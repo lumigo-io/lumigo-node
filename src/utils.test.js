@@ -10,5 +10,9 @@ describe('utils', () => {
       Sampled: '1',
     };
     expect(utils.getTraceId(awsXAmznTraceId)).toEqual(expected);
+    expect(() => utils.getTraceId('x;y')).toThrowErrorMatchingSnapshot();
+    expect(() =>
+      utils.getTraceId('a=b;c=d;e=f')
+    ).toThrowErrorMatchingSnapshot();
   });
 });

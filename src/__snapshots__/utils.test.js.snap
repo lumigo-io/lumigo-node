@@ -1,0 +1,5 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`utils getTraceId 1`] = `"Expected 3 semi-colon separated parts in _X_AMZN_TRACE_ID."`;
+
+exports[`utils getTraceId 2`] = `"Either Root, Parent or Sampled weren't found in traceId."`;
