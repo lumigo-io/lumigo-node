@@ -27,4 +27,18 @@ describe('utils', () => {
       utils.getTraceId('a=b;c=d;e=f')
     ).toThrowErrorMatchingSnapshot();
   });
+
+  test('isAsyncFn', () => {
+    const asyncFn = async x => x;
+    expect(utils.isAsyncFn(asyncFn)).toBe(true);
+    const notAsyncFn = x => x;
+    expect(utils.isAsyncFn(notAsyncFn)).toBe(false);
+  });
+
+  test('getAWSEnvironment', () => {
+    const asyncFn = async x => x;
+    expect(utils.isAsyncFn(asyncFn)).toBe(true);
+    const notAsyncFn = x => x;
+    expect(utils.isAsyncFn(notAsyncFn)).toBe(false);
+  });
 });

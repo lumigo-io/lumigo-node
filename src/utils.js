@@ -39,30 +39,6 @@ export const isAsyncFn = fn =>
   fn.constructor['name'] &&
   fn.constructor.name === 'AsyncFunction';
 
-/*
-const isWarm = () =>
-  Object.keys(process.env).filter(k => k.startsWith('LUMIGO_')).length > 0;
-
-const setLumigoEnvironment = (lumigoContainerTimestamp, lumigoIsWarm) => {
-  process.env['LUMIG_IS_WARM'] = lumigoIsWarm;
-};
-
-const getLumigoEnvironment = () => {
-  if (!isWarm()) {
-    const lumigoContainerTimestamp = new Date().getTime();
-    const lumigoIsWarm = 1;
-    setLumigoEnvironment();
-  } else {
-    const {
-      LUMIGO_CONTAINER_TIMESTAMP: lumigoContainerTimestamp,
-      LUMIGO_IS_WARM: lumigoIsWarm,
-    } = process.env;
-    return { lumigoContainerTimestamp, lumgioIsWarm };
-  }
-  const { LUMIGO_TRACER_CONTAINER_TIMESTAMP } = process.env;
-};
-*/
-
 export const getAWSEnvironment = () => {
   const {
     AWS_REGION: awsRegion,
@@ -90,3 +66,27 @@ export const getAWSEnvironment = () => {
     awsLambdaFunctionMemorySize,
   };
 };
+
+/*
+const isWarm = () =>
+  Object.keys(process.env).filter(k => k.startsWith('LUMIGO_')).length > 0;
+
+const setLumigoEnvironment = (lumigoContainerTimestamp, lumigoIsWarm) => {
+  process.env['LUMIG_IS_WARM'] = lumigoIsWarm;
+};
+
+const getLumigoEnvironment = () => {
+  if (!isWarm()) {
+    const lumigoContainerTimestamp = new Date().getTime();
+    const lumigoIsWarm = 1;
+    setLumigoEnvironment();
+  } else {
+    const {
+      LUMIGO_CONTAINER_TIMESTAMP: lumigoContainerTimestamp,
+      LUMIGO_IS_WARM: lumigoIsWarm,
+    } = process.env;
+    return { lumigoContainerTimestamp, lumgioIsWarm };
+  }
+  const { LUMIGO_TRACER_CONTAINER_TIMESTAMP } = process.env;
+};
+*/
