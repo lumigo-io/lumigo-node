@@ -1,5 +1,11 @@
 import axios from 'axios';
 
+export const getTracerInfo = () => {
+  const pkg = require('../package.json');
+  const { name, version } = pkg;
+  return { name, version };
+};
+
 export const getTraceId = awsXAmznTraceId => {
   // XXX Consider putting condition in parent.
   if (!awsXAmznTraceId) {
