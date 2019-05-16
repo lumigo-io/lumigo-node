@@ -1,5 +1,11 @@
 import axios from 'axios';
 
+export const getContextInfo = context => {
+  const remainingTimeInMillis = context.getRemainingTimeInMillis();
+  const { functionName, awsRequestId } = context;
+  return { functionName, awsRequestId, remainingTimeInMillis };
+};
+
 export const getTracerInfo = () => {
   const pkg = require('../package.json');
   const { name, version } = pkg;

@@ -6,6 +6,24 @@ jest.mock('../package.json', () => ({
 }));
 
 describe('utils', () => {
+  test('getContextInfo', () => {
+    const awsRequestId = '6d26e3c8-60a6-4cee-8a70-f525f47a4caf';
+    const functionName = 'w00t';
+    const remainingTimeInMillis = 123456;
+    const getRemainingTimeInMillis = jest.fn(() => remainingTimeInMillis);
+    const context = {
+      awsRequestId,
+      functionName,
+      getRemainingTimeInMillis,
+    };
+
+    expect(utils.getContextInfo(context)).toEqual({
+      functionName,
+      awsRequestId,
+      remainingTimeInMillis,
+    });
+  });
+
   test('getTracerInfo', () => {
     expect(utils.getTracerInfo()).toEqual({
       name: '@lumigo/tracerMock',
