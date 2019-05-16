@@ -26,6 +26,11 @@ export const getApiGatewayData = event => {
   return { httpMethod, resource, stage, api };
 };
 
+export const getSnsData = event => {
+  const { TopicArn: arn, MessageId: messageId } = event.Records[0].Sns;
+  return { arn, messageId };
+};
+
 export const getRelevantEventData = (triggeredBy, event) => {
   switch (triggeredBy) {
     case 'sqs':
@@ -33,7 +38,7 @@ export const getRelevantEventData = (triggeredBy, event) => {
     case 'dynamodb':
       return { arn: event.Records[0].eventSourceARN };
     case 'sns':
-      return { arn: event.Records[0].Sns.TopicArn };
+      return getSnsData(event);
     case 's3':
       return { arn: event.Records[0].s3.bucket.arn };
     case 'apigw':

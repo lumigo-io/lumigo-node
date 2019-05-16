@@ -47,6 +47,7 @@ describe('events', () => {
 
     expect(events.getRelevantEventData('sns', exampleSnsEvent)).toEqual({
       arn: 'arn:aws:sns:EXAMPLE',
+      messageId: '95df01b4-ee98-5cb9-9903-4c221d41eb5e',
     });
 
     expect(events.getRelevantEventData('s3', exampleS3Event)).toEqual({
@@ -65,6 +66,13 @@ describe('events', () => {
     expect(
       events.getRelevantEventData('invocation', exampleUnsupportedEvent)
     ).toEqual({});
+  });
+
+  test('getSnsData', () => {
+    expect(events.getSnsData(exampleSnsEvent)).toEqual({
+      arn: 'arn:aws:sns:EXAMPLE',
+      messageId: '95df01b4-ee98-5cb9-9903-4c221d41eb5e',
+    });
   });
 
   test('getEventInfo', () => {
