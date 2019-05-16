@@ -93,4 +93,20 @@ describe('utils', () => {
     expect(utils.getAWSEnvironment()).toEqual(expected);
     process.env = { ...oldEnv };
   });
+
+  test('isWarm', () => {
+    expect(utils.isWarm()).toBe(false);
+    const oldEnv = Object.assign({}, process.env);
+    process.env = { ...oldEnv, LUMIGO_IS_WARM: 'TRUE' };
+    expect(utils.isWarm()).toBe(true);
+    process.env = { ...oldEnv };
+  });
+
+  test('isVerboseMode', () => {
+    expect(utils.isVerboseMode()).toBe(false);
+    const oldEnv = Object.assign({}, process.env);
+    process.env = { ...oldEnv, LUMIGO_VERBOSE: 'TRUE' };
+    expect(utils.isVerboseMode()).toBe(true);
+    process.env = { ...oldEnv };
+  });
 });

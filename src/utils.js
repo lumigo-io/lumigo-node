@@ -73,6 +73,12 @@ export const getAWSEnvironment = () => {
   };
 };
 
+export const isVerboseMode = () =>
+  !!(process.env['LUMIGO_VERBOSE'] && process.env.LUMIGO_VERBOSE === 'TRUE');
+
+export const isWarm = () =>
+  !!(process.env['LUMIGO_IS_WARM'] && process.env.LUMIGO_IS_WARM === 'TRUE');
+
 /*
 const isWarm = () =>
   Object.keys(process.env).filter(k => k.startsWith('LUMIGO_')).length > 0;

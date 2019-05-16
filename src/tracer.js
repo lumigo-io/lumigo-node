@@ -17,12 +17,34 @@ const getSpanInfo = event => {
   return { traceId, tracer, logGroupName, logStreamName, ...eventInfo };
 };
 
-const getStartSpan = (event, context) => {
-  const _info = getSpanInfo(event);
+const getStartSpan = (event, context, token) => {
+  const info = getSpanInfo(event);
   const { functionName, awsRequestId, remainingTimeInMillis } = getContextInfo(
     context
   );
-  return { _info };
+  const id = `${awsRequestId}_started`;
+  const name = functionName;
+  const started = new Date().getTime();
+  const ended = started; // Indicates a StartSpan.
+  const { awsRegion: region, awsExecutionEnv: runtime } = getAWSEnvironment();
+  const type = 'function';
+  const maxFinishTime = started + remainingTimeInMillis;
+  const messageVersion = 2;
+  const readiness = 'warm'; //XXX
+
+  return {
+    info,
+    readiness,
+    messageVersion,
+    token,
+    id,
+    name,
+    started,
+    ended,
+    region,
+    type,
+    maxFinishTime,
+  };
 };
 
 const beforeUserHandler = () => {
@@ -30,11 +52,12 @@ const beforeUserHandler = () => {
   console.log(awsEnv);
 };
 
-export const trace = (token, eventFilter) => userHandler => (
-  event,
-  context,
-  callback
-) => {
+export const trace = ({
+  token,
+  eventFilter,
+  verbose,
+  switchOff,
+}) => userHandler => (event, context, callback) => {
   const ret = userHandler(event, context, callback);
   return ret;
 };
