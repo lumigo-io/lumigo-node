@@ -1,4 +1,4 @@
-import { getFunctionSpan } from './spans/aws_span';
+import { getFunctionSpan, getEndFunctionSpan } from './spans/aws_span';
 
 // XXX Promisify userHandler for non-async handlers?
 export const trace = ({
@@ -8,6 +8,7 @@ export const trace = ({
   switchOff,
 }) => userHandler => (event, context, callback) => {
   const functionSpan = getFunctionSpan(event, context, token);
-  const ret = userHandler(event, context, callback);
+  const handlerReturnValue = userHandler(event, context, callback);
+  const endFunctionSpan = getEndFunctionSpan(functionSpan, handlerReturnValue);
   return ret;
 };
