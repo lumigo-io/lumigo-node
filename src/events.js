@@ -22,7 +22,7 @@ export const getApiGatewayData = event => {
   const { headers, resource, httpMethod, requestContext } = event;
   const { stage = null } = requestContext;
 
-  const api = event.headers.Host || null;
+  const api = headers.Host || null;
   return { httpMethod, resource, stage, api };
 };
 
