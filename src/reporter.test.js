@@ -51,9 +51,9 @@ describe('getEdgeUrl', () => {
     const expectedData = JSON.stringify([span]);
 
     axios.post.mockResolvedValue('All good in da hood.');
-
     const p = reporter.sendSingleSpan(span);
     expect(await p).toEqual('All good in da hood.');
+
     expect(axios.post).toHaveBeenCalledWith(expectedEdgeUrl, {
       headers: expectedHeaders,
       data: expectedData,
