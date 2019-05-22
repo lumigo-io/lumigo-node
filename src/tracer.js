@@ -37,11 +37,12 @@ const getStartSpan = (lambdaEvent, lambdaContext, token) => {
     awsLambdaFunctionMemorySize: _memoryAllocated,
     awsLambdaFunctionVersion: _version,
   } = getAWSEnvironment();
-
+  const x = 'asdf';
   const _id = `${awsRequestId}_started`;
+  const type = 'asdf';
   const _name = functionName;
   const _started = new Date().getTime();
-  const _ended = started; // Indicates a StartSpan.
+  const _ended = _started; // Indicates a StartSpan.
   const _type = 'function';
   const _messageVersion = 2;
   const _vendor = 'AWS';
