@@ -1,62 +1,81 @@
 import {
   isWarm,
-  getTracerId,
+  getTraceId,
   getTracerInfo,
   getContextInfo,
   getAWSEnvironment,
+  stringifyAndPrune,
 } from './utils';
 import { getEventInfo } from './events';
 
 const getSpanInfo = event => {
   const tracer = getTracerInfo();
-  const traceId = getTraceId();
   const {
     awsLambdaLogGroupName: logGroupName,
     awsLambdaLogStreamName: logStreamName,
+    awsXAmznTraceId,
   } = getAWSEnvironment();
+  const traceId = getTraceId(awsXAmznTraceId);
   const eventInfo = getEventInfo(event);
   return { traceId, tracer, logGroupName, logStreamName, ...eventInfo };
 };
 
-const getSpanEnvironment = () => {};
+const getStartSpan = (lambdaEvent, lambdaContext, token) => {
+  const _info = getSpanInfo(lambdaEvent);
+  const { transactionId: _transactionId } = _info;
 
-const getStartSpan = (event, context, token) => {
-  const info = getSpanInfo(event);
-  const { transactionId } = info;
-  const { functionName, awsRequestId, remainingTimeInMillis } = getContextInfo(
-    context
-  );
-  const id = `${awsRequestId}_started`;
-  const name = functionName;
-  const started = new Date().getTime();
-  const ended = started; // Indicates a StartSpan.
-  const { awsRegion: region, awsExecutionEnv: runtime } = getAWSEnvironment();
-  const type = 'function';
-  const maxFinishTime = started + remainingTimeInMillis;
-  const messageVersion = 2;
+  const {
+    functionName,
+    awsRequestId,
+    awsAccountId,
+    remainingTimeInMillis,
+  } = getContextInfo(lambdaContext);
 
-  const readiness = isWarm();
+  const {
+    awsRegion: _region,
+    awsExecutionEnv: _runtime,
+    awsLambdaFunctionMemorySize: _memoryAllocated,
+    awsLambdaFunctionVersion: _version,
+  } = getAWSEnvironment();
 
-  if (!readiness) {
+  const _id = `${awsRequestId}_started`;
+  const _name = functionName;
+  const _started = new Date().getTime();
+  const _ended = started; // Indicates a StartSpan.
+  const _type = 'function';
+  const _messageVersion = 2;
+  const _vendor = 'AWS';
+  const _account = awsAccountId;
+  const maxFinishTime = _started + remainingTimeInMillis;
+
+  const _readiness = isWarm();
+  if (!_readiness) {
     setWarm();
   }
 
-  const vendor = 'AWS';
+  const event = isVerboseMode() ? stringifyAndPrune(event) : null;
+  const envs = isVerboseMode() ? stringifyAndPrune(process.env) : null;
 
   return {
-    info,
-    vendor,
-    transactionId,
-    readiness,
-    messageVersion,
-    token,
-    id,
-    name,
-    started,
-    ended,
-    region,
-    type,
+    _info,
+    _vendor,
+    _transactionId,
+    _account,
+    _memoryAllocated,
+    _version,
+    _runtime,
+    _readiness,
+    _messageVersion,
+    _token,
+    _id,
+    _name,
+    _started,
+    _ended,
+    _region,
+    _type,
     maxFinishTime,
+    event,
+    envs,
   };
 };
 
@@ -72,6 +91,8 @@ export const trace = ({
   verbose,
   switchOff,
 }) => userHandler => (event, context, callback) => {
+  const startSpan = getStartSpan(event, context);
+  console.log(JSON.stringify(startSpan, null, 2));
   const ret = userHandler(event, context, callback);
   return ret;
 };

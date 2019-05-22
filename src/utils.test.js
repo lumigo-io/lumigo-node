@@ -11,15 +11,20 @@ describe('utils', () => {
     const functionName = 'w00t';
     const remainingTimeInMillis = 123456;
     const getRemainingTimeInMillis = jest.fn(() => remainingTimeInMillis);
+    const awsAccountId = `985323015126`;
+    const invokedFunctionArn = `arn:aws:lambda:us-east-1:${awsAccountId}:function:aws-nodejs-dev-hello`;
+
     const context = {
       awsRequestId,
       functionName,
+      invokedFunctionArn,
       getRemainingTimeInMillis,
     };
 
     expect(utils.getContextInfo(context)).toEqual({
       functionName,
       awsRequestId,
+      awsAccountId,
       remainingTimeInMillis,
     });
   });
@@ -125,5 +130,24 @@ describe('utils', () => {
     utils.setWarm();
     expect(utils.isWarm()).toBe(true);
     process.env = { ...oldEnv };
+  });
+
+  test('isString', () => {
+    expect(utils.isString('asdf')).toBe(true);
+    expect(utils.isString({ satoshi: 'nakamoto' })).toBe(false);
+  });
+
+  test('prune', () => {
+    expect(utils.prune('abcdefg', 3)).toEqual('abc');
+    expect(utils.prune('abcdefg')).toEqual('abcdefg');
+  });
+
+  test('stringifyAndPrune', () => {
+    const obj = {
+      founder: 'Elon Musk',
+      companies: ['SpaceX', 'Tesla', 'Boring Company', 'PayPal', 'X.com'],
+    };
+    expect(utils.stringifyAndPrune(obj, 4)).toEqual('{"fo');
+    expect(utils.stringifyAndPrune(obj)).toEqual(JSON.stringify(obj));
   });
 });

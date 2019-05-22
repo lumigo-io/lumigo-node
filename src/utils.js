@@ -2,8 +2,17 @@ import axios from 'axios';
 
 export const getContextInfo = context => {
   const remainingTimeInMillis = context.getRemainingTimeInMillis();
-  const { functionName, awsRequestId } = context;
-  return { functionName, awsRequestId, remainingTimeInMillis };
+  const { functionName, awsRequestId, invokedFunctionArn } = context;
+  const awsAccountId = invokedFunctionArn
+    ? invokedFunctionArn.split(':')[4]
+    : '';
+
+  return {
+    functionName,
+    awsRequestId,
+    awsAccountId,
+    remainingTimeInMillis,
+  };
 };
 
 export const getTracerInfo = () => {
@@ -50,6 +59,7 @@ export const isAsyncFn = fn =>
   fn.constructor.name === 'AsyncFunction';
 
 export const getAWSEnvironment = () => {
+  //console.log(JSON.stringify(process.env, null, 2));
   const {
     AWS_REGION: awsRegion,
     _X_AMZN_TRACE_ID: awsXAmznTraceId,
@@ -92,6 +102,19 @@ export const isSwitchedOff = () =>
   );
 
 export const setWarm = () => (process.env['LUMIGO_IS_WARM'] = 'TRUE');
+
+export const isString = x =>
+  Object.prototype.toString.call(x) === '[object String]';
+
+export const MAX_ENTITY_SIZE = 1024;
+
+export const prune = (str, maxLength = MAX_ENTITY_SIZE) =>
+  str.substr(0, maxLength);
+
+export const stringifyAndPrune = (obj, maxLength = MAX_ENTITY_SIZE) =>
+  prune(JSON.stringify(obj), maxLength);
+
+//export const prepareLargeData =
 /*
 const isWarm = () =>
   Object.keys(process.env).filter(k => k.startsWith('LUMIGO_')).length > 0;
