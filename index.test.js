@@ -1,6 +1,8 @@
 const lambdaLocal = require('lambda-local');
 const lumigo = require('./index')({ token: 'baba' });
 
+jest.mock('axios');
+
 const awsEnv = {
   LAMBDA_TASK_ROOT: '/var/task',
   LAMBDA_RUNTIME_DIR: '/var/runtime',
