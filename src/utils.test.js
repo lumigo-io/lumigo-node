@@ -38,6 +38,7 @@ describe('utils', () => {
       Parent: '59fa1aeb03c2ec1f',
       Root: '1-5b1d2450-6ac46730d346cad0e53f89d0',
       Sampled: '1',
+      transactionId: '6ac46730d346cad0e53f89d0',
     };
     expect(utils.getTraceId(awsXAmznTraceId)).toEqual(expected);
     expect(() => utils.getTraceId('x;y')).toThrowErrorMatchingSnapshot();
@@ -107,6 +108,22 @@ describe('utils', () => {
     const oldEnv = Object.assign({}, process.env);
     process.env = { ...oldEnv, LUMIGO_VERBOSE: 'TRUE' };
     expect(utils.isVerboseMode()).toBe(true);
+    process.env = { ...oldEnv };
+  });
+
+  test('isDebug', () => {
+    expect(utils.isDebug()).toBe(false);
+    const oldEnv = Object.assign({}, process.env);
+    process.env = { ...oldEnv, LUMIGO_DEBUG: 'TRUE' };
+    expect(utils.isDebug()).toBe(true);
+    process.env = { ...oldEnv };
+  });
+
+  test('setWarm', () => {
+    expect(utils.isWarm()).toBe(false);
+    const oldEnv = Object.assign({}, process.env);
+    utils.setWarm();
+    expect(utils.isWarm()).toBe(true);
     process.env = { ...oldEnv };
   });
 });

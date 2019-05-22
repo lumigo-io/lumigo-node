@@ -36,6 +36,10 @@ export const getTraceId = awsXAmznTraceId => {
     throw new Error(`Either Root, Parent or Sampled weren't found in traceId.`);
   }
 
+  const transactionId = traceId.Root.split('-')[2];
+
+  traceId.transactionId = transactionId;
+
   return traceId;
 };
 
@@ -79,6 +83,15 @@ export const isVerboseMode = () =>
 export const isWarm = () =>
   !!(process.env['LUMIGO_IS_WARM'] && process.env.LUMIGO_IS_WARM === 'TRUE');
 
+export const isDebug = () =>
+  !!(process.env['LUMIGO_DEBUG'] && process.env.LUMIGO_DEBUG === 'TRUE');
+
+export const isSwitchedOff = () =>
+  !!(
+    process.env['LUMIGO_SWITCH_OFF'] && process.env.LUMIGO_SWITCH_OFF === 'TRUE'
+  );
+
+export const setWarm = () => (process.env['LUMIGO_IS_WARM'] = 'TRUE');
 /*
 const isWarm = () =>
   Object.keys(process.env).filter(k => k.startsWith('LUMIGO_')).length > 0;

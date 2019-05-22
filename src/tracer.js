@@ -1,4 +1,5 @@
 import {
+  isWarm,
   getTracerId,
   getTracerInfo,
   getContextInfo,
@@ -17,8 +18,11 @@ const getSpanInfo = event => {
   return { traceId, tracer, logGroupName, logStreamName, ...eventInfo };
 };
 
+const getSpanEnvironment = () => {};
+
 const getStartSpan = (event, context, token) => {
   const info = getSpanInfo(event);
+  const { transactionId } = info;
   const { functionName, awsRequestId, remainingTimeInMillis } = getContextInfo(
     context
   );
@@ -30,10 +34,19 @@ const getStartSpan = (event, context, token) => {
   const type = 'function';
   const maxFinishTime = started + remainingTimeInMillis;
   const messageVersion = 2;
-  const readiness = 'warm'; //XXX
+
+  const readiness = isWarm();
+
+  if (!readiness) {
+    setWarm();
+  }
+
+  const vendor = 'AWS';
 
   return {
     info,
+    vendor,
+    transactionId,
     readiness,
     messageVersion,
     token,
@@ -52,6 +65,7 @@ const beforeUserHandler = () => {
   console.log(awsEnv);
 };
 
+// XXX Promisify userHandler for non-async handlers?
 export const trace = ({
   token,
   eventFilter,
