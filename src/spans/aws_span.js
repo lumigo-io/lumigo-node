@@ -1,6 +1,7 @@
 import {
   isWarm,
   setWarm,
+  pruneData,
   getTraceId,
   isVerboseMode,
   getTracerInfo,
@@ -22,7 +23,7 @@ export const getSpanInfo = event => {
   return { traceId, tracer, logGroupName, logStreamName, ...eventInfo };
 };
 
-export const getStartSpan = (lambdaEvent, lambdaContext, token) => {
+export const getFunctionSpan = (lambdaEvent, lambdaContext, token) => {
   const _info = getSpanInfo(lambdaEvent);
   const { traceId } = _info;
   const { transactionId: _transactionId } = traceId;
@@ -52,7 +53,7 @@ export const getStartSpan = (lambdaEvent, lambdaContext, token) => {
   const _account = awsAccountId;
   const maxFinishTime = _started + remainingTimeInMillis;
 
-  const _readiness = isWarm() ? 'warm' : 'cold ';
+  const _readiness = isWarm() ? 'warm' : 'cold';
   if (_readiness === 'warm') {
     setWarm();
   }
@@ -81,4 +82,13 @@ export const getStartSpan = (lambdaEvent, lambdaContext, token) => {
     event,
     envs,
   };
+};
+
+export const removeStartedFromId = id => id.split('_')[0];
+
+export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
+  const _id = removeStartedFromId(functionSpan._id);
+  const _ended = new Date().getTime();
+  const return_value = isVerboseMode() ? pruneData(handlerReturnValue) : null;
+  return Object.assign({}, functionSpan, { _id, _ended, return_value });
 };

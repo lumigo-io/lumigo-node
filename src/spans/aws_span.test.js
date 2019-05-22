@@ -1,10 +1,10 @@
 import * as awsSpan from './aws_span.js';
+import { setVerboseMode } from '../utils';
 import MockDate from 'mockdate';
 const exampleApiGatewayEvent = require('../testdata/events/apigw-request.json');
 
 describe('aws', () => {
   const oldEnv = Object.assign({}, process.env);
-  MockDate.set('05/14/1998');
   beforeEach(() => {
     const awsEnv = {
       LAMBDA_TASK_ROOT: '/var/task',
@@ -27,6 +27,8 @@ describe('aws', () => {
     };
 
     process.env = { ...oldEnv, ...awsEnv };
+
+    MockDate.set('05/14/1998');
   });
   afterEach(() => {
     process.env = { ...oldEnv };
@@ -55,8 +57,8 @@ describe('aws', () => {
     );
   });
 
-  test('getStartSpan', () => {
-    const token = 'DEAFBEEF';
+  test('getFunctionSpan', () => {
+    const token = 'DEADBEEF';
 
     const awsRequestId = '6d26e3c8-60a6-4cee-8a70-f525f47a4caf';
     const functionName = 'w00t';
@@ -94,12 +96,12 @@ describe('aws', () => {
       _memoryAllocated: '1024',
       _messageVersion: 2,
       _name: 'w00t',
-      _readiness: 'cold ',
+      _readiness: 'cold',
       _region: 'us-east-1',
       _runtime: 'AWS_Lambda_nodejs8.10',
       _started: 895093200000,
       _ended: 895093200000,
-      _token: 'DEAFBEEF',
+      _token: 'DEADBEEF',
       _transactionId: '64a1b06067c2100c52e51ef4',
       _type: 'function',
       _vendor: 'AWS',
@@ -110,7 +112,140 @@ describe('aws', () => {
     };
 
     expect(
-      awsSpan.getStartSpan(exampleApiGatewayEvent, context, token)
+      awsSpan.getFunctionSpan(exampleApiGatewayEvent, context, token)
     ).toEqual(expectedStartSpan);
+  });
+
+  test('removeStartedFromId', () => {
+    const idWithStarted = '6d26e3c8-60a6-4cee-8a70-f525f47a4caf_started';
+    expect(awsSpan.removeStartedFromId(idWithStarted)).toEqual(
+      '6d26e3c8-60a6-4cee-8a70-f525f47a4caf'
+    );
+  });
+
+  test('getEndFunctionSpan', () => {
+    const functionSpan = {
+      _account: '985323015126',
+      _id: '6d26e3c8-60a6-4cee-8a70-f525f47a4caf_started',
+      _info: {
+        api: 'gy415nuibc.execute-api.us-east-1.amazonaws.com',
+        httpMethod: 'POST',
+        logGroupName: '/aws/lambda/aws-nodejs-dev-hello',
+        logStreamName: '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',
+        resource: '/{proxy+}',
+        stage: 'testStage',
+        traceId: {
+          Parent: '28effe37598bb622',
+          Root: '1-5cdcf03a-64a1b06067c2100c52e51ef4',
+          Sampled: '0',
+          transactionId: '64a1b06067c2100c52e51ef4',
+        },
+        tracer: { name: '@lumigo/tracer', version: '0.0.123' },
+        triggeredBy: 'apigw',
+      },
+      _memoryAllocated: '1024',
+      _messageVersion: 2,
+      _name: 'w00t',
+      _readiness: 'cold',
+      _region: 'us-east-1',
+      _runtime: 'AWS_Lambda_nodejs8.10',
+      _started: 895093200000,
+      _ended: 895093200000,
+      _token: 'DEADBEEF',
+      _transactionId: '64a1b06067c2100c52e51ef4',
+      _type: 'function',
+      _vendor: 'AWS',
+      _version: '$LATEST',
+      envs: null,
+      event: null,
+      maxFinishTime: 895093323456,
+    };
+
+    const expectedFunctionSpan1 = {
+      _account: '985323015126',
+      _id: '6d26e3c8-60a6-4cee-8a70-f525f47a4caf',
+      _info: {
+        api: 'gy415nuibc.execute-api.us-east-1.amazonaws.com',
+        httpMethod: 'POST',
+        logGroupName: '/aws/lambda/aws-nodejs-dev-hello',
+        logStreamName: '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',
+        resource: '/{proxy+}',
+        stage: 'testStage',
+        traceId: {
+          Parent: '28effe37598bb622',
+          Root: '1-5cdcf03a-64a1b06067c2100c52e51ef4',
+          Sampled: '0',
+          transactionId: '64a1b06067c2100c52e51ef4',
+        },
+        tracer: { name: '@lumigo/tracer', version: '0.0.123' },
+        triggeredBy: 'apigw',
+      },
+      _memoryAllocated: '1024',
+      _messageVersion: 2,
+      _name: 'w00t',
+      _readiness: 'cold',
+      _region: 'us-east-1',
+      _runtime: 'AWS_Lambda_nodejs8.10',
+      _started: 895093200000,
+      _ended: 895179612345,
+      _token: 'DEADBEEF',
+      _transactionId: '64a1b06067c2100c52e51ef4',
+      _type: 'function',
+      _vendor: 'AWS',
+      _version: '$LATEST',
+      envs: null,
+      event: null,
+      maxFinishTime: 895093323456,
+      return_value: null,
+    };
+
+    MockDate.set(895179612345);
+    expect(awsSpan.getEndFunctionSpan(functionSpan)).toEqual(
+      expectedFunctionSpan1
+    );
+
+    setVerboseMode();
+    const handlerReturnValue = 'baba was here';
+
+    const expectedFunctionSpan2 = {
+      _account: '985323015126',
+      _id: '6d26e3c8-60a6-4cee-8a70-f525f47a4caf',
+      _info: {
+        api: 'gy415nuibc.execute-api.us-east-1.amazonaws.com',
+        httpMethod: 'POST',
+        logGroupName: '/aws/lambda/aws-nodejs-dev-hello',
+        logStreamName: '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',
+        resource: '/{proxy+}',
+        stage: 'testStage',
+        traceId: {
+          Parent: '28effe37598bb622',
+          Root: '1-5cdcf03a-64a1b06067c2100c52e51ef4',
+          Sampled: '0',
+          transactionId: '64a1b06067c2100c52e51ef4',
+        },
+        tracer: { name: '@lumigo/tracer', version: '0.0.123' },
+        triggeredBy: 'apigw',
+      },
+      _memoryAllocated: '1024',
+      _messageVersion: 2,
+      _name: 'w00t',
+      _readiness: 'cold',
+      _region: 'us-east-1',
+      _runtime: 'AWS_Lambda_nodejs8.10',
+      _started: 895093200000,
+      _ended: 895179612345,
+      _token: 'DEADBEEF',
+      _transactionId: '64a1b06067c2100c52e51ef4',
+      _type: 'function',
+      _vendor: 'AWS',
+      _version: '$LATEST',
+      envs: null,
+      event: null,
+      maxFinishTime: 895093323456,
+      return_value: handlerReturnValue,
+    };
+    expect(
+      awsSpan.getEndFunctionSpan(functionSpan, handlerReturnValue)
+    ).toEqual(expectedFunctionSpan2);
   });
 });

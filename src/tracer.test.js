@@ -1,8 +1,5 @@
 describe('tracer', () => {
-  test('getSpanInfo', () => {
-      
-  
-  });
+  test('getSpanInfo', () => {});
 });
 
 /* XXX Example Started Trace

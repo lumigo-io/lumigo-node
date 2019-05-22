@@ -150,4 +150,13 @@ describe('utils', () => {
     expect(utils.stringifyAndPrune(obj, 4)).toEqual('{"fo');
     expect(utils.stringifyAndPrune(obj)).toEqual(JSON.stringify(obj));
   });
+
+  test('pruneData', () => {
+    const obj = {
+      founder: 'Elon Musk',
+      companies: ['SpaceX', 'Tesla', 'Boring Company', 'PayPal', 'X.com'],
+    };
+    expect(utils.pruneData(obj, 4)).toEqual('{"fo');
+    expect(utils.pruneData('abcdefg', 3)).toEqual('abc');
+  });
 });

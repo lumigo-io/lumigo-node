@@ -1,5 +1,3 @@
-import axios from 'axios';
-
 export const getContextInfo = context => {
   const remainingTimeInMillis = context.getRemainingTimeInMillis();
   const { functionName, awsRequestId, invokedFunctionArn } = context;
@@ -103,6 +101,8 @@ export const isSwitchedOff = () =>
 
 export const setWarm = () => (process.env['LUMIGO_IS_WARM'] = 'TRUE');
 
+export const setVerboseMode = () => (process.env['LUMIGO_VERBOSE'] = 'TRUE');
+
 export const isString = x =>
   Object.prototype.toString.call(x) === '[object String]';
 
@@ -114,27 +114,5 @@ export const prune = (str, maxLength = MAX_ENTITY_SIZE) =>
 export const stringifyAndPrune = (obj, maxLength = MAX_ENTITY_SIZE) =>
   prune(JSON.stringify(obj), maxLength);
 
-//export const prepareLargeData =
-/*
-const isWarm = () =>
-  Object.keys(process.env).filter(k => k.startsWith('LUMIGO_')).length > 0;
-
-const setLumigoEnvironment = (lumigoContainerTimestamp, lumigoIsWarm) => {
-  process.env['LUMIG_IS_WARM'] = lumigoIsWarm;
-};
-
-const getLumigoEnvironment = () => {
-  if (!isWarm()) {
-    const lumigoContainerTimestamp = new Date().getTime();
-    const lumigoIsWarm = 1;
-    setLumigoEnvironment();
-  } else {
-    const {
-      LUMIGO_CONTAINER_TIMESTAMP: lumigoContainerTimestamp,
-      LUMIGO_IS_WARM: lumigoIsWarm,
-    } = process.env;
-    return { lumigoContainerTimestamp, lumgioIsWarm };
-  }
-  const { LUMIGO_TRACER_CONTAINER_TIMESTAMP } = process.env;
-};
-*/
+export const pruneData = (data, maxLength) =>
+  isString(data) ? prune(data, maxLength) : stringifyAndPrune(data, maxLength);
