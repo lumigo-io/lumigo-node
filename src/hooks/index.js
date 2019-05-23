@@ -2,6 +2,7 @@ import shimmer from 'shimmer';
 import http from 'http';
 import { isRequestToAwsService, pruneData, isVerboseMode } from '../utils';
 import { SpansHive } from '../reporter';
+import { getHttpSpan, addResponseDataToHttpSpan } from '../spans/aws_span';
 
 // XXX Blacklist calls to Lumigo's edge
 export const isBlacklisted = host => {};
@@ -30,7 +31,7 @@ export const parseHttpRequestOptions = options => {
   };
 };
 
-export const wrappedHttpResponseCallback = callback => response => {
+export const wrappedHttpResponseCallback = (httpSpan, callback) => response => {
   const { headers, statusCode } = response;
   const recievedTime = new Date().getTime();
 
@@ -40,13 +41,18 @@ export const wrappedHttpResponseCallback = callback => response => {
   }
 
   response.on('end', () => {
-    const data = {
+    const responseData = {
       body,
       statusCode,
       recievedTime,
       headers: isVerboseMode() ? pruneData(headers) : '',
     };
-    //console.log(JSON.stringify(data, null, 2));
+
+    const httpSpanWithResponseData = addResponseDataToHttpSpan(
+      responseData,
+      httpSpan
+    );
+    SpansHive.addSpan(httpSpanWithResponseData);
   });
 
   callback && callback(response);
@@ -54,9 +60,13 @@ export const wrappedHttpResponseCallback = callback => response => {
 
 export const httpRequestWrapper = originalRequestFn => (options, callback) => {
   // XXX Consider try / catch
+  //
+  const requestData = parseHttpRequestOptions(options);
+  const httpSpan = getHttpSpan(requestData);
+  console.log(JSON.stringify(httpSpan, null, 2));
   const clientRequest = originalRequestFn.apply(this, [
     options,
-    wrappedHttpResponseCallback(callback),
+    wrappedHttpResponseCallback(httpSpan, callback),
   ]);
   return clientRequest;
 };

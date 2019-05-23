@@ -10,6 +10,7 @@ import {
   stringifyAndPrune,
 } from '../utils';
 import { getEventInfo } from '../events';
+import uuidv1 from 'uuid/v1';
 
 const FUNCTION_SPAN = 'function';
 const HTTP_SPAN = 'http';
@@ -127,4 +128,26 @@ export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
   return Object.assign({}, functionSpan, { id, ended, return_value });
 };
 
-export const getHttpSpan = () => {};
+export const getHttpSpan = requestData => {
+  const { context } = SpanGlobals.get();
+  const { awsRequestId: parentId } = context;
+
+  const basicSpan = getBasicSpan();
+
+  const id = uuidv1();
+  const type = HTTP_SPAN;
+
+  const { host } = requestData;
+  const request = requestData;
+  const response = {};
+
+  const httpInfo = { host, request, response };
+  const info = Object.assign({}, basicSpan.info, { httpInfo });
+  return { ...basicSpan, id, type, parentId, info };
+};
+
+export const addResponseDataToHttpSpan = (responseData, httpSpan) => {
+  const newHttpSpan = Object.assign({}, httpSpan);
+  newHttpSpan.info.httpInfo.response = responseData;
+  return newHttpSpan;
+};

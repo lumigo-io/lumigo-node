@@ -28,7 +28,8 @@ describe('lumigo-node', () => {
   test.only('x', async () => {
     const expected = 'Satoshi was here';
     const userHandler = async (event, context, callback) => {
-      const r = await axios.get('https://examplefff.com/');
+      // XXX Test the case for an NX Domain
+      const r = await axios.get('https://example.com/');
       //const x = y;
       return expected;
     };

@@ -268,4 +268,32 @@ describe('aws', () => {
       awsSpan.getEndFunctionSpan(functionSpan, handlerReturnValue)
     ).toEqual(expectedFunctionSpan2);
   });
+
+  test('addResponseDataToHttpSpan', () => {
+    const httpSpan = {
+      info: {
+        httpInfo: {
+          host: 'lumigo.io',
+          request: { method: 'GET' },
+          response: {},
+        },
+      },
+    };
+
+    const responseData = { statusCode: 200 };
+
+    const expectedHttpSpan = {
+      info: {
+        httpInfo: {
+          host: 'lumigo.io',
+          request: { method: 'GET' },
+          response: responseData,
+        },
+      },
+    };
+
+    expect(awsSpan.addResponseDataToHttpSpan(responseData, httpSpan)).toEqual(
+      expectedHttpSpan
+    );
+  });
 });
