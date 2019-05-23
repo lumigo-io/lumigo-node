@@ -16,10 +16,15 @@ const HTTP_SPAN = 'http';
 
 export const SpanGlobals = (() => {
   const globals = { event: {}, context: {}, token: '' };
-  const set = (name, value) => (globals[name] = value);
-  const get = () => globals;
 
-  return { set, get };
+  const set = ({ event, context, token }) =>
+    Object.assign(globals, { event, context, token });
+
+  const get = () => globals;
+  const clear = () =>
+    Object.assign(globals, { event: {}, context: {}, token: '' });
+
+  return { set, get, clear };
 })();
 
 export const getSpanInfo = event => {
@@ -34,7 +39,13 @@ export const getSpanInfo = event => {
   return { traceId, tracer, logGroupName, logStreamName, ...eventInfo };
 };
 
-export const getBasicSpan = (lambdaEvent, lambdaContext, token) => {
+export const getBasicSpan = () => {
+  const {
+    token,
+    event: lambdaEvent,
+    context: lambdaContext,
+  } = SpanGlobals.get();
+
   const info = getSpanInfo(lambdaEvent);
   const { traceId } = info;
   const { transactionId } = traceId;
@@ -72,8 +83,10 @@ export const getBasicSpan = (lambdaEvent, lambdaContext, token) => {
   };
 };
 
-export const getFunctionSpan = (lambdaEvent, lambdaContext, token) => {
-  const basicSpan = getBasicSpan(lambdaEvent, lambdaContext, token);
+export const getFunctionSpan = () => {
+  const { event: lambdaEvent, context: lambdaContext } = SpanGlobals.get();
+
+  const basicSpan = getBasicSpan();
 
   const type = FUNCTION_SPAN;
 

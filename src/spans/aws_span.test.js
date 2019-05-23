@@ -1,10 +1,12 @@
 import * as awsSpan from './aws_span.js';
 import { setVerboseMode } from '../utils';
 import MockDate from 'mockdate';
+
 const exampleApiGatewayEvent = require('../testdata/events/apigw-request.json');
 
 describe('aws', () => {
   const oldEnv = Object.assign({}, process.env);
+
   beforeEach(() => {
     const awsEnv = {
       LAMBDA_TASK_ROOT: '/var/task',
@@ -28,23 +30,46 @@ describe('aws', () => {
 
     process.env = { ...oldEnv, ...awsEnv };
 
+    const token = 'DEADBEEF';
+
+    const awsRequestId = '6d26e3c8-60a6-4cee-8a70-f525f47a4caf';
+    const functionName = 'w00t';
+    const remainingTimeInMillis = 123456;
+    const getRemainingTimeInMillis = jest.fn(() => remainingTimeInMillis);
+    const awsAccountId = `985323015126`;
+    const invokedFunctionArn = `arn:aws:lambda:us-east-1:${awsAccountId}:function:aws-nodejs-dev-hello`;
+
+    const context = {
+      awsRequestId,
+      functionName,
+      invokedFunctionArn,
+      getRemainingTimeInMillis,
+    };
+    const event = exampleApiGatewayEvent;
+
+    awsSpan.SpanGlobals.set({ context, event, token });
+
     MockDate.set('05/14/1998');
   });
+
   afterEach(() => {
     process.env = { ...oldEnv };
   });
 
   test('SpanGlobals', () => {
-    const exampleContext = { awsRequestId: '1234' };
-    awsSpan.SpanGlobals.set('event', exampleApiGatewayEvent);
-    awsSpan.SpanGlobals.set('context', exampleContext);
-    awsSpan.SpanGlobals.set('token', 'DEADBEEF');
+    const context = { awsRequestId: '1234' };
+    const event = exampleApiGatewayEvent;
+    const token = 'DEADBEEF';
 
-    const spanGlobals = awsSpan.SpanGlobals.get();
+    awsSpan.SpanGlobals.set({ context, event, token });
 
-    expect(spanGlobals.event).toEqual(exampleApiGatewayEvent);
-    expect(spanGlobals.context).toEqual(exampleContext);
-    expect(spanGlobals.token).toEqual('DEADBEEF');
+    expect(awsSpan.SpanGlobals.get()).toEqual({ event, context, token });
+    awsSpan.SpanGlobals.clear();
+    expect(awsSpan.SpanGlobals.get()).toEqual({
+      event: {},
+      context: {},
+      token: '',
+    });
   });
 
   test('getSpanInfo', () => {
@@ -71,22 +96,6 @@ describe('aws', () => {
   });
 
   test('getFunctionSpan', () => {
-    const token = 'DEADBEEF';
-
-    const awsRequestId = '6d26e3c8-60a6-4cee-8a70-f525f47a4caf';
-    const functionName = 'w00t';
-    const remainingTimeInMillis = 123456;
-    const getRemainingTimeInMillis = jest.fn(() => remainingTimeInMillis);
-    const awsAccountId = `985323015126`;
-    const invokedFunctionArn = `arn:aws:lambda:us-east-1:${awsAccountId}:function:aws-nodejs-dev-hello`;
-
-    const context = {
-      awsRequestId,
-      functionName,
-      invokedFunctionArn,
-      getRemainingTimeInMillis,
-    };
-
     const expectedStartSpan = {
       account: '985323015126',
       id: '6d26e3c8-60a6-4cee-8a70-f525f47a4caf_started',
@@ -124,9 +133,7 @@ describe('aws', () => {
       maxFinishTime: 895093323456,
     };
 
-    expect(
-      awsSpan.getFunctionSpan(exampleApiGatewayEvent, context, token)
-    ).toEqual(expectedStartSpan);
+    expect(awsSpan.getFunctionSpan()).toEqual(expectedStartSpan);
   });
 
   test('removeStartedFromId', () => {

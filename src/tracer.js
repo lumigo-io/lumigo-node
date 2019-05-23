@@ -1,4 +1,8 @@
-import { getFunctionSpan, getEndFunctionSpan } from './spans/aws_span';
+import {
+  SpanGlobals,
+  getFunctionSpan,
+  getEndFunctionSpan,
+} from './spans/aws_span';
 import { sendSingleSpan, SpansHive } from './reporter';
 
 // XXX Promisify userHandler for non-async handlers, and Promise.all with the Epilogue
@@ -8,6 +12,7 @@ export const trace = ({
   verbose,
   switchOff,
 }) => userHandler => async (event, context, callback) => {
+  SpanGlobals.set({ event, context, token });
   const functionSpan = getFunctionSpan(event, context, token);
   SpansHive.addSpan(functionSpan);
   //await sendSingleSpan(functionSpan);
