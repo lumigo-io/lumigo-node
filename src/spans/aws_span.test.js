@@ -34,6 +34,19 @@ describe('aws', () => {
     process.env = { ...oldEnv };
   });
 
+  test('SpanGlobals', () => {
+    const exampleContext = { awsRequestId: '1234' };
+    awsSpan.SpanGlobals.set('event', exampleApiGatewayEvent);
+    awsSpan.SpanGlobals.set('context', exampleContext);
+    awsSpan.SpanGlobals.set('token', 'DEADBEEF');
+
+    const spanGlobals = awsSpan.SpanGlobals.get();
+
+    expect(spanGlobals.event).toEqual(exampleApiGatewayEvent);
+    expect(spanGlobals.context).toEqual(exampleContext);
+    expect(spanGlobals.token).toEqual('DEADBEEF');
+  });
+
   test('getSpanInfo', () => {
     const expectedSpanInfo = {
       traceId: {

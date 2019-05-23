@@ -1,8 +1,10 @@
 import shimmer from 'shimmer';
 import http from 'http';
 import { isRequestToAwsService, pruneData, isVerboseMode } from '../utils';
+import { SpansHive } from '../reporter';
 
-export const isWhitelisted = host => {};
+// XXX Blacklist calls to Lumigo's edge
+export const isBlacklisted = host => {};
 
 export const parseHttpRequestOptions = options => {
   const host =
@@ -44,13 +46,14 @@ export const wrappedHttpResponseCallback = callback => response => {
       recievedTime,
       headers: isVerboseMode() ? pruneData(headers) : '',
     };
-    // console.log(JSON.stringify(data, null, 2));
+    //console.log(JSON.stringify(data, null, 2));
   });
 
   callback && callback(response);
 };
 
 export const httpRequestWrapper = originalRequestFn => (options, callback) => {
+  // XXX Consider try / catch
   const clientRequest = originalRequestFn.apply(this, [
     options,
     wrappedHttpResponseCallback(callback),

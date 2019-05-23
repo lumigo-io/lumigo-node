@@ -17,3 +17,12 @@ export const sendSingleSpan = async span => {
   const data = JSON.stringify([span]);
   return axios.post(edgeUrl, { headers, data });
 };
+
+export const SpansHive = (() => {
+  const spans = [];
+
+  const addSpan = span => spans.push(span);
+  const getSpans = () => spans;
+
+  return { addSpan, getSpans };
+})();

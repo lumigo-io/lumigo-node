@@ -11,6 +11,17 @@ import {
 } from '../utils';
 import { getEventInfo } from '../events';
 
+const FUNCTION_SPAN = 'function';
+const HTTP_SPAN = 'http';
+
+export const SpanGlobals = (() => {
+  const globals = { event: {}, context: {}, token: '' };
+  const set = (name, value) => (globals[name] = value);
+  const get = () => globals;
+
+  return { set, get };
+})();
+
 export const getSpanInfo = event => {
   const tracer = getTracerInfo();
   const {
@@ -23,17 +34,12 @@ export const getSpanInfo = event => {
   return { traceId, tracer, logGroupName, logStreamName, ...eventInfo };
 };
 
-export const getFunctionSpan = (lambdaEvent, lambdaContext, token) => {
+export const getBasicSpan = (lambdaEvent, lambdaContext, token) => {
   const info = getSpanInfo(lambdaEvent);
   const { traceId } = info;
   const { transactionId } = traceId;
 
-  const {
-    functionName,
-    awsRequestId,
-    awsAccountId,
-    remainingTimeInMillis,
-  } = getContextInfo(lambdaContext);
+  const { awsAccountId } = getContextInfo(lambdaContext);
 
   const {
     awsRegion: region,
@@ -42,23 +48,14 @@ export const getFunctionSpan = (lambdaEvent, lambdaContext, token) => {
     awsLambdaFunctionVersion: version,
   } = getAWSEnvironment();
 
-  const id = `${awsRequestId}_started`;
-  const name = functionName;
-  const started = new Date().getTime();
-  const ended = started; // Indicates a StartSpan.
-  const type = 'function';
   const messageVersion = 2;
   const vendor = 'AWS';
   const account = awsAccountId;
-  const maxFinishTime = started + remainingTimeInMillis;
 
   const readiness = isWarm() ? 'warm' : 'cold';
   if (readiness === 'warm') {
     setWarm();
   }
-
-  const event = isVerboseMode() ? stringifyAndPrune(event) : null;
-  const envs = isVerboseMode() ? stringifyAndPrune(process.env) : null;
 
   return {
     info,
@@ -71,15 +68,40 @@ export const getFunctionSpan = (lambdaEvent, lambdaContext, token) => {
     readiness,
     messageVersion,
     token,
-    id,
-    name,
-    started,
-    ended,
     region,
-    type,
-    maxFinishTime,
-    event,
+  };
+};
+
+export const getFunctionSpan = (lambdaEvent, lambdaContext, token) => {
+  const basicSpan = getBasicSpan(lambdaEvent, lambdaContext, token);
+
+  const type = FUNCTION_SPAN;
+
+  const started = new Date().getTime();
+  const ended = started; // Indicates a StartSpan.
+
+  const event = isVerboseMode() ? stringifyAndPrune(lambdaEvent) : null;
+  const envs = isVerboseMode() ? stringifyAndPrune(process.env) : null;
+
+  const {
+    functionName: name,
+    awsRequestId,
+    remainingTimeInMillis,
+  } = getContextInfo(lambdaContext);
+
+  const id = `${awsRequestId}_started`;
+  const maxFinishTime = started + remainingTimeInMillis;
+
+  return {
+    ...basicSpan,
+    id,
     envs,
+    name,
+    type,
+    ended,
+    event,
+    started,
+    maxFinishTime,
   };
 };
 
@@ -91,3 +113,5 @@ export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
   const return_value = isVerboseMode() ? pruneData(handlerReturnValue) : null;
   return Object.assign({}, functionSpan, { id, ended, return_value });
 };
+
+export const getHttpSpan = () => {};

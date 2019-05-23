@@ -28,11 +28,12 @@ describe('lumigo-node', () => {
   test.only('x', async () => {
     const expected = 'Satoshi was here';
     const userHandler = async (event, context, callback) => {
-      const { data } = await axios.get('https://example.com/');
+      const r = await axios.get('https://examplefff.com/');
+      //const x = y;
       return expected;
     };
 
-    const r = await lambdaLocal.execute({
+    const e = await lambdaLocal.execute({
       event: {},
       lambdaFunc: { handler: lumigo.trace(userHandler) },
       timeoutMs: 3000,
@@ -40,6 +41,6 @@ describe('lumigo-node', () => {
       verboseLevel: 3,
     });
 
-    expect(r).toEqual(expected);
+    expect(e).toEqual(expected);
   });
 });
