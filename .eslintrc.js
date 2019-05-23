@@ -5,9 +5,9 @@ module.exports = {
   globals: {
     process: true,
     console: true,
+    module: true,
   },
   env: {
     'jest/globals': true,
-    module: true,
   },
 };

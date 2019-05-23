@@ -1,7 +1,8 @@
 const lambdaLocal = require('lambda-local');
 const lumigo = require('./index')({ token: 'baba' });
+const axios = require('axios');
 
-jest.mock('axios');
+//jest.mock('axios');
 
 const awsEnv = {
   LAMBDA_TASK_ROOT: '/var/task',
@@ -24,9 +25,10 @@ const awsEnv = {
 };
 
 describe('lumigo-node', () => {
-  test('x', async () => {
+  test.only('x', async () => {
     const expected = 'Satoshi was here';
-    const userHandler = (event, context, callback) => {
+    const userHandler = async (event, context, callback) => {
+      const { data } = await axios.get('https://example.com/');
       return expected;
     };
 

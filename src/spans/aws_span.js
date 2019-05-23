@@ -24,9 +24,9 @@ export const getSpanInfo = event => {
 };
 
 export const getFunctionSpan = (lambdaEvent, lambdaContext, token) => {
-  const _info = getSpanInfo(lambdaEvent);
-  const { traceId } = _info;
-  const { transactionId: _transactionId } = traceId;
+  const info = getSpanInfo(lambdaEvent);
+  const { traceId } = info;
+  const { transactionId } = traceId;
 
   const {
     functionName,
@@ -36,25 +36,24 @@ export const getFunctionSpan = (lambdaEvent, lambdaContext, token) => {
   } = getContextInfo(lambdaContext);
 
   const {
-    awsRegion: _region,
-    awsExecutionEnv: _runtime,
-    awsLambdaFunctionMemorySize: _memoryAllocated,
-    awsLambdaFunctionVersion: _version,
+    awsRegion: region,
+    awsExecutionEnv: runtime,
+    awsLambdaFunctionMemorySize: memoryAllocated,
+    awsLambdaFunctionVersion: version,
   } = getAWSEnvironment();
 
-  const _id = `${awsRequestId}_started`;
-  const _name = functionName;
-  const _token = token;
-  const _started = new Date().getTime();
-  const _ended = _started; // Indicates a StartSpan.
-  const _type = 'function';
-  const _messageVersion = 2;
-  const _vendor = 'AWS';
-  const _account = awsAccountId;
-  const maxFinishTime = _started + remainingTimeInMillis;
+  const id = `${awsRequestId}_started`;
+  const name = functionName;
+  const started = new Date().getTime();
+  const ended = started; // Indicates a StartSpan.
+  const type = 'function';
+  const messageVersion = 2;
+  const vendor = 'AWS';
+  const account = awsAccountId;
+  const maxFinishTime = started + remainingTimeInMillis;
 
-  const _readiness = isWarm() ? 'warm' : 'cold';
-  if (_readiness === 'warm') {
+  const readiness = isWarm() ? 'warm' : 'cold';
+  if (readiness === 'warm') {
     setWarm();
   }
 
@@ -62,22 +61,22 @@ export const getFunctionSpan = (lambdaEvent, lambdaContext, token) => {
   const envs = isVerboseMode() ? stringifyAndPrune(process.env) : null;
 
   return {
-    _info,
-    _vendor,
-    _transactionId,
-    _account,
-    _memoryAllocated,
-    _version,
-    _runtime,
-    _readiness,
-    _messageVersion,
-    _token,
-    _id,
-    _name,
-    _started,
-    _ended,
-    _region,
-    _type,
+    info,
+    vendor,
+    transactionId,
+    account,
+    memoryAllocated,
+    version,
+    runtime,
+    readiness,
+    messageVersion,
+    token,
+    id,
+    name,
+    started,
+    ended,
+    region,
+    type,
     maxFinishTime,
     event,
     envs,
@@ -87,8 +86,8 @@ export const getFunctionSpan = (lambdaEvent, lambdaContext, token) => {
 export const removeStartedFromId = id => id.split('_')[0];
 
 export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
-  const _id = removeStartedFromId(functionSpan._id);
-  const _ended = new Date().getTime();
+  const id = removeStartedFromId(functionSpan.id);
+  const ended = new Date().getTime();
   const return_value = isVerboseMode() ? pruneData(handlerReturnValue) : null;
-  return Object.assign({}, functionSpan, { _id, _ended, return_value });
+  return Object.assign({}, functionSpan, { id, ended, return_value });
 };

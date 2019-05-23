@@ -1,5 +1,7 @@
 const { trace } = require('./lib/tracer');
 
+require('./lib/hooks');
+
 module.exports = ({
   token,
   eventFilter = {},

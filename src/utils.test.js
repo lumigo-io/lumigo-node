@@ -159,4 +159,12 @@ describe('utils', () => {
     expect(utils.pruneData(obj, 4)).toEqual('{"fo');
     expect(utils.pruneData('abcdefg', 3)).toEqual('abc');
   });
+
+  test('isRequestToAwsService', () => {
+    const s3host = 's3.aws-region.amazonaws.com';
+    expect(utils.isRequestToAwsService(s3host)).toBe(true);
+
+    const gcp = 'peace_in_the_middleast.storage.googleapis.com';
+    expect(utils.isRequestToAwsService(gcp)).toBe(false);
+  });
 });

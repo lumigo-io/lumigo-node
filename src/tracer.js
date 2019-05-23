@@ -9,12 +9,12 @@ export const trace = ({
   switchOff,
 }) => userHandler => async (event, context, callback) => {
   const functionSpan = getFunctionSpan(event, context, token);
-  await sendSingleSpan(functionSpan);
+  //await sendSingleSpan(functionSpan);
 
-  const handlerReturnValue = userHandler(event, context, callback);
+  const handlerReturnValue = await userHandler(event, context, callback);
 
   const endFunctionSpan = getEndFunctionSpan(functionSpan, handlerReturnValue);
-  await sendSingleSpan(endFunctionSpan);
+  //await sendSingleSpan(endFunctionSpan);
 
   return handlerReturnValue;
 };

@@ -116,3 +116,15 @@ export const stringifyAndPrune = (obj, maxLength = MAX_ENTITY_SIZE) =>
 
 export const pruneData = (data, maxLength) =>
   isString(data) ? prune(data, maxLength) : stringifyAndPrune(data, maxLength);
+
+export const isRequestToAwsService = host =>
+  !!(host && host.includes('amazonaws.com'));
+
+export const AWS_PARSED_SERVICES = ['dynamodb', 'sns', 'lambda'];
+
+export const getAwsServiceFromHost = host => {
+  const service = host.split('.')[0];
+  if (AWS_PARSED_SERVICES.includes(service)) {
+    return service;
+  }
+};
