@@ -46,10 +46,12 @@ describe('utils', () => {
       transactionId: '6ac46730d346cad0e53f89d0',
     };
     expect(utils.getTraceId(awsXAmznTraceId)).toEqual(expected);
-    expect(() => utils.getTraceId('x;y')).toThrowErrorMatchingSnapshot();
-    expect(() =>
-      utils.getTraceId('a=b;c=d;e=f')
-    ).toThrowErrorMatchingSnapshot();
+    expect(() => utils.getTraceId('x;y')).toThrow(
+      'Expected 3 semi-colon separated parts in _X_AMZN_TRACE_ID.'
+    );
+    expect(() => utils.getTraceId('a=b;c=d;e=f')).toThrow(
+      "Either Root, Parent or Sampled weren't found in traceId."
+    );
   });
 
   test('isAsyncFn', () => {

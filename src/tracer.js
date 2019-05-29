@@ -13,7 +13,8 @@ export const trace = ({
   switchOff,
 }) => userHandler => async (event, context, callback) => {
   SpanGlobals.set({ event, context, token });
-  const functionSpan = getFunctionSpan(event, context, token);
+
+  const functionSpan = getFunctionSpan();
   SpansHive.addSpan(functionSpan);
   //await sendSingleSpan(functionSpan);
   let handlerReturnValue = null;
