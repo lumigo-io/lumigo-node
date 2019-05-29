@@ -1,5 +1,5 @@
 const { trace } = require('./lib/tracer');
-const { setVerboseMode } = require('./lib/utils');
+const { setVerboseMode, setSwitchOff } = require('./lib/utils');
 
 require('./lib/hooks').default({ enabled: true });
 
@@ -10,5 +10,7 @@ module.exports = ({
   switchOff = false,
 }) => {
   verbose && setVerboseMode();
-  return { trace: trace({ token, eventFilter, verbose }) };
+  switchOff && setSwitchOff();
+
+  return { trace: trace({ token, eventFilter }) };
 };

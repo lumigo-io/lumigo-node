@@ -9,6 +9,7 @@ import {
   getAWSEnvironment,
   stringifyAndPrune,
 } from '../utils';
+import { dynamodbParser, snsParser, lambdaParser } from '../../parsers/aws';
 import { getEventInfo } from '../events';
 import uuidv1 from 'uuid/v1';
 
@@ -128,22 +129,64 @@ export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
   return Object.assign({}, functionSpan, { id, ended, return_value });
 };
 
-export const getHttpSpan = requestData => {
+export const isRequestToAwsService = host =>
+  !!(host && host.includes('amazonaws.com'));
+
+export const AWS_PARSED_SERVICES = ['dynamodb', 'sns', 'lambda'];
+
+export const getAwsServiceFromHost = host => {
+  const service = host.split('.')[0];
+  if (AWS_PARSED_SERVICES.includes(service)) {
+    return service;
+  }
+};
+
+export const getAwsServiceData = (requestData, responseData) => {
+  const { host } = requestData;
+  const awsService = getAwsServiceFromHost(host);
+
+  switch (awsService) {
+    case 'dynamodb':
+      return dynamodbParser(requestData);
+    case 'sns':
+      return snsParser(requestData, responseData);
+    case 'lambda':
+      return lambdaParser(requestData, responseData);
+    default:
+      return {};
+  }
+};
+
+export const getHttpInfo = (requestData, responseData) => {
+  const { host } = requestData;
+  return { host, request: requestData, response: responseData };
+};
+
+export const getBasicHttpSpan = () => {
   const { context } = SpanGlobals.get();
   const { awsRequestId: parentId } = context;
-
-  const basicSpan = getBasicSpan();
-
   const id = uuidv1();
   const type = HTTP_SPAN;
+  const basicSpan = getBasicSpan();
+  return { ...basicSpan, id, type, parentId };
+};
+
+export const getHttpSpan = (requestData, responseData) => {
+  const httpInfo = getHttpInfo(requestData, responseData);
 
   const { host } = requestData;
-  const request = requestData;
-  const response = {};
+  const awsServiceData = isRequestToAwsService(host)
+    ? getAwsServiceData(requestData, responseData)
+    : {};
 
-  const httpInfo = { host, request, response };
-  const info = Object.assign({}, basicSpan.info, { httpInfo });
-  return { ...basicSpan, id, type, parentId, info };
+  const basicHttpSpan = getBasicHttpSpan();
+
+  const info = Object.assign({}, basicHttpSpan.info, {
+    httpInfo,
+    ...awsServiceData,
+  });
+
+  return { ...basicHttpSpan, info };
 };
 
 export const addResponseDataToHttpSpan = (responseData, httpSpan) => {

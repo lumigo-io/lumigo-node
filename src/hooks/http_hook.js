@@ -1,6 +1,6 @@
 import shimmer from 'shimmer';
 import http from 'http';
-import { isRequestToAwsService, pruneData, isVerboseMode } from '../utils';
+import { pruneData, isVerboseMode } from '../utils';
 import { SpansHive } from '../reporter';
 import { getHttpSpan, addResponseDataToHttpSpan } from '../spans/aws_span';
 
@@ -40,11 +40,12 @@ export const wrappedHttpResponseCallback = (httpSpan, callback) => response => {
     response.on('data', chunk => (body += chunk));
   }
 
+  let responseData = {};
   response.on('end', () => {
-    const responseData = {
-      body,
+    responseData = {
       statusCode,
       recievedTime,
+      body,
       headers: isVerboseMode() ? pruneData(headers) : '',
     };
 
@@ -52,6 +53,7 @@ export const wrappedHttpResponseCallback = (httpSpan, callback) => response => {
       responseData,
       httpSpan
     );
+
     SpansHive.addSpan(httpSpanWithResponseData);
   });
 
@@ -60,6 +62,9 @@ export const wrappedHttpResponseCallback = (httpSpan, callback) => response => {
 
 export const httpRequestWrapper = originalRequestFn => (options, callback) => {
   // XXX Consider try / catch
+  // XXX We're currently ignoring the case where the event loop waits for a
+  // respose, but the handler ended.
+
   const requestData = parseHttpRequestOptions(options);
   const httpSpan = getHttpSpan(requestData);
 

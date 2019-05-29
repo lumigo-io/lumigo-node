@@ -6,12 +6,11 @@ import {
 import { sendSingleSpan, SpansHive } from './reporter';
 
 // XXX Promisify userHandler for non-async handlers, and Promise.all with the Epilogue
-export const trace = ({
-  token,
-  eventFilter,
-  verbose,
-  switchOff,
-}) => userHandler => async (event, context, callback) => {
+export const trace = ({ token, eventFilter }) => userHandler => async (
+  event,
+  context,
+  callback
+) => {
   SpanGlobals.set({ event, context, token });
 
   const functionSpan = getFunctionSpan();
