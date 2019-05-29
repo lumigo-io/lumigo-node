@@ -1,1 +1,5 @@
-import httpHook from './http_hook';
+export default ({ enabled }) => {
+  if (enabled) {
+    require('./http_hook').default();
+  }
+};

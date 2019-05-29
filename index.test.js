@@ -1,5 +1,4 @@
 const lambdaLocal = require('lambda-local');
-const lumigo = require('./index')({ token: 'baba' });
 const axios = require('axios');
 
 //jest.mock('axios');
@@ -26,7 +25,12 @@ const awsEnv = {
 
 describe('lumigo-node', () => {
   test.only('x', async () => {
+    const verbose = true;
+    const token = 'baba';
+    const lumigo = require('./index')({ token, verbose });
+
     const expected = 'Satoshi was here';
+
     const userHandler = async (event, context, callback) => {
       // XXX Test the case for an NX Domain
       const r = await axios.get('https://example.com/');

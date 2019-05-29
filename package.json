@@ -8,7 +8,7 @@
   "license": "Apache 2",
   "private": true,
   "scripts": {
-    "build": "babel --ignore '**/*.test.js' src -d lib --verbose",
+    "build": "babel --ignore '**/*.test.js' --ignore testdata src -d lib --verbose",
     "test": "yarn build && yarn jest"
   },
   "dependencies": {
@@ -29,6 +29,8 @@
     "jest-junit": "^6.4.0",
     "lambda-local": "^1.6.2",
     "mockdate": "^2.0.2",
-    "prettier": "^1.17.1"
+    "prettier": "^1.17.1",
+    "webpack": "^4.32.2",
+    "webpack-cli": "^3.3.2"
   }
 }

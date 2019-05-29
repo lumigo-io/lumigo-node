@@ -70,4 +70,6 @@ export const httpRequestWrapper = originalRequestFn => (options, callback) => {
   return clientRequest;
 };
 
-shimmer.wrap(http, 'request', httpRequestWrapper);
+export default () => {
+  shimmer.wrap(http, 'request', httpRequestWrapper);
+};
