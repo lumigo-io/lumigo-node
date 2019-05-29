@@ -1,21 +1,24 @@
-import axios from 'axios';
+import got from 'got';
 
 import { getAWSEnvironment } from './utils';
 
 export const SPAN_PATH = 'api/spans';
 export const LUMIGO_TRACER_EDGE = 'lumigo-tracer-edge.golumigo.com';
 
+// XXX Use an option to set the host (for testing)
 export const getEdgeUrl = () => {
-  const { awsRegion } = getAWSEnvironment();
-  return `https://${awsRegion}.${LUMIGO_TRACER_EDGE}/${SPAN_PATH}`;
+  //const { awsRegion } = getAWSEnvironment();
+  return 'https://kzc0w7k50d.execute-api.eu-west-1.amazonaws.com/api/spans';
+  //return 'https://qdmqfep5c1.execute-api.eu-west-1.amazonaws.com/api/spans ';
+  //return `https://${awsRegion}.${LUMIGO_TRACER_EDGE}/${SPAN_PATH}`;
 };
 
 export const sendSingleSpan = async span => {
-  const { _token } = span;
-  const headers = { 'Content-Type': 'application/json', Authorization: _token };
+  const { token } = span;
+  const headers = { 'Content-Type': 'application/json', Authorization: token };
   const edgeUrl = getEdgeUrl();
-  const data = JSON.stringify([span]);
-  return axios.post(edgeUrl, { headers, data });
+  const body = JSON.stringify([span]);
+  await got.post(edgeUrl, { headers, body });
 };
 
 export const SpansHive = (() => {

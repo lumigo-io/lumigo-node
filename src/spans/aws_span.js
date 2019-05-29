@@ -9,7 +9,7 @@ import {
   getAWSEnvironment,
   stringifyAndPrune,
 } from '../utils';
-import { dynamodbParser, snsParser, lambdaParser } from '../../parsers/aws';
+import { dynamodbParser, snsParser, lambdaParser } from '../parsers/aws';
 import { getEventInfo } from '../events';
 import uuidv1 from 'uuid/v1';
 
@@ -96,7 +96,7 @@ export const getFunctionSpan = () => {
   const ended = started; // Indicates a StartSpan.
 
   const event = isVerboseMode() ? stringifyAndPrune(lambdaEvent) : null;
-  const envs = isVerboseMode() ? stringifyAndPrune(process.env) : null;
+  const envs = ''; //isVerboseMode() ? stringifyAndPrune(process.env) : null;
 
   const {
     functionName: name,
