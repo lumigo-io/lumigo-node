@@ -26,19 +26,20 @@ export const parseHttpRequestOptions = options => {
     method,
     protocol,
     sendTime,
-    body: pruneData(body),
-    headers: pruneData(headers),
+    body,
+    headers,
   };
 };
 
-export const wrappedHttpResponseCallback = (httpSpan, callback) => response => {
+export const wrappedHttpResponseCallback = (
+  requestData,
+  callback
+) => response => {
   const { headers, statusCode } = response;
   const recievedTime = new Date().getTime();
 
   let body = '';
-  if (isVerboseMode()) {
-    response.on('data', chunk => (body += chunk));
-  }
+  response.on('data', chunk => (body += chunk));
 
   let responseData = {};
   response.on('end', () => {
@@ -46,15 +47,11 @@ export const wrappedHttpResponseCallback = (httpSpan, callback) => response => {
       statusCode,
       recievedTime,
       body,
-      headers: isVerboseMode() ? pruneData(headers) : '',
+      headers,
     };
 
-    const httpSpanWithResponseData = addResponseDataToHttpSpan(
-      responseData,
-      httpSpan
-    );
-
-    SpansHive.addSpan(httpSpanWithResponseData);
+    const httpSpan = getHttpSpan(requestData, responseData);
+    SpansHive.addSpan(httpSpan);
   });
 
   callback && callback(response);
@@ -66,11 +63,10 @@ export const httpRequestWrapper = originalRequestFn => (options, callback) => {
   // respose, but the handler ended.
 
   const requestData = parseHttpRequestOptions(options);
-  const httpSpan = getHttpSpan(requestData);
 
   const clientRequest = originalRequestFn.apply(this, [
     options,
-    wrappedHttpResponseCallback(httpSpan, callback),
+    wrappedHttpResponseCallback(requestData, callback),
   ]);
   return clientRequest;
 };

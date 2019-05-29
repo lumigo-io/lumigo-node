@@ -1,5 +1,8 @@
 export const dynamodbParser = requestData => {
-  return {};
+  const { headers, body } = requestData;
+  const { TableName: name = '' } = JSON.parse(body);
+  const dynamodbMethod = headers['x-amz-target'] || '';
+  return { name, dynamodbMethod };
 };
 
 export const snsParser = (requestData, responseData) => {

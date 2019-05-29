@@ -27,6 +27,7 @@ describe('lumigo-node', () => {
   test.only('x', async () => {
     const verbose = true;
     const token = 'baba';
+
     const lumigo = require('./index')({ token, verbose });
 
     const expected = 'Satoshi was here';

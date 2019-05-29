@@ -15,7 +15,7 @@ export const trace = ({ token, eventFilter }) => userHandler => async (
 
   const functionSpan = getFunctionSpan();
   SpansHive.addSpan(functionSpan);
-  //await sendSingleSpan(functionSpan);
+  await sendSingleSpan(functionSpan);
   let handlerReturnValue = null;
 
   try {
@@ -26,8 +26,8 @@ export const trace = ({ token, eventFilter }) => userHandler => async (
 
   const endFunctionSpan = getEndFunctionSpan(functionSpan, handlerReturnValue);
   SpansHive.addSpan(endFunctionSpan);
-  //await sendSingleSpan(endFunctionSpan);
-  console.log(JSON.stringify(SpansHive.getSpans(), null, 2));
+  await sendSingleSpan(endFunctionSpan);
+  //console.log(JSON.stringify(SpansHive.getSpans(), null, 2));
 
   return handlerReturnValue;
 };
