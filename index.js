@@ -5,6 +5,7 @@ require('./lib/hooks').default({ enabled: true });
 
 module.exports = ({
   token,
+  edgeHost = '',
   eventFilter = {},
   verbose = false,
   switchOff = false,
@@ -12,5 +13,5 @@ module.exports = ({
   verbose && setVerboseMode();
   switchOff && setSwitchOff();
 
-  return { trace: trace({ token, eventFilter }) };
+  return { trace: trace({ token, edgeHost, eventFilter }) };
 };

@@ -1,4 +1,5 @@
 import got from 'got';
+import { TracerGlobals } from './globals';
 
 import { getAWSEnvironment } from './utils';
 
@@ -7,10 +8,13 @@ export const LUMIGO_TRACER_EDGE = 'lumigo-tracer-edge.golumigo.com';
 
 // XXX Use an option to set the host (for testing)
 export const getEdgeUrl = () => {
-  //const { awsRegion } = getAWSEnvironment();
-  return 'https://kzc0w7k50d.execute-api.eu-west-1.amazonaws.com/api/spans';
-  //return 'https://qdmqfep5c1.execute-api.eu-west-1.amazonaws.com/api/spans ';
-  //return `https://${awsRegion}.${LUMIGO_TRACER_EDGE}/${SPAN_PATH}`;
+  const { edgeHost } = TracerGlobals.getTracerInputs();
+  if (edgeHost) {
+    return `https://${edgeHost}/api/spans`;
+  }
+
+  const { awsRegion } = getAWSEnvironment();
+  return `https://${awsRegion}.${LUMIGO_TRACER_EDGE}/${SPAN_PATH}`;
 };
 
 export const sendSingleSpan = async span => sendSpans([span]);

@@ -22,15 +22,14 @@ describe('lumigo-node', () => {
   });
 
   test.only('x', async () => {
-    const verbose = true;
+    const edgeHost = 'kzc0w7k50d.execute-api.eu-west-1.amazonaws.com';
 
-    const lumigo = require('./index')({ token, verbose });
+    const lumigo = require('./index')({ token, edgeHost });
     const expectedReturnValue = 'Satoshi was here';
 
     const userHandler = async (event, context, callback) => {
       // XXX Test the case for an NX Domain
-      const r = await axios.get('https://example.com/');
-      console.log(r.data);
+      await axios.get('https://example.com/');
       return expectedReturnValue;
     };
 

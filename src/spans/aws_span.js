@@ -20,11 +20,13 @@ const EXTERNAL_SERVICE = 'external';
 
 export const getSpanInfo = event => {
   const tracer = getTracerInfo();
+
   const {
     awsLambdaLogGroupName: logGroupName,
     awsLambdaLogStreamName: logStreamName,
     awsXAmznTraceId,
   } = getAWSEnvironment();
+
   const traceId = getTraceId(awsXAmznTraceId);
   const eventInfo = getEventInfo(event);
   return { traceId, tracer, logGroupName, logStreamName, ...eventInfo };

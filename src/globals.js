@@ -9,14 +9,15 @@ export const SpansHive = (() => {
 
 export const TracerGlobals = (() => {
   const handlerInputs = { event: {}, context: {} };
-  const tracerInputs = { token: '' };
+  const tracerInputs = { token: '', edgeHost: '' };
 
   const setHandlerInputs = ({ event, context }) =>
     Object.assign(handlerInputs, { event, context });
 
   const getHandlerInputs = () => handlerInputs;
 
-  const setTracerInputs = ({ token }) => Object.assign(tracerInputs, { token });
+  const setTracerInputs = ({ token, edgeHost }) =>
+    Object.assign(tracerInputs, { token, edgeHost });
 
   const getTracerInputs = () => tracerInputs;
 
