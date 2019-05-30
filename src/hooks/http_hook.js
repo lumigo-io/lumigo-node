@@ -64,7 +64,6 @@ export const httpRequestWrapper = originalRequestFn => (options, callback) => {
   // respose, but the handler ended.
 
   const requestData = parseHttpRequestOptions(options);
-
   const clientRequest = originalRequestFn.apply(this, [
     options,
     wrappedHttpResponseCallback(requestData, callback),
