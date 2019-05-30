@@ -12,7 +12,6 @@
     "test": "yarn build && yarn jest"
   },
   "dependencies": {
-    "axios": "^0.18.0",
     "got": "^9.6.0",
     "shimmer": "^1.2.1",
     "uuid": "^3.3.2"
@@ -21,6 +20,8 @@
     "@babel/cli": "^7.4.4",
     "@babel/core": "^7.4.4",
     "@babel/preset-env": "^7.4.4",
+    "aws-sdk": "^2.465.0",
+    "axios": "^0.18.0",
     "babel-eslint": "^10.0.1",
     "eslint": "^5.16.0",
     "eslint-config-prettier": "^4.3.0",

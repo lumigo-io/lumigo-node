@@ -19,6 +19,7 @@ export const parseHttpRequestOptions = options => {
     options.port || options.defaultPort || (agent && agent.defaultPort) || 80;
   const protocol = options.protocol || (port === 443 && 'https:') || 'http:';
   const { headers, body = '', path = '/', method = 'GET' } = options;
+  console.log(JSON.stringify(options, null, 2));
   const sendTime = new Date().getTime();
 
   return {

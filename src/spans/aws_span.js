@@ -145,7 +145,7 @@ export const getAwsServiceData = (requestData, responseData) => {
 
   switch (awsService) {
     case 'dynamodb':
-      return dynamodbParser(requestData);
+      return dynamodbParser(requestData, responseData);
     case 'sns':
       return snsParser(requestData, responseData);
     case 'lambda':
