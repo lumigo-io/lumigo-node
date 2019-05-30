@@ -29,7 +29,7 @@ describe('lumigo-node', () => {
 
     const userHandler = async (event, context, callback) => {
       // XXX Test the case for an NX Domain
-      await axios.get('https://example.com/');
+      await axios.get('https://lumigo.io/');
       return expectedReturnValue;
     };
 

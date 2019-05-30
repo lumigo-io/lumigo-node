@@ -52,8 +52,8 @@ export const getBasicSpan = () => {
     awsLambdaFunctionVersion: version,
   } = getAWSEnvironment();
 
-  const messageVersion = 2;
   const vendor = 'AWS';
+  const messageVersion = 2;
   const account = awsAccountId;
 
   const readiness = isWarm() ? 'warm' : 'cold';
@@ -157,7 +157,16 @@ export const getAwsServiceData = (requestData, responseData) => {
 
 export const getHttpInfo = (requestData, responseData) => {
   const { host } = requestData;
-  return { host, request: requestData, response: responseData };
+
+  const request = Object.assign({}, requestData);
+  request.headers = stringifyAndPrune(request.headers);
+  request.body = stringifyAndPrune(request.body);
+
+  const response = Object.assign({}, responseData);
+  response.headers = stringifyAndPrune(response.headers);
+  response.body = stringifyAndPrune(response.body);
+
+  return { host, request, response };
 };
 
 export const getBasicHttpSpan = () => {
@@ -176,13 +185,13 @@ export const getHttpSpanTimings = (requestData, responseData) => {
 };
 
 export const getHttpSpan = (requestData, responseData) => {
-  const httpInfo = getHttpInfo(requestData, responseData);
-
   const { host } = requestData;
 
   const awsServiceData = isRequestToAwsService(host)
     ? getAwsServiceData(requestData, responseData)
     : {};
+
+  const httpInfo = getHttpInfo(requestData, responseData);
 
   const basicHttpSpan = getBasicHttpSpan();
 
