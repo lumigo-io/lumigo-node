@@ -169,6 +169,12 @@ export const getBasicHttpSpan = () => {
   return { ...basicSpan, id, type, parentId };
 };
 
+export const getHttpSpanTimings = (requestData, responseData) => {
+  const { sendTime: started } = requestData;
+  const { recievedTime: ended } = responseData;
+  return { started, ended };
+};
+
 export const getHttpSpan = (requestData, responseData) => {
   const httpInfo = getHttpInfo(requestData, responseData);
 
@@ -186,8 +192,9 @@ export const getHttpSpan = (requestData, responseData) => {
   });
 
   const service = getServiceType(host);
+  const { started, ended } = getHttpSpanTimings(requestData, responseData);
 
-  return { ...basicHttpSpan, info, service };
+  return { ...basicHttpSpan, info, service, started, ended };
 };
 
 export const addResponseDataToHttpSpan = (responseData, httpSpan) => {

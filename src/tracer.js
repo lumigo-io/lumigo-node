@@ -25,6 +25,7 @@ export const trace = ({
   SpansHive.addSpan(endFunctionSpan);
 
   const spans = SpansHive.getSpans();
+  console.log(JSON.stringify(spans, null, 2));
   await sendSpans(spans);
 
   return handlerReturnValue;
