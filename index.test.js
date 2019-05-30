@@ -25,16 +25,16 @@ describe('lumigo-node', () => {
     const verbose = true;
 
     const lumigo = require('./index')({ token, verbose });
-    const expected = 'Satoshi was here';
+    const expectedReturnValue = 'Satoshi was here';
 
     const userHandler = async (event, context, callback) => {
       // XXX Test the case for an NX Domain
       const r = await axios.get('https://example.com/');
       console.log(r.data);
-      return expected;
+      return expectedReturnValue;
     };
 
-    const e = await lambdaLocal.execute({
+    const returnValue = await lambdaLocal.execute({
       event: exampleApiGatewayEvent,
       lambdaFunc: { handler: lumigo.trace(userHandler) },
       timeoutMs: 3000,
@@ -42,7 +42,7 @@ describe('lumigo-node', () => {
       verboseLevel: 3,
     });
 
-    expect(e).toEqual(expected);
+    expect(returnValue).toEqual(expectedReturnValue);
   });
 });
 

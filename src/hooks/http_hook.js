@@ -1,7 +1,7 @@
 import shimmer from 'shimmer';
 import http from 'http';
 import { pruneData, isVerboseMode } from '../utils';
-import { SpansHive } from '../reporter';
+import { SpansHive } from '../globals';
 import { getHttpSpan, addResponseDataToHttpSpan } from '../spans/aws_span';
 
 // XXX Blacklist calls to Lumigo's edge
@@ -51,7 +51,6 @@ export const wrappedHttpResponseCallback = (
       body,
       headers,
     };
-    console.log(JSON.stringify(requestData, null, 2));
     const httpSpan = getHttpSpan(requestData, responseData);
     SpansHive.addSpan(httpSpan);
   });

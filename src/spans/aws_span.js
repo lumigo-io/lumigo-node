@@ -12,23 +12,11 @@ import {
 import { dynamodbParser, snsParser, lambdaParser } from '../parsers/aws';
 import { getEventInfo } from '../events';
 import uuidv1 from 'uuid/v1';
+import { TracerGlobals } from '../globals';
 
-const FUNCTION_SPAN = 'function';
 const HTTP_SPAN = 'http';
+const FUNCTION_SPAN = 'function';
 const EXTERNAL_SERVICE = 'external';
-
-export const SpanGlobals = (() => {
-  const globals = { event: {}, context: {}, token: '' };
-
-  const set = ({ event, context, token }) =>
-    Object.assign(globals, { event, context, token });
-
-  const get = () => globals;
-  const clear = () =>
-    Object.assign(globals, { event: {}, context: {}, token: '' });
-
-  return { set, get, clear };
-})();
 
 export const getSpanInfo = event => {
   const tracer = getTracerInfo();
@@ -44,10 +32,10 @@ export const getSpanInfo = event => {
 
 export const getBasicSpan = () => {
   const {
-    token,
     event: lambdaEvent,
     context: lambdaContext,
-  } = SpanGlobals.get();
+  } = TracerGlobals.getHandlerInputs();
+  const { token } = TracerGlobals.getTracerInputs();
 
   const info = getSpanInfo(lambdaEvent);
   const { traceId } = info;
@@ -87,7 +75,10 @@ export const getBasicSpan = () => {
 };
 
 export const getFunctionSpan = () => {
-  const { event: lambdaEvent, context: lambdaContext } = SpanGlobals.get();
+  const {
+    event: lambdaEvent,
+    context: lambdaContext,
+  } = TracerGlobals.getHandlerInputs();
 
   const basicSpan = getBasicSpan();
 
@@ -98,7 +89,6 @@ export const getFunctionSpan = () => {
 
   const event = stringifyAndPrune(lambdaEvent);
   const envs = stringifyAndPrune(process.env);
-  console.log(envs);
 
   const {
     functionName: name,
@@ -169,7 +159,7 @@ export const getHttpInfo = (requestData, responseData) => {
 };
 
 export const getBasicHttpSpan = () => {
-  const { context } = SpanGlobals.get();
+  const { context } = TracerGlobals.getHandlerInputs();
   const { awsRequestId: parentId } = context;
   const id = uuidv1();
   const type = HTTP_SPAN;

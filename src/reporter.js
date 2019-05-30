@@ -22,12 +22,3 @@ export const sendSpans = async spans => {
   const body = JSON.stringify(spans);
   await got.post(edgeUrl, { headers, body });
 };
-
-export const SpansHive = (() => {
-  const spans = [];
-
-  const addSpan = span => spans.push(span);
-  const getSpans = () => spans;
-
-  return { addSpan, getSpans };
-})();
