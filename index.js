@@ -13,5 +13,5 @@ module.exports = ({
   verbose && setVerboseMode();
   switchOff && setSwitchOff();
 
-  return { trace: trace({ token, edgeHost, eventFilter }) };
+  return { trace: trace({ token, edgeHost, switchOff, eventFilter }) };
 };

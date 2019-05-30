@@ -1,3 +1,5 @@
+import { TracerGlobals } from './globals';
+
 export const getContextInfo = context => {
   const remainingTimeInMillis = context.getRemainingTimeInMillis();
   const { functionName, awsRequestId, invokedFunctionArn } = context;
@@ -94,10 +96,16 @@ export const isWarm = () =>
 export const isDebug = () =>
   !!(process.env['LUMIGO_DEBUG'] && process.env.LUMIGO_DEBUG === 'TRUE');
 
-export const isSwitchedOff = () =>
-  !!(
+export const isSwitchedOff = () => {
+  const isSwitchedOffFromEnv = !!(
     process.env['LUMIGO_SWITCH_OFF'] && process.env.LUMIGO_SWITCH_OFF === 'TRUE'
   );
+  const {
+    switchOff: isSwitchedOffFromTracerInput,
+  } = TracerGlobals.getTracerInputs();
+
+  return isSwitchedOffFromEnv || isSwitchedOffFromTracerInput;
+};
 
 export const setWarm = () => (process.env['LUMIGO_IS_WARM'] = 'TRUE');
 
