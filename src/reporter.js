@@ -6,14 +6,23 @@ import { getAWSEnvironment, getTracerInfo } from './utils';
 export const SPAN_PATH = 'api/spans';
 export const LUMIGO_TRACER_EDGE = 'lumigo-tracer-edge.golumigo.com';
 
-export const getEdgeUrl = () => {
+export const getAwsEdgeHost = () => {
+  const { awsRegion } = getAWSEnvironment();
+  return `${awsRegion}.${LUMIGO_TRACER_EDGE}`;
+};
+
+export const getEdgeHost = () => {
   const { edgeHost } = TracerGlobals.getTracerInputs();
   if (edgeHost) {
-    return `https://${edgeHost}/api/spans`;
+    return edgeHost;
   }
+  const awsEdgeHost = getAwsEdgeHost();
+  return awsEdgeHost;
+};
 
-  const { awsRegion } = getAWSEnvironment();
-  return `https://${awsRegion}.${LUMIGO_TRACER_EDGE}/${SPAN_PATH}`;
+export const getEdgeUrl = () => {
+  const edgeHost = getEdgeHost();
+  return `https://${edgeHost}/${SPAN_PATH}`;
 };
 
 export const sendSingleSpan = async span => sendSpans([span]);

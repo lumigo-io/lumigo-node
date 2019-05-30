@@ -2,10 +2,10 @@ import shimmer from 'shimmer';
 import http from 'http';
 import { pruneData, isVerboseMode } from '../utils';
 import { SpansHive } from '../globals';
+import { getEdgeHost } from '../reporter';
 import { getHttpSpan, addResponseDataToHttpSpan } from '../spans/aws_span';
 
-// XXX Blacklist calls to Lumigo's edge
-export const isBlacklisted = host => {};
+export const isBlacklisted = host => host === getEdgeHost();
 
 export const parseHttpRequestOptions = options => {
   const host =
@@ -64,6 +64,12 @@ export const httpRequestWrapper = originalRequestFn => (options, callback) => {
   // respose, but the handler ended.
 
   const requestData = parseHttpRequestOptions(options);
+  const { host } = requestData;
+
+  if (isBlacklisted(host)) {
+    return originalRequestFn.apply(this, [options, callback]);
+  }
+
   const clientRequest = originalRequestFn.apply(this, [
     options,
     wrappedHttpResponseCallback(requestData, callback),
