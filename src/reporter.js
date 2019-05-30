@@ -13,11 +13,13 @@ export const getEdgeUrl = () => {
   //return `https://${awsRegion}.${LUMIGO_TRACER_EDGE}/${SPAN_PATH}`;
 };
 
-export const sendSingleSpan = async span => {
-  const { token } = span;
+export const sendSingleSpan = async span => sendSpans([span]);
+
+export const sendSpans = async spans => {
+  const { token } = spans[0];
   const headers = { 'Content-Type': 'application/json', Authorization: token };
   const edgeUrl = getEdgeUrl();
-  const body = JSON.stringify([span]);
+  const body = JSON.stringify(spans);
   await got.post(edgeUrl, { headers, body });
 };
 

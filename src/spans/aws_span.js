@@ -15,6 +15,7 @@ import uuidv1 from 'uuid/v1';
 
 const FUNCTION_SPAN = 'function';
 const HTTP_SPAN = 'http';
+const EXTERNAL_SERVICE = 'external';
 
 export const SpanGlobals = (() => {
   const globals = { event: {}, context: {}, token: '' };
@@ -95,8 +96,9 @@ export const getFunctionSpan = () => {
   const started = new Date().getTime();
   const ended = started; // Indicates a StartSpan.
 
-  const event = isVerboseMode() ? stringifyAndPrune(lambdaEvent) : null;
-  const envs = ''; //isVerboseMode() ? stringifyAndPrune(process.env) : null;
+  const event = stringifyAndPrune(lambdaEvent);
+  const envs = stringifyAndPrune(process.env);
+  console.log(envs);
 
   const {
     functionName: name,
@@ -139,7 +141,11 @@ export const getAwsServiceFromHost = host => {
   if (AWS_PARSED_SERVICES.includes(service)) {
     return service;
   }
+  return EXTERNAL_SERVICE;
 };
+
+export const getServiceType = host =>
+  isRequestToAwsService(host) ? getAwsServiceFromHost(host) : EXTERNAL_SERVICE;
 
 export const getAwsServiceData = (requestData, responseData) => {
   const { host } = requestData;
@@ -175,6 +181,7 @@ export const getHttpSpan = (requestData, responseData) => {
   const httpInfo = getHttpInfo(requestData, responseData);
 
   const { host } = requestData;
+
   const awsServiceData = isRequestToAwsService(host)
     ? getAwsServiceData(requestData, responseData)
     : {};
@@ -186,7 +193,9 @@ export const getHttpSpan = (requestData, responseData) => {
     ...awsServiceData,
   });
 
-  return { ...basicHttpSpan, info };
+  const service = getServiceType(host);
+
+  return { ...basicHttpSpan, info, service };
 };
 
 export const addResponseDataToHttpSpan = (responseData, httpSpan) => {

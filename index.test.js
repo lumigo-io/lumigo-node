@@ -2,7 +2,49 @@ const lambdaLocal = require('lambda-local');
 const axios = require('axios');
 const crypto = require('crypto');
 
+const exampleApiGatewayEvent = require('./src/testdata/events/apigw-request.json');
 //jest.mock('axios');
+
+describe('lumigo-node', () => {
+  const oldEnv = Object.assign({}, process.env);
+  let awsEnv = {};
+  let token = '';
+
+  beforeEach(() => {
+    token = 't_a595aa58c126575c5c41';
+    awsEnv = getRandomAwsEnv();
+    const { HOME } = oldEnv;
+    process.env = { HOME, ...awsEnv };
+  });
+
+  afterEach(() => {
+    process.env = { ...oldEnv };
+  });
+
+  test.only('x', async () => {
+    const verbose = true;
+
+    const lumigo = require('./index')({ token, verbose });
+    const expected = 'Satoshi was here';
+
+    const userHandler = async (event, context, callback) => {
+      // XXX Test the case for an NX Domain
+      const r = await axios.get('https://example.com/');
+      console.log(r.data);
+      return expected;
+    };
+
+    const e = await lambdaLocal.execute({
+      event: exampleApiGatewayEvent,
+      lambdaFunc: { handler: lumigo.trace(userHandler) },
+      timeoutMs: 3000,
+      environment: awsEnv,
+      verboseLevel: 3,
+    });
+
+    expect(e).toEqual(expected);
+  });
+});
 
 const getRandomString = evenNrChars =>
   crypto.randomBytes(evenNrChars / 2).toString('hex');
@@ -29,30 +71,3 @@ const getRandomAwsEnv = () => {
     AWS_EXECUTION_ENV: 'AWS_Lambda_nodejs8.10',
   };
 };
-
-describe('lumigo-node', () => {
-  test.only('x', async () => {
-    const verbose = true;
-    const token = 't_a595aa58c126575c5c41';
-
-    const lumigo = require('./index')({ token, verbose });
-    const expected = 'Satoshi was here';
-
-    const userHandler = async (event, context, callback) => {
-      // XXX Test the case for an NX Domain
-      const r = await axios.get('https://example.com/');
-      return expected;
-    };
-
-    const awsEnv = getRandomAwsEnv();
-    const e = await lambdaLocal.execute({
-      event: {},
-      lambdaFunc: { handler: lumigo.trace(userHandler) },
-      timeoutMs: 3000,
-      environment: awsEnv,
-      verboseLevel: 3,
-    });
-
-    expect(e).toEqual(expected);
-  });
-});

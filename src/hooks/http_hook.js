@@ -14,7 +14,9 @@ export const parseHttpRequestOptions = options => {
     (options.uri && options.uri.hostname) ||
     'localhost';
 
-  const port = options.port || options.defaultPort || 80; // FIXME - https requests get assigned 80.
+  const agent = options.agent || options._defaultAgent;
+  const port =
+    options.port || options.defaultPort || (agent && agent.defaultPort) || 80;
   const protocol = options.protocol || (port === 443 && 'https:') || 'http:';
   const { headers, body = '', path = '/', method = 'GET' } = options;
   const sendTime = new Date().getTime();
@@ -23,11 +25,11 @@ export const parseHttpRequestOptions = options => {
     path,
     port,
     host,
+    body,
     method,
+    headers,
     protocol,
     sendTime,
-    body,
-    headers,
   };
 };
 
