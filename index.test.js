@@ -3,7 +3,6 @@ const axios = require('axios');
 const crypto = require('crypto');
 
 const exampleApiGatewayEvent = require('./src/testdata/events/apigw-request.json');
-//jest.mock('axios');
 
 describe('lumigo-node', () => {
   const oldEnv = Object.assign({}, process.env);
@@ -46,6 +45,7 @@ describe('lumigo-node', () => {
   });
 
   test.only('y', async () => {
+    jest.setTimeout(30000);
     const edgeHost = 'kzc0w7k50d.execute-api.eu-west-1.amazonaws.com';
 
     const switchOff = false;
