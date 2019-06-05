@@ -1,23 +1,14 @@
-export const dynamodbParser = (requestData, responseData) => {
+export const dynamodbParser = requestData => {
   const { headers: reqHeaders, body: reqBody } = requestData;
-  const { headers: resHeaders, body: resBody } = responseData;
-
-  console.log(responseData);
-
-  const name = '';
   const dynamodbMethod =
     (reqHeaders['X-Amz-Target'] && reqHeaders['X-Amz-Target'].split('.')[1]) ||
     '';
 
-  switch (dynamodbMethod) {
-    case 'GetItem':
-      console.log('CD');
-      console.log(reqBody);
-      console.log('AB');
-      break;
-  }
+  const reqBodyJSON = JSON.parse(reqBody);
+  const resourceName =
+    (reqBodyJSON['TableName'] && reqBodyJSON.TableName) || '';
 
-  return { name, dynamodbMethod };
+  return { resourceName, dynamodbMethod };
 };
 
 export const snsParser = (requestData, responseData) => {
