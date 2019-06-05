@@ -26,6 +26,7 @@ export const parseHttpRequestOptions = options => {
     path,
     port,
     host,
+    body: '', // XXX Filled by the "Write" and "End" wrappers.
     method,
     headers,
     protocol,
@@ -62,8 +63,15 @@ export const wrappedHttpResponseCallback = (
 export const httpRequestEndWrapper = requestData => originalEndFn =>
   // XXX An Arrow function won't work. Dynamic context handling by Node.js.
   function(data, encoding, callback) {
-    requestData.body = data;
+    requestData.body += data;
     return originalEndFn.apply(this, [data, encoding, callback]);
+  };
+
+export const httpRequestWriteWrapper = requestData => originalWriteFn =>
+  // XXX An Arrow function won't work. Dynamic context handling by Node.js.
+  function(data, encoding, callback) {
+    requestData.body += data;
+    return originalWriteFn.apply(this, [data, encoding, callback]);
   };
 
 export const httpRequestWrapper = originalRequestFn => (options, callback) => {
@@ -84,6 +92,7 @@ export const httpRequestWrapper = originalRequestFn => (options, callback) => {
     wrappedHttpResponseCallback(requestData, callback),
   ]);
 
+  shimmer.wrap(clientRequest, 'write', httpRequestWriteWrapper(requestData));
   shimmer.wrap(clientRequest, 'end', httpRequestEndWrapper(requestData));
 
   return clientRequest;

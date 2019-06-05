@@ -20,7 +20,7 @@ describe('lumigo-node', () => {
     process.env = { ...oldEnv };
   });
 
-  test('x', async () => {
+  test.only('x', async () => {
     const edgeHost = 'kzc0w7k50d.execute-api.eu-west-1.amazonaws.com';
 
     const switchOff = false;
@@ -29,7 +29,7 @@ describe('lumigo-node', () => {
 
     const userHandler = async (event, context, callback) => {
       // XXX Test the case for an NX Domain
-      await axios.get('https://lumigo.io/');
+      const x = await axios.get('https://sagi.io/');
       return expectedReturnValue;
     };
 
@@ -44,7 +44,7 @@ describe('lumigo-node', () => {
     expect(returnValue).toEqual(expectedReturnValue);
   });
 
-  test.only('y', async () => {
+  test('y', async () => {
     jest.setTimeout(30000);
     const edgeHost = 'kzc0w7k50d.execute-api.eu-west-1.amazonaws.com';
 
@@ -59,9 +59,7 @@ describe('lumigo-node', () => {
       const params = {
         TableName: 'sagid_common-resources_spans',
         Key: {
-          span_id: {
-            S: '07181f77-6c0b-f805-d611-cc2c55b087d9',
-          },
+          span_id: { S: '07181f77-6c0b-f805-d611-cc2c55b087d9' },
         },
       };
 

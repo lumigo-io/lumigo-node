@@ -42,7 +42,7 @@ export const trace = ({
   try {
     handlerReturnValue = await userHandler(event, context, callback);
   } catch (e) {
-    console.log('T', e.message);
+    console.log('T', e);
     // XXX Remove Lumigo from stacktrace and throw.
   }
 
