@@ -20,7 +20,7 @@ describe('lumigo-node', () => {
     process.env = { ...oldEnv };
   });
 
-  test.only('x', async () => {
+  test('x', async () => {
     const edgeHost = 'kzc0w7k50d.execute-api.eu-west-1.amazonaws.com';
 
     const switchOff = false;
@@ -44,7 +44,7 @@ describe('lumigo-node', () => {
     expect(returnValue).toEqual(expectedReturnValue);
   });
 
-  test('y', async () => {
+  test.only('y', async () => {
     jest.setTimeout(30000);
     const edgeHost = 'kzc0w7k50d.execute-api.eu-west-1.amazonaws.com';
 
@@ -59,12 +59,13 @@ describe('lumigo-node', () => {
       const params = {
         TableName: 'sagid_common-resources_spans',
         Key: {
-          span_id: { S: '07181f77-6c0b-f805-d611-cc2c55b087d9' },
+          span_id: { S: '6fa4d7ea-93e2-75c1-d75f-b276375c7cc7' },
+          span_type: { S: 'function' },
         },
       };
-
+      console.log('A');
       const data = await ddb.getItem(params).promise();
-      console.log(data);
+      //console.log(data);
       // XXX Test the case for an NX Domain
       //await axios.get('https://lumigo.io/');
       return expectedReturnValue;
@@ -73,7 +74,7 @@ describe('lumigo-node', () => {
     const returnValue = await lambdaLocal.execute({
       event: exampleApiGatewayEvent,
       lambdaFunc: { handler: lumigo.trace(userHandler) },
-      timeoutMs: 3000,
+      timeoutMs: 30000,
       environment: awsEnv,
       verboseLevel: 3,
     });

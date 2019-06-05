@@ -3,6 +3,7 @@ import http from 'http';
 import { SpansHive } from '../globals';
 import { getEdgeHost } from '../reporter';
 import { getHttpSpan } from '../spans/aws_span';
+import { PassThrough } from 'stream';
 
 export const isBlacklisted = host => host === getEdgeHost();
 
@@ -38,65 +39,96 @@ export const wrappedHttpResponseCallback = (
   requestData,
   callback
 ) => response => {
+  //
+  //console.log(response.listeners('end'));
+  const data1 = new PassThrough();
+  const data2 = new PassThrough();
+  response.pipe(data1);
+  response.pipe(data2);
+
   const { headers, statusCode } = response;
   const recievedTime = new Date().getTime();
 
   let body = '';
-  response.on('data', chunk => (body += chunk));
+  data1.on('data', chunk => (body += chunk));
 
   let responseData = {};
-  response.on('end', () => {
+  data1.on('end', () => {
     responseData = {
       statusCode,
       recievedTime,
       body,
       headers,
     };
-
+    //console.log(statusCode, body);
     const httpSpan = getHttpSpan(requestData, responseData);
     SpansHive.addSpan(httpSpan);
   });
-
-  callback && callback(response);
+  console.log('XA');
+  if (callback) {
+    callback(data2);
+    //callback(response);
+  }
 };
 
 export const httpRequestEndWrapper = requestData => originalEndFn =>
-  // XXX An Arrow function won't work. Dynamic context handling by Node.js.
   function(data, encoding, callback) {
     requestData.body += data;
     return originalEndFn.apply(this, [data, encoding, callback]);
   };
 
 export const httpRequestWriteWrapper = requestData => originalWriteFn =>
-  // XXX An Arrow function won't work. Dynamic context handling by Node.js.
   function(data, encoding, callback) {
     requestData.body += data;
     return originalWriteFn.apply(this, [data, encoding, callback]);
   };
 
-export const httpRequestWrapper = originalRequestFn => (options, callback) => {
-  // TODO try / catch to propagate errors
+export const httpRequestWrapper = originalRequestFn =>
+  function(options, callback) {
+    // TODO try / catch to propagate errors
 
-  // XXX We're currently ignoring the case where the event loop waits for a
-  // response, but the handler ended.
+    // XXX We're currently ignoring the case where the event loop waits for a
+    // response, but the handler ended.
 
-  const host = getHostFromOptions(options);
+    const host = getHostFromOptions(options);
 
-  if (isBlacklisted(host)) {
-    return originalRequestFn.apply(this, [options, callback]);
-  }
+    if (isBlacklisted(host)) {
+      return originalRequestFn.apply(this, [options, callback]);
+    }
 
-  const requestData = parseHttpRequestOptions(options);
-  const clientRequest = originalRequestFn.apply(this, [
-    options,
-    wrappedHttpResponseCallback(requestData, callback),
-  ]);
+    const requestData = parseHttpRequestOptions(options);
+    const clientRequest = originalRequestFn.apply(this, [
+      options,
+      wrappedHttpResponseCallback(requestData, callback),
+    ]);
 
-  shimmer.wrap(clientRequest, 'write', httpRequestWriteWrapper(requestData));
-  shimmer.wrap(clientRequest, 'end', httpRequestEndWrapper(requestData));
+    //shimmer.wrap(clientRequest, 'write', httpRequestWriteWrapper(requestData));
+    //shimmer.wrap(clientRequest, 'end', httpRequestEndWrapper(requestData));
+    /*
+    clientRequest.on('response', response => {
+      const { headers, statusCode } = response;
+      const recievedTime = new Date().getTime();
 
-  return clientRequest;
-};
+      let body = '';
+      response.on('data', chunk => (body += chunk));
+
+      let responseData = {};
+      response.on('end', () => {
+        responseData = {
+          statusCode,
+          recievedTime,
+          body,
+          headers,
+        };
+        console.log(statusCode, body);
+        const httpSpan = getHttpSpan(requestData, responseData);
+        SpansHive.addSpan(httpSpan);
+      });
+    });
+    */
+
+    return clientRequest;
+  };
 
 export default () => {
   shimmer.wrap(http, 'request', httpRequestWrapper);
