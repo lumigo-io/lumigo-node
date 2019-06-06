@@ -59,7 +59,6 @@ export const isAsyncFn = fn =>
   fn.constructor.name === 'AsyncFunction';
 
 export const getAWSEnvironment = () => {
-  //console.log(JSON.stringify(process.env, null, 2));
   const {
     AWS_REGION: awsRegion,
     _X_AMZN_TRACE_ID: awsXAmznTraceId,

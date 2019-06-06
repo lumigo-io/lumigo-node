@@ -25,10 +25,29 @@ export const endTrace = async (functionSpan, handlerReturnValue) => {
     await sendSpans(spans);
   }
 };
+export const callbackResolver = resolve => (err, data) =>
+  resolve({ err, data, type: 'callbacked' });
 
-export const wrappedCallback = originalCallbackFn => (err, data) => {
-  originalCallbackFn && originalCallbackFn(err, data);
-};
+// See https://docs.aws.amazon.com/lambda/latest/dg/nodejs-prog-model-handler.html
+export const promisifyUserHandler = (userHandler, event, context) =>
+  new Promise(resolve => {
+    if (isAsyncFn(userHandler)) {
+      return userHandler(event, context, callbackResolver(resolve))
+        .then(data =>
+          resolve({ err: null, data, type: 'async_handler_resolved' })
+        )
+        .catch(err =>
+          resolve({ err, data: null, type: 'async_handler_rejected' })
+        );
+    } else {
+      try {
+        const result = userHandler(event, context, callbackResolver(resolve));
+        resolve({ err: null, data: result, type: 'non_async_returned' });
+      } catch (err) {
+        resolve({ err, data: null, type: 'non_async_errored' });
+      }
+    }
+  });
 
 // XXX Promisify userHandler for non-async handlers, and Promise.all with the Epilogue
 export const trace = ({
@@ -40,21 +59,22 @@ export const trace = ({
   TracerGlobals.setHandlerInputs({ event, context });
   TracerGlobals.setTracerInputs({ token, edgeHost, switchOff, eventFilter });
 
-  const functionSpan = await startTrace();
+  const pStartTrace = startTrace();
+  const pUserHandler = promisifyUserHandler(
+    userHandler,
+    event,
+    context,
+    callback
+  );
 
-  let handlerReturnValue = null;
-  try {
-    handlerReturnValue = await userHandler(
-      event,
-      context,
-      wrappedCallback(callback)
-    );
-  } catch (e) {
-    console.log('T', e);
-    // XXX Remove Lumigo from stacktrace and throw.
-  }
+  const [functionSpan, handlerReturnValue] = await Promise.all([
+    pStartTrace,
+    pUserHandler,
+  ]);
 
   await endTrace(functionSpan, handlerReturnValue);
+
+  console.log(handlerReturnValue);
 
   return handlerReturnValue;
 };

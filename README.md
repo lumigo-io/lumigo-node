@@ -4,6 +4,12 @@ There're still many unsolved edge cases. I'll add `CircleCI`, `100%` `jest` test
 coverage, `eslint` and publish it when I return.
 
 
+## Pull Docker Lambda
+
+~~~
+$ docker pull lambci/lambda:build-nodejs8.10
+~~~
+
 ## Incomplete Things
 
 - **`userHandler`** wrapper - currently we only support `async` userHandlers (without `callback`).
