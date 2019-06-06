@@ -3,7 +3,7 @@ import http from 'http';
 import { SpansHive } from '../globals';
 import { getEdgeHost } from '../reporter';
 import { getHttpSpan } from '../spans/aws_span';
-import { PassThrough } from 'stream';
+import cloneResponse from 'clone-response';
 
 export const isBlacklisted = host => host === getEdgeHost();
 
@@ -27,7 +27,7 @@ export const parseHttpRequestOptions = options => {
     path,
     port,
     host,
-    body: '', // XXX Filled by the "Write" and "End" wrappers.
+    body: '', // XXX Filled by the httpRequestEndWrapper ( / Write)
     method,
     headers,
     protocol,
@@ -35,52 +35,44 @@ export const parseHttpRequestOptions = options => {
   };
 };
 
+export const bodyBuilderClosure = () => {
+  let body = '';
+  const append = chunk => (body += chunk);
+  const get = () => body;
+  return { append, get };
+};
+
 export const wrappedHttpResponseCallback = (
   requestData,
   callback
 ) => response => {
-  //
-  //console.log(response.listeners('end'));
-  const data1 = new PassThrough();
-  const data2 = new PassThrough();
-  response.pipe(data1);
-  response.pipe(data2);
-
-  const { headers, statusCode } = response;
+  const clonedResponse1 = cloneResponse(response);
+  const clonedResponse2 = cloneResponse(response);
+  const { headers, statusCode } = clonedResponse1;
   const recievedTime = new Date().getTime();
 
   let body = '';
-  data1.on('data', chunk => (body += chunk));
+  clonedResponse1.on('data', chunk => (body += chunk));
 
   let responseData = {};
-  data1.on('end', () => {
+  clonedResponse1.on('end', () => {
     responseData = {
       statusCode,
       recievedTime,
       body,
       headers,
     };
-    //console.log(statusCode, body);
     const httpSpan = getHttpSpan(requestData, responseData);
     SpansHive.addSpan(httpSpan);
   });
-  console.log('XA');
-  if (callback) {
-    callback(data2);
-    //callback(response);
-  }
+
+  callback && callback(clonedResponse2);
 };
 
 export const httpRequestEndWrapper = requestData => originalEndFn =>
   function(data, encoding, callback) {
     requestData.body += data;
     return originalEndFn.apply(this, [data, encoding, callback]);
-  };
-
-export const httpRequestWriteWrapper = requestData => originalWriteFn =>
-  function(data, encoding, callback) {
-    requestData.body += data;
-    return originalWriteFn.apply(this, [data, encoding, callback]);
   };
 
 export const httpRequestWrapper = originalRequestFn =>
@@ -102,30 +94,7 @@ export const httpRequestWrapper = originalRequestFn =>
       wrappedHttpResponseCallback(requestData, callback),
     ]);
 
-    //shimmer.wrap(clientRequest, 'write', httpRequestWriteWrapper(requestData));
-    //shimmer.wrap(clientRequest, 'end', httpRequestEndWrapper(requestData));
-    /*
-    clientRequest.on('response', response => {
-      const { headers, statusCode } = response;
-      const recievedTime = new Date().getTime();
-
-      let body = '';
-      response.on('data', chunk => (body += chunk));
-
-      let responseData = {};
-      response.on('end', () => {
-        responseData = {
-          statusCode,
-          recievedTime,
-          body,
-          headers,
-        };
-        console.log(statusCode, body);
-        const httpSpan = getHttpSpan(requestData, responseData);
-        SpansHive.addSpan(httpSpan);
-      });
-    });
-    */
+    shimmer.wrap(clientRequest, 'end', httpRequestEndWrapper(requestData));
 
     return clientRequest;
   };

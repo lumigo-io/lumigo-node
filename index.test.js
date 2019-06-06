@@ -20,7 +20,7 @@ describe('lumigo-node', () => {
     process.env = { ...oldEnv };
   });
 
-  test('x', async () => {
+  test.only('x', async () => {
     const edgeHost = 'kzc0w7k50d.execute-api.eu-west-1.amazonaws.com';
 
     const switchOff = false;
@@ -44,7 +44,7 @@ describe('lumigo-node', () => {
     expect(returnValue).toEqual(expectedReturnValue);
   });
 
-  test.only('y', async () => {
+  test('y', async () => {
     jest.setTimeout(30000);
     const edgeHost = 'kzc0w7k50d.execute-api.eu-west-1.amazonaws.com';
 
