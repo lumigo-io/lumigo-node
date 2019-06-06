@@ -3,6 +3,7 @@ import http from 'http';
 import { SpansHive } from '../globals';
 import { getEdgeHost } from '../reporter';
 import { getHttpSpan } from '../spans/aws_span';
+import cloneResponse from 'clone-response';
 
 export const isBlacklisted = host => host === getEdgeHost();
 
@@ -26,7 +27,7 @@ export const parseHttpRequestOptions = options => {
     path,
     port,
     host,
-    body: '', // XXX Filled by the "Write" and "End" wrappers.
+    body: '', // XXX Filled by the httpRequestEndWrapper ( / Write)
     method,
     headers,
     protocol,
@@ -34,69 +35,69 @@ export const parseHttpRequestOptions = options => {
   };
 };
 
+export const bodyBuilderClosure = () => {
+  let body = '';
+  const append = chunk => (body += chunk);
+  const get = () => body;
+  return { append, get };
+};
+
 export const wrappedHttpResponseCallback = (
   requestData,
   callback
 ) => response => {
-  const { headers, statusCode } = response;
+  const clonedResponse1 = cloneResponse(response);
+  const clonedResponse2 = cloneResponse(response);
+  const { headers, statusCode } = clonedResponse1;
   const recievedTime = new Date().getTime();
 
   let body = '';
-  response.on('data', chunk => (body += chunk));
+  clonedResponse1.on('data', chunk => (body += chunk));
 
   let responseData = {};
-  response.on('end', () => {
+  clonedResponse1.on('end', () => {
     responseData = {
       statusCode,
       recievedTime,
       body,
       headers,
     };
-
     const httpSpan = getHttpSpan(requestData, responseData);
     SpansHive.addSpan(httpSpan);
   });
 
-  callback && callback(response);
+  callback && callback(clonedResponse2);
 };
 
 export const httpRequestEndWrapper = requestData => originalEndFn =>
-  // XXX An Arrow function won't work. Dynamic context handling by Node.js.
   function(data, encoding, callback) {
     requestData.body += data;
     return originalEndFn.apply(this, [data, encoding, callback]);
   };
 
-export const httpRequestWriteWrapper = requestData => originalWriteFn =>
-  // XXX An Arrow function won't work. Dynamic context handling by Node.js.
-  function(data, encoding, callback) {
-    requestData.body += data;
-    return originalWriteFn.apply(this, [data, encoding, callback]);
+export const httpRequestWrapper = originalRequestFn =>
+  function(options, callback) {
+    // TODO try / catch to propagate errors
+
+    // XXX We're currently ignoring the case where the event loop waits for a
+    // response, but the handler ended.
+
+    const host = getHostFromOptions(options);
+
+    if (isBlacklisted(host)) {
+      return originalRequestFn.apply(this, [options, callback]);
+    }
+
+    const requestData = parseHttpRequestOptions(options);
+    const clientRequest = originalRequestFn.apply(this, [
+      options,
+      wrappedHttpResponseCallback(requestData, callback),
+    ]);
+
+    shimmer.wrap(clientRequest, 'end', httpRequestEndWrapper(requestData));
+
+    return clientRequest;
   };
-
-export const httpRequestWrapper = originalRequestFn => (options, callback) => {
-  // TODO try / catch to propagate errors
-
-  // XXX We're currently ignoring the case where the event loop waits for a
-  // response, but the handler ended.
-
-  const host = getHostFromOptions(options);
-
-  if (isBlacklisted(host)) {
-    return originalRequestFn.apply(this, [options, callback]);
-  }
-
-  const requestData = parseHttpRequestOptions(options);
-  const clientRequest = originalRequestFn.apply(this, [
-    options,
-    wrappedHttpResponseCallback(requestData, callback),
-  ]);
-
-  shimmer.wrap(clientRequest, 'write', httpRequestWriteWrapper(requestData));
-  shimmer.wrap(clientRequest, 'end', httpRequestEndWrapper(requestData));
-
-  return clientRequest;
-};
 
 export default () => {
   shimmer.wrap(http, 'request', httpRequestWrapper);

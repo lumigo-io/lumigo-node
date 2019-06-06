@@ -4,7 +4,7 @@ export const dynamodbParser = requestData => {
     (reqHeaders['X-Amz-Target'] && reqHeaders['X-Amz-Target'].split('.')[1]) ||
     '';
 
-  const reqBodyJSON = JSON.parse(reqBody);
+  const reqBodyJSON = (!!reqBody && JSON.parse(reqBody)) || {};
   const resourceName =
     (reqBodyJSON['TableName'] && reqBodyJSON.TableName) || '';
 
