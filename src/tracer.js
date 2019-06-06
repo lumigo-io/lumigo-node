@@ -1,4 +1,4 @@
-import { isSwitchedOff } from './utils';
+import { isSwitchedOff, isAsyncFn } from './utils';
 import { getFunctionSpan, getEndFunctionSpan } from './spans/aws_span';
 import { sendSingleSpan, sendSpans } from './reporter';
 import { TracerGlobals, SpansHive } from './globals';
@@ -26,6 +26,10 @@ export const endTrace = async (functionSpan, handlerReturnValue) => {
   }
 };
 
+export const wrappedCallback = originalCallbackFn => (err, data) => {
+  originalCallbackFn && originalCallbackFn(err, data);
+};
+
 // XXX Promisify userHandler for non-async handlers, and Promise.all with the Epilogue
 export const trace = ({
   token,
@@ -40,7 +44,11 @@ export const trace = ({
 
   let handlerReturnValue = null;
   try {
-    handlerReturnValue = await userHandler(event, context, callback);
+    handlerReturnValue = await userHandler(
+      event,
+      context,
+      wrappedCallback(callback)
+    );
   } catch (e) {
     console.log('T', e);
     // XXX Remove Lumigo from stacktrace and throw.
