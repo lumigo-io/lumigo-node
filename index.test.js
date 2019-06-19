@@ -20,7 +20,7 @@ describe('lumigo-node', () => {
     process.env = { ...oldEnv };
   });
 
-  test.only('x', async () => {
+  test('x', async () => {
     jest.setTimeout(30000);
     const edgeHost = 'kzc0w7k50d.execute-api.eu-west-1.amazonaws.com';
 
@@ -50,10 +50,9 @@ describe('lumigo-node', () => {
     expect(returnValue).toEqual(expectedReturnValue);
   });
 
-  test('y', () => {
+  test.only('y', done => {
     jest.setTimeout(30000);
     const edgeHost = 'kzc0w7k50d.execute-api.eu-west-1.amazonaws.com';
-
     const switchOff = false;
     const lumigo = require('./index')({ token, edgeHost, switchOff });
     const expectedReturnValue = 'Satoshi was here';
@@ -69,31 +68,29 @@ describe('lumigo-node', () => {
           span_type: { S: 'function' },
         },
       };
-      console.log('A');
-      //const data = await ddb.getItem(params).promise();
-      ddb.getItem(params, callback);
-      //console.log(data);
-      // XXX Test the case for an NX Domain
-      //await axios.get('https://lumigo.io/');
-      return expectedReturnValue;
+
+      ddb.getItem(params, (err, data) => {
+        callback(null, expectedReturnValue);
+      });
     };
 
-    const returnValue = lambdaLocal.execute({
+    const callback = function(err, data) {
+      if (err) {
+        console.log(err);
+        done();
+      } else {
+        console.log(data);
+        done();
+      }
+    };
+    lambdaLocal.execute({
       event: exampleApiGatewayEvent,
       lambdaFunc: { handler: lumigo.trace(userHandler) },
       timeoutMs: 30000,
       environment: awsEnv,
       verboseLevel: 3,
-      callback: function(err, data) {
-        if (err) {
-          console.log(err);
-        } else {
-          console.log(data);
-        }
-      },
+      callback,
     });
-
-    expect(returnValue).toEqual(expectedReturnValue);
   });
 });
 

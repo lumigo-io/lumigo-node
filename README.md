@@ -19,9 +19,11 @@ We need to `promisify` the userHandler for all edge cases.
 
 - **`Parsing of AWS Requests / Responses `** - currently only `DynamoDB` is parsed.
 
-- **`EventFilter`** - currently only `DynamoDB` is parsed.
+- **`EventFilter`**
 
-- **`Removal of Lumigo from Stacktrace`** - currently only `DynamoDB` is parsed.
+- **`Removal of Lumigo from Stacktrace`**
+
+- **`Use an HTTP Agent to reuse the TCP connection to the edge`**
 
 - **`Debug Level Logs`**
 
