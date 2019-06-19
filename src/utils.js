@@ -86,6 +86,8 @@ export const getAWSEnvironment = () => {
   };
 };
 
+export const isAwsEnvironment = () => !!process.env['LAMBDA_RUNTIME_DIR'];
+
 export const isVerboseMode = () =>
   !!(process.env['LUMIGO_VERBOSE'] && process.env.LUMIGO_VERBOSE === 'TRUE');
 

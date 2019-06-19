@@ -1,4 +1,4 @@
-import { isSwitchedOff, isAsyncFn } from './utils';
+import { isSwitchedOff, isAwsEnvironment, isAsyncFn } from './utils';
 import { getFunctionSpan, getEndFunctionSpan } from './spans/aws_span';
 import { sendSingleSpan, sendSpans } from './reporter';
 import { TracerGlobals, SpansHive } from './globals';
@@ -10,7 +10,7 @@ const NON_ASYNC_ERRORED = 'non_async_errored';
 const ASYNC_CALLBACKED = 'async_callbacked';
 
 export const startTrace = async () => {
-  if (!isSwitchedOff()) {
+  if (!isSwitchedOff() && isAwsEnvironment()) {
     const functionSpan = getFunctionSpan();
     await sendSingleSpan(functionSpan);
     return functionSpan;
@@ -20,7 +20,7 @@ export const startTrace = async () => {
 };
 
 export const endTrace = async (functionSpan, handlerReturnValue) => {
-  if (!isSwitchedOff()) {
+  if (!isSwitchedOff() && isAwsEnvironment()) {
     const endFunctionSpan = getEndFunctionSpan(
       functionSpan,
       handlerReturnValue
