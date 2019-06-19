@@ -25,10 +25,10 @@ export const getEdgeUrl = () => {
   return `https://${edgeHost}/${SPAN_PATH}`;
 };
 
-export const sendSingleSpan = async span => sendSpans([span]);
+export const sendSingleSpan = async span => exports.sendSpans([span]);
 
 export const sendSpans = async spans => {
-  const { token } = spans[0];
+  const { token } = TracerGlobals.getTracerInputs();
   const { name, version } = getTracerInfo();
 
   const headers = {

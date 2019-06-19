@@ -1,9 +1,15 @@
 import * as reporter from './reporter';
+import { TracerGlobals } from './globals';
+import got from 'got';
 
-import axios from 'axios';
-jest.mock('axios');
+jest.mock('got');
 
-describe('getEdgeUrl', () => {
+describe('reporter', () => {
+  const spies = {};
+  Object.keys(reporter).map(
+    x => typeof spies[x] === 'function' && (spies[x] = jest.spyOn(reporter, x))
+  );
+
   const oldEnv = Object.assign({}, process.env);
   beforeEach(() => {
     const awsEnv = {
@@ -32,19 +38,43 @@ describe('getEdgeUrl', () => {
     process.env = { ...oldEnv };
   });
 
+  test('getEdgeHost', () => {
+    TracerGlobals.setTracerInputs({ token: '', edgeHost: 'zarathustra.com' });
+    expect(reporter.getEdgeHost()).toEqual('zarathustra.com');
+
+    TracerGlobals.setTracerInputs({ token: '', edgeHost: '' });
+
+    expect(reporter.getEdgeHost()).toEqual(
+      'us-east-1.lumigo-tracer-edge.golumigo.com'
+    );
+  });
+
   test('getEdgeUrl', () => {
     const expectedEdgeUrl =
       'https://us-east-1.lumigo-tracer-edge.golumigo.com/api/spans';
     expect(reporter.getEdgeUrl()).toEqual(expectedEdgeUrl);
   });
 
-  test('sendSingleSpan', async () => {
-    const _token = 'DEADBEEF';
-    const span = { _token };
+  test('sendSingleSpan', () => {
+    const retVal = { rtt: 1234 };
+    console.log(spies);
+    spies.sendSpans.mockReturnValueOnce(retVal);
+
+    const span = { a: 'b', c: 'd' };
+    const result = reporter.sendSingleSpan(span);
+
+    expect(result).toEqual(retVal);
+  });
+
+  test.skip('sendSpans', async () => {
+    const token = 'DEADBEEF';
+    TracerGlobals.setTracerInputs({ token });
+
+    const span = { a: 'b', c: 'd' };
 
     const expectedHeaders = {
       'Content-Type': 'application/json',
-      Authorization: _token,
+      Authorization: token,
     };
     const expectedEdgeUrl =
       'https://us-east-1.lumigo-tracer-edge.golumigo.com/api/spans';
