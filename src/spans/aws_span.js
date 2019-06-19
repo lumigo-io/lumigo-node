@@ -122,7 +122,7 @@ export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
   const id = removeStartedFromId(functionSpan.id);
   const error = stringifyError(err);
   const ended = new Date().getTime();
-  const return_value = isVerboseMode() ? pruneData(handlerReturnValue) : null;
+  const return_value = isVerboseMode() ? pruneData(data || '') : null;
   return Object.assign({}, functionSpan, { id, ended, error, return_value });
 };
 
