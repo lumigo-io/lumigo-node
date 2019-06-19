@@ -1,5 +1,4 @@
 const lambdaLocal = require('lambda-local');
-const axios = require('axios');
 const crypto = require('crypto');
 
 const exampleApiGatewayEvent = require('./src/testdata/events/apigw-request.json');
@@ -20,37 +19,122 @@ describe('lumigo-node', () => {
     process.env = { ...oldEnv };
   });
 
-  test('x', async () => {
+  test('real: async rejected', done => {
     jest.setTimeout(30000);
     const edgeHost = 'kzc0w7k50d.execute-api.eu-west-1.amazonaws.com';
-
     const switchOff = false;
     const lumigo = require('./index')({ token, edgeHost, switchOff });
     const expectedReturnValue = 'Satoshi was here';
 
     const userHandler = async (event, context, callback) => {
-      // XXX Test the case for an NX Domain
+      const AWS = require('aws-sdk');
+      AWS.config.update({ region: 'us-west-2' });
+      const ddb = new AWS.DynamoDB();
+      const params = {
+        TableName: 'sagid_common-resources_spans',
+        Key: {
+          span_id: { S: '6fa4d7ea-93e2-75c1-d75f-b276375c7cc7' },
+          span_type: { S: 'function' },
+        },
+      };
 
-      //const x = await axios.get('https://sagi.io/');
+      const data = await ddb.getItem(params).promise();
+      throw new Error(expectedReturnValue);
+    };
 
-      throw new Error('blechsssa');
-      //callback(null, 'baba');
-      //console.log(x);
+    const callback = function(err, data) {
+      expect(err.errorMessage).toEqual(expectedReturnValue);
+      done();
+    };
+
+    lambdaLocal.execute({
+      event: exampleApiGatewayEvent,
+      lambdaFunc: { handler: lumigo.trace(userHandler) },
+      timeoutMs: 30000,
+      environment: awsEnv,
+      verboseLevel: 0, // Verbose 3 will throw the error to stderr
+      callback,
+    });
+  });
+
+  test('real: async resolved', done => {
+    jest.setTimeout(30000);
+    const edgeHost = 'kzc0w7k50d.execute-api.eu-west-1.amazonaws.com';
+    const switchOff = false;
+    const lumigo = require('./index')({ token, edgeHost, switchOff });
+    const expectedReturnValue = 'Satoshi was here';
+
+    const userHandler = async (event, context, callback) => {
+      const AWS = require('aws-sdk');
+      AWS.config.update({ region: 'us-west-2' });
+      const ddb = new AWS.DynamoDB();
+      const params = {
+        TableName: 'sagid_common-resources_spans',
+        Key: {
+          span_id: { S: '6fa4d7ea-93e2-75c1-d75f-b276375c7cc7' },
+          span_type: { S: 'function' },
+        },
+      };
+
+      const data = await ddb.getItem(params).promise();
       return expectedReturnValue;
     };
 
-    const returnValue = await lambdaLocal.execute({
+    const callback = function(err, data) {
+      expect(data).toEqual(expectedReturnValue);
+      done();
+    };
+
+    lambdaLocal.execute({
       event: exampleApiGatewayEvent,
       lambdaFunc: { handler: lumigo.trace(userHandler) },
-      timeoutMs: 15000,
+      timeoutMs: 30000,
       environment: awsEnv,
       verboseLevel: 3,
+      callback,
     });
-
-    expect(returnValue).toEqual(expectedReturnValue);
   });
 
-  test.only('y', done => {
+  test('real: async callback', done => {
+    jest.setTimeout(30000);
+    const edgeHost = 'kzc0w7k50d.execute-api.eu-west-1.amazonaws.com';
+    const switchOff = false;
+    const lumigo = require('./index')({ token, edgeHost, switchOff });
+    const expectedReturnValue = 'Satoshi was here';
+
+    const userHandler = async (event, context, callback) => {
+      const AWS = require('aws-sdk');
+      AWS.config.update({ region: 'us-west-2' });
+      const ddb = new AWS.DynamoDB();
+      const params = {
+        TableName: 'sagid_common-resources_spans',
+        Key: {
+          span_id: { S: '6fa4d7ea-93e2-75c1-d75f-b276375c7cc7' },
+          span_type: { S: 'function' },
+        },
+      };
+
+      const data = await ddb.getItem(params).promise();
+      callback(null, expectedReturnValue);
+      await sleep(1000);
+    };
+
+    const callback = function(err, data) {
+      expect(data).toEqual(expectedReturnValue);
+      done();
+    };
+
+    lambdaLocal.execute({
+      event: exampleApiGatewayEvent,
+      lambdaFunc: { handler: lumigo.trace(userHandler) },
+      timeoutMs: 30000,
+      environment: awsEnv,
+      verboseLevel: 3,
+      callback,
+    });
+  });
+
+  test('real: non async callback', done => {
     jest.setTimeout(30000);
     const edgeHost = 'kzc0w7k50d.execute-api.eu-west-1.amazonaws.com';
     const switchOff = false;
@@ -75,20 +159,42 @@ describe('lumigo-node', () => {
     };
 
     const callback = function(err, data) {
-      if (err) {
-        console.log(err);
-        done();
-      } else {
-        console.log(data);
-        done();
-      }
+      expect(data).toEqual(expectedReturnValue);
+      done();
     };
+
     lambdaLocal.execute({
       event: exampleApiGatewayEvent,
       lambdaFunc: { handler: lumigo.trace(userHandler) },
       timeoutMs: 30000,
       environment: awsEnv,
-      verboseLevel: 3,
+      verboseLevel: 0,
+      callback,
+    });
+  });
+
+  test('real: non async error thrown', done => {
+    jest.setTimeout(30000);
+    const edgeHost = 'kzc0w7k50d.execute-api.eu-west-1.amazonaws.com';
+    const switchOff = false;
+    const lumigo = require('./index')({ token, edgeHost, switchOff });
+    const expectedReturnValue = 'Satoshi was here';
+
+    const userHandler = (event, context, callback) => {
+      throw new Error(expectedReturnValue);
+    };
+
+    const callback = function(err, data) {
+      expect(err.errorMessage).toEqual(expectedReturnValue);
+      done();
+    };
+
+    lambdaLocal.execute({
+      event: exampleApiGatewayEvent,
+      lambdaFunc: { handler: lumigo.trace(userHandler) },
+      timeoutMs: 30000,
+      environment: awsEnv,
+      verboseLevel: 0, // Verbose 3 will throw the error to stderr
       callback,
     });
   });
@@ -119,16 +225,3 @@ const getRandomAwsEnv = () => {
     AWS_EXECUTION_ENV: 'AWS_Lambda_nodejs8.10',
   };
 };
-
-/*
-  return Promise.all([pStartTrace, pUserHandler]).then(
-    ([functionSpan, handlerReturnValue]) => {
-      console.log(handlerReturnValue);
-      endTrace(functionSpan, handlerReturnValue).then(
-        callback(null, handlerReturnValue)
-      );
-    }
-  );
-
-
-*/
