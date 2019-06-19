@@ -2,10 +2,11 @@ export const getTriggeredBy = event => {
   if (event && event['Records']) {
     // XXX Parses s3, sns, ses, kinesis, dynamodb event sources.
     const { eventSource, EventSource } = event.Records[0];
-    const eventSourceStr = eventSource || EventSource || null;
+    const eventSourceStr = eventSource || EventSource;
     if (eventSourceStr) {
       // XXX AWS EventSources are formatted as "aws:$EVENT_SOURCE_NAME"
       // See https://github.com/aws/aws-lambda-go/tree/master/events/testdata
+      // eslint-disable-next-line
       const [_, eventSourceName] = eventSourceStr.split(':');
       return eventSourceName;
     }
@@ -19,10 +20,10 @@ export const getTriggeredBy = event => {
 };
 
 export const getApiGatewayData = event => {
-  const { headers, resource, httpMethod, requestContext } = event;
+  const { headers = {}, resource, httpMethod, requestContext = {} } = event;
   const { stage = null } = requestContext;
 
-  const api = headers.Host || null;
+  const api = headers['Host'] || null;
   return { httpMethod, resource, stage, api };
 };
 

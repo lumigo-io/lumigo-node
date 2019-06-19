@@ -7,6 +7,7 @@ const exampleKinesisEvent = require('./testdata/events/kinesis-event.json');
 const exampleDynamoDBEvent = require('./testdata/events/dynamodb-event.json');
 const exampleApiGatewayEvent = require('./testdata/events/apigw-request.json');
 const exampleUnsupportedEvent = require('./testdata/events/appsync-invoke.json');
+const exampleApiGatewayEventWithoutHost = require('./testdata/events/apigw-custom-auth-request.json');
 
 describe('events', () => {
   test('getTriggeredBy', () => {
@@ -27,6 +28,22 @@ describe('events', () => {
       httpMethod: 'POST',
       resource: '/{proxy+}',
       stage: 'testStage',
+    });
+
+    expect(events.getApiGatewayData(exampleApiGatewayEventWithoutHost)).toEqual(
+      {
+        api: null,
+        httpMethod: undefined,
+        resource: undefined,
+        stage: null,
+      }
+    );
+  });
+
+  test('getSnsData', () => {
+    expect(events.getSnsData(exampleSnsEvent)).toEqual({
+      arn: 'arn:aws:sns:EXAMPLE',
+      messageId: '95df01b4-ee98-5cb9-9903-4c221d41eb5e',
     });
   });
 
@@ -66,13 +83,6 @@ describe('events', () => {
     expect(
       events.getRelevantEventData('invocation', exampleUnsupportedEvent)
     ).toEqual({});
-  });
-
-  test('getSnsData', () => {
-    expect(events.getSnsData(exampleSnsEvent)).toEqual({
-      arn: 'arn:aws:sns:EXAMPLE',
-      messageId: '95df01b4-ee98-5cb9-9903-4c221d41eb5e',
-    });
   });
 
   test('getEventInfo', () => {
