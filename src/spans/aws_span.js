@@ -5,6 +5,7 @@ import {
   getTraceId,
   isVerboseMode,
   getTracerInfo,
+  stringifyError,
   getContextInfo,
   getAWSEnvironment,
   stringifyAndPrune,
@@ -117,10 +118,12 @@ export const getFunctionSpan = () => {
 export const removeStartedFromId = id => id.split('_')[0];
 
 export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
+  const { err, data } = handlerReturnValue;
   const id = removeStartedFromId(functionSpan.id);
+  const error = stringifyError(err);
   const ended = new Date().getTime();
   const return_value = isVerboseMode() ? pruneData(handlerReturnValue) : null;
-  return Object.assign({}, functionSpan, { id, ended, return_value });
+  return Object.assign({}, functionSpan, { id, ended, error, return_value });
 };
 
 export const isRequestToAwsService = host =>

@@ -19,7 +19,7 @@ describe('lumigo-node', () => {
     process.env = { ...oldEnv };
   });
 
-  test('real: async rejected', done => {
+  test.only('real: async rejected', done => {
     jest.setTimeout(30000);
     const edgeHost = 'kzc0w7k50d.execute-api.eu-west-1.amazonaws.com';
     const switchOff = false;
@@ -90,7 +90,7 @@ describe('lumigo-node', () => {
       lambdaFunc: { handler: lumigo.trace(userHandler) },
       timeoutMs: 30000,
       environment: awsEnv,
-      verboseLevel: 3,
+      verboseLevel: 0,
       callback,
     });
   });
@@ -116,7 +116,6 @@ describe('lumigo-node', () => {
 
       const data = await ddb.getItem(params).promise();
       callback(null, expectedReturnValue);
-      await sleep(1000);
     };
 
     const callback = function(err, data) {
@@ -129,7 +128,7 @@ describe('lumigo-node', () => {
       lambdaFunc: { handler: lumigo.trace(userHandler) },
       timeoutMs: 30000,
       environment: awsEnv,
-      verboseLevel: 3,
+      verboseLevel: 0,
       callback,
     });
   });
