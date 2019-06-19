@@ -6,8 +6,6 @@ coverage, `eslint` and publish it when I return.
 
 ## Incomplete Things
 
-- **`Propagation of errors`** - currently no errors are propagated to spans.
-
 - **`Parsing of AWS Requests / Responses `** - currently only `DynamoDB` is parsed.
 
 - **`EventFilter`**
@@ -21,3 +19,5 @@ coverage, `eslint` and publish it when I return.
 - **`Inject X-Amzn.. Header to Request`**
 
 - **`When locally used (i.e. not on AWS Lambda for now) auto-switch off`**
+
+- **`Try / catch Lumigo's errors e.g. parsing http hooks etc.`**
