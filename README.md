@@ -10,6 +10,8 @@ coverage, `eslint` and publish it when I return.
 
 - **`EventFilter`**
 
+- **`callbackWaitsForEmptyEventLoop`** - we should check if setting it to false/true alters the tracers behaviour.
+
 - **`Removal of Lumigo from Stacktrace`**
 
 - **`Use an HTTP Agent to reuse the TCP connection to the edge`**
