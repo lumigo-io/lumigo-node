@@ -1,4 +1,5 @@
 const utils = require('./utils');
+const { TracerGlobals } = require('./globals');
 
 jest.mock('../package.json', () => ({
   name: '@lumigo/tracerMock',
@@ -27,6 +28,19 @@ describe('utils', () => {
       awsAccountId,
       remainingTimeInMillis,
     });
+
+    const context2 = {
+      awsRequestId,
+      functionName,
+      invokedFunctionArn: '',
+      getRemainingTimeInMillis,
+    };
+    expect(utils.getContextInfo(context2)).toEqual({
+      functionName,
+      awsRequestId,
+      awsAccountId: '',
+      remainingTimeInMillis,
+    });
   });
 
   test('getTracerInfo', () => {
@@ -46,9 +60,15 @@ describe('utils', () => {
       transactionId: '6ac46730d346cad0e53f89d0',
     };
     expect(utils.getTraceId(awsXAmznTraceId)).toEqual(expected);
+
+    expect(() => utils.getTraceId(null)).toThrow(
+      'Missing _X_AMZN_TRACE_ID in Lambda Env Vars.'
+    );
+
     expect(() => utils.getTraceId('x;y')).toThrow(
       'Expected 3 semi-colon separated parts in _X_AMZN_TRACE_ID.'
     );
+
     expect(() => utils.getTraceId('a=b;c=d;e=f')).toThrow(
       "Either Root, Parent or Sampled weren't found in traceId."
     );
@@ -102,11 +122,11 @@ describe('utils', () => {
     process.env = { ...oldEnv };
   });
 
-  test('isWarm', () => {
-    expect(utils.isWarm()).toBe(false);
+  test('isAwsEnvironment', () => {
+    expect(utils.isAwsEnvironment()).toBe(false);
     const oldEnv = Object.assign({}, process.env);
-    process.env = { ...oldEnv, LUMIGO_IS_WARM: 'TRUE' };
-    expect(utils.isWarm()).toBe(true);
+    process.env = { ...oldEnv, LAMBDA_RUNTIME_DIR: 'BLA BLA' };
+    expect(utils.isAwsEnvironment()).toBe(true);
     process.env = { ...oldEnv };
   });
 
@@ -118,6 +138,14 @@ describe('utils', () => {
     process.env = { ...oldEnv };
   });
 
+  test('isWarm', () => {
+    expect(utils.isWarm()).toBe(false);
+    const oldEnv = Object.assign({}, process.env);
+    process.env = { ...oldEnv, LUMIGO_IS_WARM: 'TRUE' };
+    expect(utils.isWarm()).toBe(true);
+    process.env = { ...oldEnv };
+  });
+
   test('isDebug', () => {
     expect(utils.isDebug()).toBe(false);
     const oldEnv = Object.assign({}, process.env);
@@ -126,11 +154,38 @@ describe('utils', () => {
     process.env = { ...oldEnv };
   });
 
+  test('isSwitchedOff', () => {
+    expect(utils.isSwitchedOff()).toBe(false);
+
+    const oldEnv = Object.assign({}, process.env);
+    process.env = { ...oldEnv, LUMIGO_SWITCH_OFF: 'TRUE' };
+    expect(utils.isSwitchedOff()).toBe(true);
+
+    process.env = { ...oldEnv };
+    expect(utils.isSwitchedOff()).toBe(false);
+
+    TracerGlobals.setTracerInputs({ token: '', edgeHost: '', switchOff: true });
+    expect(utils.isSwitchedOff()).toBe(true);
+    TracerGlobals.setTracerInputs({
+      token: '',
+      edgeHost: '',
+      switchOff: false,
+    });
+  });
+
   test('setWarm', () => {
     expect(utils.isWarm()).toBe(false);
     const oldEnv = Object.assign({}, process.env);
     utils.setWarm();
     expect(utils.isWarm()).toBe(true);
+    process.env = { ...oldEnv };
+  });
+
+  test('setSwitchOff', () => {
+    expect(utils.isSwitchedOff()).toBe(false);
+    const oldEnv = Object.assign({}, process.env);
+    utils.setSwitchOff();
+    expect(utils.isSwitchedOff()).toBe(true);
     process.env = { ...oldEnv };
   });
 
@@ -162,11 +217,9 @@ describe('utils', () => {
     expect(utils.pruneData('abcdefg', 3)).toEqual('abc');
   });
 
-  test('isRequestToAwsService', () => {
-    const s3host = 's3.aws-region.amazonaws.com';
-    expect(utils.isRequestToAwsService(s3host)).toBe(true);
-
-    const gcp = 'peace_in_the_middleast.storage.googleapis.com';
-    expect(utils.isRequestToAwsService(gcp)).toBe(false);
+  test('stringifyError', () => {
+    const err = new Error('baba');
+    const error = JSON.stringify(err, Object.getOwnPropertyNames(err));
+    expect(utils.stringifyError(err)).toEqual(error);
   });
 });

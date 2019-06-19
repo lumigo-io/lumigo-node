@@ -22,7 +22,6 @@ export const getTracerInfo = () => {
 };
 
 export const getTraceId = awsXAmznTraceId => {
-  // XXX Consider putting condition in parent.
   if (!awsXAmznTraceId) {
     throw new Error('Missing _X_AMZN_TRACE_ID in Lambda Env Vars.');
   }
