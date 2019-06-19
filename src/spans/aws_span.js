@@ -214,3 +214,6 @@ export const addResponseDataToHttpSpan = (responseData, httpSpan) => {
   newHttpSpan.info.httpInfo.response = responseData;
   return newHttpSpan;
 };
+
+export const addRttToFunctionSpan = (functionSpan, rtt) =>
+  Object.assign({}, functionSpan, { reporter_rtt: rtt });

@@ -19,7 +19,7 @@ describe('lumigo-node', () => {
     process.env = { ...oldEnv };
   });
 
-  test.only('real: async rejected', done => {
+  test('real: async rejected', done => {
     jest.setTimeout(30000);
     const edgeHost = 'kzc0w7k50d.execute-api.eu-west-1.amazonaws.com';
     const switchOff = false;

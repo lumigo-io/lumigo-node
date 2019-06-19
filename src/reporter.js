@@ -30,12 +30,21 @@ export const sendSingleSpan = async span => sendSpans([span]);
 export const sendSpans = async spans => {
   const { token } = spans[0];
   const { name, version } = getTracerInfo();
+
   const headers = {
     Authorization: token,
     'User-Agent': `${name}$${version}`,
     'Content-Type': 'application/json',
   };
+
   const edgeUrl = getEdgeUrl();
   const body = JSON.stringify(spans);
+  const roundTripStart = Date.now();
+
   await got.post(edgeUrl, { headers, body });
+
+  const roundTripEnd = Date.now();
+  const rtt = roundTripEnd - roundTripStart;
+
+  return { rtt };
 };
