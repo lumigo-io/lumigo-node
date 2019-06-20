@@ -7,11 +7,11 @@ import {
 import { sendSingleSpan, sendSpans } from './reporter';
 import { TracerGlobals, SpansHive, clearGlobals } from './globals';
 
+export const NON_ASYNC_HANDLER_CALLBACKED = 'non_async_callbacked';
+export const NON_ASYNC_HANDLER_ERRORED = 'non_async_errored';
+export const ASYNC_HANDLER_CALLBACKED = 'async_callbacked';
 export const ASYNC_HANDLER_RESOLVED = 'async_handler_resolved';
 export const ASYNC_HANDLER_REJECTED = 'async_handler_rejected';
-export const NON_ASYNC_CALLBACKED = 'non_async_callbacked';
-export const NON_ASYNC_ERRORED = 'non_async_errored';
-export const ASYNC_CALLBACKED = 'async_callbacked';
 
 export const startTrace = async () => {
   if (!isSwitchedOff() && isAwsEnvironment()) {
@@ -38,10 +38,10 @@ export const endTrace = async (functionSpan, handlerReturnValue) => {
 };
 
 export const asyncCallbackResolver = resolve => (err, data) =>
-  resolve({ err, data, type: ASYNC_CALLBACKED });
+  resolve({ err, data, type: ASYNC_HANDLER_CALLBACKED });
 
 export const nonAsyncCallbackResolver = resolve => (err, data) =>
-  resolve({ err, data, type: NON_ASYNC_CALLBACKED });
+  resolve({ err, data, type: NON_ASYNC_HANDLER_CALLBACKED });
 
 // See https://docs.aws.amazon.com/lambda/latest/dg/nodejs-prog-model-handler.html
 export const promisifyUserHandler = (userHandler, event, context) =>
@@ -58,7 +58,7 @@ export const promisifyUserHandler = (userHandler, event, context) =>
       try {
         userHandler(event, context, nonAsyncCallbackResolver(resolve));
       } catch (err) {
-        resolve({ err, data: null, type: NON_ASYNC_ERRORED });
+        resolve({ err, data: null, type: NON_ASYNC_HANDLER_ERRORED });
       }
     }
   });
@@ -89,13 +89,13 @@ export const trace = ({
 
   const { err, data, type } = handlerReturnValue;
   switch (type) {
-    case ASYNC_CALLBACKED:
-    case NON_ASYNC_CALLBACKED:
+    case ASYNC_HANDLER_CALLBACKED:
+    case NON_ASYNC_HANDLER_CALLBACKED:
       callback(err, data);
       break;
     case ASYNC_HANDLER_RESOLVED:
       return data;
-    case NON_ASYNC_ERRORED:
+    case NON_ASYNC_HANDLER_ERRORED:
     case ASYNC_HANDLER_REJECTED:
       throw err;
   }

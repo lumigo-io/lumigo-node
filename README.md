@@ -9,6 +9,8 @@ coverage, `eslint` and publish it when I return.
 2. Orthogonal unit tests with 100% code cov
 3. use the E2E tests with mocks (i.e. as partial system tests with lambdaLocal)
 4. Test switchOff and local (isawsenv) with E2E tests.
+5. Test a Lumigo-tracer error with E2E tests.
+6. use Webpack to minify and bundle the tracer.
 
 ## Incomplete Things
 
@@ -23,7 +25,5 @@ coverage, `eslint` and publish it when I return.
 - **`Use an HTTP Agent to reuse the TCP connection to the edge`**
 
 - **`Inject X-Amzn.. Header to Request`**
-
-- **`When locally used (i.e. not on AWS Lambda for now) auto-switch off`**
 
 - **`Try / catch Lumigo's errors e.g. parsing http hooks etc.`**

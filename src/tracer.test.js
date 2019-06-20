@@ -93,7 +93,7 @@ describe('tracer', () => {
     const resolve = jest.fn();
     const err = 'err';
     const data = 'data';
-    const type = tracer.ASYNC_CALLBACKED;
+    const type = tracer.ASYNC_HANDLER_CALLBACKED;
     tracer.asyncCallbackResolver(resolve)(err, data);
     expect(resolve).toHaveBeenCalledWith({ err, data, type });
   });
@@ -102,14 +102,82 @@ describe('tracer', () => {
     const resolve = jest.fn();
     const err = 'err';
     const data = 'data';
-    const type = tracer.NON_ASYNC_CALLBACKED;
+    const type = tracer.NON_ASYNC_HANDLER_CALLBACKED;
     tracer.nonAsyncCallbackResolver(resolve)(err, data);
     expect(resolve).toHaveBeenCalledWith({ err, data, type });
   });
 
-  test('promisifyUserHandler', async () => {
+  test('promisifyUserHandler async ', async () => {
+    const event = { a: 'b', c: 'd' };
+    const context = { e: 'f', g: 'h' };
+    const data = 'Satoshi was here';
+    const err = new Error('w00t');
+    const userHandler1 = async () => Promise.resolve(data);
+    expect(
+      tracer.promisifyUserHandler(userHandler1, event, context)
+    ).resolves.toEqual({
+      err: null,
+      data,
+      type: tracer.ASYNC_HANDLER_RESOLVED,
+    });
+
+    const userHandler2 = async () => Promise.reject(err);
+    expect(
+      tracer.promisifyUserHandler(userHandler2, event, context)
+    ).resolves.toEqual({
+      err,
+      data: null,
+      type: tracer.ASYNC_HANDLER_REJECTED,
+    });
+
+    const userHandler3 = async (event, context, callback) => {
+      const err = null;
+      const data = 'async callbacked?';
+      callback(err, data);
+    };
+    expect(
+      tracer.promisifyUserHandler(userHandler3, event, context)
+    ).resolves.toEqual({
+      err: null,
+      data: 'async callbacked?',
+      type: tracer.ASYNC_HANDLER_CALLBACKED,
+    });
+  });
+
+  test('promisifyUserHandler non async', async () => {
+    const event = { a: 'b', c: 'd' };
+    const context = { e: 'f', g: 'h' };
+    const err = new Error('w00t');
+
+    const userHandler1 = () => {
+      throw err;
+    };
+    expect(
+      tracer.promisifyUserHandler(userHandler1, event, context)
+    ).resolves.toEqual({
+      err,
+      data: null,
+      type: tracer.NON_ASYNC_HANDLER_ERRORED,
+    });
+
+    const userHandler2 = (event, context, callback) => {
+      const err = null;
+      const data = 'non async callbacked?';
+      callback(err, data);
+    };
+    await expect(
+      tracer.promisifyUserHandler(userHandler2, event, context)
+    ).resolves.toEqual({
+      err: null,
+      data: 'non async callbacked?',
+      type: tracer.NON_ASYNC_HANDLER_CALLBACKED,
+    });
+  });
+
+  test('trace', async () => {
     const userHandler = jest.fn();
     const event = { a: 'b', c: 'd' };
     const context = { e: 'f', g: 'h' };
+    throw new Error('not tested');
   });
 });
