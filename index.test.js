@@ -1,9 +1,75 @@
 /* eslint-disable */
-const lambdaLocal = require('lambda-local');
-const crypto = require('crypto');
+import lambdaLocal from 'lambda-local';
+import crypto from 'crypto';
+import * as tracer from './lib/tracer';
+import * as utils from './lib/utils';
 
 const exampleApiGatewayEvent = require('./src/testdata/events/apigw-request.json');
 
+describe('index', () => {
+  const spies = {};
+  spies.trace = jest.spyOn(tracer, 'trace');
+  spies.setSwitchOff = jest.spyOn(utils, 'setSwitchOff');
+  spies.setVerboseMode = jest.spyOn(utils, 'setVerboseMode');
+
+  beforeEach(() => {
+    Object.keys(spies).map(x => spies[x].mockClear());
+  });
+
+  test('init tracer', () => {
+    const retVal = 1234;
+    spies.trace.mockReturnValueOnce(retVal);
+
+    const token = 'DEADBEEF';
+    const edgeHost = 'zarathustra.com';
+    const verbose = true;
+
+    const lumigo1 = require('./index')({ token, edgeHost, verbose });
+    expect(lumigo1.trace).toEqual(retVal);
+    expect(spies.trace).toHaveBeenCalledWith({
+      token,
+      edgeHost,
+      switchOff: false,
+      eventFilter: {},
+    });
+    expect(spies.setVerboseMode).toHaveBeenCalled();
+
+    spies.trace.mockClear();
+    spies.trace.mockReturnValueOnce(retVal);
+    const lumigo2 = require('./index')({
+      token,
+      switchOff: true,
+    });
+    expect(lumigo2.trace).toEqual(retVal);
+    expect(spies.trace).toHaveBeenCalledWith({
+      token,
+      edgeHost: '',
+      switchOff: true,
+      eventFilter: {},
+    });
+    expect(spies.setSwitchOff).toHaveBeenCalled();
+  });
+
+  test('init backward compatbility with older tracer', () => {
+    const retVal = 1234;
+    spies.trace.mockReturnValueOnce(retVal);
+
+    const LumigoTracer = require('./index');
+    const token = 'DEADBEEF';
+    const edgeHost = 'zarathustra.com';
+
+    const retTracer = new LumigoTracer({ token, edgeHost });
+    expect(retTracer.trace).toEqual(retVal);
+    expect(spies.trace).toHaveBeenCalledWith({
+      token,
+      edgeHost,
+      switchOff: false,
+      eventFilter: {},
+    });
+  });
+});
+
+// XXX Below are real E2E system tests. Unskip when developing new features.
 describe.skip('end-to-end lumigo-node', () => {
   const oldEnv = Object.assign({}, process.env);
   const verboseLevel = 0; // XXX 0 - supressed lambdaLocal outputs, 3 - logs are outputted.

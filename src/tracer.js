@@ -5,7 +5,7 @@ import {
   addRttToFunctionSpan,
 } from './spans/aws_span';
 import { sendSingleSpan, sendSpans } from './reporter';
-import { TracerGlobals, SpansHive } from './globals';
+import { TracerGlobals, SpansHive, clearGlobals } from './globals';
 
 const ASYNC_HANDLER_RESOLVED = 'async_handler_resolved';
 const ASYNC_HANDLER_REJECTED = 'async_handler_rejected';
@@ -33,7 +33,7 @@ export const endTrace = async (functionSpan, handlerReturnValue) => {
 
     const spans = SpansHive.getSpans();
     await sendSpans(spans);
-    SpansHive.clearSpans(); // Clears the closure i.e. consecutive (warm) executions won't send past spans.
+    clearGlobals(); // Clears the all global closures.
   }
 };
 

@@ -17,15 +17,29 @@ export const TracerGlobals = (() => {
 
   const getHandlerInputs = () => handlerInputs;
 
+  const clearHandlerInputs = () =>
+    Object.assign(handlerInputs, { event: {}, context: {} });
+
   const setTracerInputs = ({ token, edgeHost, switchOff }) =>
     Object.assign(tracerInputs, { token, edgeHost, switchOff });
 
   const getTracerInputs = () => tracerInputs;
+
+  const clearTracerInputs = () =>
+    Object.assign(tracerInputs, { token: '', edgeHost: '', switchOff: false });
 
   return {
     getTracerInputs,
     setTracerInputs,
     setHandlerInputs,
     getHandlerInputs,
+    clearTracerInputs,
+    clearHandlerInputs,
   };
 })();
+
+export const clearGlobals = () => {
+  SpansHive.clearSpans();
+  TracerGlobals.clearTracerInputs();
+  TracerGlobals.clearHandlerInputs();
+};
