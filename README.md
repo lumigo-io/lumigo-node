@@ -3,6 +3,12 @@
 There're still many unsolved edge cases. I'll add `CircleCI`, `100%` `jest` test
 coverage, `eslint` and publish it when I return.
 
+## TODO
+
+1. Try to minimize use of external packages.
+2. Orthogonal unit tests with 100% code cov
+3. use the E2E tests with mocks (i.e. as partial system tests with lambdaLocal)
+4. Test switchOff and local (isawsenv) with E2E tests.
 
 ## Incomplete Things
 
@@ -15,8 +21,6 @@ coverage, `eslint` and publish it when I return.
 - **`Removal of Lumigo from Stacktrace`**
 
 - **`Use an HTTP Agent to reuse the TCP connection to the edge`**
-
-- **`Debug Level Logs`**
 
 - **`Inject X-Amzn.. Header to Request`**
 
