@@ -3,8 +3,9 @@ export const SpansHive = (() => {
 
   const addSpan = span => spans.push(span);
   const getSpans = () => spans;
+  const clearSpans = () => (spans.length = 0);
 
-  return { addSpan, getSpans };
+  return { addSpan, getSpans, clearSpans };
 })();
 
 export const TracerGlobals = (() => {

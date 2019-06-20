@@ -7,6 +7,8 @@ describe('globals', () => {
     globals.SpansHive.addSpan(span1);
     globals.SpansHive.addSpan(span2);
     expect(globals.SpansHive.getSpans()).toEqual([span1, span2]);
+    globals.SpansHive.clearSpans();
+    expect(globals.SpansHive.getSpans()).toEqual([]);
   });
 
   test('TracerGlobals', () => {

@@ -1,3 +1,4 @@
+/* eslint-disable */
 const lambdaLocal = require('lambda-local');
 const crypto = require('crypto');
 
@@ -5,14 +6,19 @@ const exampleApiGatewayEvent = require('./src/testdata/events/apigw-request.json
 
 describe.skip('end-to-end lumigo-node', () => {
   const oldEnv = Object.assign({}, process.env);
-  let awsEnv = {};
+  const verboseLevel = 0; // XXX 0 - supressed lambdaLocal outputs, 3 - logs are outputted.
+
+  let clientContext = {};
+  let environment = {};
   let token = '';
 
   beforeEach(() => {
     token = 't_a595aa58c126575c5c41';
-    awsEnv = getRandomAwsEnv();
+    environment = getRandomAwsEnv();
+    clientContext = JSON.stringify(getRandomClientContext());
+
     const { HOME } = oldEnv;
-    process.env = { HOME, ...awsEnv };
+    process.env = { HOME, ...environment };
   });
 
   afterEach(() => {
@@ -48,11 +54,12 @@ describe.skip('end-to-end lumigo-node', () => {
     };
 
     lambdaLocal.execute({
-      event: exampleApiGatewayEvent,
       lambdaFunc: { handler: lumigo.trace(userHandler) },
+      event: exampleApiGatewayEvent,
       timeoutMs: 30000,
-      environment: awsEnv,
-      verboseLevel: 0, // Verbose 3 will throw the error to stderr
+      environment,
+      verboseLevel,
+      clientContext,
       callback,
     });
   });
@@ -86,11 +93,12 @@ describe.skip('end-to-end lumigo-node', () => {
     };
 
     lambdaLocal.execute({
-      event: exampleApiGatewayEvent,
       lambdaFunc: { handler: lumigo.trace(userHandler) },
+      event: exampleApiGatewayEvent,
       timeoutMs: 30000,
-      environment: awsEnv,
-      verboseLevel: 0,
+      clientContext,
+      verboseLevel,
+      environment,
       callback,
     });
   });
@@ -124,11 +132,12 @@ describe.skip('end-to-end lumigo-node', () => {
     };
 
     lambdaLocal.execute({
-      event: exampleApiGatewayEvent,
       lambdaFunc: { handler: lumigo.trace(userHandler) },
+      event: exampleApiGatewayEvent,
       timeoutMs: 30000,
-      environment: awsEnv,
-      verboseLevel: 0,
+      clientContext,
+      verboseLevel,
+      environment,
       callback,
     });
   });
@@ -163,11 +172,12 @@ describe.skip('end-to-end lumigo-node', () => {
     };
 
     lambdaLocal.execute({
-      event: exampleApiGatewayEvent,
       lambdaFunc: { handler: lumigo.trace(userHandler) },
+      event: exampleApiGatewayEvent,
       timeoutMs: 30000,
-      environment: awsEnv,
-      verboseLevel: 0,
+      clientContext,
+      verboseLevel,
+      environment,
       callback,
     });
   });
@@ -189,22 +199,25 @@ describe.skip('end-to-end lumigo-node', () => {
     };
 
     lambdaLocal.execute({
-      event: exampleApiGatewayEvent,
       lambdaFunc: { handler: lumigo.trace(userHandler) },
+      event: exampleApiGatewayEvent,
       timeoutMs: 30000,
-      environment: awsEnv,
-      verboseLevel: 0, // Verbose 3 will throw the error to stderr
+      clientContext,
+      verboseLevel,
+      environment,
       callback,
     });
   });
 });
 
 const getRandomString = evenNrChars =>
-  crypto.randomBytes(evenNrChars / 2).toString('hex');
+  crypto
+    .randomBytes(evenNrChars / 2)
+    .toString('hex')
+    .toLowerCase();
 
 const getRandomAwsEnv = () => {
   const transactionId = getRandomString(10);
-  // XXX Add parentId / id mocks (contexts...)
   return {
     LAMBDA_TASK_ROOT: '/var/task',
     LAMBDA_RUNTIME_DIR: '/var/runtime',
@@ -222,5 +235,23 @@ const getRandomAwsEnv = () => {
     AWS_XRAY_CONTEXT_MISSING: 'LOG_ERROR',
     _X_AMZN_TRACE_ID: `Root=1-5cdcf03a-${transactionId};Parent=28effe37598bb622;Sampled=0`,
     AWS_EXECUTION_ENV: 'AWS_Lambda_nodejs8.10',
+  };
+};
+
+const getRandomClientContext = () => {
+  const x1 = getRandomString(8);
+  const x5 = getRandomString(12);
+  const awsRequestId = `${x1}-60a6-4cee-8a70-${x5}`;
+  const functionName = 'w00t';
+  const remainingTimeInMillis = 123456;
+  const getRemainingTimeInMillis = () => remainingTimeInMillis;
+  const awsAccountId = `985323015126`;
+  const invokedFunctionArn = `arn:aws:lambda:us-east-1:${awsAccountId}:function:aws-nodejs-dev-hello`;
+
+  return {
+    awsRequestId,
+    functionName,
+    invokedFunctionArn,
+    getRemainingTimeInMillis,
   };
 };

@@ -33,6 +33,7 @@ export const endTrace = async (functionSpan, handlerReturnValue) => {
 
     const spans = SpansHive.getSpans();
     await sendSpans(spans);
+    SpansHive.clearSpans(); // Clears the closure i.e. consecutive (warm) executions won't send past spans.
   }
 };
 
