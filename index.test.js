@@ -303,6 +303,7 @@ const getRandomAwsEnv = () => {
     AWS_XRAY_CONTEXT_MISSING: 'LOG_ERROR',
     _X_AMZN_TRACE_ID: `Root=1-5cdcf03a-${transactionId};Parent=28effe37598bb622;Sampled=0`,
     AWS_EXECUTION_ENV: 'AWS_Lambda_nodejs8.10',
+    LUMIGO_DEBUG: 'TRUE',
   };
 };
 

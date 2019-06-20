@@ -1,7 +1,6 @@
 import got from 'got';
 import { TracerGlobals } from './globals';
-
-import { getAWSEnvironment, getTracerInfo } from './utils';
+import { getAWSEnvironment, getTracerInfo, isDebug } from './utils';
 
 export const SPAN_PATH = 'api/spans';
 export const LUMIGO_TRACER_EDGE = 'lumigo-tracer-edge.golumigo.com';
@@ -27,6 +26,10 @@ export const getEdgeUrl = () => {
 
 export const sendSingleSpan = async span => exports.sendSpans([span]);
 
+export const logSpans = spans =>
+  // eslint-disable-next-line
+  spans.map(span => console.log(`#LUMIGO# ${JSON.stringify(span, null, 2)}`));
+
 export const sendSpans = async spans => {
   const { token } = TracerGlobals.getTracerInputs();
   const { name, version } = getTracerInfo();
@@ -45,6 +48,8 @@ export const sendSpans = async spans => {
 
   const roundTripEnd = Date.now();
   const rtt = roundTripEnd - roundTripStart;
+
+  isDebug() && logSpans(spans);
 
   return { rtt };
 };

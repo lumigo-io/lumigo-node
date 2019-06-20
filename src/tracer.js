@@ -7,11 +7,11 @@ import {
 import { sendSingleSpan, sendSpans } from './reporter';
 import { TracerGlobals, SpansHive, clearGlobals } from './globals';
 
-const ASYNC_HANDLER_RESOLVED = 'async_handler_resolved';
-const ASYNC_HANDLER_REJECTED = 'async_handler_rejected';
-const NON_ASYNC_CALLBACKED = 'non_async_callbacked';
-const NON_ASYNC_ERRORED = 'non_async_errored';
-const ASYNC_CALLBACKED = 'async_callbacked';
+export const ASYNC_HANDLER_RESOLVED = 'async_handler_resolved';
+export const ASYNC_HANDLER_REJECTED = 'async_handler_rejected';
+export const NON_ASYNC_CALLBACKED = 'non_async_callbacked';
+export const NON_ASYNC_ERRORED = 'non_async_errored';
+export const ASYNC_CALLBACKED = 'async_callbacked';
 
 export const startTrace = async () => {
   if (!isSwitchedOff() && isAwsEnvironment()) {
@@ -33,7 +33,7 @@ export const endTrace = async (functionSpan, handlerReturnValue) => {
 
     const spans = SpansHive.getSpans();
     await sendSpans(spans);
-    clearGlobals(); // Clears the all global closures.
+    clearGlobals();
   }
 };
 
@@ -47,7 +47,6 @@ export const nonAsyncCallbackResolver = resolve => (err, data) =>
 export const promisifyUserHandler = (userHandler, event, context) =>
   new Promise(resolve => {
     if (isAsyncFn(userHandler)) {
-      // XXX Return isn't needed here?
       return userHandler(event, context, asyncCallbackResolver(resolve))
         .then(data =>
           resolve({ err: null, data, type: ASYNC_HANDLER_RESOLVED })

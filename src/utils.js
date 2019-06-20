@@ -94,7 +94,10 @@ export const isWarm = () =>
   !!(process.env['LUMIGO_IS_WARM'] && process.env.LUMIGO_IS_WARM === 'TRUE');
 
 export const isDebug = () =>
-  !!(process.env['LUMIGO_DEBUG'] && process.env.LUMIGO_DEBUG === 'TRUE');
+  !!(
+    process.env['LUMIGO_DEBUG'] &&
+    process.env.LUMIGO_DEBUG.toUpperCase() === 'TRUE'
+  );
 
 export const isSwitchedOff = () => {
   const isSwitchedOffFromEnv = !!(
