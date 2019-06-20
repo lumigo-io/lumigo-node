@@ -3,13 +3,13 @@ const { setVerboseMode, setSwitchOff } = require('./lib/utils');
 
 require('./lib/hooks').default({ enabled: true });
 
-module.exports = ({
+module.exports = function({
   token,
   edgeHost = '',
   eventFilter = {},
   verbose = false,
   switchOff = false,
-}) => {
+}) {
   verbose && setVerboseMode();
   switchOff && setSwitchOff();
 
