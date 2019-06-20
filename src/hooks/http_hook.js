@@ -2,6 +2,7 @@ import shimmer from 'shimmer';
 import http from 'http';
 import { SpansHive } from '../globals';
 import { getEdgeHost } from '../reporter';
+import { lowerCaseObjectKeys } from '../utils';
 import { getHttpSpan } from '../spans/awsSpan';
 import cloneResponse from 'clone-response';
 
@@ -29,7 +30,7 @@ export const parseHttpRequestOptions = options => {
     host,
     body: '', // XXX Filled by the httpRequestEndWrapper ( / Write)
     method,
-    headers,
+    headers: lowerCaseObjectKeys(headers),
     protocol,
     sendTime,
   };
@@ -60,7 +61,7 @@ export const wrappedHttpResponseCallback = (
       statusCode,
       recievedTime,
       body,
-      headers,
+      headers: lowerCaseObjectKeys(headers),
     };
     const httpSpan = getHttpSpan(requestData, responseData);
     SpansHive.addSpan(httpSpan);

@@ -15,7 +15,7 @@ describe('tracer', () => {
     Object.keys(spies).map(x => spies[x].mockClear());
   });
 
-  test.skip('startTrace', async () => {
+  test.only('startTrace', async () => {
     spies.isSwitchedOff.mockReturnValueOnce(false);
 
     const rtt = 1234;
@@ -26,13 +26,9 @@ describe('tracer', () => {
 
     const retVal = 'Satoshi was here';
     spies.addRttToFunctionSpan.mockReturnValueOnce(retVal);
+    await tracer.startTrace();
 
-    const resolve = jest.fn();
-    const err = 'err';
-    const data = 'data';
-    const type = tracer.ASYNC_CALLBACKED;
-    tracer.asyncCallbackResolver(resolve)(err, data);
-    expect(resolve).toHaveBeenCalledWith({ err, data, type });
+    expect(spies.isSwitchedOff).toHaveBeenCalled();
   });
 
   test('asyncCallbackResolver', () => {

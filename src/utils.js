@@ -134,3 +134,6 @@ export const stringifyError = err => {
   const error = JSON.stringify(err, Object.getOwnPropertyNames(err));
   return error;
 };
+
+export const lowerCaseObjectKeys = o =>
+  Object.keys(o).reduce((c, k) => ((c[k.toLowerCase()] = o[k]), c), {});
