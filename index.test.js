@@ -3,7 +3,7 @@ const crypto = require('crypto');
 
 const exampleApiGatewayEvent = require('./src/testdata/events/apigw-request.json');
 
-describe('lumigo-node', () => {
+describe.skip('end-to-end lumigo-node', () => {
   const oldEnv = Object.assign({}, process.env);
   let awsEnv = {};
   let token = '';

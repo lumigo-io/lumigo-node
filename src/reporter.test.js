@@ -4,11 +4,15 @@ import got from 'got';
 
 jest.mock('got');
 
+jest.mock('../package.json', () => ({
+  name: '@lumigo/tracerMock',
+  version: '1.2.3',
+}));
+
 describe('reporter', () => {
   const spies = {};
-  Object.keys(reporter).map(
-    x => typeof spies[x] === 'function' && (spies[x] = jest.spyOn(reporter, x))
-  );
+  spies['sendSpans'] = jest.spyOn(reporter, 'sendSpans');
+  spies['now'] = jest.spyOn(global.Date, 'now');
 
   const oldEnv = Object.assign({}, process.env);
   beforeEach(() => {
@@ -55,38 +59,43 @@ describe('reporter', () => {
     expect(reporter.getEdgeUrl()).toEqual(expectedEdgeUrl);
   });
 
-  test('sendSingleSpan', () => {
+  test('sendSingleSpan', async () => {
     const retVal = { rtt: 1234 };
-    console.log(spies);
     spies.sendSpans.mockReturnValueOnce(retVal);
 
     const span = { a: 'b', c: 'd' };
-    const result = reporter.sendSingleSpan(span);
+    const result = await reporter.sendSingleSpan(span);
 
     expect(result).toEqual(retVal);
   });
 
-  test.skip('sendSpans', async () => {
+  test('sendSpans', async () => {
     const token = 'DEADBEEF';
     TracerGlobals.setTracerInputs({ token });
 
-    const span = { a: 'b', c: 'd' };
+    const span1 = { a: 'b', c: 'd' };
+    const span2 = { e: 'f', g: 'h' };
+
+    const pkgNameMock = '@lumigo/tracerMock';
+    const pkgVersionMock = '1.2.3';
 
     const expectedHeaders = {
       'Content-Type': 'application/json',
+      'User-Agent': `${pkgNameMock}$${pkgVersionMock}`,
       Authorization: token,
     };
     const expectedEdgeUrl =
       'https://us-east-1.lumigo-tracer-edge.golumigo.com/api/spans';
-    const expectedData = JSON.stringify([span]);
+    const expectedBody = JSON.stringify([span1, span2]);
 
-    axios.post.mockResolvedValue('All good in da hood.');
-    const p = reporter.sendSingleSpan(span);
-    expect(await p).toEqual('All good in da hood.');
+    spies.now.mockReturnValueOnce(0);
+    spies.now.mockReturnValueOnce(1024);
+    const result = await reporter.sendSpans([span1, span2]);
 
-    expect(axios.post).toHaveBeenCalledWith(expectedEdgeUrl, {
+    expect(got.post).toHaveBeenCalledWith(expectedEdgeUrl, {
       headers: expectedHeaders,
-      data: expectedData,
+      body: expectedBody,
     });
+    expect(result.rtt).toEqual(1024);
   });
 });
