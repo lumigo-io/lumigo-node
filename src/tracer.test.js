@@ -2,7 +2,7 @@ import * as tracer from './tracer';
 import * as utils from './utils';
 import * as globals from './globals';
 import * as reporter from './reporter';
-import * as awsSpan from './spans/aws_span';
+import * as awsSpan from './spans/awsSpan';
 
 describe('tracer', () => {
   const spies = {};

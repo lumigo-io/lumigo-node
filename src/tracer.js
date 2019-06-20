@@ -3,7 +3,7 @@ import {
   getFunctionSpan,
   getEndFunctionSpan,
   addRttToFunctionSpan,
-} from './spans/aws_span';
+} from './spans/awsSpan';
 import { sendSingleSpan, sendSpans } from './reporter';
 import { TracerGlobals, SpansHive, clearGlobals } from './globals';
 

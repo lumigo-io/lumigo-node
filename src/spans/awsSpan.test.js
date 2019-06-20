@@ -1,4 +1,4 @@
-import * as awsSpan from './aws_span.js';
+import * as awsSpan from './awsSpan.js';
 import { setVerboseMode } from '../utils';
 import MockDate from 'mockdate';
 

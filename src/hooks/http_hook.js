@@ -2,7 +2,7 @@ import shimmer from 'shimmer';
 import http from 'http';
 import { SpansHive } from '../globals';
 import { getEdgeHost } from '../reporter';
-import { getHttpSpan } from '../spans/aws_span';
+import { getHttpSpan } from '../spans/awsSpan';
 import cloneResponse from 'clone-response';
 
 export const isBlacklisted = host => host === getEdgeHost();
