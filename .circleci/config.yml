@@ -4,6 +4,8 @@ jobs:
     working_directory: ~/repo
     docker:
       - image: circleci/node:8.10
+        environment:
+          TZ: "Asia/Jerusalem"
     steps:
       - checkout # special step to check out source code to working directory
       - run:
