@@ -296,6 +296,7 @@ describe('awsSpan', () => {
       maxFinishTime: 895093323456,
       return_value: null,
     };
+    MockDate.set(895179612345);
     expect(
       awsSpan.getEndFunctionSpan(functionSpan1, handlerReturnValue2)
     ).toEqual(expectedFunctionSpan2);
