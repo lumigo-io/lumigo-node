@@ -1,4 +1,5 @@
 import { TracerGlobals } from './globals';
+import https from 'https';
 
 export const getContextInfo = context => {
   const remainingTimeInMillis = context.getRemainingTimeInMillis();
@@ -136,4 +137,19 @@ export const stringifyError = err => {
 };
 
 export const lowerCaseObjectKeys = o =>
-  Object.keys(o).reduce((c, k) => ((c[k.toLowerCase()] = o[k]), c), {});
+  o
+    ? Object.keys(o).reduce((c, k) => ((c[k.toLowerCase()] = o[k]), c), {})
+    : {};
+
+export const httpReq = (options, reqBody) =>
+  new Promise((resolve, reject) => {
+    const req = https.request(options, res => {
+      const { statusCode } = res;
+      let data = '';
+      res.on('data', chunk => (data += chunk));
+      res.on('end', () => resolve({ statusCode, data }));
+    });
+    req.on('error', e => reject(e));
+    !!reqBody && req.write(reqBody);
+    req.end();
+  });
