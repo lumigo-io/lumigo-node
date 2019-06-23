@@ -3,7 +3,6 @@ import {
   setWarm,
   pruneData,
   getTraceId,
-  isVerboseMode,
   getTracerInfo,
   stringifyError,
   getContextInfo,
@@ -15,9 +14,9 @@ import { getEventInfo } from '../events';
 import uuidv1 from 'uuid/v1';
 import { TracerGlobals } from '../globals';
 
-const HTTP_SPAN = 'http';
-const FUNCTION_SPAN = 'function';
-const EXTERNAL_SERVICE = 'external';
+export const HTTP_SPAN = 'http';
+export const FUNCTION_SPAN = 'function';
+export const EXTERNAL_SERVICE = 'external';
 
 export const getSpanInfo = event => {
   const tracer = getTracerInfo();
@@ -138,7 +137,6 @@ export const getAwsServiceFromHost = host => {
   }
   return EXTERNAL_SERVICE;
 };
-
 export const getServiceType = host =>
   isRequestToAwsService(host) ? getAwsServiceFromHost(host) : EXTERNAL_SERVICE;
 
@@ -183,7 +181,7 @@ export const getBasicHttpSpan = () => {
 
 export const getHttpSpanTimings = (requestData, responseData) => {
   const { sendTime: started } = requestData;
-  const { recievedTime: ended } = responseData;
+  const { receivedTime: ended } = responseData;
   return { started, ended };
 };
 
@@ -207,12 +205,6 @@ export const getHttpSpan = (requestData, responseData) => {
   const { started, ended } = getHttpSpanTimings(requestData, responseData);
 
   return { ...basicHttpSpan, info, service, started, ended };
-};
-
-export const addResponseDataToHttpSpan = (responseData, httpSpan) => {
-  const newHttpSpan = Object.assign({}, httpSpan);
-  newHttpSpan.info.httpInfo.response = responseData;
-  return newHttpSpan;
 };
 
 export const addRttToFunctionSpan = (functionSpan, rtt) =>

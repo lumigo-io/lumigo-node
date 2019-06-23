@@ -26,3 +26,5 @@ coverage, `eslint` and publish it when I return.
 - **`Inject X-Amzn.. Header to Request`**
 
 - **`Try / catch Lumigo's errors e.g. parsing http hooks etc.`**
+
+- **`Node 10.x adds a new https.request API, once that accepts (URL, options, ...)` - i.e we need to check if we handle the URL properly**

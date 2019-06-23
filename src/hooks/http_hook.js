@@ -50,7 +50,7 @@ export const wrappedHttpResponseCallback = (
   const clonedResponse1 = cloneResponse(response);
   const clonedResponse2 = cloneResponse(response);
   const { headers, statusCode } = clonedResponse1;
-  const recievedTime = new Date().getTime();
+  const receivedTime = new Date().getTime();
 
   let body = '';
   clonedResponse1.on('data', chunk => (body += chunk));
@@ -59,7 +59,7 @@ export const wrappedHttpResponseCallback = (
   clonedResponse1.on('end', () => {
     responseData = {
       statusCode,
-      recievedTime,
+      receivedTime,
       body,
       headers: lowerCaseObjectKeys(headers),
     };
