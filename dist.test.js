@@ -4,7 +4,7 @@ const crypto = require('crypto');
 const exampleApiGatewayEvent = require('./src/testdata/events/apigw-request.json');
 
 // XXX Below are real E2E system tests.
-describe('end-to-end lumigo-node', () => {
+describe.skip('end-to-end lumigo-node', () => {
   const oldEnv = Object.assign({}, process.env);
   const verboseLevel = 0; // XXX 0 - supressed lambdaLocal outputs, 3 - logs are outputted.
 

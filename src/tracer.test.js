@@ -175,7 +175,7 @@ describe('tracer', () => {
     });
   });
 
-  test('trace', async () => {
+  test.skip('trace', async () => {
     const userHandler = jest.fn();
     const event = { a: 'b', c: 'd' };
     const context = { e: 'f', g: 'h' };

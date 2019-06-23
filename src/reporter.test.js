@@ -1,9 +1,7 @@
 /* eslint-disable */
-import * as reporter from './reporter';
 import { TracerGlobals } from './globals';
-import got from 'got';
-
-jest.mock('got');
+import * as reporter from './reporter';
+import * as utils from './utils';
 
 jest.mock('../package.json', () => ({
   name: '@lumigo/tracerMock',
@@ -14,6 +12,7 @@ describe('reporter', () => {
   const spies = {};
   spies['sendSpans'] = jest.spyOn(reporter, 'sendSpans');
   spies['now'] = jest.spyOn(global.Date, 'now');
+  spies['httpReq'] = jest.spyOn(utils, 'httpReq');
 
   const oldEnv = Object.assign({}, process.env);
   beforeEach(() => {
@@ -55,9 +54,11 @@ describe('reporter', () => {
   });
 
   test('getEdgeUrl', () => {
-    const expectedEdgeUrl =
-      'https://us-east-1.lumigo-tracer-edge.golumigo.com/api/spans';
-    expect(reporter.getEdgeUrl()).toEqual(expectedEdgeUrl);
+    const expected = {
+      host: 'us-east-1.lumigo-tracer-edge.golumigo.com',
+      path: '/api/spans',
+    };
+    expect(reporter.getEdgeUrl()).toEqual(expected);
   });
 
   test('sendSingleSpan', async () => {
@@ -85,18 +86,26 @@ describe('reporter', () => {
       'User-Agent': `${pkgNameMock}$${pkgVersionMock}`,
       Authorization: token,
     };
-    const expectedEdgeUrl =
-      'https://us-east-1.lumigo-tracer-edge.golumigo.com/api/spans';
-    const expectedBody = JSON.stringify([span1, span2]);
+    const expectedHost = 'us-east-1.lumigo-tracer-edge.golumigo.com';
+
+    const expectedPath = '/api/spans';
+    const expectedMethod = 'POST';
+    const expectedReqBody = JSON.stringify([span1, span2]);
 
     spies.now.mockReturnValueOnce(0);
     spies.now.mockReturnValueOnce(1024);
     const result = await reporter.sendSpans([span1, span2]);
 
-    expect(got.post).toHaveBeenCalledWith(expectedEdgeUrl, {
-      headers: expectedHeaders,
-      body: expectedBody,
-    });
+    spies.httpReq.mockImplementationOnce(() => {});
+    expect(spies.httpReq).toHaveBeenCalledWith(
+      {
+        host: expectedHost,
+        path: expectedPath,
+        method: expectedMethod,
+        headers: expectedHeaders,
+      },
+      expectedReqBody
+    );
     expect(result.rtt).toEqual(1024);
   });
 });
