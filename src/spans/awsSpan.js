@@ -122,7 +122,7 @@ export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
   const id = removeStartedFromId(functionSpan.id);
   const error = err ? stringifyError(err) : undefined;
   const ended = new Date().getTime();
-  const return_value = pruneData(data || '');
+  const return_value = data ? pruneData(data) : null;
   return Object.assign({}, functionSpan, { id, ended, error, return_value });
 };
 

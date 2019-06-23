@@ -26,12 +26,11 @@ describe('end-to-end lumigo-node', () => {
     process.env = { ...oldEnv };
   });
 
-  test.only('real: async rejected', done => {
+  test('real: async rejected', done => {
     jest.setTimeout(30000);
     const edgeHost = 'kzc0w7k50d.execute-api.eu-west-1.amazonaws.com';
-    //const edgeHost = 'damnthis.free.beeceptor.com';
     const switchOff = false;
-    const lumigo = require('./lib/index.js')({ token, edgeHost, switchOff });
+    const lumigo = require('./')({ token, edgeHost, switchOff });
     const expectedReturnValue = 'Satoshi was here';
 
     const userHandler = async (event, context, callback) => {
@@ -70,7 +69,7 @@ describe('end-to-end lumigo-node', () => {
     jest.setTimeout(30000);
     const edgeHost = 'kzc0w7k50d.execute-api.eu-west-1.amazonaws.com';
     const switchOff = false;
-    const lumigo = require('./dist/main.js')({ token, edgeHost, switchOff });
+    const lumigo = require('./')({ token, edgeHost, switchOff });
     const expectedReturnValue = 'Satoshi was here';
 
     const userHandler = async (event, context, callback) => {
@@ -109,7 +108,7 @@ describe('end-to-end lumigo-node', () => {
     jest.setTimeout(30000);
     const edgeHost = 'kzc0w7k50d.execute-api.eu-west-1.amazonaws.com';
     const switchOff = false;
-    const lumigo = require('./dist/main.js')({ token, edgeHost, switchOff });
+    const lumigo = require('./')({ token, edgeHost, switchOff });
     const expectedReturnValue = 'Satoshi was here';
 
     const userHandler = async (event, context, callback) => {
@@ -148,7 +147,7 @@ describe('end-to-end lumigo-node', () => {
     jest.setTimeout(30000);
     const edgeHost = 'kzc0w7k50d.execute-api.eu-west-1.amazonaws.com';
     const switchOff = false;
-    const lumigo = require('./dist/main.js')({ token, edgeHost, switchOff });
+    const lumigo = require('./')({ token, edgeHost, switchOff });
     const expectedReturnValue = 'Satoshi was here';
 
     const userHandler = (event, context, callback) => {
@@ -189,7 +188,7 @@ describe('end-to-end lumigo-node', () => {
     const edgeHost = 'kzc0w7k50d.execute-api.eu-west-1.amazonaws.com';
     const switchOff = false;
     // XXX Trying out the old way of instantiating the tracer.
-    const LumigoTracer = require('./dist/main.js');
+    const LumigoTracer = require('./');
     const tracer = new LumigoTracer({ token, edgeHost });
     const expectedReturnValue = 'Satoshi was here';
 
