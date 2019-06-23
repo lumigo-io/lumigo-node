@@ -5,7 +5,7 @@ const crypto = require('crypto');
 const exampleApiGatewayEvent = require('./src/testdata/events/apigw-request.json');
 
 // XXX Below are real E2E system tests.
-describe.skip('end-to-end lumigo-node', () => {
+describe('end-to-end lumigo-node', () => {
   const oldEnv = Object.assign({}, process.env);
   const verboseLevel = 0; // XXX 0 - supressed lambdaLocal outputs, 3 - logs are outputted.
 
@@ -26,11 +26,12 @@ describe.skip('end-to-end lumigo-node', () => {
     process.env = { ...oldEnv };
   });
 
-  test('real: async rejected', done => {
+  test.only('real: async rejected', done => {
     jest.setTimeout(30000);
     const edgeHost = 'kzc0w7k50d.execute-api.eu-west-1.amazonaws.com';
+    //const edgeHost = 'damnthis.free.beeceptor.com';
     const switchOff = false;
-    const lumigo = require('./dist/main.js')({ token, edgeHost, switchOff });
+    const lumigo = require('./lib/index.js')({ token, edgeHost, switchOff });
     const expectedReturnValue = 'Satoshi was here';
 
     const userHandler = async (event, context, callback) => {
@@ -238,7 +239,7 @@ const getRandomAwsEnv = () => {
     AWS_XRAY_CONTEXT_MISSING: 'LOG_ERROR',
     _X_AMZN_TRACE_ID: `Root=1-5cdcf03a-${transactionId};Parent=28effe37598bb622;Sampled=0`,
     AWS_EXECUTION_ENV: 'AWS_Lambda_nodejs8.10',
-    LUMIGO_DEBUG: 'TRUE',
+    //LUMIGO_DEBUG: 'TRUE',
   };
 };
 

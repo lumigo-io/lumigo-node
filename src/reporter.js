@@ -1,7 +1,7 @@
 import { TracerGlobals } from './globals';
 import { getAWSEnvironment, getTracerInfo, isDebug, httpReq } from './utils';
 
-export const SPAN_PATH = 'api/spans';
+export const SPAN_PATH = '/api/spans';
 export const LUMIGO_TRACER_EDGE = 'lumigo-tracer-edge.golumigo.com';
 
 export const getAwsEdgeHost = () => {
