@@ -7,3 +7,19 @@
 
 
 ## Usage
+
+Install `@lumigo/tracer`:
+
+~~~sh
+$ npm i @lumigo/tracer
+~~~
+
+Wrap your `handler` (replace `DEADBEEF` with your token):
+
+~~~js
+const lumigo = require('@lumigo/tracer')({ token: 'DEADBEEF' })
+
+const myHandler = async (event, context, callback) => { ... }
+
+exports.handler = lumigo.trace(myHandler)
+~~~
