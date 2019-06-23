@@ -143,7 +143,6 @@ export const lowerCaseObjectKeys = o =>
 
 export const httpReq = (options, reqBody) =>
   new Promise((resolve, reject) => {
-    console.log();
     const req = https.request(options, res => {
       const { statusCode } = res;
       let data = '';
