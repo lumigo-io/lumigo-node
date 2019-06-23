@@ -11,6 +11,7 @@ export const dynamodbParser = requestData => {
   return { resourceName, dynamodbMethod };
 };
 
+/*eslint-disable */
 export const snsParser = (requestData, responseData) => {
   const {} = requestData;
   return {};
@@ -23,3 +24,4 @@ export const lambdaParser = (requestData, responseData) => {
 export const kinesisParser = (requestData, responseData) => {
   return {};
 };
+/*eslint-enable */

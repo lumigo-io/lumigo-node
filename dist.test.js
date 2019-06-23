@@ -1,5 +1,4 @@
 /* eslint-disable */
-
 const lambdaLocal = require('lambda-local');
 const crypto = require('crypto');
 const exampleApiGatewayEvent = require('./src/testdata/events/apigw-request.json');

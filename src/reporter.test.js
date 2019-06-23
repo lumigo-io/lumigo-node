@@ -1,3 +1,4 @@
+/* eslint-disable */
 import * as reporter from './reporter';
 import { TracerGlobals } from './globals';
 import got from 'got';
