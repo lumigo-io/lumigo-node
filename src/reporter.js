@@ -1,6 +1,5 @@
-import got from 'got';
 import { TracerGlobals } from './globals';
-import { getAWSEnvironment, getTracerInfo, isDebug } from './utils';
+import { getAWSEnvironment, getTracerInfo, isDebug, httpReq } from './utils';
 
 export const SPAN_PATH = 'api/spans';
 export const LUMIGO_TRACER_EDGE = 'lumigo-tracer-edge.golumigo.com';
@@ -20,8 +19,9 @@ export const getEdgeHost = () => {
 };
 
 export const getEdgeUrl = () => {
-  const edgeHost = getEdgeHost();
-  return `https://${edgeHost}/${SPAN_PATH}`;
+  const host = getEdgeHost();
+  const path = SPAN_PATH;
+  return { host, path };
 };
 
 export const sendSingleSpan = async span => exports.sendSpans([span]);
@@ -40,11 +40,12 @@ export const sendSpans = async spans => {
     'Content-Type': 'application/json',
   };
 
-  const edgeUrl = getEdgeUrl();
-  const body = JSON.stringify(spans);
+  const method = 'POST';
+  const { host, path } = getEdgeUrl();
+  const reqBody = JSON.stringify(spans);
   const roundTripStart = Date.now();
 
-  await got.post(edgeUrl, { headers, body });
+  await httpReq({ method, headers, host, path }, reqBody);
 
   const roundTripEnd = Date.now();
   const rtt = roundTripEnd - roundTripStart;

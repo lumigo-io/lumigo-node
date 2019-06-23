@@ -1,10 +1,10 @@
 /* eslint-disable */
 import lambdaLocal from 'lambda-local';
 import crypto from 'crypto';
-import * as tracer from './lib/tracer';
-import * as utils from './lib/utils';
+import * as tracer from './tracer';
+import * as utils from './utils';
 
-const exampleApiGatewayEvent = require('./src/testdata/events/apigw-request.json');
+const exampleApiGatewayEvent = require('./testdata/events/apigw-request.json');
 
 describe('index', () => {
   const spies = {};
@@ -70,7 +70,7 @@ describe('index', () => {
 });
 
 // XXX Below are real E2E system tests. Unskip when developing new features.
-describe.skip('end-to-end lumigo-node', () => {
+describe('end-to-end lumigo-node', () => {
   const oldEnv = Object.assign({}, process.env);
   const verboseLevel = 0; // XXX 0 - supressed lambdaLocal outputs, 3 - logs are outputted.
 
@@ -91,7 +91,7 @@ describe.skip('end-to-end lumigo-node', () => {
     process.env = { ...oldEnv };
   });
 
-  test('real: async rejected', done => {
+  test.only('real: async rejected', done => {
     jest.setTimeout(30000);
     const edgeHost = 'kzc0w7k50d.execute-api.eu-west-1.amazonaws.com';
     const switchOff = false;
@@ -124,7 +124,7 @@ describe.skip('end-to-end lumigo-node', () => {
       event: exampleApiGatewayEvent,
       timeoutMs: 30000,
       environment,
-      verboseLevel,
+      verboseLevel: 3,
       clientContext,
       callback,
     });

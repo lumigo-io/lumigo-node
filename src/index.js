@@ -1,7 +1,7 @@
-const { trace } = require('./lib/tracer');
-const { setVerboseMode, setSwitchOff } = require('./lib/utils');
+const { trace } = require('./tracer');
+const { setVerboseMode, setSwitchOff } = require('./utils');
 
-require('./lib/hooks').default({ enabled: true });
+require('./hooks').default({ enabled: true });
 
 module.exports = function({
   token,
