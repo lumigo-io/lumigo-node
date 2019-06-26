@@ -36,13 +36,6 @@ export const parseHttpRequestOptions = options => {
   };
 };
 
-export const bodyBuilderClosure = () => {
-  let body = '';
-  const append = chunk => (body += chunk);
-  const get = () => body;
-  return { append, get };
-};
-
 export const wrappedHttpResponseCallback = (
   requestData,
   callback
