@@ -1,6 +1,9 @@
-const utils = require('./utils');
-const { TracerGlobals } = require('./globals');
+import * as utils from './utils';
+import { TracerGlobals } from './globals';
+import EventEmitter from 'events';
+import https from 'https';
 
+jest.mock('https');
 jest.mock('../package.json', () => ({
   name: '@lumigo/tracerMock',
   version: '1.2.3',
@@ -221,5 +224,39 @@ describe('utils', () => {
     const err = new Error('baba');
     const error = JSON.stringify(err, Object.getOwnPropertyNames(err));
     expect(utils.stringifyError(err)).toEqual(error);
+  });
+
+  test('lowerCaseObjectKeys', () => {
+    const o = { X: 'y', z: 'C' };
+    const expected = { x: 'y', z: 'C' };
+    expect(utils.lowerCaseObjectKeys(o)).toEqual(expected);
+  });
+
+  test('httpReq', async () => {
+    const options = { bla: 'bla' };
+    const req = new EventEmitter();
+    const reqBody = 'abcdefg';
+    req.end = jest.fn();
+    req.write = jest.fn();
+    https.request.mockReturnValueOnce(req);
+
+    const p1 = utils.httpReq(options, reqBody);
+    req.emit('error', 'errmsg');
+    await expect(p1).rejects.toEqual('errmsg');
+
+    https.request.mockClear();
+    https.request.mockReturnValueOnce(req);
+
+    const p2 = utils.httpReq(options, reqBody);
+
+    const reqCallback = https.request.mock.calls[0][1];
+    const res = new EventEmitter();
+    const statusCode = 200;
+    res.statusCode = statusCode;
+    reqCallback(res);
+    const data = 'chunky';
+    res.emit('data', data);
+    res.emit('end');
+    await expect(p2).resolves.toEqual({ statusCode, data });
   });
 });
