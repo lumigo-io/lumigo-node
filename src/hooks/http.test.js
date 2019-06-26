@@ -14,12 +14,20 @@ jest.mock('clone-response');
 import * as awsSpan from '../spans/awsSpan';
 jest.mock('../spans/awsSpan');
 
+import * as globals from '../globals';
+jest.mock('../globals');
+
+import * as reporter from '../reporter';
+jest.mock('../reporter');
+
 describe('http hook', () => {
   process.env['AWS_REGION'] = 'us-east-x';
 
   test('isBlacklisted', () => {
     const host = 'asdf';
     const edgeHost = 'us-east-x.lumigo-tracer-edge.golumigo.com';
+    reporter.getEdgeHost.mockReturnValueOnce(edgeHost);
+    reporter.getEdgeHost.mockReturnValueOnce(edgeHost);
     expect(httpHook.isBlacklisted(host)).toBe(false);
     expect(httpHook.isBlacklisted(edgeHost)).toBe(true);
   });
@@ -80,6 +88,8 @@ describe('http hook', () => {
     const response = {};
 
     const httpSpan = { a: 'b', c: 'd' };
+    globals.SpansHive.addSpan = jest.fn(() => {});
+
     awsSpan.getHttpSpan.mockReturnValueOnce(httpSpan);
 
     httpHook.wrappedHttpResponseCallback(requestData, callback)(response);
@@ -94,6 +104,7 @@ describe('http hook', () => {
       headers: lowerCaseObjectKeys(headers),
       receivedTime,
     });
+    expect(globals.SpansHive.addSpan).toHaveBeenCalledWith(httpSpan);
   });
 
   test('httpRequestEndWrapper', () => {
@@ -112,6 +123,43 @@ describe('http hook', () => {
 
     expect(requestData).toEqual({ body });
     expect(originalEndFn).toHaveBeenCalledWith(data, encoding, callback);
+  });
+
+  test('httpRequestWrapper', () => {
+    const originalRequestFn = jest.fn();
+    const edgeHost = 'edge-asdf.com';
+    reporter.getEdgeHost.mockReturnValueOnce(edgeHost);
+    const callback1 = jest.fn();
+
+    // Blacklisted.
+    const options1 = { host: edgeHost };
+    httpHook.httpRequestWrapper(originalRequestFn)(options1, callback1);
+    expect(originalRequestFn).toHaveBeenCalledWith(options1, callback1);
+    originalRequestFn.mockClear();
+
+    const options2 = {
+      host: 'asdf1.com',
+      port: 443,
+      protocol: 'https:',
+      path: '/api/where/is/satoshi',
+      method: 'POST',
+      headers: { X: 'Y' },
+    };
+    // const requestData = httpHook.parseHttpRequestOptions(options2);
+
+    const callback2 = jest.fn();
+
+    const clientRequest = { a: 'b' };
+    originalRequestFn.mockReturnValueOnce(clientRequest);
+
+    expect(
+      httpHook.httpRequestWrapper(originalRequestFn)(options2, callback2)
+    ).toEqual(clientRequest);
+
+    expect(originalRequestFn).toHaveBeenCalledWith(
+      options2,
+      expect.any(Function)
+    );
   });
 
   test('export default', () => {
