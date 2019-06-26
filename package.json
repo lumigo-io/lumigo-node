@@ -13,7 +13,7 @@
     "build:webpack": "webpack --display-modules ./lib",
     "build": "npm run build:babel && npm run build:webpack",
     "test": "yarn build && yarn jest",
-    "prepush": "yarn eslint && yarn test"
+    "prepush": "yarn eslint ./src && yarn test"
   },
   "dependencies": {
     "clone-response": "^1.0.2",
