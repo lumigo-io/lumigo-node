@@ -94,9 +94,9 @@ describe('reporter', () => {
 
     spies.now.mockReturnValueOnce(0);
     spies.now.mockReturnValueOnce(1024);
+    spies.httpReq.mockImplementationOnce(() => {});
     const result = await reporter.sendSpans([span1, span2]);
 
-    spies.httpReq.mockImplementationOnce(() => {});
     expect(spies.httpReq).toHaveBeenCalledWith(
       {
         host: expectedHost,
