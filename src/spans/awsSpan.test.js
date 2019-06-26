@@ -4,13 +4,16 @@ import MockDate from 'mockdate';
 import { TracerGlobals } from '../globals';
 import * as awsParsers from '../parsers/aws';
 import uuidv1 from 'uuid/v1';
+import * as utils from '../utils';
 
 const exampleApiGatewayEvent = require('../testdata/events/apigw-request.json');
 
 jest.mock('../parsers/aws');
 jest.mock('uuid/v1');
 describe('awsSpan', () => {
+  const spies = {};
   const oldEnv = Object.assign({}, process.env);
+  spies['isWarm'] = jest.spyOn(utils, 'isWarm');
 
   beforeEach(() => {
     const awsEnv = {
@@ -107,11 +110,12 @@ describe('awsSpan', () => {
       memoryAllocated: '1024',
       version: '$LATEST',
       runtime: 'AWS_Lambda_nodejs8.10',
-      readiness: 'cold',
+      readiness: 'warm',
       messageVersion: 2,
       token: 'DEADBEEF',
       region: 'us-east-1',
     };
+    spies.isWarm.mockReturnValueOnce(true);
 
     expect(awsSpan.getBasicSpan()).toEqual(expectedBasicSpan);
   });
