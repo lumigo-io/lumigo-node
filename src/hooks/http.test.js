@@ -1,11 +1,18 @@
-import MockDate from 'mockdate';
 import { lowerCaseObjectKeys } from '../utils';
+import cloneResponse from 'clone-response';
+import EventEmitter from 'events';
 import defaultHttp from './http';
-import * as httpHook from './http';
+import MockDate from 'mockdate';
 import shimmer from 'shimmer';
 import http from 'http';
 
+import * as httpHook from './http';
+
 jest.mock('shimmer');
+jest.mock('clone-response');
+
+import * as awsSpan from '../spans/awsSpan';
+jest.mock('../spans/awsSpan');
 
 describe('http hook', () => {
   process.env['AWS_REGION'] = 'us-east-x';
@@ -51,6 +58,42 @@ describe('http hook', () => {
       body: '',
     };
     expect(httpHook.parseHttpRequestOptions(options1)).toEqual(expected1);
+  });
+
+  test('wrappedHttpResponseCallback', () => {
+    const statusCode = 200;
+    const headers = { X: 'Y', z: 'A' };
+
+    const callback = jest.fn();
+    const clonedResponse1 = new EventEmitter();
+    clonedResponse1.headers = headers;
+    clonedResponse1.statusCode = statusCode;
+
+    const clonedResponse2 = new EventEmitter();
+    cloneResponse.mockReturnValueOnce(clonedResponse1);
+    cloneResponse.mockReturnValueOnce(clonedResponse2);
+
+    const receivedTime = 895179612345;
+    MockDate.set(receivedTime);
+
+    const requestData = { a: 'request' };
+    const response = {};
+
+    const httpSpan = { a: 'b', c: 'd' };
+    awsSpan.getHttpSpan.mockReturnValueOnce(httpSpan);
+
+    httpHook.wrappedHttpResponseCallback(requestData, callback)(response);
+    expect(callback).toHaveBeenCalledWith(clonedResponse2);
+
+    clonedResponse1.emit('data', 'chunky');
+    clonedResponse1.emit('end');
+
+    expect(awsSpan.getHttpSpan).toHaveBeenCalledWith(requestData, {
+      statusCode,
+      body: 'chunky',
+      headers: lowerCaseObjectKeys(headers),
+      receivedTime,
+    });
   });
 
   test('httpRequestEndWrapper', () => {
