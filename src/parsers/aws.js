@@ -13,7 +13,6 @@ export const dynamodbParser = requestData => {
 
 /*eslint-disable */
 export const snsParser = (requestData, responseData) => {
-  const {} = requestData;
   return {};
 };
 

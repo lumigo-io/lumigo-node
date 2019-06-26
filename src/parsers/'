@@ -1,0 +1,18 @@
+import * as aws from './aws';
+
+describe('aws parser', () => {
+  test('dynamodbParser', () => {
+    const TableName = 'TabulaRasa';
+    const ddbMethod = 'GetItem' 
+    const xAmzTarget = `DynamoDB_20120810.${ddbMethod}`;
+
+    const body = JSON.stringify({ TableName });
+    const headers = {
+      'X-Amz-Target': dynamodbMethod,
+    };
+
+    const requestData = { headers, body };
+    const expected = { resourceName: TableName, dynamodbMethod };
+    expect(aws.dynamodbParser(requestData)).toEqual(expected);
+  });
+});
