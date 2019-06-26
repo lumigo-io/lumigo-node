@@ -175,10 +175,90 @@ describe('tracer', () => {
     });
   });
 
-  test.skip('trace', async () => {
-    const userHandler = jest.fn();
+  test('trace; non async callbacked', async done => {
+    const retVal = 'The Tracer Wars';
+    const userHandler1 = (event, context, callback) => callback(null, retVal);
+    const callback1 = (err, data) => {
+      expect(data).toEqual(retVal);
+      done();
+    };
+
     const event = { a: 'b', c: 'd' };
     const context = { e: 'f', g: 'h' };
-    throw new Error('not tested');
+
+    const token = 'DEADBEEF';
+
+    spies.isSwitchedOff.mockReturnValue(true);
+    await tracer.trace({ token })(userHandler1)(event, context, callback1);
+  });
+
+  test('trace; non async throw error', async () => {
+    const event = { a: 'b', c: 'd' };
+    const context = { e: 'f', g: 'h' };
+    const token = 'DEADBEEF';
+
+    spies.isSwitchedOff.mockReturnValue(true);
+    const userHandler2 = (event, context, callback) => {
+      throw new Error('bla');
+    };
+    const callback2 = jest.fn();
+    await expect(
+      tracer.trace({ token })(userHandler2)(event, context, callback2)
+    ).rejects.toEqual(new Error('bla'));
+  });
+
+  test('trace; async callbacked ', async done => {
+    const event = { a: 'b', c: 'd' };
+    const context = { e: 'f', g: 'h' };
+    const token = 'DEADBEEF';
+
+    const retVal = 'The Tracer Wars';
+    const callback3 = (err, data) => {
+      expect(data).toEqual(retVal);
+      done();
+    };
+
+    spies.isSwitchedOff.mockReturnValue(true);
+
+    const userHandler3 = async (event, context, callback) => {
+      callback(null, retVal);
+    };
+    await tracer.trace({ token })(userHandler3)(event, context, callback3);
+  });
+
+  test('trace; async resolved ', async () => {
+    const event = { a: 'b', c: 'd' };
+    const context = { e: 'f', g: 'h' };
+    const token = 'DEADBEEF';
+
+    const retVal = 'The Tracer Wars';
+    const callback4 = jest.fn();
+
+    spies.isSwitchedOff.mockReturnValue(true);
+
+    const userHandler4 = async (event, context, callback) => {
+      return retVal;
+    };
+    await expect(
+      tracer.trace({ token })(userHandler4)(event, context, callback4)
+    ).resolves.toEqual(retVal);
+  });
+
+  test('trace; async rejected', async () => {
+    const event = { a: 'b', c: 'd' };
+    const context = { e: 'f', g: 'h' };
+    const token = 'DEADBEEF';
+
+    const retVal = 'The Tracer Wars';
+    const callback5 = jest.fn();
+
+    spies.isSwitchedOff.mockReturnValue(true);
+
+    const userHandler5 = async (event, context, callback) => {
+      throw new Error(retVal);
+    };
+    await expect(
+      tracer.trace({ token })(userHandler5)(event, context, callback5)
+    ).rejects.toEqual(new Error(retVal));
   });
 });
