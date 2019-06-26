@@ -24,8 +24,11 @@ jobs:
           name: test
           command: npm test
       - run:
+          name: install codecov
+          command: 'sudo npm install -g codecov'
+      - run:
           name: code-coverage
-          command: npm run jest --coverage || npm run codecov
-      - store_artifacts: # for display in Artifacts: https://circleci.com/docs/2.0/artifacts/
+          command: npm test --coverage || codecov
+      - store_artifacts:
           path: coverage
           prefix: coverage
