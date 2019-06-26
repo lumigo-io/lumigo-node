@@ -10,7 +10,12 @@ coverage, `eslint` and publish it when I return.
 3. use the E2E tests with mocks (i.e. as partial system tests with lambdaLocal)
 4. Test switchOff and local (isawsenv) with E2E tests.
 5. Test a Lumigo-tracer error with E2E tests.
-6. Semantic versioning? Auto bump? 
+6. Semantic versioning? Auto bump?
+7. Test interoperability with other sdks that use shimmer or other hooking system.
+8. Add debug messages for Lumigo. Test specific flows
+9. SpansHive -> SpansContainer.
+10. cloneResponse1/2 -> common sense name.
+11. Talk with Uri and Saar about, about a misusage of shimmer wrapping.
 
 ## Incomplete Things
 
