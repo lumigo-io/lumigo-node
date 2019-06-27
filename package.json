@@ -6,7 +6,9 @@
   "repository": "git@github.com:lumigo-io/lumigo-node.git",
   "private": true,
   "author": "Lumigo LTD (https://lumigo.io)",
-  "contributors": ["Sagi Kedmi (https://sagi.io)"],
+  "contributors": [
+    "Sagi Kedmi (https://sagi.io)"
+  ],
   "license": "Apache 2",
   "scripts": {
     "build:babel": "babel --ignore '**/*.test.js' --ignore testdata src -d lib --verbose",
@@ -17,11 +19,9 @@
     "lint": "eslint ./src",
     "prepush": "npm run lint && npm run test"
   },
-  "dependencies": {
-    "clone-response": "^1.0.2",
-    "shimmer": "^1.2.1"
-  },
   "devDependencies": {
+    "clone-response": "^1.0.2",
+    "shimmer": "^1.2.1",
     "@babel/cli": "^7.4.4",
     "@babel/core": "^7.4.4",
     "@babel/preset-env": "^7.4.4",
