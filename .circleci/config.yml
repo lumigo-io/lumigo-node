@@ -27,6 +27,9 @@ jobs:
           name: install codecov
           command: 'sudo npm install -g codecov'
       - run:
+          name: eslint
+          command: npm run lint
+      - run:
           name: code-coverage
           command: npm test --coverage && codecov
       - store_artifacts:
