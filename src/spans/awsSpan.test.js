@@ -6,6 +6,10 @@ import * as awsParsers from '../parsers/aws';
 import * as utils from '../utils';
 
 const exampleApiGatewayEvent = require('../testdata/events/apigw-request.json');
+jest.mock('../../package.json', () => ({
+  name: '@lumigo/tracer',
+  version: '0.0.123',
+}));
 
 jest.mock('../parsers/aws');
 describe('awsSpan', () => {
