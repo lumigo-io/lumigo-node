@@ -1,6 +1,6 @@
 import shimmer from 'shimmer';
 import http from 'http';
-import { SpansHive } from '../globals';
+import { SpansContainer } from '../globals';
 import { getEdgeHost } from '../reporter';
 import { lowerCaseObjectKeys } from '../utils';
 import { getHttpSpan } from '../spans/awsSpan';
@@ -57,7 +57,7 @@ export const wrappedHttpResponseCallback = (
       headers: lowerCaseObjectKeys(headers),
     };
     const httpSpan = getHttpSpan(requestData, responseData);
-    SpansHive.addSpan(httpSpan);
+    SpansContainer.addSpan(httpSpan);
   });
 
   callback && callback(clonedResponsePassThrough);

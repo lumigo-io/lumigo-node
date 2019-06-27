@@ -5,7 +5,7 @@ import {
   addRttToFunctionSpan,
 } from './spans/awsSpan';
 import { sendSingleSpan, sendSpans } from './reporter';
-import { TracerGlobals, SpansHive, clearGlobals } from './globals';
+import { TracerGlobals, SpansContainer, clearGlobals } from './globals';
 
 export const NON_ASYNC_HANDLER_CALLBACKED = 'non_async_callbacked';
 export const NON_ASYNC_HANDLER_ERRORED = 'non_async_errored';
@@ -29,9 +29,9 @@ export const endTrace = async (functionSpan, handlerReturnValue) => {
       functionSpan,
       handlerReturnValue
     );
-    SpansHive.addSpan(endFunctionSpan);
+    SpansContainer.addSpan(endFunctionSpan);
 
-    const spans = SpansHive.getSpans();
+    const spans = SpansContainer.getSpans();
     await sendSpans(spans);
     clearGlobals();
   }

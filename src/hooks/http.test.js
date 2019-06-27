@@ -88,7 +88,7 @@ describe('http hook', () => {
     const response = {};
 
     const httpSpan = { a: 'b', c: 'd' };
-    globals.SpansHive.addSpan = jest.fn(() => {});
+    globals.SpansContainer.addSpan = jest.fn(() => {});
 
     awsSpan.getHttpSpan.mockReturnValueOnce(httpSpan);
 
@@ -104,7 +104,7 @@ describe('http hook', () => {
       headers: lowerCaseObjectKeys(headers),
       receivedTime,
     });
-    expect(globals.SpansHive.addSpan).toHaveBeenCalledWith(httpSpan);
+    expect(globals.SpansContainer.addSpan).toHaveBeenCalledWith(httpSpan);
   });
 
   test('httpRequestEndWrapper', () => {

@@ -1,4 +1,4 @@
-export const SpansHive = (() => {
+export const SpansContainer = (() => {
   const spans = [];
 
   const addSpan = span => spans.push(span);
@@ -39,7 +39,7 @@ export const TracerGlobals = (() => {
 })();
 
 export const clearGlobals = () => {
-  SpansHive.clearSpans();
+  SpansContainer.clearSpans();
   TracerGlobals.clearTracerInputs();
   TracerGlobals.clearHandlerInputs();
 };

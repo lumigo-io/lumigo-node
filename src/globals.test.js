@@ -1,14 +1,14 @@
 import * as globals from './globals';
 
 describe('globals', () => {
-  test('SpansHive', () => {
+  test('SpansContainer', () => {
     const span1 = { a: 'b', c: 'd' };
     const span2 = { e: 'f', g: 'h' };
-    globals.SpansHive.addSpan(span1);
-    globals.SpansHive.addSpan(span2);
-    expect(globals.SpansHive.getSpans()).toEqual([span1, span2]);
-    globals.SpansHive.clearSpans();
-    expect(globals.SpansHive.getSpans()).toEqual([]);
+    globals.SpansContainer.addSpan(span1);
+    globals.SpansContainer.addSpan(span2);
+    expect(globals.SpansContainer.getSpans()).toEqual([span1, span2]);
+    globals.SpansContainer.clearSpans();
+    expect(globals.SpansContainer.getSpans()).toEqual([]);
   });
 
   test('TracerGlobals', () => {
@@ -51,14 +51,14 @@ describe('globals', () => {
     const event = { a: 'b', c: 'd' };
     const context = { e: 'f', g: 'h' };
 
-    globals.SpansHive.addSpan(span1);
-    globals.SpansHive.addSpan(span2);
+    globals.SpansContainer.addSpan(span1);
+    globals.SpansContainer.addSpan(span2);
     globals.TracerGlobals.setTracerInputs({ token, edgeHost, switchOff });
     globals.TracerGlobals.setHandlerInputs({ event, context });
 
     globals.clearGlobals();
 
-    expect(globals.SpansHive.getSpans()).toEqual([]);
+    expect(globals.SpansContainer.getSpans()).toEqual([]);
     expect(globals.TracerGlobals.getHandlerInputs()).toEqual({
       event: {},
       context: {},

@@ -14,9 +14,9 @@ describe('tracer', () => {
   spies.getFunctionSpan = jest.spyOn(awsSpan, 'getFunctionSpan');
   spies.getEndFunctionSpan = jest.spyOn(awsSpan, 'getEndFunctionSpan');
   spies.addRttToFunctionSpan = jest.spyOn(awsSpan, 'addRttToFunctionSpan');
-  spies.SpansHive = {};
-  spies.SpansHive.getSpans = jest.spyOn(globals.SpansHive, 'getSpans');
-  spies.SpansHive.addSpan = jest.spyOn(globals.SpansHive, 'addSpan');
+  spies.SpansContainer = {};
+  spies.SpansContainer.getSpans = jest.spyOn(globals.SpansContainer, 'getSpans');
+  spies.SpansContainer.addSpan = jest.spyOn(globals.SpansContainer, 'addSpan');
   spies.clearGlobals = jest.spyOn(globals, 'clearGlobals');
 
   beforeEach(() => {
@@ -67,7 +67,7 @@ describe('tracer', () => {
     const endFunctionSpan = { a: 'b', c: 'd', rtt };
 
     const spans = [dummySpan, endFunctionSpan];
-    spies.SpansHive.getSpans.mockReturnValueOnce(spans);
+    spies.SpansContainer.getSpans.mockReturnValueOnce(spans);
 
     spies.getEndFunctionSpan.mockReturnValueOnce(endFunctionSpan);
 
