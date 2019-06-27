@@ -14,7 +14,6 @@ coverage, `eslint` and publish it when I return.
 7. Test interoperability with other sdks that use shimmer or other hooking system.
 8. Add debug messages for Lumigo. Test specific flows
 9. SpansHive -> SpansContainer.
-10. cloneResponse1/2 -> common sense name.
 11. Talk with Uri and Saar about, about a misusage of shimmer wrapping.
 
 ## Incomplete Things
@@ -27,7 +26,7 @@ coverage, `eslint` and publish it when I return.
 
 - **`Removal of Lumigo from Stacktrace`**
 
-- **`Use an HTTP Agent to reuse the TCP connection to the edge`**
+- **`Use an HTTP Agent to reuse the TCP/TLS connection to the edge`**
 
 - **`Inject X-Amzn.. Header to Request`**
 

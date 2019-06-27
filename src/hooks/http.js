@@ -40,16 +40,16 @@ export const wrappedHttpResponseCallback = (
   requestData,
   callback
 ) => response => {
-  const clonedResponse1 = cloneResponse(response);
-  const clonedResponse2 = cloneResponse(response);
-  const { headers, statusCode } = clonedResponse1;
+  const clonedResponse = cloneResponse(response);
+  const clonedResponsePassThrough = cloneResponse(response);
+  const { headers, statusCode } = clonedResponse;
   const receivedTime = new Date().getTime();
 
   let body = '';
-  clonedResponse1.on('data', chunk => (body += chunk));
+  clonedResponse.on('data', chunk => (body += chunk));
 
   let responseData = {};
-  clonedResponse1.on('end', () => {
+  clonedResponse.on('end', () => {
     responseData = {
       statusCode,
       receivedTime,
@@ -60,7 +60,7 @@ export const wrappedHttpResponseCallback = (
     SpansHive.addSpan(httpSpan);
   });
 
-  callback && callback(clonedResponse2);
+  callback && callback(clonedResponsePassThrough);
 };
 
 export const httpRequestEndWrapper = requestData => originalEndFn =>
