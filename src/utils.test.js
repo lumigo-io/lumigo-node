@@ -2,14 +2,19 @@ import * as utils from './utils';
 import { TracerGlobals } from './globals';
 import EventEmitter from 'events';
 import https from 'https';
+import crypto from 'crypto';
 
 jest.mock('https');
+jest.mock('crypto');
 jest.mock('../package.json', () => ({
   name: '@lumigo/tracerMock',
   version: '1.2.3',
 }));
 
 describe('utils', () => {
+  const spies = {};
+  spies.randomBytes = jest.spyOn(crypto, 'randomBytes');
+
   test('getContextInfo', () => {
     const awsRequestId = '6d26e3c8-60a6-4cee-8a70-f525f47a4caf';
     const functionName = 'w00t';
@@ -230,6 +235,16 @@ describe('utils', () => {
     const o = { X: 'y', z: 'C' };
     const expected = { x: 'y', z: 'C' };
     expect(utils.lowerCaseObjectKeys(o)).toEqual(expected);
+  });
+
+  test('getRandomString', () => {
+    spies.randomBytes.mockReturnValueOnce(Buffer.from('lmno'));
+    expect(utils.getRandomString(10)).toEqual('6c6d6e6f');
+  });
+
+  test('getRandomId', () => {
+    spies.randomBytes.mockImplementation(nr => Buffer.from(`l`.repeat(nr)));
+    expect(utils.getRandomId()).toEqual('6c6c6c6c-6c6c-6c6c-6c6c-6c6c6c6c6c6c');
   });
 
   test('httpReq', async () => {
