@@ -273,5 +273,7 @@ describe('utils', () => {
     res.emit('data', data);
     res.emit('end');
     await expect(p2).resolves.toEqual({ statusCode, data });
+
+    expect(https.request).toHaveBeenCalledWith(options, expect.any(Function));
   });
 });

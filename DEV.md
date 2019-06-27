@@ -2,7 +2,6 @@
 
 ## TODO
 
-1. Try to minimize use of external packages (removed GOT, now what's left are uuid and clone-response)
 3. use the E2E tests with mocks (i.e. as partial system tests with lambdaLocal)
 4. Test switchOff and local (isawsenv) with E2E tests.
 5. Test a Lumigo-tracer error with E2E tests.

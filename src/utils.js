@@ -157,8 +157,11 @@ export const getRandomId = () => {
   return `${p1}-${p2}-${p3}-${p4}-${p5}`;
 };
 
+export const httpsAgent = new https.Agent({ keepAlive: true });
+
 export const httpReq = (options, reqBody) =>
   new Promise((resolve, reject) => {
+    options.agent = httpsAgent;
     const req = https.request(options, res => {
       const { statusCode } = res;
       let data = '';
