@@ -20,8 +20,6 @@
 
 - **`Removal of Lumigo from Stacktrace`**
 
-- **`Use an HTTP Agent to reuse the TCP/TLS connection to the edge`**
-
 - **`Inject X-Amzn.. Header to Request`**
 
 - **`Try / catch Lumigo's errors e.g. parsing http hooks etc.`**
