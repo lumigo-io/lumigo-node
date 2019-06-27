@@ -1,5 +1,6 @@
 import { TracerGlobals } from './globals';
 import https from 'https';
+import crypto from 'crypto';
 
 export const getContextInfo = context => {
   const remainingTimeInMillis = context.getRemainingTimeInMillis();
@@ -140,6 +141,21 @@ export const lowerCaseObjectKeys = o =>
   o
     ? Object.keys(o).reduce((c, k) => ((c[k.toLowerCase()] = o[k]), c), {})
     : {};
+
+export const getRandomString = evenNrChars =>
+  crypto
+    .randomBytes(evenNrChars / 2)
+    .toString('hex')
+    .toLowerCase();
+
+export const getRandomId = () => {
+  const p1 = getRandomString(8);
+  const p2 = getRandomString(4);
+  const p3 = getRandomString(4);
+  const p4 = getRandomString(4);
+  const p5 = getRandomString(12);
+  return `${p1}-${p2}-${p3}-${p4}-${p5}`;
+};
 
 export const httpReq = (options, reqBody) =>
   new Promise((resolve, reject) => {

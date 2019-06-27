@@ -3,6 +3,7 @@ import {
   setWarm,
   pruneData,
   getTraceId,
+  getRandomId,
   getTracerInfo,
   stringifyError,
   getContextInfo,
@@ -11,7 +12,6 @@ import {
 } from '../utils';
 import { dynamodbParser, snsParser, lambdaParser } from '../parsers/aws';
 import { getEventInfo } from '../events';
-import uuidv1 from 'uuid/v1';
 import { TracerGlobals } from '../globals';
 
 export const HTTP_SPAN = 'http';
@@ -173,7 +173,7 @@ export const getHttpInfo = (requestData, responseData) => {
 export const getBasicHttpSpan = () => {
   const { context } = TracerGlobals.getHandlerInputs();
   const { awsRequestId: parentId } = context;
-  const id = uuidv1();
+  const id = getRandomId();
   const type = HTTP_SPAN;
   const basicSpan = getBasicSpan();
   return { ...basicSpan, id, type, parentId };

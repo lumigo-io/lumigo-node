@@ -10,7 +10,6 @@
 7. Test interoperability with other sdks that use shimmer or other hooking system.
 8. Add debug messages for Lumigo. Test specific flows
 11. Talk with Uri and Saar about, about a misusage of shimmer wrapping.
-Add Eslint to circleci
 
 ## Incomplete Things
 
@@ -28,4 +27,4 @@ Add Eslint to circleci
 
 - **`Try / catch Lumigo's errors e.g. parsing http hooks etc.`**
 
-- **`Node 10.x adds a new https.request API, once that accepts (URL, options, ...)` - i.e we need to check if we handle the URL properly**
+- **`Node 10.x adds a new https.request API, one that accepts (URL, options, ...)` - i.e we need to check if we handle the URL properly**

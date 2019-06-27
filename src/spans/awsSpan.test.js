@@ -3,17 +3,16 @@ import { stringifyError } from '../utils';
 import MockDate from 'mockdate';
 import { TracerGlobals } from '../globals';
 import * as awsParsers from '../parsers/aws';
-import uuidv1 from 'uuid/v1';
 import * as utils from '../utils';
 
 const exampleApiGatewayEvent = require('../testdata/events/apigw-request.json');
 
 jest.mock('../parsers/aws');
-jest.mock('uuid/v1');
 describe('awsSpan', () => {
   const spies = {};
   const oldEnv = Object.assign({}, process.env);
   spies['isWarm'] = jest.spyOn(utils, 'isWarm');
+  spies['getRandomId'] = jest.spyOn(utils, 'getRandomId');
 
   beforeEach(() => {
     const awsEnv = {
@@ -404,7 +403,7 @@ describe('awsSpan', () => {
 
   test('getBasicHttpSpan', () => {
     const id = 'not-a-random-id';
-    uuidv1.mockReturnValueOnce(id);
+    spies.getRandomId.mockReturnValueOnce(id);
     const expected = {
       info: {
         traceId: {
@@ -441,7 +440,7 @@ describe('awsSpan', () => {
 
   test('getHttpSpan ', () => {
     const id = 'not-a-random-id';
-    uuidv1.mockReturnValueOnce(id);
+    spies.getRandomId.mockReturnValueOnce(id);
     const sendTime = 1234;
     const receivedTime = 1256;
 

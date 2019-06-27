@@ -19,8 +19,7 @@
   },
   "dependencies": {
     "clone-response": "^1.0.2",
-    "shimmer": "^1.2.1",
-    "uuid": "^3.3.2"
+    "shimmer": "^1.2.1"
   },
   "devDependencies": {
     "@babel/cli": "^7.4.4",
