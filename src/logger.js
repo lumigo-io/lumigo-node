@@ -1,4 +1,3 @@
-'use strict';
 import { isDebug } from './utils';
 
 const LOG_PREFIX = '#LUMIGO#';
