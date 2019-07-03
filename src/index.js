@@ -1,5 +1,8 @@
 const { trace } = require('./tracer');
 const { setVerboseMode, setSwitchOff } = require('./utils');
+import { debug } from './logger';
+
+debug('Tracer imported');
 
 require('./hooks').default({ enabled: true });
 

@@ -6,6 +6,7 @@ import {
 } from './spans/awsSpan';
 import { sendSingleSpan, sendSpans } from './reporter';
 import { TracerGlobals, SpansContainer, clearGlobals } from './globals';
+import { debug as logDebug } from './logger';
 
 export const NON_ASYNC_HANDLER_CALLBACKED = 'non_async_callbacked';
 export const NON_ASYNC_HANDLER_ERRORED = 'non_async_errored';
@@ -33,6 +34,7 @@ export const endTrace = async (functionSpan, handlerReturnValue) => {
 
     const spans = SpansContainer.getSpans();
     await sendSpans(spans);
+    logDebug('Tracer ended');
     clearGlobals();
   }
 };
@@ -72,6 +74,14 @@ export const trace = ({
 }) => userHandler => async (event, context, callback) => {
   TracerGlobals.setHandlerInputs({ event, context });
   TracerGlobals.setTracerInputs({
+    token,
+    debug,
+    edgeHost,
+    switchOff,
+    eventFilter,
+  });
+
+  logDebug('Tracer started', {
     token,
     debug,
     edgeHost,

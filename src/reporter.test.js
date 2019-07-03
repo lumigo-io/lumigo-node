@@ -72,17 +72,6 @@ describe('reporter', () => {
     expect(result).toEqual(retVal);
   });
 
-  test('logSpans', async () => {
-    const span1 = { a: 'b', c: 'd' };
-    const span2 = { e: 'f', g: 'h' };
-    const spans = [span1, span2];
-    jest.spyOn(global.console, 'log');
-    global.console.log.mockImplementation(() => {});
-
-    reporter.logSpans(spans);
-    expect(global.console.log).toHaveBeenCalledTimes(spans.length);
-  });
-
   test('sendSpans', async () => {
     const token = 'DEADBEEF';
     TracerGlobals.setTracerInputs({ token });

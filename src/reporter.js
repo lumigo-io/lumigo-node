@@ -1,5 +1,5 @@
 import { TracerGlobals } from './globals';
-import { getAWSEnvironment, getTracerInfo, isDebug, httpReq } from './utils';
+import { getAWSEnvironment, getTracerInfo, httpReq } from './utils';
 import { debug } from './logger';
 
 export const SPAN_PATH = '/api/spans';
@@ -27,10 +27,6 @@ export const getEdgeUrl = () => {
 
 export const sendSingleSpan = async span => exports.sendSpans([span]);
 
-export const logSpans = spans =>
-  // eslint-disable-next-line
-  spans.map(span => debug('Span created', span));
-
 export const sendSpans = async spans => {
   const { token } = TracerGlobals.getTracerInputs();
   const { name, version } = getTracerInfo();
@@ -44,6 +40,11 @@ export const sendSpans = async spans => {
   const method = 'POST';
   const { host, path } = getEdgeUrl();
 
+  debug('Edge selected', {
+    host,
+    path,
+  });
+
   const reqBody = JSON.stringify(spans);
   const roundTripStart = Date.now();
 
@@ -52,7 +53,7 @@ export const sendSpans = async spans => {
   const roundTripEnd = Date.now();
   const rtt = roundTripEnd - roundTripStart;
 
-  logSpans(spans);
+  spans.map(span => debug('Span sent', span.id));
 
   return { rtt };
 };
