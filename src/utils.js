@@ -118,6 +118,8 @@ export const setVerboseMode = () => (process.env['LUMIGO_VERBOSE'] = 'TRUE');
 
 export const setSwitchOff = () => (process.env['LUMIGO_SWITCH_OFF'] = 'TRUE');
 
+export const setIsDebug = () => (process.env['LUMIGO_DEBUG'] = 'TRUE');
+
 export const isString = x =>
   Object.prototype.toString.call(x) === '[object String]';
 

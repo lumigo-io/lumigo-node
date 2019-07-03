@@ -197,6 +197,14 @@ describe('utils', () => {
     process.env = { ...oldEnv };
   });
 
+  test('setIsDebug', () => {
+    expect(utils.isDebug()).toBe(false);
+    const oldEnv = Object.assign({}, process.env);
+    utils.setIsDebug();
+    expect(utils.isDebug()).toBe(true);
+    process.env = { ...oldEnv };
+  });
+
   test('isString', () => {
     expect(utils.isString('asdf')).toBe(true);
     expect(utils.isString({ satoshi: 'nakamoto' })).toBe(false);
