@@ -15,7 +15,10 @@ describe('tracer', () => {
   spies.getEndFunctionSpan = jest.spyOn(awsSpan, 'getEndFunctionSpan');
   spies.addRttToFunctionSpan = jest.spyOn(awsSpan, 'addRttToFunctionSpan');
   spies.SpansContainer = {};
-  spies.SpansContainer.getSpans = jest.spyOn(globals.SpansContainer, 'getSpans');
+  spies.SpansContainer.getSpans = jest.spyOn(
+    globals.SpansContainer,
+    'getSpans'
+  );
   spies.SpansContainer.addSpan = jest.spyOn(globals.SpansContainer, 'addSpan');
   spies.clearGlobals = jest.spyOn(globals, 'clearGlobals');
 
