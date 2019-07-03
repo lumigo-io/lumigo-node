@@ -6,11 +6,13 @@ import { lowerCaseObjectKeys } from '../utils';
 import { getHttpSpan } from '../spans/awsSpan';
 import cloneResponse from 'clone-response';
 
-export const isBlacklisted = host => host === getEdgeHost();
+export const hostBlaclist = new Set(['127.0.0.1']);
+export const isBlacklisted = host =>
+  host === getEdgeHost() || hostBlaclist.has(host);
 
 export const getHostFromOptions = options =>
-  options.host ||
   options.hostname ||
+  options.host ||
   (options.uri && options.uri.hostname) ||
   'localhost';
 

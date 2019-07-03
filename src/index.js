@@ -1,8 +1,6 @@
 const { trace } = require('./tracer');
 const { setVerboseMode, setSwitchOff } = require('./utils');
 
-require('./hooks').default({ enabled: true });
-
 module.exports = function({
   token,
   edgeHost = '',

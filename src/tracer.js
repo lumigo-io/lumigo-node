@@ -69,6 +69,7 @@ export const trace = ({
   switchOff,
   eventFilter,
 }) => userHandler => async (event, context, callback) => {
+  require('./hooks').default({ enabled: true });
   TracerGlobals.setHandlerInputs({ event, context });
   TracerGlobals.setTracerInputs({ token, edgeHost, switchOff, eventFilter });
 

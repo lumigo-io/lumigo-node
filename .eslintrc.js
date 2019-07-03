@@ -9,6 +9,7 @@ module.exports = {
     Promise: true,
     exports: true,
     Buffer: true,
+    Set: true,
   },
   env: {
     'jest/globals': true,
