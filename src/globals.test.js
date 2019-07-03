@@ -26,17 +26,25 @@ describe('globals', () => {
     });
 
     const switchOff = true;
+    const debug = true;
     const token = 'abcdefg';
     const edgeHost = 'zarathustra.com';
-    globals.TracerGlobals.setTracerInputs({ token, edgeHost, switchOff });
+    globals.TracerGlobals.setTracerInputs({
+      token,
+      debug,
+      edgeHost,
+      switchOff,
+    });
     expect(globals.TracerGlobals.getTracerInputs()).toEqual({
       token,
+      debug,
       edgeHost,
       switchOff,
     });
     globals.TracerGlobals.clearTracerInputs();
     expect(globals.TracerGlobals.getTracerInputs()).toEqual({
       token: '',
+      debug: false,
       edgeHost: '',
       switchOff: false,
     });
@@ -44,6 +52,7 @@ describe('globals', () => {
 
   test('clearGlobals', () => {
     const switchOff = true;
+    const debug = true;
     const token = 'abcdefg';
     const edgeHost = 'zarathustra.com';
     const span1 = { a: 'b', c: 'd' };
@@ -53,7 +62,12 @@ describe('globals', () => {
 
     globals.SpansContainer.addSpan(span1);
     globals.SpansContainer.addSpan(span2);
-    globals.TracerGlobals.setTracerInputs({ token, edgeHost, switchOff });
+    globals.TracerGlobals.setTracerInputs({
+      token,
+      edgeHost,
+      switchOff,
+      debug,
+    });
     globals.TracerGlobals.setHandlerInputs({ event, context });
 
     globals.clearGlobals();
@@ -65,6 +79,7 @@ describe('globals', () => {
     });
     expect(globals.TracerGlobals.getTracerInputs()).toEqual({
       token: '',
+      debug: false,
       edgeHost: '',
       switchOff: false,
     });
