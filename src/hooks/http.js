@@ -1,16 +1,19 @@
 import shimmer from 'shimmer';
 import http from 'http';
+import https from 'https';
 import { SpansContainer } from '../globals';
 import { getEdgeHost } from '../reporter';
 import { lowerCaseObjectKeys } from '../utils';
 import { getHttpSpan } from '../spans/awsSpan';
 import cloneResponse from 'clone-response';
 
-export const isBlacklisted = host => host === getEdgeHost();
+export const hostBlaclist = new Set(['127.0.0.1']);
+export const isBlacklisted = host =>
+  host === getEdgeHost() || hostBlaclist.has(host);
 
 export const getHostFromOptions = options =>
-  options.host ||
   options.hostname ||
+  options.host ||
   (options.uri && options.uri.hostname) ||
   'localhost';
 
@@ -77,7 +80,6 @@ export const httpRequestWrapper = originalRequestFn =>
     // response, but the handler ended.
 
     const host = getHostFromOptions(options);
-
     if (isBlacklisted(host)) {
       return originalRequestFn.apply(this, [options, callback]);
     }
@@ -95,4 +97,5 @@ export const httpRequestWrapper = originalRequestFn =>
 
 export default () => {
   shimmer.wrap(http, 'request', httpRequestWrapper);
+  shimmer.wrap(https, 'request', httpRequestWrapper);
 };
