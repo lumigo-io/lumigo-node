@@ -210,44 +210,6 @@ describe.skip('end-to-end lumigo-node', () => {
       callback,
     });
   });
-
-  // XXX The case for callbackWaitsForEmptyEventLoop = true, is hard to test
-  // with lambdaLocal. jest's Timers litter the event loop so when we set
-  // it to 'true' it won't ever quit.
-  test('real: test callbackWaitsForEmptyEventLoop = false', done => {
-    jest.setTimeout(30000);
-    const edgeHost = 'kzc0w7k50d.execute-api.eu-west-1.amazonaws.com';
-    const switchOff = false;
-    const tracer = require('./')({ token, edgeHost });
-    const expectedReturnValue = 'Satoshi was here';
-
-    const sentinelFn = jest.fn();
-
-    const userHandler = (event, context, callback) => {
-      setTimeout(() => {
-        sentinelFn('sentinel');
-      }, 100);
-      callback(null, 'yo');
-    };
-
-    const callback = function(err, data) {
-      expect(data).toEqual('yo');
-      done();
-    };
-
-    lambdaLocal.execute({
-      lambdaFunc: { handler: tracer.trace(userHandler) },
-      event: exampleApiGatewayEvent,
-      timeoutMs: 30000,
-      clientContext,
-      verboseLevel,
-      environment,
-      callback,
-      callbackWaitsForEmptyEventLoop: false,
-    });
-
-    expect(sentinelFn).not.toHaveBeenCalled();
-  });
 });
 
 const getRandomString = evenNrChars =>
