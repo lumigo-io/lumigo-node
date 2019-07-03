@@ -17,12 +17,14 @@ describe('index', () => {
     spies.trace.mockReturnValueOnce(retVal);
 
     const token = 'DEADBEEF';
+    const debug = false;
     const edgeHost = 'zarathustra.com';
     const verbose = true;
 
     const lumigo1 = require('./index')({ token, edgeHost, verbose });
     expect(lumigo1.trace).toEqual(retVal);
     expect(spies.trace).toHaveBeenCalledWith({
+      debug,
       token,
       edgeHost,
       switchOff: false,
@@ -38,6 +40,7 @@ describe('index', () => {
     });
     expect(lumigo2.trace).toEqual(retVal);
     expect(spies.trace).toHaveBeenCalledWith({
+      debug,
       token,
       edgeHost: '',
       switchOff: true,
@@ -52,12 +55,14 @@ describe('index', () => {
 
     const LumigoTracer = require('./index');
     const token = 'DEADBEEF';
+    const debug = false;
     const edgeHost = 'zarathustra.com';
 
     const retTracer = new LumigoTracer({ token, edgeHost });
     expect(retTracer.trace).toEqual(retVal);
     expect(spies.trace).toHaveBeenCalledWith({
       token,
+      debug,
       edgeHost,
       switchOff: false,
       eventFilter: {},
