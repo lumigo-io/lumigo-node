@@ -2,6 +2,7 @@
 
 ## TODO
 
+2. Add prettier to CI/CD.
 3. use the E2E tests with mocks (i.e. as partial system tests with lambdaLocal)
 4. Test switchOff and local (isawsenv) with E2E tests.
 5. Test a Lumigo-tracer error with E2E tests.

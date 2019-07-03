@@ -95,11 +95,14 @@ export const isVerboseMode = () =>
 export const isWarm = () =>
   !!(process.env['LUMIGO_IS_WARM'] && process.env.LUMIGO_IS_WARM === 'TRUE');
 
-export const isDebug = () =>
-  !!(
+export const isDebug = () => {
+  const isDebugFromEnv = !!(
     process.env['LUMIGO_DEBUG'] &&
     process.env.LUMIGO_DEBUG.toUpperCase() === 'TRUE'
   );
+  const { debug: isDebugFromTracerInput } = TracerGlobals.getTracerInputs();
+  return isDebugFromEnv || isDebugFromTracerInput;
+};
 
 export const isSwitchedOff = () => {
   const isSwitchedOffFromEnv = !!(

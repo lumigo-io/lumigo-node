@@ -10,7 +10,12 @@ export const SpansContainer = (() => {
 
 export const TracerGlobals = (() => {
   const handlerInputs = { event: {}, context: {} };
-  const tracerInputs = { token: '', edgeHost: '', switchOff: false };
+  const tracerInputs = {
+    token: '',
+    debug: false,
+    edgeHost: '',
+    switchOff: false,
+  };
 
   const setHandlerInputs = ({ event, context }) =>
     Object.assign(handlerInputs, { event, context });
@@ -20,13 +25,22 @@ export const TracerGlobals = (() => {
   const clearHandlerInputs = () =>
     Object.assign(handlerInputs, { event: {}, context: {} });
 
-  const setTracerInputs = ({ token, edgeHost, switchOff }) =>
-    Object.assign(tracerInputs, { token, edgeHost, switchOff });
+  const setTracerInputs = ({
+    token = '',
+    debug = false,
+    edgeHost = '',
+    switchOff = false,
+  }) => Object.assign(tracerInputs, { token, debug, edgeHost, switchOff });
 
   const getTracerInputs = () => tracerInputs;
 
   const clearTracerInputs = () =>
-    Object.assign(tracerInputs, { token: '', edgeHost: '', switchOff: false });
+    Object.assign(tracerInputs, {
+      token: '',
+      debug: false,
+      edgeHost: '',
+      switchOff: false,
+    });
 
   return {
     getTracerInputs,

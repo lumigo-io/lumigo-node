@@ -65,13 +65,19 @@ export const promisifyUserHandler = (userHandler, event, context) =>
 
 export const trace = ({
   token,
+  debug,
   edgeHost,
   switchOff,
   eventFilter,
 }) => userHandler => async (event, context, callback) => {
-  require('./hooks').default({ enabled: true });
   TracerGlobals.setHandlerInputs({ event, context });
-  TracerGlobals.setTracerInputs({ token, edgeHost, switchOff, eventFilter });
+  TracerGlobals.setTracerInputs({
+    token,
+    debug,
+    edgeHost,
+    switchOff,
+    eventFilter,
+  });
 
   const pStartTrace = startTrace();
   const pUserHandler = promisifyUserHandler(

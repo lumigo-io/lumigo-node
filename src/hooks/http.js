@@ -1,5 +1,6 @@
 import shimmer from 'shimmer';
 import http from 'http';
+import https from 'https';
 import { SpansContainer } from '../globals';
 import { getEdgeHost } from '../reporter';
 import { lowerCaseObjectKeys } from '../utils';
@@ -79,7 +80,6 @@ export const httpRequestWrapper = originalRequestFn =>
     // response, but the handler ended.
 
     const host = getHostFromOptions(options);
-
     if (isBlacklisted(host)) {
       return originalRequestFn.apply(this, [options, callback]);
     }
@@ -97,4 +97,5 @@ export const httpRequestWrapper = originalRequestFn =>
 
 export default () => {
   shimmer.wrap(http, 'request', httpRequestWrapper);
+  shimmer.wrap(https, 'request', httpRequestWrapper);
 };
