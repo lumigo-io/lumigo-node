@@ -181,7 +181,16 @@ export const httpRequestWrapper = originalRequestFn =>
     return clientRequest;
   };
 
+export const httpGetWrapper = httpModule => (/* originalGetFn */) =>
+  function(...args) {
+    const req = httpModule.request(...args);
+    req.end();
+    return req;
+  };
+
 export default () => {
+  shimmer.wrap(http, 'get', httpGetWrapper(http));
+  shimmer.wrap(https, 'get', httpGetWrapper(https));
   shimmer.wrap(http, 'request', httpRequestWrapper);
   shimmer.wrap(https, 'request', httpRequestWrapper);
 };
