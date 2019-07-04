@@ -294,6 +294,20 @@ describe('http hook', () => {
     );
   });
 
+  test('httpGetWrapper', () => {
+    const retVal = 'endCalled';
+    const end = jest.fn(() => retVal);
+    const req = { end };
+    const request = jest.fn(() => req);
+    const httpModule = { request };
+    const fn = httpHook.httpGetWrapper(httpModule)();
+
+    const args = ['x', 'y', 'z'];
+    expect(fn(args)).toEqual(req);
+    expect(httpModule.request).toHaveBeenCalledWith(args);
+    expect(end).toHaveBeenCalled();
+  });
+
   test('export default', () => {
     defaultHttp();
     expect(shimmer.wrap).toHaveBeenCalledWith(
@@ -305,6 +319,16 @@ describe('http hook', () => {
       https,
       'request',
       httpHook.httpRequestWrapper
+    );
+    expect(shimmer.wrap).toHaveBeenCalledWith(
+      https,
+      'get',
+      expect.any(Function)
+    );
+    expect(shimmer.wrap).toHaveBeenCalledWith(
+      https,
+      'get',
+      expect.any(Function)
     );
   });
 });

@@ -6,7 +6,7 @@ const https = require('https');
 const http = require('http');
 
 // XXX Below are real E2E system tests.
-describe('end-to-end lumigo-node', () => {
+describe.skip('end-to-end lumigo-node', () => {
   const oldEnv = Object.assign({}, process.env);
   const verboseLevel = 0; // XXX 0 - supressed lambdaLocal outputs, 3 - logs are outputted.
 
@@ -247,6 +247,39 @@ describe('end-to-end lumigo-node', () => {
   });
 
   test('real: Node.js 10.x https.get(url, cb)', done => {
+    jest.setTimeout(30000);
+    const edgeHost = 'kzc0w7k50d.execute-api.eu-west-1.amazonaws.com';
+    const switchOff = false;
+    const lumigo = require('./')({ token, edgeHost });
+    const expectedReturnValue = 'Satoshi was here';
+
+    const userHandler = (event, context, callback) => {
+      const req = https.get('https://sagi.io', res => {
+        const { statusCode } = res;
+        let data = '';
+        res.on('data', chunk => (data += chunk));
+        res.on('end', () => callback(null, { statusCode, data }));
+      });
+      req.end();
+    };
+
+    const callback = function(err, data) {
+      expect(data.statusCode).toEqual(200);
+      done();
+    };
+
+    lambdaLocal.execute({
+      lambdaFunc: { handler: lumigo.trace(userHandler) },
+      event: exampleApiGatewayEvent,
+      timeoutMs: 30000,
+      clientContext,
+      verboseLevel,
+      environment,
+      callback,
+    });
+  });
+
+  test('real: Node.js 10.x https.get(url)', done => {
     jest.setTimeout(30000);
     const edgeHost = 'kzc0w7k50d.execute-api.eu-west-1.amazonaws.com';
     const switchOff = false;
