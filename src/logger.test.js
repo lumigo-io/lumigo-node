@@ -9,9 +9,20 @@ global.console.log.mockImplementation(() => {});
 // Console.log = jest.fn(x => x + 1);
 
 describe('logger', () => {
-  test('info', () => {
+  const spies = {};
+  spies.log = jest.spyOn(logger, 'log');
+
+  beforeEach(() => {
     global.console.log.mockClear();
-    logger.info('Test');
+  });
+
+  test('info', () => {
+    const retVal = 'dori was here';
+    spies.log.mockReturnValueOnce(retVal);
+
+    const infoInput = 'info test';
+    logger.info(infoInput);
+    expect(spies.log).toHaveBeenCalledWith(infoInput, undefined);
     expect(global.console.log).toHaveBeenCalledTimes(1);
     expect(global.console.log).toHaveBeenCalledWith('#LUMIGO# - INFO - "Test"');
 
@@ -25,7 +36,6 @@ describe('logger', () => {
   });
 
   test('debug', () => {
-    global.console.log.mockClear();
     const oldEnv = Object.assign({}, process.env);
     const debug = utils.isDebug();
     logger.debug('Test', 1);
@@ -50,7 +60,6 @@ describe('logger', () => {
   });
 
   test('warn', () => {
-    global.console.log.mockClear();
     logger.warn('Test');
     expect(global.console.log).toHaveBeenCalledTimes(1);
     expect(global.console.log).toHaveBeenCalledWith(
@@ -67,7 +76,6 @@ describe('logger', () => {
   });
 
   test('fatal', () => {
-    global.console.log.mockClear();
     logger.fatal('Test');
     expect(global.console.log).toHaveBeenCalledTimes(1);
     expect(global.console.log).toHaveBeenCalledWith(
