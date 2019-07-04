@@ -4,6 +4,7 @@ import EventEmitter from 'events';
 import defaultHttp from './http';
 import MockDate from 'mockdate';
 import shimmer from 'shimmer';
+import https from 'https';
 import http from 'http';
 
 import * as httpHook from './http';
@@ -22,6 +23,11 @@ jest.mock('../reporter');
 
 describe('http hook', () => {
   process.env['AWS_REGION'] = 'us-east-x';
+  const spies = {};
+  spies.wrappedHttpResponseCallback = jest.spyOn(
+    httpHook,
+    'wrappedHttpResponseCallback'
+  );
 
   test('isBlacklisted', () => {
     const host = 'asdf';
@@ -32,15 +38,18 @@ describe('http hook', () => {
     expect(httpHook.isBlacklisted(edgeHost)).toBe(true);
   });
 
-  test('getHostFromOptions', () => {
+  test('getHostFromOptionsOrUrl', () => {
     const options1 = { host: 'asdf1.com' };
     const options2 = { hostname: 'asdf2.com' };
     const options3 = { uri: { hostname: 'asdf3.com' } };
     const options4 = {};
-    expect(httpHook.getHostFromOptions(options1)).toEqual('asdf1.com');
-    expect(httpHook.getHostFromOptions(options2)).toEqual('asdf2.com');
-    expect(httpHook.getHostFromOptions(options3)).toEqual('asdf3.com');
-    expect(httpHook.getHostFromOptions(options4)).toEqual('localhost');
+    expect(httpHook.getHostFromOptionsOrUrl(options1)).toEqual('asdf1.com');
+    expect(httpHook.getHostFromOptionsOrUrl(options2)).toEqual('asdf2.com');
+    expect(httpHook.getHostFromOptionsOrUrl(options3)).toEqual('asdf3.com');
+    expect(httpHook.getHostFromOptionsOrUrl(options4)).toEqual('localhost');
+
+    const url1 = 'https://asdf.io:1234/yo?ref=baba';
+    expect(httpHook.getHostFromOptionsOrUrl({}, url1)).toEqual('asdf.io');
   });
 
   test('parseHttpRequestOptions', () => {
@@ -66,6 +75,24 @@ describe('http hook', () => {
       body: '',
     };
     expect(httpHook.parseHttpRequestOptions(options1)).toEqual(expected1);
+
+    const url2 = 'https://asdf.io:1234/yo.php?ref=baba';
+    const options2 = { headers, method: 'POST' };
+    const expected2 = {
+      body: '',
+      headers: {
+        x: 'Y',
+        z: 'A',
+      },
+      host: 'asdf.io',
+      method: 'POST',
+      path: '/yo.php',
+      port: '1234',
+      protocol: 'https:',
+      sendTime: 895179612345,
+    };
+
+    expect(httpHook.parseHttpRequestOptions(options2, url2)).toEqual(expected2);
   });
 
   test('wrappedHttpResponseCallback', () => {
@@ -125,6 +152,102 @@ describe('http hook', () => {
     expect(originalEndFn).toHaveBeenCalledWith(data, encoding, callback);
   });
 
+  test('httpRequestArguments', () => {
+    expect(() => httpHook.httpRequestArguments([])).toThrow(
+      new Error('http/s.request(...) was called without any arguments.')
+    );
+
+    const expected1 = {
+      url: 'https://x.com',
+      options: undefined,
+      callback: undefined,
+    };
+    expect(httpHook.httpRequestArguments(['https://x.com'])).toEqual(expected1);
+
+    const callback = () => {};
+
+    const expected2 = {
+      url: 'https://x.com',
+      options: undefined,
+      callback,
+    };
+    expect(httpHook.httpRequestArguments(['https://x.com', callback])).toEqual(
+      expected2
+    );
+
+    const options = { a: 'b' };
+    const expected3 = {
+      url: 'https://x.com',
+      options,
+      callback,
+    };
+    expect(
+      httpHook.httpRequestArguments(['https://x.com', options, callback])
+    ).toEqual(expected3);
+
+    const expected4 = {
+      url: undefined,
+      options,
+      callback,
+    };
+    expect(httpHook.httpRequestArguments([options, callback])).toEqual(
+      expected4
+    );
+  });
+
+  test('getHookedClientRequestArgs', () => {
+    const url1 = undefined;
+    const options1 = { a: 'b' };
+    const callback1 = () => {};
+    const requestData1 = { c: 'd' };
+
+    const retVal1 = { mock: 'value1' };
+    spies.wrappedHttpResponseCallback.mockReturnValueOnce(retVal1);
+
+    const expected1 = [options1, retVal1];
+    expect(
+      httpHook.getHookedClientRequestArgs(
+        url1,
+        options1,
+        callback1,
+        requestData1
+      )
+    ).toEqual(expected1);
+
+    const url2 = 'https://x.com';
+    const options2 = undefined;
+    const callback2 = () => {};
+    const requestData2 = { c: 'd' };
+
+    const retVal2 = { mock: 'value2' };
+    spies.wrappedHttpResponseCallback.mockReturnValueOnce(retVal2);
+
+    const expected2 = [url2, retVal2];
+    expect(
+      httpHook.getHookedClientRequestArgs(
+        url2,
+        options2,
+        callback2,
+        requestData2
+      )
+    ).toEqual(expected2);
+
+    const url3 = 'https://x.com';
+    const options3 = undefined;
+    const callback3 = undefined;
+    const requestData3 = { c: 'd' };
+
+    const expected3 = [url3];
+    expect(
+      httpHook.getHookedClientRequestArgs(
+        url3,
+        options3,
+        callback3,
+        requestData3
+      )
+    ).toEqual(expected3);
+  });
+
   test('httpRequestWrapper', () => {
     const originalRequestFn = jest.fn();
     const edgeHost = 'edge-asdf.com';
@@ -135,6 +258,16 @@ describe('http hook', () => {
     const options1 = { host: edgeHost };
     httpHook.httpRequestWrapper(originalRequestFn)(options1, callback1);
     expect(originalRequestFn).toHaveBeenCalledWith(options1, callback1);
+
+    originalRequestFn.mockClear();
+
+    // Already traced.
+    const options3 = { host: 'bla.com' };
+    const callback3 = jest.fn();
+    callback3.__lumigoSentinel = true;
+    httpHook.httpRequestWrapper(originalRequestFn)(options3, callback3);
+    expect(originalRequestFn).toHaveBeenCalledWith(options3, callback3);
+
     originalRequestFn.mockClear();
 
     const options2 = {
@@ -145,7 +278,6 @@ describe('http hook', () => {
       method: 'POST',
       headers: { X: 'Y' },
     };
-    // const requestData = httpHook.parseHttpRequestOptions(options2);
 
     const callback2 = jest.fn();
 
@@ -166,6 +298,11 @@ describe('http hook', () => {
     defaultHttp();
     expect(shimmer.wrap).toHaveBeenCalledWith(
       http,
+      'request',
+      httpHook.httpRequestWrapper
+    );
+    expect(shimmer.wrap).toHaveBeenCalledWith(
+      https,
       'request',
       httpHook.httpRequestWrapper
     );

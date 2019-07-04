@@ -2,6 +2,7 @@
 
 ## TODO
 
+1. Support node-fetch.  req.on('response', () => {})
 2. Add prettier to CI/CD.
 3. use the E2E tests with mocks (i.e. as partial system tests with lambdaLocal)
 4. Test switchOff and local (isawsenv) with E2E tests.
