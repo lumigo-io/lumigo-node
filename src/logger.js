@@ -2,18 +2,16 @@ import { isDebug } from './utils';
 
 const LOG_PREFIX = '#LUMIGO#';
 
-export const info = (msg, obj = undefined) => exports.log('INFO', msg, obj);
+export const invokeLog = type => (msg, obj = undefined) =>
+  isDebug() && exports.log(type, msg, obj);
 
-export const warn = (msg, obj = undefined) => exports.log('WARNING', msg, obj);
+export const info = invokeLog('INFO');
 
-export const fatal = (msg, obj = undefined) => exports.log('FATAL', msg, obj);
+export const warn = invokeLog('WARNING');
 
-const fn = type => (msg, obj = undefined) => exports.log(type, msg, obj);
+export const fatal = invokeLog('FATAL');
 
-export const fata = fn('FATAL');
-
-export const debug = (msg, obj = undefined) =>
-  isDebug() && exports.log('DEBUG', msg, obj);
+export const debug = invokeLog('DEBUG');
 
 export const log = (levelname, message, obj) => {
   const escapedMessage = JSON.stringify(message, null, 2);

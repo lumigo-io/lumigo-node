@@ -5,89 +5,89 @@ import * as utils from './utils';
 jest.spyOn(global.console, 'log');
 global.console.log.mockImplementation(() => {});
 
-// const Console = console;
-// Console.log = jest.fn(x => x + 1);
-
 describe('logger', () => {
   const spies = {};
+  const oldEnv = Object.assign({}, process.env);
   spies.log = jest.spyOn(logger, 'log');
 
   beforeEach(() => {
     global.console.log.mockClear();
+    spies.log.mockClear();
+    process.env = { ...oldEnv };
   });
 
   test('info', () => {
-    const retVal = 'dori was here';
-    spies.log.mockReturnValueOnce(retVal);
-
-    const infoInput = 'info test';
-    logger.info(infoInput);
-    expect(spies.log).toHaveBeenCalledWith(infoInput, undefined);
-    expect(global.console.log).toHaveBeenCalledTimes(1);
-    expect(global.console.log).toHaveBeenCalledWith('#LUMIGO# - INFO - "Test"');
-
-    global.console.log.mockClear();
-    logger.info('Test', 1);
-    expect(global.console.log).toHaveBeenCalledTimes(1);
-    expect(global.console.log).toHaveBeenCalledWith(
-      '#LUMIGO# - INFO - "Test"',
-      '1'
-    );
+    utils.setIsDebug();
+    logger.info();
+    expect(spies.log).toHaveBeenCalledTimes(1);
+    expect(spies.log).toHaveBeenCalledWith('INFO', undefined, undefined);
   });
 
   test('debug', () => {
+    utils.setIsDebug();
+    logger.debug();
+    expect(spies.log).toHaveBeenCalledTimes(1);
+    expect(spies.log).toHaveBeenCalledWith('DEBUG', undefined, undefined);
+  });
+
+  test('warn', () => {
+    utils.setIsDebug();
+    logger.warn();
+    expect(spies.log).toHaveBeenCalledTimes(1);
+    expect(spies.log).toHaveBeenCalledWith('WARNING', undefined, undefined);
+  });
+
+  test('fatal', () => {
+    utils.setIsDebug();
+    logger.fatal();
+    expect(spies.log).toHaveBeenCalledTimes(1);
+    expect(spies.log).toHaveBeenCalledWith('FATAL', undefined, undefined);
+  });
+
+  test('invokeLog', () => {
     const oldEnv = Object.assign({}, process.env);
-    const debug = utils.isDebug();
-    logger.debug('Test', 1);
-    expect(global.console.log).toHaveBeenCalledTimes(0);
+    const logLevel = 'LOG_LEVEL';
+    const logMessage = 'info test';
+    const logObject = 1;
+
+    const typedInvokeLogFn = logger.invokeLog(logLevel);
+    expect(typedInvokeLogFn).toBeInstanceOf(Function);
+    typedInvokeLogFn();
+    expect(spies.log).toHaveBeenCalledTimes(0);
 
     utils.setIsDebug();
-    logger.debug('Test');
-    expect(global.console.log).toHaveBeenCalledTimes(1);
-    expect(global.console.log).toHaveBeenCalledWith(
-      '#LUMIGO# - DEBUG - "Test"'
-    );
 
-    global.console.log.mockClear();
-    logger.debug('Test', 1);
-    expect(global.console.log).toHaveBeenCalledTimes(1);
-    expect(global.console.log).toHaveBeenCalledWith(
-      '#LUMIGO# - DEBUG - "Test"',
-      '1'
-    );
+    expect(typedInvokeLogFn).toBeInstanceOf(Function);
+
+    typedInvokeLogFn(logMessage);
+    expect(spies.log).toHaveBeenCalledTimes(1);
+    expect(spies.log).toHaveBeenCalledWith(logLevel, logMessage, undefined);
+
+    spies.log.mockClear();
+    typedInvokeLogFn(logMessage, logObject);
+    expect(spies.log).toHaveBeenCalledTimes(1);
+    expect(spies.log).toHaveBeenCalledWith(logLevel, logMessage, logObject);
 
     process.env = { ...oldEnv };
   });
 
-  test('warn', () => {
-    logger.warn('Test');
+  test('log', () => {
+    const logMessage = 'info test';
+    const logLevel = 'LOG_LEVEL';
+    const logObject = 1;
+
+    logger.log(logLevel, logMessage, undefined);
     expect(global.console.log).toHaveBeenCalledTimes(1);
     expect(global.console.log).toHaveBeenCalledWith(
-      '#LUMIGO# - WARNING - "Test"'
+      `#LUMIGO# - ${logLevel} - "${logMessage}"`
     );
 
     global.console.log.mockClear();
-    logger.warn('Test', 1);
+    logger.log(logLevel, logMessage, logObject);
     expect(global.console.log).toHaveBeenCalledTimes(1);
     expect(global.console.log).toHaveBeenCalledWith(
-      '#LUMIGO# - WARNING - "Test"',
-      '1'
-    );
-  });
-
-  test('fatal', () => {
-    logger.fatal('Test');
-    expect(global.console.log).toHaveBeenCalledTimes(1);
-    expect(global.console.log).toHaveBeenCalledWith(
-      '#LUMIGO# - FATAL - "Test"'
-    );
-
-    global.console.log.mockClear();
-    logger.fatal('Test', 1);
-    expect(global.console.log).toHaveBeenCalledTimes(1);
-    expect(global.console.log).toHaveBeenCalledWith(
-      '#LUMIGO# - FATAL - "Test"',
-      '1'
+      `#LUMIGO# - ${logLevel} - "${logMessage}"`,
+      `${logObject}`
     );
   });
 });
