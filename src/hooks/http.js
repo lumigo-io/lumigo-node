@@ -132,13 +132,21 @@ export const getHookedClientRequestArgs = (
 
   !!url && hookedClientRequestArgs.push(url);
   !!options && hookedClientRequestArgs.push(options);
-  !!callback &&
-    hookedClientRequestArgs.push(
-      exports.wrappedHttpResponseCallback(requestData, callback)
+
+  if (callback) {
+    const wrappedCallback = exports.wrappedHttpResponseCallback(
+      requestData,
+      callback
     );
+    wrappedCallback.__lumigoSentinel = true;
+    hookedClientRequestArgs.push(wrappedCallback);
+  }
 
   return hookedClientRequestArgs;
 };
+
+export const isAlreadyTraced = callback =>
+  callback && callback.__lumigoSentinel;
 
 export const httpRequestWrapper = originalRequestFn =>
   function(...args) {
@@ -146,9 +154,11 @@ export const httpRequestWrapper = originalRequestFn =>
 
     // XXX We're currently ignoring the case where the event loop waits for a
     // response, but the handler ended.
+
     const { url, options, callback } = httpRequestArguments(args);
     const host = getHostFromOptionsOrUrl(options, url);
-    if (isBlacklisted(host)) {
+
+    if (isBlacklisted(host) || isAlreadyTraced(callback)) {
       return originalRequestFn.apply(this, args);
     }
 

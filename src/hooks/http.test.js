@@ -4,6 +4,7 @@ import EventEmitter from 'events';
 import defaultHttp from './http';
 import MockDate from 'mockdate';
 import shimmer from 'shimmer';
+import https from 'https';
 import http from 'http';
 
 import * as httpHook from './http';
@@ -200,10 +201,10 @@ describe('http hook', () => {
     const callback1 = () => {};
     const requestData1 = { c: 'd' };
 
-    const fnMockStr1 = 'fn mock1';
-    spies.wrappedHttpResponseCallback.mockReturnValueOnce(fnMockStr1);
+    const retVal1 = { mock: 'value1' };
+    spies.wrappedHttpResponseCallback.mockReturnValueOnce(retVal1);
 
-    const expected1 = [options1, fnMockStr1];
+    const expected1 = [options1, retVal1];
     expect(
       httpHook.getHookedClientRequestArgs(
         url1,
@@ -218,10 +219,10 @@ describe('http hook', () => {
     const callback2 = () => {};
     const requestData2 = { c: 'd' };
 
-    const fnMockStr2 = 'fn mock2';
-    spies.wrappedHttpResponseCallback.mockReturnValueOnce(fnMockStr2);
+    const retVal2 = { mock: 'value2' };
+    spies.wrappedHttpResponseCallback.mockReturnValueOnce(retVal2);
 
-    const expected2 = [url2, fnMockStr2];
+    const expected2 = [url2, retVal2];
     expect(
       httpHook.getHookedClientRequestArgs(
         url2,
@@ -230,6 +231,21 @@ describe('http hook', () => {
         requestData2
       )
     ).toEqual(expected2);
+
+    const url3 = 'https://x.com';
+    const options3 = undefined;
+    const callback3 = undefined;
+    const requestData3 = { c: 'd' };
+
+    const expected3 = [url3];
+    expect(
+      httpHook.getHookedClientRequestArgs(
+        url3,
+        options3,
+        callback3,
+        requestData3
+      )
+    ).toEqual(expected3);
   });
 
   test('httpRequestWrapper', () => {
@@ -242,6 +258,16 @@ describe('http hook', () => {
     const options1 = { host: edgeHost };
     httpHook.httpRequestWrapper(originalRequestFn)(options1, callback1);
     expect(originalRequestFn).toHaveBeenCalledWith(options1, callback1);
+
+    originalRequestFn.mockClear();
+
+    // Already traced.
+    const options3 = { host: 'bla.com' };
+    const callback3 = jest.fn();
+    callback3.__lumigoSentinel = true;
+    httpHook.httpRequestWrapper(originalRequestFn)(options3, callback3);
+    expect(originalRequestFn).toHaveBeenCalledWith(options3, callback3);
+
     originalRequestFn.mockClear();
 
     const options2 = {
@@ -272,6 +298,11 @@ describe('http hook', () => {
     defaultHttp();
     expect(shimmer.wrap).toHaveBeenCalledWith(
       http,
+      'request',
+      httpHook.httpRequestWrapper
+    );
+    expect(shimmer.wrap).toHaveBeenCalledWith(
+      https,
       'request',
       httpHook.httpRequestWrapper
     );
