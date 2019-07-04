@@ -14,25 +14,37 @@ export const ASYNC_HANDLER_RESOLVED = 'async_handler_resolved';
 export const ASYNC_HANDLER_REJECTED = 'async_handler_rejected';
 
 export const startTrace = async () => {
-  if (!isSwitchedOff() && isAwsEnvironment()) {
-    const functionSpan = getFunctionSpan();
-    const { rtt } = await sendSingleSpan(functionSpan);
-    return addRttToFunctionSpan(functionSpan, rtt);
-  } else {
-    return {};
+  try {
+    if (!isSwitchedOff() && isAwsEnvironment()) {
+      const functionSpan = getFunctionSpan();
+      const { rtt } = await sendSingleSpan(functionSpan);
+      return addRttToFunctionSpan(functionSpan, rtt);
+    } else {
+      return null;
+    }
+  } catch (err) {
+    // eslint-disable-next-line
+    console.log('#LUMIGO#', 'startTrace failure', err);
+    return null;
   }
 };
 
 export const endTrace = async (functionSpan, handlerReturnValue) => {
-  if (!isSwitchedOff() && isAwsEnvironment()) {
-    const endFunctionSpan = getEndFunctionSpan(
-      functionSpan,
-      handlerReturnValue
-    );
-    SpansContainer.addSpan(endFunctionSpan);
+  try {
+    if (functionSpan && !isSwitchedOff() && isAwsEnvironment()) {
+      const endFunctionSpan = getEndFunctionSpan(
+        functionSpan,
+        handlerReturnValue
+      );
+      SpansContainer.addSpan(endFunctionSpan);
 
-    const spans = SpansContainer.getSpans();
-    await sendSpans(spans);
+      const spans = SpansContainer.getSpans();
+      await sendSpans(spans);
+      clearGlobals();
+    }
+  } catch (err) {
+    // eslint-disable-next-line
+    console.log('#LUMIGO#', 'endTrace failure', err);
     clearGlobals();
   }
 };

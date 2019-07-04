@@ -15,9 +15,13 @@ describe('tracer', () => {
   spies.getEndFunctionSpan = jest.spyOn(awsSpan, 'getEndFunctionSpan');
   spies.addRttToFunctionSpan = jest.spyOn(awsSpan, 'addRttToFunctionSpan');
   spies.SpansContainer = {};
-  spies.SpansContainer.getSpans = jest.spyOn(globals.SpansContainer, 'getSpans');
+  spies.SpansContainer.getSpans = jest.spyOn(
+    globals.SpansContainer,
+    'getSpans'
+  );
   spies.SpansContainer.addSpan = jest.spyOn(globals.SpansContainer, 'addSpan');
   spies.clearGlobals = jest.spyOn(globals, 'clearGlobals');
+  spies.log = jest.spyOn(console, 'log');
 
   beforeEach(() => {
     Object.keys(spies).map(
@@ -51,7 +55,20 @@ describe('tracer', () => {
     spies.isSwitchedOff.mockReturnValueOnce(false);
 
     const result2 = await tracer.startTrace();
-    expect(result2).toEqual({});
+    expect(result2).toEqual(null);
+
+    spies.log.mockImplementationOnce(() => {});
+    const err1 = new Error('stam1');
+    spies.isSwitchedOff.mockImplementationOnce(() => {
+      throw err1;
+    });
+
+    await expect(tracer.startTrace()).resolves.toEqual(null);
+    expect(spies.log).toHaveBeenCalledWith(
+      '#LUMIGO#',
+      'startTrace failure',
+      err1
+    );
   });
 
   test('endTrace', async () => {
@@ -88,6 +105,23 @@ describe('tracer', () => {
 
     const result2 = await tracer.endTrace(functionSpan, handlerReturnValue);
     expect(result2).toEqual(undefined);
+
+    spies.clearGlobals.mockClear();
+
+    spies.log.mockImplementationOnce(() => {});
+    const err2 = new Error('stam2');
+    spies.isSwitchedOff.mockImplementationOnce(() => {
+      throw err2;
+    });
+
+    await tracer.endTrace(functionSpan, handlerReturnValue);
+
+    expect(spies.log).toHaveBeenCalledWith(
+      '#LUMIGO#',
+      'endTrace failure',
+      err2
+    );
+    expect(spies.clearGlobals).toHaveBeenCalled();
   });
 
   test('asyncCallbackResolver', () => {
