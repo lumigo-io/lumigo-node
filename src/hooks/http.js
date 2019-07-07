@@ -86,8 +86,22 @@ export const wrappedHttpResponseCallback = (
 
 export const httpRequestEndWrapper = requestData => originalEndFn =>
   function(data, encoding, callback) {
-    requestData.body += data;
+    data && (requestData.body += data);
     return originalEndFn.apply(this, [data, encoding, callback]);
+  };
+
+export const httpRequestOnWrapper = requestData => originalOnFn =>
+  function(event, callback) {
+    if (event === 'response' && callback && !callback.__lumigoSentinel) {
+      const wrappedCallback = exports.wrappedHttpResponseCallback(
+        requestData,
+        callback
+      );
+      wrappedCallback.__lumigoSentinel = true;
+
+      return originalOnFn.apply(this, [event, wrappedCallback]);
+    }
+    return originalOnFn.apply(this, [event, callback]);
   };
 
 // http/s.request can be called with either (options, callback) or (url, options, callback)
@@ -177,6 +191,10 @@ export const httpRequestWrapper = originalRequestFn =>
     );
 
     shimmer.wrap(clientRequest, 'end', httpRequestEndWrapper(requestData));
+
+    if (!callback) {
+      shimmer.wrap(clientRequest, 'on', httpRequestOnWrapper(requestData));
+    }
 
     return clientRequest;
   };

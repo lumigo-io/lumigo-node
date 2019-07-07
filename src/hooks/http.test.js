@@ -248,6 +248,50 @@ describe('http hook', () => {
     ).toEqual(expected3);
   });
 
+  test('httpRequestOnWrapper', () => {
+    const requestData1 = { a: 'b' };
+    const originalOnFn1 = jest.fn();
+    const event1 = 'response';
+    const callback1 = jest.fn();
+    const retVal1 = 'xyz';
+
+    const retWrappedCallback1 = jest.fn();
+    spies.wrappedHttpResponseCallback.mockReturnValueOnce(retWrappedCallback1);
+    originalOnFn1.mockReturnValueOnce(retVal1);
+
+    expect(
+      httpHook.httpRequestOnWrapper(requestData1)(originalOnFn1)(
+        event1,
+        callback1
+      )
+    ).toEqual(retVal1);
+
+    expect(originalOnFn1).toHaveBeenCalledWith(event1, retWrappedCallback1);
+
+    expect(spies.wrappedHttpResponseCallback).toHaveBeenCalledWith(
+      requestData1,
+      callback1
+    );
+    expect(retWrappedCallback1.__lumigoSentinel).toBe(true);
+
+    const requestData2 = { a: 'b' };
+    const originalOnFn2 = jest.fn();
+    const event2 = 'something_else';
+    const callback2 = jest.fn();
+    const retVal2 = 'xyz';
+
+    originalOnFn2.mockReturnValueOnce(retVal2);
+
+    expect(
+      httpHook.httpRequestOnWrapper(requestData2)(originalOnFn2)(
+        event2,
+        callback2
+      )
+    ).toEqual(retVal2);
+
+    expect(originalOnFn2).toHaveBeenCalledWith(event2, callback2);
+  });
+
   test('httpRequestWrapper', () => {
     const originalRequestFn = jest.fn();
     const edgeHost = 'edge-asdf.com';
@@ -270,6 +314,7 @@ describe('http hook', () => {
 
     originalRequestFn.mockClear();
 
+    // Regular case
     const options2 = {
       host: 'asdf1.com',
       port: 443,
@@ -290,6 +335,33 @@ describe('http hook', () => {
 
     expect(originalRequestFn).toHaveBeenCalledWith(
       options2,
+      expect.any(Function)
+    );
+
+    originalRequestFn.mockClear();
+
+    // No callback provided case
+    const options4 = {
+      host: 'asdf1.com',
+      port: 443,
+      protocol: 'https:',
+      path: '/api/where/is/satoshi',
+      method: 'POST',
+      headers: { X: 'Y' },
+    };
+
+    const clientRequest4 = { a: 'b' };
+    originalRequestFn.mockReturnValueOnce(clientRequest4);
+
+    expect(httpHook.httpRequestWrapper(originalRequestFn)(options4)).toEqual(
+      clientRequest4
+    );
+
+    expect(originalRequestFn).toHaveBeenCalledWith(options4);
+
+    expect(shimmer.wrap).toHaveBeenCalledWith(
+      clientRequest4,
+      'on',
       expect.any(Function)
     );
   });

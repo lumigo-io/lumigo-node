@@ -6,7 +6,7 @@ import {
 } from './spans/awsSpan';
 import { sendSingleSpan, sendSpans } from './reporter';
 import { TracerGlobals, SpansContainer, clearGlobals } from './globals';
-import { debug as logDebug } from './logger';
+import { debug as logDebug, fatal as logFatal } from './logger';
 
 export const NON_ASYNC_HANDLER_CALLBACKED = 'non_async_callbacked';
 export const NON_ASYNC_HANDLER_ERRORED = 'non_async_errored';
@@ -15,26 +15,36 @@ export const ASYNC_HANDLER_RESOLVED = 'async_handler_resolved';
 export const ASYNC_HANDLER_REJECTED = 'async_handler_rejected';
 
 export const startTrace = async () => {
-  if (!isSwitchedOff() && isAwsEnvironment()) {
-    const functionSpan = getFunctionSpan();
-    const { rtt } = await sendSingleSpan(functionSpan);
-    return addRttToFunctionSpan(functionSpan, rtt);
-  } else {
-    return {};
+  try {
+    if (!isSwitchedOff() && isAwsEnvironment()) {
+      const functionSpan = getFunctionSpan();
+      const { rtt } = await sendSingleSpan(functionSpan);
+      return addRttToFunctionSpan(functionSpan, rtt);
+    } else {
+      return null;
+    }
+  } catch (err) {
+    logFatal('startTrace failure', err);
+    return null;
   }
 };
 
 export const endTrace = async (functionSpan, handlerReturnValue) => {
-  if (!isSwitchedOff() && isAwsEnvironment()) {
-    const endFunctionSpan = getEndFunctionSpan(
-      functionSpan,
-      handlerReturnValue
-    );
-    SpansContainer.addSpan(endFunctionSpan);
+  try {
+    if (functionSpan && !isSwitchedOff() && isAwsEnvironment()) {
+      const endFunctionSpan = getEndFunctionSpan(
+        functionSpan,
+        handlerReturnValue
+      );
+      SpansContainer.addSpan(endFunctionSpan);
 
-    const spans = SpansContainer.getSpans();
-    await sendSpans(spans);
-    logDebug('Tracer ended');
+      const spans = SpansContainer.getSpans();
+      await sendSpans(spans);
+      logDebug('Tracer ended');
+      clearGlobals();
+    }
+  } catch (err) {
+    logFatal('endTrace failure', err);
     clearGlobals();
   }
 };
