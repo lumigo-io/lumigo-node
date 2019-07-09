@@ -3,14 +3,15 @@ jobs:
   build:
     working_directory: ~/repo
     docker:
-      - image: circleci/node:8.10
-        environment:
-          TZ: "Asia/Jerusalem"
+    - image: lumigo/ci:latest
+        auth:
+        username: lumigo
+        password: $DOCKERHUB_PASSWORD
+    environment:
+        TZ: "Asia/Jerusalem"
+
     steps:
       - checkout # special step to check out source code to working directory
-      - run:
-          name: update-npm
-          command: 'sudo npm install -g npm@latest'
       - restore_cache:
           key: dependency-cache-{{ checksum "package.json" }}
       - run:
@@ -23,9 +24,6 @@ jobs:
       - run:
           name: test
           command: npm test
-      - run:
-          name: install codecov
-          command: 'sudo npm install -g codecov'
       - run:
           name: eslint
           command: npm run lint
