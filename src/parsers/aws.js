@@ -11,12 +11,20 @@ export const dynamodbParser = requestData => {
   return { resourceName, dynamodbMethod };
 };
 
-/*eslint-disable */
-export const snsParser = (requestData, responseData) => {
-  return {};
+export const lambdaParser = (requestData, responseData) => {
+  const { path, headers } = requestData;
+  const resourceName = path.split('/')[3]; // FunctionName
+  const invocationType = headers['x-amz-invocation-type'];
+  const { headers: responseHeaders } = responseData;
+  const id =
+    responseHeaders['x-amzn-requestid'] ||
+    responseHeaders['x-amz-requestid'] ||
+    '';
+  return { resourceName, invocationType, id };
 };
 
-export const lambdaParser = (requestData, responseData) => {
+/*eslint-disable */
+export const snsParser = (requestData, responseData) => {
   return {};
 };
 
