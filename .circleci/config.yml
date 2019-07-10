@@ -4,9 +4,9 @@ jobs:
     working_directory: ~/repo
     docker:
     - image: lumigo/ci:latest
-        auth:
-            username: lumigo
-            password: $DOCKERHUB_PASSWORD
+    auth:
+        username: lumigo
+        password: $DOCKERHUB_PASSWORD
     environment:
         TZ: "Asia/Jerusalem"
 
