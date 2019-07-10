@@ -5,7 +5,6 @@ import https from 'https';
 import crypto from 'crypto';
 
 jest.mock('https');
-jest.mock('crypto');
 jest.mock('../package.json', () => ({
   name: '@lumigo/tracerMock',
   version: '1.2.3',
@@ -80,6 +79,15 @@ describe('utils', () => {
     expect(() => utils.getTraceId('a=b;c=d;e=f')).toThrow(
       "Either Root, Parent or Sampled weren't found in traceId."
     );
+  });
+
+  test('getPatchedTraceId', () => {
+    spies.randomBytes.mockReturnValueOnce(Buffer.from('aa'));
+    const awsXAmznTraceId =
+      'Root=1-5b1d2450-6ac46730d346cad0e53f89d0;Parent=59fa1aeb03c2ec1f;Sampled=1';
+    const expected =
+      'Root=1-5b1d2450-6ac46730d346cad0e53f89d0-00006161-6ac46730d346cad0e53f89d0;Parent=59fa1aeb03c2ec1f;Sampled=1';
+    expect(utils.getPatchedTraceId(awsXAmznTraceId)).toEqual(expected);
   });
 
   test('isAsyncFn', () => {
@@ -245,6 +253,16 @@ describe('utils', () => {
   test('getRandomId', () => {
     spies.randomBytes.mockImplementation(nr => Buffer.from(`l`.repeat(nr)));
     expect(utils.getRandomId()).toEqual('6c6c6c6c-6c6c-6c6c-6c6c-6c6c6c6c6c6c');
+  });
+
+  test('isRequestToAwsService', () => {
+    const s1 = 'dynamodb';
+    const host1 = `${s1}.amazonaws.com`;
+    expect(utils.isRequestToAwsService(host1)).toBe(true);
+
+    const s2 = 'xyz';
+    const host2 = `${s2}.cloud.google.com`;
+    expect(utils.isRequestToAwsService(host2)).toBe(false);
   });
 
   test('httpReq', async () => {

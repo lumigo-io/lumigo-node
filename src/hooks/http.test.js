@@ -4,6 +4,7 @@ import EventEmitter from 'events';
 import defaultHttp from './http';
 import MockDate from 'mockdate';
 import shimmer from 'shimmer';
+import crypto from 'crypto';
 import https from 'https';
 import http from 'http';
 
@@ -23,11 +24,15 @@ jest.mock('../reporter');
 
 describe('http hook', () => {
   process.env['AWS_REGION'] = 'us-east-x';
+  process.env['_X_AMZN_TRACE_ID'] =
+    'Root=1-5b1d2450-6ac46730d346cad0e53f89d0;Parent=59fa1aeb03c2ec1f;Sampled=1';
+
   const spies = {};
   spies.wrappedHttpResponseCallback = jest.spyOn(
     httpHook,
     'wrappedHttpResponseCallback'
   );
+  spies.randomBytes = jest.spyOn(crypto, 'randomBytes');
 
   test('isBlacklisted', () => {
     const host = 'asdf';
@@ -214,7 +219,7 @@ describe('http hook', () => {
       )
     ).toEqual(expected1);
 
-    const url2 = 'https://x.com';
+    const url2 = 'https://xaws.com';
     const options2 = undefined;
     const callback2 = () => {};
     const requestData2 = { c: 'd' };
@@ -246,6 +251,31 @@ describe('http hook', () => {
         requestData3
       )
     ).toEqual(expected3);
+
+    const url4 = 'https://bla.amazonaws.com/asdf';
+    const options4 = { headers: { 'Content-Type': 'text/plain' } };
+    const callback4 = undefined;
+    const requestData4 = { c: 'd' };
+    const expected4 = [
+      'https://bla.amazonaws.com/asdf',
+      {
+        headers: {
+          'Content-Type': 'text/plain',
+          'X-Amzn-Trace-Id':
+            'Root=1-5b1d2450-6ac46730d346cad0e53f89d0-00006161-6ac46730d346cad0e53f89d0;Parent=59fa1aeb03c2ec1f;Sampled=1',
+        },
+      },
+    ];
+    spies.randomBytes.mockReturnValueOnce(Buffer.from('aa'));
+
+    expect(
+      httpHook.getHookedClientRequestArgs(
+        url4,
+        options4,
+        callback4,
+        requestData4
+      )
+    ).toEqual(expected4);
   });
 
   test('httpRequestOnWrapper', () => {

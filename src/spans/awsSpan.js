@@ -9,6 +9,7 @@ import {
   getContextInfo,
   getAWSEnvironment,
   stringifyAndPrune,
+  isRequestToAwsService,
 } from '../utils';
 import { dynamodbParser, snsParser, lambdaParser } from '../parsers/aws';
 import { getEventInfo } from '../events';
@@ -124,9 +125,6 @@ export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
   const return_value = data ? pruneData(data) : null;
   return Object.assign({}, functionSpan, { id, ended, error, return_value });
 };
-
-export const isRequestToAwsService = host =>
-  !!(host && host.includes('amazonaws.com'));
 
 export const AWS_PARSED_SERVICES = ['dynamodb', 'sns', 'lambda'];
 

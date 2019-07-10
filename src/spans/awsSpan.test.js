@@ -309,16 +309,6 @@ describe('awsSpan', () => {
     ).toEqual(expectedFunctionSpan2);
   });
 
-  test('isRequestToAwsService', () => {
-    const s1 = 'dynamodb';
-    const host1 = `${s1}.amazonaws.com`;
-    expect(awsSpan.isRequestToAwsService(host1)).toBe(true);
-
-    const s2 = 'xyz';
-    const host2 = `${s2}.cloud.google.com`;
-    expect(awsSpan.isRequestToAwsService(host2)).toBe(false);
-  });
-
   test('getAwsServiceFromHost', () => {
     const s1 = 'dynamodb';
     const host1 = `${s1}.amazonaws.com`;
