@@ -40,10 +40,7 @@ export const sendSpans = async spans => {
   const method = 'POST';
   const { host, path } = getEdgeUrl();
 
-  debug('Edge selected', {
-    host,
-    path,
-  });
+  debug('Edge selected', { host, path });
 
   const reqBody = JSON.stringify(spans);
   const roundTripStart = Date.now();
