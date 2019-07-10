@@ -1,5 +1,5 @@
-const { trace } = require('./tracer');
-const { setVerboseMode, setSwitchOff } = require('./utils');
+import { trace } from './tracer';
+import { setVerboseMode, setSwitchOff } from './utils';
 import { debug } from './logger';
 
 debug('Tracer imported');
