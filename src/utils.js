@@ -55,8 +55,11 @@ export const getTraceId = awsXAmznTraceId => {
 
 export const getPatchedTraceId = awsXAmznTraceId => {
   const { Root, Parent, Sampled, transactionId } = getTraceId(awsXAmznTraceId);
+  const rootArr = Root.split('-');
   const shortId = getRandomString(4);
-  return `Root=${Root}-0000${shortId}-${transactionId};Parent=${Parent};Sampled=${Sampled}`;
+  return `Root=${
+    rootArr[0]
+  }-0000${shortId}-${transactionId};Parent=${Parent};Sampled=${Sampled}`;
 };
 
 export const isAsyncFn = fn =>

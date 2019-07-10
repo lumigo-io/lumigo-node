@@ -86,7 +86,7 @@ describe('utils', () => {
     const awsXAmznTraceId =
       'Root=1-5b1d2450-6ac46730d346cad0e53f89d0;Parent=59fa1aeb03c2ec1f;Sampled=1';
     const expected =
-      'Root=1-5b1d2450-6ac46730d346cad0e53f89d0-00006161-6ac46730d346cad0e53f89d0;Parent=59fa1aeb03c2ec1f;Sampled=1';
+      'Root=1-00006161-6ac46730d346cad0e53f89d0;Parent=59fa1aeb03c2ec1f;Sampled=1';
     expect(utils.getPatchedTraceId(awsXAmznTraceId)).toEqual(expected);
   });
 
