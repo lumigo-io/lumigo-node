@@ -12,12 +12,13 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const yikes = async () => {
   await sleep(5000);
   const { data } = await axios.get('https://sagi.io');
-  console.log('SAGIZZ4');
+  console.log('SAGIZZ5');
 };
 const childFn = async (event, context, callback) => {
   //context.callbackWaitsForEmptyEventLoop = false;
   yikes();
-  callback(null, 'zarathustra4');
+  console.log(process._getActiveHandles());
+  callback(null, 'zarathustra5');
   /*
   const c = () => {
     throw new Error('bla');
