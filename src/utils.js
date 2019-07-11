@@ -173,7 +173,7 @@ export const isAwsService = host => !!(host && host.includes('amazonaws.com'));
 
 export const removeLumigoFromStacktrace = handleReturnValue => {
   const { err, data, type } = handleReturnValue;
-  if (!err) {
+  if (!err || !err.trace) {
     return handleReturnValue;
   }
   const { trace } = err;
