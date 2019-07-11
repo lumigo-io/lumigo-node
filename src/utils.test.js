@@ -265,7 +265,7 @@ describe('utils', () => {
     expect(utils.isAwsService(host2)).toBe(false);
   });
 
-  test.only('removeLumigoFromStacktrace', () => {
+  test('removeLumigoFromStacktrace', () => {
     const err = {
       errorType: 'Error',
       errorMessage: 'bla',
