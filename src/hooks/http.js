@@ -3,7 +3,12 @@ import http from 'http';
 import https from 'https';
 import { SpansContainer } from '../globals';
 import { getEdgeHost } from '../reporter';
-import { lowerCaseObjectKeys } from '../utils';
+import {
+  getAWSEnvironment,
+  getPatchedTraceId,
+  lowerCaseObjectKeys,
+  isAwsService,
+} from '../utils';
 import { getHttpSpan } from '../spans/awsSpan';
 import cloneResponse from 'clone-response';
 import { URL } from 'url';
@@ -145,7 +150,16 @@ export const getHookedClientRequestArgs = (
   const hookedClientRequestArgs = [];
 
   !!url && hookedClientRequestArgs.push(url);
-  !!options && hookedClientRequestArgs.push(options);
+
+  if (options) {
+    const host = getHostFromOptionsOrUrl(options, url);
+    if (isAwsService(host)) {
+      const { awsXAmznTraceId } = getAWSEnvironment();
+      options.headers['X-Amzn-Trace-Id'] = getPatchedTraceId(awsXAmznTraceId);
+    }
+
+    hookedClientRequestArgs.push(options);
+  }
 
   if (callback) {
     const wrappedCallback = exports.wrappedHttpResponseCallback(

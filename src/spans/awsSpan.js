@@ -9,6 +9,7 @@ import {
   getContextInfo,
   getAWSEnvironment,
   stringifyAndPrune,
+  isAwsService,
 } from '../utils';
 import { dynamodbParser, snsParser, lambdaParser } from '../parsers/aws';
 import { getEventInfo } from '../events';
@@ -125,9 +126,6 @@ export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
   return Object.assign({}, functionSpan, { id, ended, error, return_value });
 };
 
-export const isRequestToAwsService = host =>
-  !!(host && host.includes('amazonaws.com'));
-
 export const AWS_PARSED_SERVICES = ['dynamodb', 'sns', 'lambda'];
 
 export const getAwsServiceFromHost = host => {
@@ -138,7 +136,7 @@ export const getAwsServiceFromHost = host => {
   return EXTERNAL_SERVICE;
 };
 export const getServiceType = host =>
-  isRequestToAwsService(host) ? getAwsServiceFromHost(host) : EXTERNAL_SERVICE;
+  isAwsService(host) ? getAwsServiceFromHost(host) : EXTERNAL_SERVICE;
 
 export const getAwsServiceData = (requestData, responseData) => {
   const { host } = requestData;
@@ -170,10 +168,10 @@ export const getHttpInfo = (requestData, responseData) => {
   return { host, request, response };
 };
 
-export const getBasicHttpSpan = () => {
+export const getBasicHttpSpan = (spanId = null) => {
   const { context } = TracerGlobals.getHandlerInputs();
   const { awsRequestId: parentId } = context;
-  const id = getRandomId();
+  const id = spanId || getRandomId();
   const type = HTTP_SPAN;
   const basicSpan = getBasicSpan();
   return { ...basicSpan, id, type, parentId };
@@ -188,13 +186,13 @@ export const getHttpSpanTimings = (requestData, responseData) => {
 export const getHttpSpan = (requestData, responseData) => {
   const { host } = requestData;
 
-  const awsServiceData = isRequestToAwsService(host)
+  const { awsServiceData, spanId } = isAwsService(host)
     ? getAwsServiceData(requestData, responseData)
     : {};
 
   const httpInfo = getHttpInfo(requestData, responseData);
 
-  const basicHttpSpan = getBasicHttpSpan();
+  const basicHttpSpan = getBasicHttpSpan(spanId);
 
   const info = Object.assign({}, basicHttpSpan.info, {
     httpInfo,

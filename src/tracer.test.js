@@ -4,7 +4,9 @@ import * as utils from './utils';
 import * as globals from './globals';
 import * as reporter from './reporter';
 import * as awsSpan from './spans/awsSpan';
+import startHooks from './hooks';
 
+jest.mock('./hooks');
 describe('tracer', () => {
   const spies = {};
   spies.isSwitchedOff = jest.spyOn(utils, 'isSwitchedOff');
@@ -24,6 +26,7 @@ describe('tracer', () => {
   spies.log = jest.spyOn(console, 'log');
 
   beforeEach(() => {
+    startHooks.mockClear();
     Object.keys(spies).map(
       x => typeof x === 'function' && spies[x].mockClear()
     );
@@ -224,6 +227,8 @@ describe('tracer', () => {
 
     spies.isSwitchedOff.mockReturnValue(true);
     await tracer.trace({ token })(userHandler1)(event, context, callback1);
+
+    expect(startHooks).toHaveBeenCalled();
   });
 
   test('trace; non async throw error', async () => {
@@ -239,6 +244,8 @@ describe('tracer', () => {
     await expect(
       tracer.trace({ token })(userHandler2)(event, context, callback2)
     ).rejects.toEqual(new Error('bla'));
+
+    expect(startHooks).toHaveBeenCalled();
   });
 
   test('trace; async callbacked ', async done => {
@@ -276,6 +283,8 @@ describe('tracer', () => {
     await expect(
       tracer.trace({ token })(userHandler4)(event, context, callback4)
     ).resolves.toEqual(retVal);
+
+    expect(startHooks).toHaveBeenCalled();
   });
 
   test('trace; async rejected', async () => {
@@ -294,5 +303,7 @@ describe('tracer', () => {
     await expect(
       tracer.trace({ token })(userHandler5)(event, context, callback5)
     ).rejects.toEqual(new Error(retVal));
+
+    expect(startHooks).toHaveBeenCalled();
   });
 });
