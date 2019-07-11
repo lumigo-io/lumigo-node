@@ -171,8 +171,7 @@ export const getRandomId = () => {
   return `${p1}-${p2}-${p3}-${p4}-${p5}`;
 };
 
-export const isAwsService = host =>
-  !!(host && host.includes('amazonaws.com'));
+export const isAwsService = host => !!(host && host.includes('amazonaws.com'));
 
 export const httpsAgent = new https.Agent({ keepAlive: true });
 

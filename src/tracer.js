@@ -25,7 +25,7 @@ export const startTrace = async () => {
       return null;
     }
   } catch (err) {
-      logger.fatal('startTrace failure', err);
+    logger.fatal('startTrace failure', err);
     return null;
   }
 };
@@ -41,7 +41,7 @@ export const endTrace = async (functionSpan, handlerReturnValue) => {
 
       const spans = SpansContainer.getSpans();
       await sendSpans(spans);
-      logger.debug('Tracer ended')
+      logger.debug('Tracer ended');
       clearGlobals();
     }
   } catch (err) {

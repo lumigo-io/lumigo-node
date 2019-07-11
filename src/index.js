@@ -1,10 +1,8 @@
 import { trace } from './tracer';
 import { setSwitchOff, setVerboseMode } from './utils';
-import * as logger from './logger'
+import * as logger from './logger';
 
-logger.debug("Tracer imported")
-
-debug('Tracer imported');
+logger.debug('Tracer imported');
 
 require('./hooks').default({ enabled: true });
 
