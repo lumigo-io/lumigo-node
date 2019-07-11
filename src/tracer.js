@@ -6,6 +6,7 @@ import {
 } from './spans/awsSpan';
 import { sendSingleSpan, sendSpans } from './reporter';
 import { TracerGlobals, SpansContainer, clearGlobals } from './globals';
+import startHooks from './hooks';
 
 export const NON_ASYNC_HANDLER_CALLBACKED = 'non_async_callbacked';
 export const NON_ASYNC_HANDLER_ERRORED = 'non_async_errored';
@@ -90,6 +91,8 @@ export const trace = ({
     switchOff,
     eventFilter,
   });
+
+  startHooks();
 
   const pStartTrace = startTrace();
   const pUserHandler = promisifyUserHandler(
