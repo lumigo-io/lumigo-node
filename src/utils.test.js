@@ -305,7 +305,12 @@ describe('utils', () => {
     expect(utils.removeLumigoFromStacktrace(handlerReturnValue)).toEqual(
       expectedHandlerReturnValue
     );
+
+    expect(
+      utils.removeLumigoFromStacktrace({ err: null, data: 'y', type: 'x' })
+    ).toEqual({ err: null, data: 'y', type: 'x' });
   });
+
   test('httpReq', async () => {
     const options = { bla: 'bla' };
     const req = new EventEmitter();
