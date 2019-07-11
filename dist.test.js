@@ -2,6 +2,9 @@
 const lambdaLocal = require('lambda-local');
 const crypto = require('crypto');
 const exampleApiGatewayEvent = require('./src/testdata/events/apigw-request.json');
+const https = require('https');
+const http = require('http');
+const fetch = require('node-fetch');
 
 // XXX Below are real E2E system tests.
 describe.skip('end-to-end lumigo-node', () => {
@@ -202,6 +205,137 @@ describe.skip('end-to-end lumigo-node', () => {
 
     lambdaLocal.execute({
       lambdaFunc: { handler: tracer.trace(userHandler) },
+      event: exampleApiGatewayEvent,
+      timeoutMs: 30000,
+      clientContext,
+      verboseLevel,
+      environment,
+      callback,
+    });
+  });
+
+  test('real: Node.js 10.x https.request(url...)', done => {
+    jest.setTimeout(30000);
+    const edgeHost = 'kzc0w7k50d.execute-api.eu-west-1.amazonaws.com';
+    const switchOff = false;
+    const lumigo = require('./')({ token, edgeHost });
+    const expectedReturnValue = 'Satoshi was here';
+
+    const userHandler = (event, context, callback) => {
+      const req = https.request('https://example.org', res => {
+        const { statusCode } = res;
+        let data = '';
+        res.on('data', chunk => (data += chunk));
+        res.on('end', () => callback(null, { statusCode, data }));
+      });
+      req.end();
+    };
+
+    const callback = function(err, data) {
+      expect(data.statusCode).toEqual(200);
+      done();
+    };
+
+    lambdaLocal.execute({
+      lambdaFunc: { handler: lumigo.trace(userHandler) },
+      event: exampleApiGatewayEvent,
+      timeoutMs: 30000,
+      clientContext,
+      verboseLevel,
+      environment,
+      callback,
+    });
+  });
+
+  test('real: Node.js 10.x https.get(url, cb)', done => {
+    jest.setTimeout(30000);
+    const edgeHost = 'kzc0w7k50d.execute-api.eu-west-1.amazonaws.com';
+    const switchOff = false;
+    const lumigo = require('./')({ token, edgeHost });
+    const expectedReturnValue = 'Satoshi was here';
+
+    const userHandler = (event, context, callback) => {
+      const req = https.get('https://sagi.io', res => {
+        const { statusCode } = res;
+        let data = '';
+        res.on('data', chunk => (data += chunk));
+        res.on('end', () => callback(null, { statusCode, data }));
+      });
+      req.end();
+    };
+
+    const callback = function(err, data) {
+      expect(data.statusCode).toEqual(200);
+      done();
+    };
+
+    lambdaLocal.execute({
+      lambdaFunc: { handler: lumigo.trace(userHandler) },
+      event: exampleApiGatewayEvent,
+      timeoutMs: 30000,
+      clientContext,
+      verboseLevel,
+      environment,
+      callback,
+    });
+  });
+
+  test('real: Node.js 10.x https.get(url)', done => {
+    jest.setTimeout(30000);
+    const edgeHost = 'kzc0w7k50d.execute-api.eu-west-1.amazonaws.com';
+    const switchOff = false;
+    const lumigo = require('./')({ token, edgeHost, debug: true });
+    const expectedReturnValue = 'Satoshi was here';
+
+    const userHandler = (event, context, callback) => {
+      const req = https.get('https://example.org');
+
+      req.on('response', res => {
+        const { statusCode } = res;
+        let data = '';
+        res.on('data', chunk => (data += chunk));
+        res.on('end', () => callback(null, { statusCode, data }));
+      });
+      req.end();
+    };
+
+    const callback = function(err, data) {
+      expect(data.statusCode).toEqual(200);
+      done();
+    };
+
+    lambdaLocal.execute({
+      lambdaFunc: { handler: lumigo.trace(userHandler) },
+      event: exampleApiGatewayEvent,
+      timeoutMs: 30000,
+      clientContext,
+      verboseLevel,
+      environment,
+      callback,
+    });
+  });
+
+  test('real: node-fetch', done => {
+    jest.setTimeout(30000);
+    const edgeHost = 'kzc0w7k50d.execute-api.eu-west-1.amazonaws.com';
+    const switchOff = false;
+    const lumigo = require('./')({ token, edgeHost });
+    const expectedReturnValue = 'Satoshi was here';
+
+    const userHandler = async (event, context, callback) => {
+      const response = await fetch('https://sagi.io');
+      const { status } = response;
+      const data = await response.text();
+      callback(null, { status, data });
+    };
+
+    const callback = function(err, data) {
+      expect(data.status).toEqual(200);
+      done();
+    };
+
+    lambdaLocal.execute({
+      lambdaFunc: { handler: lumigo.trace(userHandler) },
       event: exampleApiGatewayEvent,
       timeoutMs: 30000,
       clientContext,

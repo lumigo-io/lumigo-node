@@ -4,7 +4,9 @@ import * as utils from './utils';
 import * as globals from './globals';
 import * as reporter from './reporter';
 import * as awsSpan from './spans/awsSpan';
+import startHooks from './hooks';
 
+jest.mock('./hooks');
 describe('tracer', () => {
   const spies = {};
   spies.isSwitchedOff = jest.spyOn(utils, 'isSwitchedOff');
@@ -21,8 +23,10 @@ describe('tracer', () => {
   );
   spies.SpansContainer.addSpan = jest.spyOn(globals.SpansContainer, 'addSpan');
   spies.clearGlobals = jest.spyOn(globals, 'clearGlobals');
+  spies.log = jest.spyOn(console, 'log');
 
   beforeEach(() => {
+    startHooks.mockClear();
     Object.keys(spies).map(
       x => typeof x === 'function' && spies[x].mockClear()
     );
@@ -54,7 +58,20 @@ describe('tracer', () => {
     spies.isSwitchedOff.mockReturnValueOnce(false);
 
     const result2 = await tracer.startTrace();
-    expect(result2).toEqual({});
+    expect(result2).toEqual(null);
+
+    spies.log.mockImplementationOnce(() => {});
+    const err1 = new Error('stam1');
+    spies.isSwitchedOff.mockImplementationOnce(() => {
+      throw err1;
+    });
+
+    await expect(tracer.startTrace()).resolves.toEqual(null);
+    expect(spies.log).toHaveBeenCalledWith(
+      '#LUMIGO#',
+      'startTrace failure',
+      err1
+    );
   });
 
   test('endTrace', async () => {
@@ -91,6 +108,23 @@ describe('tracer', () => {
 
     const result2 = await tracer.endTrace(functionSpan, handlerReturnValue);
     expect(result2).toEqual(undefined);
+
+    spies.clearGlobals.mockClear();
+
+    spies.log.mockImplementationOnce(() => {});
+    const err2 = new Error('stam2');
+    spies.isSwitchedOff.mockImplementationOnce(() => {
+      throw err2;
+    });
+
+    await tracer.endTrace(functionSpan, handlerReturnValue);
+
+    expect(spies.log).toHaveBeenCalledWith(
+      '#LUMIGO#',
+      'endTrace failure',
+      err2
+    );
+    expect(spies.clearGlobals).toHaveBeenCalled();
   });
 
   test('asyncCallbackResolver', () => {
@@ -193,6 +227,8 @@ describe('tracer', () => {
 
     spies.isSwitchedOff.mockReturnValue(true);
     await tracer.trace({ token })(userHandler1)(event, context, callback1);
+
+    expect(startHooks).toHaveBeenCalled();
   });
 
   test('trace; non async throw error', async () => {
@@ -208,6 +244,8 @@ describe('tracer', () => {
     await expect(
       tracer.trace({ token })(userHandler2)(event, context, callback2)
     ).rejects.toEqual(new Error('bla'));
+
+    expect(startHooks).toHaveBeenCalled();
   });
 
   test('trace; async callbacked ', async done => {
@@ -245,6 +283,8 @@ describe('tracer', () => {
     await expect(
       tracer.trace({ token })(userHandler4)(event, context, callback4)
     ).resolves.toEqual(retVal);
+
+    expect(startHooks).toHaveBeenCalled();
   });
 
   test('trace; async rejected', async () => {
@@ -263,5 +303,7 @@ describe('tracer', () => {
     await expect(
       tracer.trace({ token })(userHandler5)(event, context, callback5)
     ).rejects.toEqual(new Error(retVal));
+
+    expect(startHooks).toHaveBeenCalled();
   });
 });

@@ -2,6 +2,7 @@
 
 ## TODO
 
+1. Separate between dev_example/ and example/
 2. Add prettier to CI/CD.
 3. use the E2E tests with mocks (i.e. as partial system tests with lambdaLocal)
 4. Test switchOff and local (isawsenv) with E2E tests.
@@ -23,6 +24,8 @@
 
 - **`Inject X-Amzn.. Header to Request`**
 
-- **`Try / catch Lumigo's errors e.g. parsing http hooks etc.`**
+- **`Try / catch lumigo's parsing http hooks etc.`**
 
-- **`Node 10.x adds a new https.request API, one that accepts (URL, options, ...)` - i.e we need to check if we handle the URL properly**
+- **`node-fetch: parsing compressed bodies`** - node-fetch and other implementations compress things on its own (not using the standard
+   http.request()), as a result it returns a response with a compressed body showing up in Lumigo's dashboard.
+   see https://github.com/bitinn/node-fetch/blob/95286f52bb866283bc69521a04efe1de37b26a33/src/index.js#L224
