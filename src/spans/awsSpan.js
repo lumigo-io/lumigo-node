@@ -9,7 +9,7 @@ import {
   getContextInfo,
   getAWSEnvironment,
   stringifyAndPrune,
-  isRequestToAwsService,
+  isAwsService,
 } from '../utils';
 import { dynamodbParser, snsParser, lambdaParser } from '../parsers/aws';
 import { getEventInfo } from '../events';
@@ -136,7 +136,7 @@ export const getAwsServiceFromHost = host => {
   return EXTERNAL_SERVICE;
 };
 export const getServiceType = host =>
-  isRequestToAwsService(host) ? getAwsServiceFromHost(host) : EXTERNAL_SERVICE;
+  isAwsService(host) ? getAwsServiceFromHost(host) : EXTERNAL_SERVICE;
 
 export const getAwsServiceData = (requestData, responseData) => {
   const { host } = requestData;
@@ -186,7 +186,7 @@ export const getHttpSpanTimings = (requestData, responseData) => {
 export const getHttpSpan = (requestData, responseData) => {
   const { host } = requestData;
 
-  const { awsServiceData, spanId } = isRequestToAwsService(host)
+  const { awsServiceData, spanId } = isAwsService(host)
     ? getAwsServiceData(requestData, responseData)
     : {};
 

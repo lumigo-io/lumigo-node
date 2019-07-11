@@ -255,14 +255,14 @@ describe('utils', () => {
     expect(utils.getRandomId()).toEqual('6c6c6c6c-6c6c-6c6c-6c6c-6c6c6c6c6c6c');
   });
 
-  test('isRequestToAwsService', () => {
+  test('isAwsService', () => {
     const s1 = 'dynamodb';
     const host1 = `${s1}.amazonaws.com`;
-    expect(utils.isRequestToAwsService(host1)).toBe(true);
+    expect(utils.isAwsService(host1)).toBe(true);
 
     const s2 = 'xyz';
     const host2 = `${s2}.cloud.google.com`;
-    expect(utils.isRequestToAwsService(host2)).toBe(false);
+    expect(utils.isAwsService(host2)).toBe(false);
   });
 
   test('httpReq', async () => {

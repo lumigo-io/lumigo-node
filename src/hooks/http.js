@@ -7,7 +7,7 @@ import {
   getAWSEnvironment,
   getPatchedTraceId,
   lowerCaseObjectKeys,
-  isRequestToAwsService,
+  isAwsService,
 } from '../utils';
 import { getHttpSpan } from '../spans/awsSpan';
 import cloneResponse from 'clone-response';
@@ -153,7 +153,7 @@ export const getHookedClientRequestArgs = (
 
   if (options) {
     const host = getHostFromOptionsOrUrl(options, url);
-    if (isRequestToAwsService(host)) {
+    if (isAwsService(host)) {
       const { awsXAmznTraceId } = getAWSEnvironment();
       options.headers['X-Amzn-Trace-Id'] = getPatchedTraceId(awsXAmznTraceId);
     }

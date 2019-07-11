@@ -430,6 +430,40 @@ describe('awsSpan', () => {
       parentId: '6d26e3c8-60a6-4cee-8a70-f525f47a4caf',
     };
     expect(awsSpan.getBasicHttpSpan()).toEqual(expected);
+
+    const spanId = 'abcdefg';
+    const expected2 = {
+      info: {
+        traceId: {
+          Root: '1-5cdcf03a-64a1b06067c2100c52e51ef4',
+          Parent: '28effe37598bb622',
+          Sampled: '0',
+          transactionId: '64a1b06067c2100c52e51ef4',
+        },
+        tracer: { name: '@lumigo/tracer', version: '0.0.123' },
+        logGroupName: '/aws/lambda/aws-nodejs-dev-hello',
+        logStreamName: '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',
+        httpMethod: 'POST',
+        resource: '/{proxy+}',
+        stage: 'testStage',
+        api: 'gy415nuibc.execute-api.us-east-1.amazonaws.com',
+        triggeredBy: 'apigw',
+      },
+      vendor: 'AWS',
+      transactionId: '64a1b06067c2100c52e51ef4',
+      account: '985323015126',
+      memoryAllocated: '1024',
+      version: '$LATEST',
+      runtime: 'AWS_Lambda_nodejs8.10',
+      readiness: 'cold',
+      messageVersion: 2,
+      token: 'DEADBEEF',
+      region: 'us-east-1',
+      id: spanId,
+      type: 'http',
+      parentId: '6d26e3c8-60a6-4cee-8a70-f525f47a4caf',
+    };
+    expect(awsSpan.getBasicHttpSpan(spanId)).toEqual(expected2);
   });
 
   test('getHttpSpan ', () => {
