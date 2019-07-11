@@ -4,6 +4,7 @@ import {
   pruneData,
   getTraceId,
   getRandomId,
+  getAccountId,
   getTracerInfo,
   stringifyError,
   getContextInfo,
@@ -44,7 +45,7 @@ export const getBasicSpan = () => {
   const { traceId } = info;
   const { transactionId } = traceId;
 
-  const { awsAccountId } = getContextInfo(lambdaContext);
+  const awsAccountId = getAccountId(lambdaContext);
 
   const {
     awsRegion: region,

@@ -17,6 +17,15 @@ export const getContextInfo = context => {
   };
 };
 
+export const getAccountIdFromInvokedFunctinArn = invokedFunctionArn =>
+  invokedFunctionArn ? invokedFunctionArn.split(':')[4] : '';
+
+export const getAccountId = context => {
+  const { invokedFunctionArn } = context;
+  const awsAccountId = getAccountIdFromInvokedFunctinArn(invokedFunctionArn);
+  return awsAccountId;
+};
+
 export const getTracerInfo = () => {
   const pkg = require('../package.json');
   const { name, version } = pkg;
@@ -169,8 +178,7 @@ export const getRandomId = () => {
   return `${p1}-${p2}-${p3}-${p4}-${p5}`;
 };
 
-export const isAwsService = host =>
-  !!(host && host.includes('amazonaws.com'));
+export const isAwsService = host => !!(host && host.includes('amazonaws.com'));
 
 export const httpsAgent = new https.Agent({ keepAlive: true });
 
