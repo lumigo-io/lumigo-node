@@ -6,7 +6,7 @@ import {
 } from './spans/awsSpan';
 import { sendSingleSpan, sendSpans } from './reporter';
 import { TracerGlobals, SpansContainer, clearGlobals } from './globals';
-import { debug as logDebug, fatal as logFatal } from './logger';
+import * as logger from './logger';
 
 export const NON_ASYNC_HANDLER_CALLBACKED = 'non_async_callbacked';
 export const NON_ASYNC_HANDLER_ERRORED = 'non_async_errored';
@@ -16,15 +16,20 @@ export const ASYNC_HANDLER_REJECTED = 'async_handler_rejected';
 
 export const startTrace = async () => {
   try {
+    const tracerInputs = TracerGlobals.getTracerInputs();
+    logger.debug('Tracer started', tracerInputs);
+
     if (!isSwitchedOff() && isAwsEnvironment()) {
       const functionSpan = getFunctionSpan();
+      logger.debug('startTrace span created', functionSpan);
+
       const { rtt } = await sendSingleSpan(functionSpan);
       return addRttToFunctionSpan(functionSpan, rtt);
     } else {
       return null;
     }
   } catch (err) {
-    logFatal('startTrace failure', err);
+    logger.fatal('startTrace failure', err);
     return null;
   }
 };
@@ -40,11 +45,11 @@ export const endTrace = async (functionSpan, handlerReturnValue) => {
 
       const spans = SpansContainer.getSpans();
       await sendSpans(spans);
-      logDebug('Tracer ended');
+      logger.debug('Tracer ended');
       clearGlobals();
     }
   } catch (err) {
-    logFatal('endTrace failure', err);
+    logger.fatal('endTrace failure', err);
     clearGlobals();
   }
 };
@@ -84,14 +89,6 @@ export const trace = ({
 }) => userHandler => async (event, context, callback) => {
   TracerGlobals.setHandlerInputs({ event, context });
   TracerGlobals.setTracerInputs({
-    token,
-    debug,
-    edgeHost,
-    switchOff,
-    eventFilter,
-  });
-
-  logDebug('Tracer started', {
     token,
     debug,
     edgeHost,

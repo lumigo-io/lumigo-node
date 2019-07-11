@@ -5,13 +5,13 @@ const LOG_PREFIX = '#LUMIGO#';
 export const invokeLog = type => (msg, obj = undefined) =>
   isDebug() && exports.log(type, msg, obj);
 
-export const info = invokeLog('INFO');
+export const info = exports.invokeLog('INFO');
 
-export const warn = invokeLog('WARNING');
+export const warn = exports.invokeLog('WARNING');
 
-export const fatal = invokeLog('FATAL');
+export const fatal = exports.invokeLog('FATAL');
 
-export const debug = invokeLog('DEBUG');
+export const debug = exports.invokeLog('DEBUG');
 
 export const log = (levelname, message, obj) => {
   const escapedMessage = JSON.stringify(message, null, 2);

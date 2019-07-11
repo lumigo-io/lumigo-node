@@ -43,25 +43,6 @@ describe('reporter', () => {
     process.env = { ...oldEnv };
   });
 
-  test('getEdgeHost', () => {
-    TracerGlobals.setTracerInputs({ token: '', edgeHost: 'zarathustra.com' });
-    expect(reporter.getEdgeHost()).toEqual('zarathustra.com');
-
-    TracerGlobals.setTracerInputs({ token: '', edgeHost: '' });
-
-    expect(reporter.getEdgeHost()).toEqual(
-      'us-east-1.lumigo-tracer-edge.golumigo.com'
-    );
-  });
-
-  test('getEdgeUrl', () => {
-    const expected = {
-      host: 'us-east-1.lumigo-tracer-edge.golumigo.com',
-      path: '/api/spans',
-    };
-    expect(reporter.getEdgeUrl()).toEqual(expected);
-  });
-
   test('sendSingleSpan', async () => {
     const retVal = { rtt: 1234 };
     spies.sendSpans.mockReturnValueOnce(retVal);

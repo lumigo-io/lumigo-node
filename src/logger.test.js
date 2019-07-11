@@ -17,28 +17,28 @@ describe('logger', () => {
   });
 
   test('info', () => {
-    utils.setIsDebug();
+    utils.setDebug();
     logger.info();
     expect(spies.log).toHaveBeenCalledTimes(1);
     expect(spies.log).toHaveBeenCalledWith('INFO', undefined, undefined);
   });
 
   test('debug', () => {
-    utils.setIsDebug();
+    utils.setDebug();
     logger.debug();
     expect(spies.log).toHaveBeenCalledTimes(1);
     expect(spies.log).toHaveBeenCalledWith('DEBUG', undefined, undefined);
   });
 
   test('warn', () => {
-    utils.setIsDebug();
+    utils.setDebug();
     logger.warn();
     expect(spies.log).toHaveBeenCalledTimes(1);
     expect(spies.log).toHaveBeenCalledWith('WARNING', undefined, undefined);
   });
 
   test('fatal', () => {
-    utils.setIsDebug();
+    utils.setDebug();
     logger.fatal();
     expect(spies.log).toHaveBeenCalledTimes(1);
     expect(spies.log).toHaveBeenCalledWith('FATAL', undefined, undefined);
@@ -55,7 +55,7 @@ describe('logger', () => {
     typedInvokeLogFn();
     expect(spies.log).toHaveBeenCalledTimes(0);
 
-    utils.setIsDebug();
+    utils.setDebug();
 
     expect(typedInvokeLogFn).toBeInstanceOf(Function);
 

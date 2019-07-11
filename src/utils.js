@@ -2,6 +2,9 @@ import { TracerGlobals } from './globals';
 import https from 'https';
 import crypto from 'crypto';
 
+export const SPAN_PATH = '/api/spans';
+export const LUMIGO_TRACER_EDGE = 'lumigo-tracer-edge.golumigo.com';
+
 export const getContextInfo = context => {
   const remainingTimeInMillis = context.getRemainingTimeInMillis();
   const { functionName, awsRequestId, invokedFunctionArn } = context;
@@ -121,7 +124,7 @@ export const setVerboseMode = () => (process.env['LUMIGO_VERBOSE'] = 'TRUE');
 
 export const setSwitchOff = () => (process.env['LUMIGO_SWITCH_OFF'] = 'TRUE');
 
-export const setIsDebug = () => (process.env['LUMIGO_DEBUG'] = 'TRUE');
+export const setDebug = () => (process.env['LUMIGO_DEBUG'] = 'TRUE');
 
 export const isString = x =>
   Object.prototype.toString.call(x) === '[object String]';
@@ -177,3 +180,23 @@ export const httpReq = (options = {}, reqBody) =>
     !!reqBody && req.write(reqBody);
     req.end();
   });
+
+export const getAwsEdgeHost = () => {
+  const { awsRegion } = getAWSEnvironment();
+  return `${awsRegion}.${LUMIGO_TRACER_EDGE}`;
+};
+
+export const getEdgeHost = () => {
+  const { edgeHost } = TracerGlobals.getTracerInputs();
+  if (edgeHost) {
+    return edgeHost;
+  }
+  const awsEdgeHost = getAwsEdgeHost();
+  return awsEdgeHost;
+};
+
+export const getEdgeUrl = () => {
+  const host = getEdgeHost();
+  const path = SPAN_PATH;
+  return { host, path };
+};
