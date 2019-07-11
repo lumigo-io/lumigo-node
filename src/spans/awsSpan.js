@@ -168,10 +168,10 @@ export const getHttpInfo = (requestData, responseData) => {
   return { host, request, response };
 };
 
-export const getBasicHttpSpan = () => {
+export const getBasicHttpSpan = (spanId = null) => {
   const { context } = TracerGlobals.getHandlerInputs();
   const { awsRequestId: parentId } = context;
-  const id = getRandomId();
+  const id = spanId || getRandomId();
   const type = HTTP_SPAN;
   const basicSpan = getBasicSpan();
   return { ...basicSpan, id, type, parentId };
@@ -186,13 +186,13 @@ export const getHttpSpanTimings = (requestData, responseData) => {
 export const getHttpSpan = (requestData, responseData) => {
   const { host } = requestData;
 
-  const awsServiceData = isRequestToAwsService(host)
+  const { awsServiceData, spanId } = isRequestToAwsService(host)
     ? getAwsServiceData(requestData, responseData)
     : {};
 
   const httpInfo = getHttpInfo(requestData, responseData);
 
-  const basicHttpSpan = getBasicHttpSpan();
+  const basicHttpSpan = getBasicHttpSpan(spanId);
 
   const info = Object.assign({}, basicHttpSpan.info, {
     httpInfo,

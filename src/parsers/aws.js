@@ -8,7 +8,8 @@ export const dynamodbParser = requestData => {
   const resourceName =
     (reqBodyJSON['TableName'] && reqBodyJSON.TableName) || '';
 
-  return { resourceName, dynamodbMethod };
+  const awsServiceData = { resourceName, dynamodbMethod };
+  return { awsServiceData };
 };
 
 export const lambdaParser = (requestData, responseData) => {
@@ -16,11 +17,12 @@ export const lambdaParser = (requestData, responseData) => {
   const resourceName = path.split('/')[3]; // FunctionName
   const invocationType = headers['x-amz-invocation-type'];
   const { headers: responseHeaders } = responseData;
-  const id =
+  const spanId =
     responseHeaders['x-amzn-requestid'] ||
     responseHeaders['x-amz-requestid'] ||
     '';
-  return { resourceName, invocationType, id };
+  const awsServiceData = { resourceName, invocationType };
+  return { awsServiceData, spanId };
 };
 
 /*eslint-disable */
