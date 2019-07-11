@@ -173,10 +173,11 @@ export const isAwsService = host => !!(host && host.includes('amazonaws.com'));
 
 export const removeLumigoFromStacktrace = handleReturnValue => {
   const { err, data, type } = handleReturnValue;
-  if (!err || !err.trace) {
+  if (!err || !err.stack) {
     return handleReturnValue;
   }
-  const { trace } = err;
+  const { stack } = err;
+  const stackArr = stack.split('\n');
 
   const pattern = '/dist/lumigo.js:';
   const reducer = (acc, v, i) => {
@@ -186,14 +187,14 @@ export const removeLumigoFromStacktrace = handleReturnValue => {
     return acc;
   };
 
-  const pattrenIndices = trace.reduce(reducer, []);
+  const pattrenIndices = stackArr.reduce(reducer, []);
 
   const minIndex = pattrenIndices.shift();
   const maxIndex = pattrenIndices.pop();
   const nrItemsToRemove = maxIndex - minIndex + 1;
 
-  trace.splice(minIndex, nrItemsToRemove);
-  err.trace = trace;
+  stackArr.splice(minIndex, nrItemsToRemove);
+  err.stack = stackArr.join('\n');
 
   return { err, data, type };
 };
