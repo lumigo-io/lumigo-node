@@ -1,4 +1,9 @@
-import { isSwitchedOff, isAwsEnvironment, isAsyncFn } from './utils';
+import {
+  isSwitchedOff,
+  isAwsEnvironment,
+  isAsyncFn,
+  getEdgeUrl,
+} from './utils';
 import {
   getFunctionSpan,
   getEndFunctionSpan,
@@ -17,7 +22,8 @@ export const ASYNC_HANDLER_REJECTED = 'async_handler_rejected';
 export const startTrace = async () => {
   try {
     const tracerInputs = TracerGlobals.getTracerInputs();
-    logger.debug('Tracer started', tracerInputs);
+    const { host, path } = getEdgeUrl();
+    logger.debug('Tracer started', { tracerInputs, host, path });
 
     if (!isSwitchedOff() && isAwsEnvironment()) {
       const functionSpan = getFunctionSpan();
