@@ -309,7 +309,7 @@ describe.skip('end-to-end lumigo-node', () => {
       event: exampleApiGatewayEvent,
       timeoutMs: 30000,
       clientContext,
-      verboseLevel: 3,
+      verboseLevel,
       environment,
       callback,
     });
@@ -330,7 +330,6 @@ describe.skip('end-to-end lumigo-node', () => {
     };
 
     const callback = function(err, data) {
-      console.log(data);
       expect(data.status).toEqual(200);
       done();
     };
@@ -340,7 +339,7 @@ describe.skip('end-to-end lumigo-node', () => {
       event: exampleApiGatewayEvent,
       timeoutMs: 30000,
       clientContext,
-      verboseLevel: 3,
+      verboseLevel,
       environment,
       callback,
     });

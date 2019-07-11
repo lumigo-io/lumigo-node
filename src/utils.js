@@ -53,6 +53,15 @@ export const getTraceId = awsXAmznTraceId => {
   return traceId;
 };
 
+export const getPatchedTraceId = awsXAmznTraceId => {
+  const { Root, Parent, Sampled, transactionId } = getTraceId(awsXAmznTraceId);
+  const rootArr = Root.split('-');
+  const shortId = getRandomString(4);
+  return `Root=${
+    rootArr[0]
+  }-0000${shortId}-${transactionId};Parent=${Parent};Sampled=${Sampled}`;
+};
+
 export const isAsyncFn = fn =>
   fn &&
   fn['constructor'] &&
@@ -159,6 +168,9 @@ export const getRandomId = () => {
   const p5 = getRandomString(12);
   return `${p1}-${p2}-${p3}-${p4}-${p5}`;
 };
+
+export const isAwsService = host =>
+  !!(host && host.includes('amazonaws.com'));
 
 export const httpsAgent = new https.Agent({ keepAlive: true });
 
