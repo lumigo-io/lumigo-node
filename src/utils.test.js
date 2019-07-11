@@ -265,6 +265,47 @@ describe('utils', () => {
     expect(utils.isAwsService(host2)).toBe(false);
   });
 
+  test.only('removeLumigoFromStacktrace', () => {
+    const err = {
+      errorType: 'Error',
+      errorMessage: 'bla',
+      trace: [
+        'Error: bla',
+        '    at c (/var/task/child.js:15:11)',
+        '    at b (/var/task/child.js:17:19)',
+        '    at a (/var/task/child.js:18:19)',
+        '    at childFn (/var/task/child.js:19:3)',
+        '    at r (/var/task/node_modules/@lumigo/tracer/dist/lumigo.js:1:11897)',
+        '    at new Promise (<anonymous>)',
+        '    at g (/var/task/node_modules/@lumigo/tracer/dist/lumigo.js:1:11852)',
+        '    at Runtime.handler (/var/task/node_modules/@lumigo/tracer/dist/lumigo.js:1:12385)',
+        '    at Runtime.handleOnce (/var/runtime/Runtime.js:63:25)',
+        '    at process._tickCallback (internal/process/next_tick.js:68:7)',
+      ],
+    };
+    const data = 'abcd';
+    const type = '1234';
+    const handlerReturnValue = { err, data, type };
+
+    const expectedErr = {
+      errorType: 'Error',
+      errorMessage: 'bla',
+      trace: [
+        'Error: bla',
+        '    at c (/var/task/child.js:15:11)',
+        '    at b (/var/task/child.js:17:19)',
+        '    at a (/var/task/child.js:18:19)',
+        '    at childFn (/var/task/child.js:19:3)',
+        '    at Runtime.handleOnce (/var/runtime/Runtime.js:63:25)',
+        '    at process._tickCallback (internal/process/next_tick.js:68:7)',
+      ],
+    };
+    const expectedHandlerReturnValue = { err: expectedErr, data, type };
+
+    expect(utils.removeLumigoFromStacktrace(handlerReturnValue)).toEqual(
+      expectedHandlerReturnValue
+    );
+  });
   test('httpReq', async () => {
     const options = { bla: 'bla' };
     const req = new EventEmitter();
