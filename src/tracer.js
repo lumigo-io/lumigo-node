@@ -25,11 +25,17 @@ export const ASYNC_HANDLER_REJECTED = 'async_handler_rejected';
 
 export const startTrace = async () => {
   try {
-    const tracerInputs = TracerGlobals.getTracerInputs();
-    const { host, path } = getEdgeUrl();
-    logger.debug('Tracer started', { tracerInputs, host, path });
-
     if (!isSwitchedOff() && isAwsEnvironment()) {
+      const tracerInputs = TracerGlobals.getTracerInputs();
+      const handlerInputs = TracerGlobals.getHandlerInputs();
+      const { host, path } = getEdgeUrl();
+      logger.debug('Tracer started', {
+        tracerInputs,
+        handlerInputs,
+        host,
+        path,
+      });
+
       const functionSpan = getFunctionSpan();
       logger.debug('startTrace span created', functionSpan);
 

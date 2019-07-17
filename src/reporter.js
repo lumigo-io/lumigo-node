@@ -1,5 +1,5 @@
 import { TracerGlobals } from './globals';
-import { getEdgeUrl, getTracerInfo, httpReq } from './utils';
+import { getEdgeUrl, getTracerInfo, httpReq, isDebug } from './utils';
 import * as logger from './logger';
 
 export const sendSingleSpan = async span => exports.sendSpans([span]);
@@ -30,6 +30,6 @@ export const sendSpans = async spans => {
   const roundTripEnd = Date.now();
   const rtt = roundTripEnd - roundTripStart;
 
-  logSpans(spans);
+  isDebug() && logSpans(spans);
   return { rtt };
 };
