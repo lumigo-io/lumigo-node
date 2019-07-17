@@ -4,10 +4,11 @@ import {
   getEndFunctionSpan,
   addRttToFunctionSpan,
 } from './spans/awsSpan';
-import { sendSingleSpan, sendSpans } from './reporter';
+import { getEdgeUrl, sendSingleSpan, sendSpans } from './reporter';
 import { TracerGlobals, SpansContainer, clearGlobals } from './globals';
 import startHooks from './hooks';
 import * as logger from './logger';
+import { debug } from './logger';
 
 export const NON_ASYNC_HANDLER_CALLBACKED = 'non_async_callbacked';
 export const NON_ASYNC_HANDLER_ERRORED = 'non_async_errored';
@@ -15,9 +16,20 @@ export const ASYNC_HANDLER_CALLBACKED = 'async_callbacked';
 export const ASYNC_HANDLER_RESOLVED = 'async_handler_resolved';
 export const ASYNC_HANDLER_REJECTED = 'async_handler_rejected';
 
+const logStartTrace = () => {
+  const { host, path } = getEdgeUrl();
+  debug('Tracer started', {
+    edge: {
+      host,
+      path,
+    },
+  });
+};
+
 export const startTrace = async () => {
   try {
     if (!isSwitchedOff() && isAwsEnvironment()) {
+      logStartTrace();
       const functionSpan = getFunctionSpan();
       const { rtt } = await sendSingleSpan(functionSpan);
       return addRttToFunctionSpan(functionSpan, rtt);

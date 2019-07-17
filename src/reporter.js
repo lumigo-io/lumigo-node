@@ -25,6 +25,8 @@ export const getEdgeUrl = () => {
   return { host, path };
 };
 
+const logSpans = (spans) => spans.map(span => debug('Span sent', span.id));
+
 export const sendSingleSpan = async span => exports.sendSpans([span]);
 
 export const sendSpans = async spans => {
@@ -40,11 +42,6 @@ export const sendSpans = async spans => {
   const method = 'POST';
   const { host, path } = getEdgeUrl();
 
-  debug('Edge selected', {
-    host,
-    path,
-  });
-
   const reqBody = JSON.stringify(spans);
   const roundTripStart = Date.now();
 
@@ -53,7 +50,7 @@ export const sendSpans = async spans => {
   const roundTripEnd = Date.now();
   const rtt = roundTripEnd - roundTripStart;
 
-  spans.map(span => debug('Span sent', span.id));
+  logSpans(spans);
 
   return { rtt };
 };
