@@ -9,6 +9,7 @@ import https from 'https';
 import http from 'http';
 
 import * as httpHook from './http';
+import * as utils from '../utils';
 
 jest.mock('shimmer');
 jest.mock('clone-response');
@@ -19,7 +20,6 @@ jest.mock('../spans/awsSpan');
 import * as globals from '../globals';
 jest.mock('../globals');
 
-import * as reporter from '../reporter';
 jest.mock('../reporter');
 
 describe('http hook', () => {
@@ -32,14 +32,15 @@ describe('http hook', () => {
     httpHook,
     'wrappedHttpResponseCallback'
   );
+  spies.getEdgeHost = jest.spyOn(utils, 'getEdgeHost');
   spies.randomBytes = jest.spyOn(crypto, 'randomBytes');
   spies.log = jest.spyOn(console, 'log');
 
   test('isBlacklisted', () => {
     const host = 'asdf';
     const edgeHost = 'us-east-x.lumigo-tracer-edge.golumigo.com';
-    reporter.getEdgeHost.mockReturnValueOnce(edgeHost);
-    reporter.getEdgeHost.mockReturnValueOnce(edgeHost);
+    utils.getEdgeHost.mockReturnValueOnce(edgeHost);
+    utils.getEdgeHost.mockReturnValueOnce(edgeHost);
     expect(httpHook.isBlacklisted(host)).toBe(false);
     expect(httpHook.isBlacklisted(edgeHost)).toBe(true);
   });
@@ -326,7 +327,7 @@ describe('http hook', () => {
   test('httpRequestWrapper', () => {
     const originalRequestFn = jest.fn();
     const edgeHost = 'edge-asdf.com';
-    reporter.getEdgeHost.mockReturnValueOnce(edgeHost);
+    utils.getEdgeHost.mockReturnValueOnce(edgeHost);
     const callback1 = jest.fn();
 
     // Blacklisted.
@@ -340,6 +341,7 @@ describe('http hook', () => {
     const options3 = { host: 'bla.com' };
     const callback3 = jest.fn();
     callback3.__lumigoSentinel = true;
+    utils.getEdgeHost.mockReturnValueOnce(edgeHost);
     httpHook.httpRequestWrapper(originalRequestFn)(options3, callback3);
     expect(originalRequestFn).toHaveBeenCalledWith(options3, callback3);
 
@@ -350,6 +352,7 @@ describe('http hook', () => {
     const callback5 = jest.fn();
     spies.log.mockClear();
     spies.log.mockReturnValueOnce(null);
+    utils.getEdgeHost.mockReturnValueOnce(edgeHost);
     originalRequestFn.mockImplementationOnce(() => {
       throw new Error();
     });
@@ -378,6 +381,7 @@ describe('http hook', () => {
 
     const clientRequest = { a: 'b' };
     originalRequestFn.mockReturnValueOnce(clientRequest);
+    utils.getEdgeHost.mockReturnValueOnce(edgeHost);
 
     expect(
       httpHook.httpRequestWrapper(originalRequestFn)(options2, callback2)
@@ -402,7 +406,7 @@ describe('http hook', () => {
 
     const clientRequest4 = { a: 'b' };
     originalRequestFn.mockReturnValueOnce(clientRequest4);
-
+    utils.getEdgeHost.mockReturnValueOnce(edgeHost);
     expect(httpHook.httpRequestWrapper(originalRequestFn)(options4)).toEqual(
       clientRequest4
     );

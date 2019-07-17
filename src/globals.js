@@ -1,7 +1,12 @@
+import { debug } from './logger';
+
 export const SpansContainer = (() => {
   const spans = [];
 
-  const addSpan = span => spans.push(span);
+  const addSpan = span => {
+    spans.push(span);
+    debug('Span created', span);
+  };
   const getSpans = () => spans;
   const clearSpans = () => (spans.length = 0);
 

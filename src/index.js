@@ -1,5 +1,8 @@
 import { trace } from './tracer';
 import { setSwitchOff, setVerboseMode } from './utils';
+import { debug } from './logger';
+
+debug('Tracer imported');
 
 module.exports = function({
   token,

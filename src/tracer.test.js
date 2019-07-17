@@ -5,6 +5,7 @@ import * as globals from './globals';
 import * as reporter from './reporter';
 import * as awsSpan from './spans/awsSpan';
 import startHooks from './hooks';
+import * as logger from './logger';
 
 jest.mock('./hooks');
 describe('tracer', () => {
@@ -24,7 +25,7 @@ describe('tracer', () => {
   );
   spies.SpansContainer.addSpan = jest.spyOn(globals.SpansContainer, 'addSpan');
   spies.clearGlobals = jest.spyOn(globals, 'clearGlobals');
-  spies.log = jest.spyOn(console, 'log');
+  spies.logFatal = jest.spyOn(logger, 'fatal');
 
   beforeEach(() => {
     startHooks.mockClear();
@@ -60,18 +61,14 @@ describe('tracer', () => {
     const result2 = await tracer.startTrace();
     expect(result2).toEqual(null);
 
-    spies.log.mockImplementationOnce(() => {});
+    spies.logFatal.mockImplementationOnce(() => {});
     const err1 = new Error('stam1');
     spies.isSwitchedOff.mockImplementationOnce(() => {
       throw err1;
     });
 
     await expect(tracer.startTrace()).resolves.toEqual(null);
-    expect(spies.log).toHaveBeenCalledWith(
-      '#LUMIGO#',
-      'startTrace failure',
-      err1
-    );
+    expect(spies.logFatal).toHaveBeenCalledWith('startTrace failure', err1);
   });
 
   test('isCallbacked', async () => {
@@ -127,7 +124,7 @@ describe('tracer', () => {
 
     spies.clearGlobals.mockClear();
 
-    spies.log.mockImplementationOnce(() => {});
+    spies.logFatal.mockImplementationOnce(() => {});
     const err2 = new Error('stam2');
     spies.isSwitchedOff.mockImplementationOnce(() => {
       throw err2;
@@ -135,11 +132,7 @@ describe('tracer', () => {
 
     await tracer.endTrace(functionSpan, handlerReturnValue);
 
-    expect(spies.log).toHaveBeenCalledWith(
-      '#LUMIGO#',
-      'endTrace failure',
-      err2
-    );
+    expect(spies.logFatal).toHaveBeenCalledWith('endTrace failure', err2);
     expect(spies.clearGlobals).toHaveBeenCalled();
   });
 
@@ -186,7 +179,7 @@ describe('tracer', () => {
 
     spies.clearGlobals.mockClear();
 
-    spies.log.mockImplementationOnce(() => {});
+    spies.logFatal.mockImplementationOnce(() => {});
     const err2 = new Error('stam2');
     spies.isSwitchedOff.mockImplementationOnce(() => {
       throw err2;
@@ -194,11 +187,7 @@ describe('tracer', () => {
 
     await tracer.endTrace(functionSpan, handlerReturnValue);
 
-    expect(spies.log).toHaveBeenCalledWith(
-      '#LUMIGO#',
-      'endTrace failure',
-      err2
-    );
+    expect(spies.logFatal).toHaveBeenCalledWith('endTrace failure', err2);
     expect(spies.clearGlobals).toHaveBeenCalled();
   });
 

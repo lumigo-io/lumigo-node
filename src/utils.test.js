@@ -14,6 +14,15 @@ describe('utils', () => {
   const spies = {};
   spies.randomBytes = jest.spyOn(crypto, 'randomBytes');
 
+  beforeEach(() => {
+    const oldEnv = Object.assign({}, process.env);
+    const awsEnv = {
+      AWS_REGION: 'us-east-1',
+      AWS_DEFAULT_REGION: 'us-east-1',
+    };
+    process.env = { ...oldEnv, ...awsEnv };
+  });
+
   test('getContextInfo', () => {
     const awsRequestId = '6d26e3c8-60a6-4cee-8a70-f525f47a4caf';
     const functionName = 'w00t';
@@ -205,6 +214,14 @@ describe('utils', () => {
     process.env = { ...oldEnv };
   });
 
+  test('setDebug', () => {
+    expect(utils.isDebug()).toBe(false);
+    const oldEnv = Object.assign({}, process.env);
+    utils.setDebug();
+    expect(utils.isDebug()).toBe(true);
+    process.env = { ...oldEnv };
+  });
+
   test('isString', () => {
     expect(utils.isString('asdf')).toBe(true);
     expect(utils.isString({ satoshi: 'nakamoto' })).toBe(false);
@@ -349,5 +366,24 @@ describe('utils', () => {
     const beforeExitAsyncCallback = prependOnceListenerSpy.mock.calls[0][1];
     await beforeExitAsyncCallback();
     expect(fn).toHaveBeenCalledWith(arg1, arg2);
+  });
+
+  test('getEdgeHost', () => {
+    TracerGlobals.setTracerInputs({ token: '', edgeHost: 'zarathustra.com' });
+    expect(utils.getEdgeHost()).toEqual('zarathustra.com');
+
+    TracerGlobals.setTracerInputs({ token: '', edgeHost: '' });
+
+    expect(utils.getEdgeHost()).toEqual(
+      'us-east-1.lumigo-tracer-edge.golumigo.com'
+    );
+  });
+
+  test('getEdgeUrl', () => {
+    const expected = {
+      host: 'us-east-1.lumigo-tracer-edge.golumigo.com',
+      path: '/api/spans',
+    };
+    expect(utils.getEdgeUrl()).toEqual(expected);
   });
 });

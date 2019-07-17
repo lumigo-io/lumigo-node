@@ -3,6 +3,7 @@ import {
   isSwitchedOff,
   getContextInfo,
   isAwsEnvironment,
+  getEdgeUrl,
   callAfterEmptyEventLoop,
   removeLumigoFromStacktrace,
 } from './utils';
@@ -14,6 +15,7 @@ import {
 import { sendSingleSpan, sendSpans } from './reporter';
 import { TracerGlobals, SpansContainer, clearGlobals } from './globals';
 import startHooks from './hooks';
+import * as logger from './logger';
 
 export const NON_ASYNC_HANDLER_CALLBACKED = 'non_async_callbacked';
 export const NON_ASYNC_HANDLER_ERRORED = 'non_async_errored';
@@ -24,15 +26,26 @@ export const ASYNC_HANDLER_REJECTED = 'async_handler_rejected';
 export const startTrace = async () => {
   try {
     if (!isSwitchedOff() && isAwsEnvironment()) {
+      const tracerInputs = TracerGlobals.getTracerInputs();
+      const handlerInputs = TracerGlobals.getHandlerInputs();
+      const { host, path } = getEdgeUrl();
+      logger.debug('Tracer started', {
+        tracerInputs,
+        handlerInputs,
+        host,
+        path,
+      });
+
       const functionSpan = getFunctionSpan();
+      logger.debug('startTrace span created', functionSpan);
+
       const { rtt } = await sendSingleSpan(functionSpan);
       return addRttToFunctionSpan(functionSpan, rtt);
     } else {
       return null;
     }
   } catch (err) {
-    // eslint-disable-next-line
-    console.log('#LUMIGO#', 'startTrace failure', err);
+    logger.fatal('startTrace failure', err);
     return null;
   }
 };
@@ -43,6 +56,7 @@ export const sendEndTraceSpans = async (functionSpan, handlerReturnValue) => {
 
   const spans = SpansContainer.getSpans();
   await sendSpans(spans);
+  logger.debug('Tracer ended');
   clearGlobals();
 };
 
@@ -68,8 +82,7 @@ export const endTrace = async (functionSpan, handlerReturnValue) => {
       }
     }
   } catch (err) {
-    // eslint-disable-next-line
-    console.log('#LUMIGO#', 'endTrace failure', err);
+    logger.fatal('endTrace failure', err);
     clearGlobals();
   }
 };

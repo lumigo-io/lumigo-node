@@ -43,25 +43,6 @@ describe('reporter', () => {
     process.env = { ...oldEnv };
   });
 
-  test('getEdgeHost', () => {
-    TracerGlobals.setTracerInputs({ token: '', edgeHost: 'zarathustra.com' });
-    expect(reporter.getEdgeHost()).toEqual('zarathustra.com');
-
-    TracerGlobals.setTracerInputs({ token: '', edgeHost: '' });
-
-    expect(reporter.getEdgeHost()).toEqual(
-      'us-east-1.lumigo-tracer-edge.golumigo.com'
-    );
-  });
-
-  test('getEdgeUrl', () => {
-    const expected = {
-      host: 'us-east-1.lumigo-tracer-edge.golumigo.com',
-      path: '/api/spans',
-    };
-    expect(reporter.getEdgeUrl()).toEqual(expected);
-  });
-
   test('sendSingleSpan', async () => {
     const retVal = { rtt: 1234 };
     spies.sendSpans.mockReturnValueOnce(retVal);
@@ -72,18 +53,8 @@ describe('reporter', () => {
     expect(result).toEqual(retVal);
   });
 
-  test('logSpans', async () => {
-    const span1 = { a: 'b', c: 'd' };
-    const span2 = { e: 'f', g: 'h' };
-    const spans = [span1, span2];
-    jest.spyOn(global.console, 'log');
-    global.console.log.mockImplementation(() => {});
-
-    reporter.logSpans(spans);
-    expect(global.console.log).toHaveBeenCalledTimes(spans.length);
-  });
-
   test('sendSpans', async () => {
+    utils.setDebug();
     const token = 'DEADBEEF';
     TracerGlobals.setTracerInputs({ token });
 

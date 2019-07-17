@@ -6,3 +6,4 @@ lib
 dist
 env.yml
 .serverless
+.idea

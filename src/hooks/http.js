@@ -2,12 +2,12 @@ import shimmer from 'shimmer';
 import http from 'http';
 import https from 'https';
 import { SpansContainer } from '../globals';
-import { getEdgeHost } from '../reporter';
 import {
   getAWSEnvironment,
   getPatchedTraceId,
   lowerCaseObjectKeys,
   isAwsService,
+  getEdgeHost,
 } from '../utils';
 import { getHttpSpan } from '../spans/awsSpan';
 import cloneResponse from 'clone-response';
