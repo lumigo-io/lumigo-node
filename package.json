@@ -15,7 +15,7 @@
     "jest": "jest",
     "test": "npm run build && npm run jest",
     "lint": "eslint ./src",
-    "prepush": "npm run lint && npm run test"
+    "prepublishOnly": "npm run lint && npm run test"
   },
   "devDependencies": {
     "@babel/cli": "^7.4.4",
