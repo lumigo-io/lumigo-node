@@ -3,6 +3,7 @@ import {
   isAwsEnvironment,
   isAsyncFn,
   getEdgeUrl,
+  removeLumigoFromStacktrace,
 } from './utils';
 import {
   getFunctionSpan,
@@ -11,6 +12,7 @@ import {
 } from './spans/awsSpan';
 import { sendSingleSpan, sendSpans } from './reporter';
 import { TracerGlobals, SpansContainer, clearGlobals } from './globals';
+import startHooks from './hooks';
 import * as logger from './logger';
 
 export const NON_ASYNC_HANDLER_CALLBACKED = 'non_async_callbacked';
@@ -102,6 +104,8 @@ export const trace = ({
     eventFilter,
   });
 
+  startHooks();
+
   const pStartTrace = startTrace();
   const pUserHandler = promisifyUserHandler(
     userHandler,
@@ -115,9 +119,13 @@ export const trace = ({
     pUserHandler,
   ]);
 
-  await endTrace(functionSpan, handlerReturnValue);
+  const cleanedHandlerReturnValue = removeLumigoFromStacktrace(
+    handlerReturnValue
+  );
 
-  const { err, data, type } = handlerReturnValue;
+  await endTrace(functionSpan, cleanedHandlerReturnValue);
+  const { err, data, type } = cleanedHandlerReturnValue;
+
   switch (type) {
     case ASYNC_HANDLER_CALLBACKED:
     case NON_ASYNC_HANDLER_CALLBACKED:

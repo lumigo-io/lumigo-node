@@ -5,7 +5,6 @@ import https from 'https';
 import crypto from 'crypto';
 
 jest.mock('https');
-jest.mock('crypto');
 jest.mock('../package.json', () => ({
   name: '@lumigo/tracerMock',
   version: '1.2.3',
@@ -89,6 +88,15 @@ describe('utils', () => {
     expect(() => utils.getTraceId('a=b;c=d;e=f')).toThrow(
       "Either Root, Parent or Sampled weren't found in traceId."
     );
+  });
+
+  test('getPatchedTraceId', () => {
+    spies.randomBytes.mockReturnValueOnce(Buffer.from('aa'));
+    const awsXAmznTraceId =
+      'Root=1-5b1d2450-6ac46730d346cad0e53f89d0;Parent=59fa1aeb03c2ec1f;Sampled=1';
+    const expected =
+      'Root=1-00006161-6ac46730d346cad0e53f89d0;Parent=59fa1aeb03c2ec1f;Sampled=1';
+    expect(utils.getPatchedTraceId(awsXAmznTraceId)).toEqual(expected);
   });
 
   test('isAsyncFn', () => {
@@ -262,6 +270,57 @@ describe('utils', () => {
   test('getRandomId', () => {
     spies.randomBytes.mockImplementation(nr => Buffer.from(`l`.repeat(nr)));
     expect(utils.getRandomId()).toEqual('6c6c6c6c-6c6c-6c6c-6c6c-6c6c6c6c6c6c');
+  });
+
+  test('isAwsService', () => {
+    const s1 = 'dynamodb';
+    const host1 = `${s1}.amazonaws.com`;
+    expect(utils.isAwsService(host1)).toBe(true);
+
+    const s2 = 'xyz';
+    const host2 = `${s2}.cloud.google.com`;
+    expect(utils.isAwsService(host2)).toBe(false);
+  });
+
+  test('removeLumigoFromStacktrace', () => {
+    const err = {
+      stack:
+        'Error: bla\n' +
+        '    at c (/var/task/child.js:15:11)\n' +
+        '    at b (/var/task/child.js:17:19)\n' +
+        '    at a (/var/task/child.js:18:19)\n' +
+        '    at childFn (/var/task/child.js:19:3)\n' +
+        '    at r (/var/task/node_modules/@lumigo/tracer/dist/lumigo.js:1:11897)\n' +
+        '    at new Promise (<anonymous>)\n' +
+        '    at g (/var/task/node_modules/@lumigo/tracer/dist/lumigo.js:1:11852)\n' +
+        '    at Runtime.handler (/var/task/node_modules/@lumigo/tracer/dist/lumigo.js:1:12385)\n' +
+        '    at Runtime.handleOnce (/var/runtime/Runtime.js:63:25)\n' +
+        '    at process._tickCallback (internal/process/next_tick.js:68:7)',
+    };
+    const data = 'abcd';
+    const type = '1234';
+    const handlerReturnValue = { err, data, type };
+
+    const expectedErr = {
+      stack:
+        'Error: bla\n' +
+        '    at c (/var/task/child.js:15:11)\n' +
+        '    at b (/var/task/child.js:17:19)\n' +
+        '    at a (/var/task/child.js:18:19)\n' +
+        '    at childFn (/var/task/child.js:19:3)\n' +
+        '    at Runtime.handleOnce (/var/runtime/Runtime.js:63:25)\n' +
+        '    at process._tickCallback (internal/process/next_tick.js:68:7)',
+    };
+
+    const expectedHandlerReturnValue = { err: expectedErr, data, type };
+
+    expect(utils.removeLumigoFromStacktrace(handlerReturnValue)).toEqual(
+      expectedHandlerReturnValue
+    );
+
+    expect(
+      utils.removeLumigoFromStacktrace({ err: null, data: 'y', type: 'x' })
+    ).toEqual({ err: null, data: 'y', type: 'x' });
   });
 
   test('httpReq', async () => {

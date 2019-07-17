@@ -31,7 +31,6 @@ describe('index', () => {
       eventFilter: {},
     });
     expect(spies.setVerboseMode).toHaveBeenCalled();
-
     spies.trace.mockClear();
     spies.trace.mockReturnValueOnce(retVal);
     const lumigo2 = require('./index')({

@@ -1,10 +1,8 @@
 import { trace } from './tracer';
-import { setVerboseMode, setSwitchOff } from './utils';
+import { setSwitchOff, setVerboseMode } from './utils';
 import { debug } from './logger';
 
 debug('Tracer imported');
-
-require('./hooks').default({ enabled: true });
 
 module.exports = function({
   token,
