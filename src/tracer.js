@@ -1,6 +1,7 @@
 import {
   isAsyncFn,
   isSwitchedOff,
+  getContextInfo,
   isAwsEnvironment,
   removeLumigoFromStacktrace,
 } from './utils';
@@ -19,6 +20,13 @@ export const ASYNC_HANDLER_CALLBACKED = 'async_callbacked';
 export const ASYNC_HANDLER_RESOLVED = 'async_handler_resolved';
 export const ASYNC_HANDLER_REJECTED = 'async_handler_rejected';
 
+export const isCallbacked = handlerReturnValue => {
+  const { type } = handlerReturnValue;
+  return (
+    type === ASYNC_HANDLER_CALLBACKED || type === NON_ASYNC_HANDLER_CALLBACKED
+  );
+};
+
 export const startTrace = async () => {
   try {
     if (!isSwitchedOff() && isAwsEnvironment()) {
@@ -35,18 +43,29 @@ export const startTrace = async () => {
   }
 };
 
+export const sendEndTraceSpans = async (functionSpan, handlerReturnValue) => {
+  const endFunctionSpan = getEndFunctionSpan(functionSpan, handlerReturnValue);
+  SpansContainer.addSpan(endFunctionSpan);
+
+  const spans = SpansContainer.getSpans();
+  await sendSpans(spans);
+  clearGlobals();
+};
+
 export const endTrace = async (functionSpan, handlerReturnValue) => {
   try {
     if (functionSpan && !isSwitchedOff() && isAwsEnvironment()) {
-      const endFunctionSpan = getEndFunctionSpan(
-        functionSpan,
-        handlerReturnValue
-      );
-      SpansContainer.addSpan(endFunctionSpan);
+      const { context } = TracerGlobals.getHandlerInputs();
+      const { callbackWaitsForEmptyEventLoop } = getContextInfo(context);
 
-      const spans = SpansContainer.getSpans();
-      await sendSpans(spans);
-      clearGlobals();
+      if (isCallbacked(handlerReturnValue) && callbackWaitsForEmptyEventLoop) {
+        process.prependOnceListener(
+          'beforeExit',
+          async () => await sendEndTraceSpans(functionSpan, handlerReturnValue)
+        );
+      } else {
+        await sendEndTraceSpans(functionSpan, handlerReturnValue);
+      }
     }
   } catch (err) {
     // eslint-disable-next-line

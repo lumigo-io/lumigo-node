@@ -4,7 +4,12 @@ import crypto from 'crypto';
 
 export const getContextInfo = context => {
   const remainingTimeInMillis = context.getRemainingTimeInMillis();
-  const { functionName, awsRequestId, invokedFunctionArn } = context;
+  const {
+    functionName,
+    awsRequestId,
+    invokedFunctionArn,
+    callbackWaitsForEmptyEventLoop,
+  } = context;
   const awsAccountId = invokedFunctionArn
     ? invokedFunctionArn.split(':')[4]
     : '';
@@ -14,6 +19,7 @@ export const getContextInfo = context => {
     awsRequestId,
     awsAccountId,
     remainingTimeInMillis,
+    callbackWaitsForEmptyEventLoop,
   };
 };
 

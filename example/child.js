@@ -2,8 +2,8 @@ const axios = require('axios');
 const token = 't_a595aa58c126575c5c41';
 const edgeHost = 'kzc0w7k50d.execute-api.eu-west-1.amazonaws.com';
 const debug = true;
-const lumigo = require('@lumigo/tracer')({ token, edgeHost, debug });
-//const lumigo = require('./lumigo')({ token, edgeHost, debug });
+const lumigo = require('./lumigo')({ token, edgeHost, debug });
+//const lumigo = require('@lumigo/tracer')({ token, edgeHost, debug });
 //const LumigoTracer = require('@lumigo/tracer');
 //const RellyTracer = new LumigoTracer({ token, host: edgeHost });
 
@@ -15,9 +15,8 @@ const yikes = async () => {
   console.log('SAGIZZ5');
 };
 const childFn = async (event, context, callback) => {
-  //context.callbackWaitsForEmptyEventLoop = false;
+  context.callbackWaitsForEmptyEventLoop = false;
   yikes();
-  console.log(process._getActiveHandles());
   callback(null, 'zarathustra5');
   /*
   const c = () => {
