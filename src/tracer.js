@@ -3,6 +3,7 @@ import {
   isSwitchedOff,
   getContextInfo,
   isAwsEnvironment,
+  callAfterEmptyEventLoop,
   removeLumigoFromStacktrace,
 } from './utils';
 import {
@@ -19,13 +20,6 @@ export const NON_ASYNC_HANDLER_ERRORED = 'non_async_errored';
 export const ASYNC_HANDLER_CALLBACKED = 'async_callbacked';
 export const ASYNC_HANDLER_RESOLVED = 'async_handler_resolved';
 export const ASYNC_HANDLER_REJECTED = 'async_handler_rejected';
-
-export const isCallbacked = handlerReturnValue => {
-  const { type } = handlerReturnValue;
-  return (
-    type === ASYNC_HANDLER_CALLBACKED || type === NON_ASYNC_HANDLER_CALLBACKED
-  );
-};
 
 export const startTrace = async () => {
   try {
@@ -52,6 +46,13 @@ export const sendEndTraceSpans = async (functionSpan, handlerReturnValue) => {
   clearGlobals();
 };
 
+export const isCallbacked = handlerReturnValue => {
+  const { type } = handlerReturnValue;
+  return (
+    type === ASYNC_HANDLER_CALLBACKED || type === NON_ASYNC_HANDLER_CALLBACKED
+  );
+};
+
 export const endTrace = async (functionSpan, handlerReturnValue) => {
   try {
     if (functionSpan && !isSwitchedOff() && isAwsEnvironment()) {
@@ -59,10 +60,9 @@ export const endTrace = async (functionSpan, handlerReturnValue) => {
       const { callbackWaitsForEmptyEventLoop } = getContextInfo(context);
 
       if (isCallbacked(handlerReturnValue) && callbackWaitsForEmptyEventLoop) {
-        process.prependOnceListener(
-          'beforeExit',
-          async () => await sendEndTraceSpans(functionSpan, handlerReturnValue)
-        );
+        const fn = sendEndTraceSpans;
+        const args = [functionSpan, handlerReturnValue];
+        callAfterEmptyEventLoop(fn, args);
       } else {
         await sendEndTraceSpans(functionSpan, handlerReturnValue);
       }

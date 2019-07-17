@@ -229,3 +229,6 @@ export const httpReq = (options = {}, reqBody) =>
     !!reqBody && req.write(reqBody);
     req.end();
   });
+
+export const callAfterEmptyEventLoop = (fn, args) =>
+  process.prependOnceListener('beforeExit', async () => await fn(...args));

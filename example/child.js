@@ -15,7 +15,7 @@ const yikes = async () => {
   console.log('SAGIZZ5');
 };
 const childFn = async (event, context, callback) => {
-  context.callbackWaitsForEmptyEventLoop = false;
+  context.callbackWaitsForEmptyEventLoop = true;
   yikes();
   callback(null, 'zarathustra5');
   /*
