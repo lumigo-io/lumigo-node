@@ -54,6 +54,7 @@ describe('reporter', () => {
   });
 
   test('sendSpans', async () => {
+    utils.setDebug();
     const token = 'DEADBEEF';
     TracerGlobals.setTracerInputs({ token });
 
