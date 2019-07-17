@@ -4,7 +4,12 @@ import crypto from 'crypto';
 
 export const getContextInfo = context => {
   const remainingTimeInMillis = context.getRemainingTimeInMillis();
-  const { functionName, awsRequestId, invokedFunctionArn } = context;
+  const {
+    functionName,
+    awsRequestId,
+    invokedFunctionArn,
+    callbackWaitsForEmptyEventLoop,
+  } = context;
   const awsAccountId = invokedFunctionArn
     ? invokedFunctionArn.split(':')[4]
     : '';
@@ -14,7 +19,17 @@ export const getContextInfo = context => {
     awsRequestId,
     awsAccountId,
     remainingTimeInMillis,
+    callbackWaitsForEmptyEventLoop,
   };
+};
+
+export const getAccountIdFromInvokedFunctinArn = invokedFunctionArn =>
+  invokedFunctionArn ? invokedFunctionArn.split(':')[4] : '';
+
+export const getAccountId = context => {
+  const { invokedFunctionArn } = context;
+  const awsAccountId = getAccountIdFromInvokedFunctinArn(invokedFunctionArn);
+  return awsAccountId;
 };
 
 export const getTracerInfo = () => {
@@ -214,3 +229,6 @@ export const httpReq = (options = {}, reqBody) =>
     !!reqBody && req.write(reqBody);
     req.end();
   });
+
+export const callAfterEmptyEventLoop = (fn, args) =>
+  process.prependOnceListener('beforeExit', async () => await fn(...args));

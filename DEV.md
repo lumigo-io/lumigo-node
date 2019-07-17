@@ -9,7 +9,6 @@
 5. Test a Lumigo-tracer error with E2E tests.
 6. Semantic versioning? Auto bump?
 7. Test interoperability with other sdks that use shimmer or other hooking system.
-8. Add debug messages for Lumigo. Test specific flows
 11. Talk with Uri and Saar about, about a misusage of shimmer wrapping.
 
 ## Incomplete Things
