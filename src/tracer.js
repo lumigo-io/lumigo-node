@@ -1,4 +1,9 @@
-import { isSwitchedOff, isAwsEnvironment, isAsyncFn } from './utils';
+import {
+  isAsyncFn,
+  isSwitchedOff,
+  isAwsEnvironment,
+  removeLumigoFromStacktrace,
+} from './utils';
 import {
   getFunctionSpan,
   getEndFunctionSpan,
@@ -119,9 +124,13 @@ export const trace = ({
     pUserHandler,
   ]);
 
-  await endTrace(functionSpan, handlerReturnValue);
+  const cleanedHandlerReturnValue = removeLumigoFromStacktrace(
+    handlerReturnValue
+  );
 
-  const { err, data, type } = handlerReturnValue;
+  await endTrace(functionSpan, cleanedHandlerReturnValue);
+  const { err, data, type } = cleanedHandlerReturnValue;
+
   switch (type) {
     case ASYNC_HANDLER_CALLBACKED:
     case NON_ASYNC_HANDLER_CALLBACKED:

@@ -25,7 +25,7 @@ export const getEdgeUrl = () => {
   return { host, path };
 };
 
-const logSpans = (spans) => spans.map(span => debug('Span sent', span.id));
+const logSpans = spans => spans.map(span => debug('Span sent', span.id));
 
 export const sendSingleSpan = async span => exports.sendSpans([span]);
 
