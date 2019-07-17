@@ -180,6 +180,34 @@ export const getRandomId = () => {
 
 export const isAwsService = host => !!(host && host.includes('amazonaws.com'));
 
+export const removeLumigoFromStacktrace = handleReturnValue => {
+  const { err, data, type } = handleReturnValue;
+  if (!err || !err.stack) {
+    return handleReturnValue;
+  }
+  const { stack } = err;
+  const stackArr = stack.split('\n');
+
+  const pattern = '/dist/lumigo.js:';
+  const reducer = (acc, v, i) => {
+    if (v.includes(pattern)) {
+      acc.push(i);
+    }
+    return acc;
+  };
+
+  const pattrenIndices = stackArr.reduce(reducer, []);
+
+  const minIndex = pattrenIndices.shift();
+  const maxIndex = pattrenIndices.pop();
+  const nrItemsToRemove = maxIndex - minIndex + 1;
+
+  stackArr.splice(minIndex, nrItemsToRemove);
+  err.stack = stackArr.join('\n');
+
+  return { err, data, type };
+};
+
 export const httpsAgent = new https.Agent({ keepAlive: true });
 
 export const httpReq = (options = {}, reqBody) =>

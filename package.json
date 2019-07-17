@@ -1,18 +1,16 @@
 {
   "name": "@lumigo/tracer",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Lumigo Tracer for Node.js v8.x / v10.x Runtimes",
-  "main": "dist/main.js",
+  "main": "dist/lumigo.js",
   "repository": "git@github.com:lumigo-io/lumigo-node.git",
-  "private": true,
+  "private": false,
   "author": "Lumigo LTD (https://lumigo.io)",
-  "contributors": [
-    "Sagi Kedmi (https://sagi.io)"
-  ],
+  "contributors": ["Sagi Kedmi (https://sagi.io)"],
   "license": "Apache 2",
   "scripts": {
     "build:babel": "babel --ignore '**/*.test.js' --ignore testdata src -d lib --verbose",
-    "build:webpack": "webpack --display-modules ./lib",
+    "build:webpack": "webpack --display-modules ./lib -o dist/lumigo.js",
     "build": "npm run build:babel && npm run build:webpack",
     "jest": "jest",
     "test": "npm run build && npm run jest",
