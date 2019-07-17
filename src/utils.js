@@ -7,7 +7,12 @@ export const LUMIGO_TRACER_EDGE = 'lumigo-tracer-edge.golumigo.com';
 
 export const getContextInfo = context => {
   const remainingTimeInMillis = context.getRemainingTimeInMillis();
-  const { functionName, awsRequestId, invokedFunctionArn } = context;
+  const {
+    functionName,
+    awsRequestId,
+    invokedFunctionArn,
+    callbackWaitsForEmptyEventLoop,
+  } = context;
   const awsAccountId = invokedFunctionArn
     ? invokedFunctionArn.split(':')[4]
     : '';
@@ -17,7 +22,17 @@ export const getContextInfo = context => {
     awsRequestId,
     awsAccountId,
     remainingTimeInMillis,
+    callbackWaitsForEmptyEventLoop,
   };
+};
+
+export const getAccountIdFromInvokedFunctinArn = invokedFunctionArn =>
+  invokedFunctionArn ? invokedFunctionArn.split(':')[4] : '';
+
+export const getAccountId = context => {
+  const { invokedFunctionArn } = context;
+  const awsAccountId = getAccountIdFromInvokedFunctinArn(invokedFunctionArn);
+  return awsAccountId;
 };
 
 export const getTracerInfo = () => {
@@ -239,3 +254,6 @@ export const getEdgeUrl = () => {
   const path = SPAN_PATH;
   return { host, path };
 };
+
+export const callAfterEmptyEventLoop = (fn, args) =>
+  process.prependOnceListener('beforeExit', async () => await fn(...args));

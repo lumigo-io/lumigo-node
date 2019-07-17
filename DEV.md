@@ -9,22 +9,13 @@
 5. Test a Lumigo-tracer error with E2E tests.
 6. Semantic versioning? Auto bump?
 7. Test interoperability with other sdks that use shimmer or other hooking system.
-8. Add debug messages for Lumigo. Test specific flows
 11. Talk with Uri and Saar about, about a misusage of shimmer wrapping.
 
 ## Incomplete Things
 
-- **`Parsing of AWS Requests / Responses `** - currently only `DynamoDB` is parsed.
+- **`Parsing of AWS Requests / Responses `** - currently only `DynamoDB` and `Lambda` are parsed.
 
 - **`EventFilter`**
-
-- **`callbackWaitsForEmptyEventLoop`** - we should check if setting it to false/true alters the tracers behaviour.
-
-- **`Removal of Lumigo from Stacktrace`**
-
-- **`Inject X-Amzn.. Header to Request`**
-
-- **`Try / catch lumigo's parsing http hooks etc.`**
 
 - **`node-fetch: parsing compressed bodies`** - node-fetch and other implementations compress things on its own (not using the standard
    http.request()), as a result it returns a response with a compressed body showing up in Lumigo's dashboard.

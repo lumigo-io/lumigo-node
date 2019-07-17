@@ -12,6 +12,7 @@ describe('tracer', () => {
   const spies = {};
   spies.isSwitchedOff = jest.spyOn(utils, 'isSwitchedOff');
   spies.isAwsEnvironment = jest.spyOn(utils, 'isAwsEnvironment');
+  spies.getContextInfo = jest.spyOn(utils, 'getContextInfo');
   spies.sendSingleSpan = jest.spyOn(reporter, 'sendSingleSpan');
   spies.sendSpans = jest.spyOn(reporter, 'sendSpans');
   spies.getFunctionSpan = jest.spyOn(awsSpan, 'getFunctionSpan');
@@ -32,7 +33,6 @@ describe('tracer', () => {
       x => typeof x === 'function' && spies[x].mockClear()
     );
   });
-
   test('startTrace', async () => {
     spies.isSwitchedOff.mockReturnValueOnce(false);
     spies.isAwsEnvironment.mockReturnValueOnce(true);
@@ -71,7 +71,19 @@ describe('tracer', () => {
     expect(spies.logFatal).toHaveBeenCalledWith('startTrace failure', err1);
   });
 
-  test('endTrace', async () => {
+  test('isCallbacked', async () => {
+    expect(
+      tracer.isCallbacked({ type: tracer.NON_ASYNC_HANDLER_CALLBACKED })
+    ).toBe(true);
+    expect(tracer.isCallbacked({ type: tracer.ASYNC_HANDLER_CALLBACKED })).toBe(
+      true
+    );
+    expect(tracer.isCallbacked({ type: tracer.ASYNC_HANDLER_RESOLVED })).toBe(
+      false
+    );
+  });
+
+  test('endTrace; callbackWaitsForEmptyEventLoop is false', async () => {
     spies.isSwitchedOff.mockReturnValueOnce(false);
     spies.isAwsEnvironment.mockReturnValueOnce(true);
 
@@ -83,9 +95,12 @@ describe('tracer', () => {
     const handlerReturnValue = 'Satoshi was here1';
     const endFunctionSpan = { a: 'b', c: 'd', rtt };
 
+    spies.getContextInfo.mockReturnValueOnce({
+      callbackWaitsForEmptyEventLoop: false,
+    });
+
     const spans = [dummySpan, endFunctionSpan];
     spies.SpansContainer.getSpans.mockReturnValueOnce(spans);
-
     spies.getEndFunctionSpan.mockReturnValueOnce(endFunctionSpan);
 
     const result1 = await tracer.endTrace(functionSpan, handlerReturnValue);
@@ -99,6 +114,62 @@ describe('tracer', () => {
     );
     expect(spies.sendSpans).toHaveBeenCalledWith(spans);
     expect(spies.clearGlobals).toHaveBeenCalled();
+
+    spies.isAwsEnvironment.mockReturnValueOnce(false);
+    spies.isSwitchedOff.mockReturnValueOnce(false);
+
+    const result2 = await tracer.endTrace(functionSpan, handlerReturnValue);
+    expect(result2).toEqual(undefined);
+    expect();
+
+    spies.clearGlobals.mockClear();
+
+    spies.logFatal.mockImplementationOnce(() => {});
+    const err2 = new Error('stam2');
+    spies.isSwitchedOff.mockImplementationOnce(() => {
+      throw err2;
+    });
+
+    await tracer.endTrace(functionSpan, handlerReturnValue);
+
+    expect(spies.logFatal).toHaveBeenCalledWith('endTrace failure', err2);
+    expect(spies.clearGlobals).toHaveBeenCalled();
+  });
+
+  test('endTrace; callbackWaitsForEmptyEventLoop is true', async () => {
+    spies.isSwitchedOff.mockReturnValueOnce(false);
+    spies.isAwsEnvironment.mockReturnValueOnce(true);
+
+    const rtt = 1234;
+    spies.sendSpans.mockImplementationOnce(() => {});
+
+    const dummySpan = { x: 'y' };
+    const functionSpan = { a: 'b', c: 'd' };
+    const handlerReturnValue = { type: tracer.ASYNC_HANDLER_CALLBACKED };
+    const endFunctionSpan = { a: 'b', c: 'd', rtt };
+
+    spies.getContextInfo.mockReturnValueOnce({
+      callbackWaitsForEmptyEventLoop: true,
+    });
+    const callAfterEmptyEventLoopSpy = jest.spyOn(
+      utils,
+      'callAfterEmptyEventLoop'
+    );
+    callAfterEmptyEventLoopSpy.mockReturnValueOnce(null);
+
+    const spans = [dummySpan, endFunctionSpan];
+    spies.SpansContainer.getSpans.mockReturnValueOnce(spans);
+    spies.getEndFunctionSpan.mockReturnValueOnce(endFunctionSpan);
+
+    const result1 = await tracer.endTrace(functionSpan, handlerReturnValue);
+    expect(result1).toEqual(undefined);
+
+    expect(callAfterEmptyEventLoopSpy).toHaveBeenCalledWith(
+      tracer.sendEndTraceSpans,
+      [functionSpan, handlerReturnValue]
+    );
+    expect(spies.isSwitchedOff).toHaveBeenCalled();
+    expect(spies.isAwsEnvironment).toHaveBeenCalled();
 
     spies.isAwsEnvironment.mockReturnValueOnce(false);
     spies.isSwitchedOff.mockReturnValueOnce(false);

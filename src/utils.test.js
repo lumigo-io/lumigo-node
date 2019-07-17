@@ -353,6 +353,21 @@ describe('utils', () => {
     expect(https.request).toHaveBeenCalledWith(options, expect.any(Function));
   });
 
+  test('callAfterEmptyEventLoop', async () => {
+    const prependOnceListenerSpy = jest.spyOn(process, 'prependOnceListener');
+    prependOnceListenerSpy.mockReturnValueOnce(null);
+
+    const fn = jest.fn();
+    const arg1 = 'x';
+    const arg2 = 'y';
+    const args = [arg1, arg2];
+    utils.callAfterEmptyEventLoop(fn, args);
+
+    const beforeExitAsyncCallback = prependOnceListenerSpy.mock.calls[0][1];
+    await beforeExitAsyncCallback();
+    expect(fn).toHaveBeenCalledWith(arg1, arg2);
+  });
+
   test('getEdgeHost', () => {
     TracerGlobals.setTracerInputs({ token: '', edgeHost: 'zarathustra.com' });
     expect(utils.getEdgeHost()).toEqual('zarathustra.com');

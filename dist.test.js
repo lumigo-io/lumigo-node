@@ -284,7 +284,7 @@ describe.skip('end-to-end lumigo-node', () => {
     jest.setTimeout(30000);
     const edgeHost = 'kzc0w7k50d.execute-api.eu-west-1.amazonaws.com';
     const switchOff = false;
-    const lumigo = require('./')({ token, edgeHost, debug: true });
+    const lumigo = require('./')({ token, edgeHost, debug: false });
     const expectedReturnValue = 'Satoshi was here';
 
     const userHandler = (event, context, callback) => {
