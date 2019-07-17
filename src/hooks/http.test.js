@@ -33,6 +33,7 @@ describe('http hook', () => {
     'wrappedHttpResponseCallback'
   );
   spies.randomBytes = jest.spyOn(crypto, 'randomBytes');
+  spies.log = jest.spyOn(console, 'log');
 
   test('isBlacklisted', () => {
     const host = 'asdf';
@@ -341,6 +342,25 @@ describe('http hook', () => {
     callback3.__lumigoSentinel = true;
     httpHook.httpRequestWrapper(originalRequestFn)(options3, callback3);
     expect(originalRequestFn).toHaveBeenCalledWith(options3, callback3);
+
+    originalRequestFn.mockClear();
+
+    // Error within Lumigo's code.
+    const options5 = { host: 'bla.com' };
+    const callback5 = jest.fn();
+    spies.log.mockClear();
+    spies.log.mockReturnValueOnce(null);
+    originalRequestFn.mockImplementationOnce(() => {
+      throw new Error();
+    });
+
+    httpHook.httpRequestWrapper(originalRequestFn)(options5, callback5);
+    expect(originalRequestFn).toHaveBeenCalledTimes(2);
+    expect(originalRequestFn).toHaveBeenCalledWith(
+      options5,
+      expect.any(Function)
+    );
+    expect(spies.log).toHaveBeenCalled();
 
     originalRequestFn.mockClear();
 

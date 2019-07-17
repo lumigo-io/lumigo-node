@@ -178,11 +178,6 @@ export const isAlreadyTraced = callback =>
 
 export const httpRequestWrapper = originalRequestFn =>
   function(...args) {
-    // TODO try / catch to propagate errors
-
-    // XXX We're currently ignoring the case where the event loop waits for a
-    // response, but the handler ended.
-
     const { url, options, callback } = httpRequestArguments(args);
     const host = getHostFromOptionsOrUrl(options, url);
 
@@ -190,27 +185,32 @@ export const httpRequestWrapper = originalRequestFn =>
       return originalRequestFn.apply(this, args);
     }
 
-    const requestData = parseHttpRequestOptions(options, url);
+    try {
+      const requestData = parseHttpRequestOptions(options, url);
 
-    const hookedClientRequestArgs = getHookedClientRequestArgs(
-      url,
-      options,
-      callback,
-      requestData
-    );
+      const hookedClientRequestArgs = getHookedClientRequestArgs(
+        url,
+        options,
+        callback,
+        requestData
+      );
 
-    const clientRequest = originalRequestFn.apply(
-      this,
-      hookedClientRequestArgs
-    );
+      const clientRequest = originalRequestFn.apply(
+        this,
+        hookedClientRequestArgs
+      );
 
-    shimmer.wrap(clientRequest, 'end', httpRequestEndWrapper(requestData));
+      shimmer.wrap(clientRequest, 'end', httpRequestEndWrapper(requestData));
 
-    if (!callback) {
-      shimmer.wrap(clientRequest, 'on', httpRequestOnWrapper(requestData));
+      if (!callback) {
+        shimmer.wrap(clientRequest, 'on', httpRequestOnWrapper(requestData));
+      }
+      return clientRequest;
+    } catch (err) {
+      // eslint-disable-next-line
+      console.log(`##LUMIGO## hook error`, err);
+      return originalRequestFn.apply(this, args);
     }
-
-    return clientRequest;
   };
 
 export const httpGetWrapper = httpModule => (/* originalGetFn */) =>
