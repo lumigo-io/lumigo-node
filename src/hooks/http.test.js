@@ -352,6 +352,7 @@ describe('http hook', () => {
     const callback5 = jest.fn();
     spies.log.mockClear();
     spies.log.mockReturnValueOnce(null);
+    utils.getEdgeHost.mockReturnValueOnce(edgeHost);
     originalRequestFn.mockImplementationOnce(() => {
       throw new Error();
     });
