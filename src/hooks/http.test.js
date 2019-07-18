@@ -355,7 +355,7 @@ describe('http hook', () => {
     spies.log.mockReturnValueOnce(null);
     utils.getEdgeHost.mockReturnValueOnce(edgeHost);
     originalRequestFn.mockImplementationOnce(() => {
-      throw new Error('ssss');
+      throw new Error();
     });
 
     httpHook.httpRequestWrapper(originalRequestFn)(options5, callback5);
