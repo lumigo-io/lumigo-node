@@ -6,7 +6,9 @@
   "repository": "git@github.com:lumigo-io/lumigo-node.git",
   "private": false,
   "author": "Lumigo LTD (https://lumigo.io)",
-  "contributors": ["Sagi Kedmi (https://sagi.io)"],
+  "contributors": [
+    "Sagi Kedmi (https://sagi.io)"
+  ],
   "license": "Apache-2.0",
   "scripts": {
     "build:babel": "babel --ignore '**/*.test.js' --ignore testdata src -d lib --verbose",

@@ -71,13 +71,19 @@ describe('http hook', () => {
     };
     const sendTime = 895179612345;
     MockDate.set(sendTime);
+
+    const expectedHeaders = lowerCaseObjectKeys({
+      ...headers,
+      ...{ host: 'asdf1.com' },
+    });
+
     const expected1 = {
       host: 'asdf1.com',
       port: 443,
       protocol: 'https:',
       path: '/api/where/is/satoshi',
       method: 'POST',
-      headers: lowerCaseObjectKeys(headers),
+      headers: expectedHeaders,
       sendTime,
       body: '',
     };
@@ -90,6 +96,7 @@ describe('http hook', () => {
       headers: {
         x: 'Y',
         z: 'A',
+        host: 'asdf1.com',
       },
       host: 'asdf.io',
       method: 'POST',

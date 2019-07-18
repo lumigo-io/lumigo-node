@@ -8,6 +8,7 @@ import {
   lowerCaseObjectKeys,
   isAwsService,
   getEdgeHost,
+  addHeaders,
 } from '../utils';
 import { getHttpSpan } from '../spans/awsSpan';
 import cloneResponse from 'clone-response';
@@ -37,6 +38,9 @@ export const parseHttpRequestOptions = (options = {}, url) => {
   let port = null;
   let protocol = null;
 
+  let { headers, method = 'GET' } = options;
+  const sendTime = new Date().getTime();
+
   if (url) {
     const myUrl = new URL(url);
     ({ pathname: path, port, protocol } = myUrl);
@@ -47,8 +51,9 @@ export const parseHttpRequestOptions = (options = {}, url) => {
     protocol = options.protocol || (port === 443 && 'https:') || 'http:';
   }
 
-  const { headers, method = 'GET' } = options;
-  const sendTime = new Date().getTime();
+  if (headers && !headers.host) {
+    headers = addHeaders(headers, { host });
+  }
 
   return {
     path,
