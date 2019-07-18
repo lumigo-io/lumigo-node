@@ -38,18 +38,21 @@ export const parseHttpRequestOptions = (options = {}, url) => {
   let port = null;
   let protocol = null;
 
-  const { headers, method = 'GET' } = options;
+  let { headers, method = 'GET' } = options;
   const sendTime = new Date().getTime();
 
   if (url) {
     const myUrl = new URL(url);
     ({ pathname: path, port, protocol } = myUrl);
-    addHeaders(headers, { host });
   } else {
     path = options.path || '/';
     port =
       options.port || options.defaultPort || (agent && agent.defaultPort) || 80;
     protocol = options.protocol || (port === 443 && 'https:') || 'http:';
+  }
+
+  if (!headers.host) {
+    headers = addHeaders(headers, { host });
   }
 
   return {
