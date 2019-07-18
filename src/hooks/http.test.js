@@ -77,7 +77,7 @@ describe('http hook', () => {
       protocol: 'https:',
       path: '/api/where/is/satoshi',
       method: 'POST',
-      headers: lowerCaseObjectKeys(headers),
+      headers: lowerCaseObjectKeys({ ...headers, ...{ host: 'asdf1.com' } }),
       sendTime,
       body: '',
     };
@@ -90,7 +90,7 @@ describe('http hook', () => {
       headers: {
         x: 'Y',
         z: 'A',
-        host: 'asdf.io',
+        host: 'asdf1.com',
       },
       host: 'asdf.io',
       method: 'POST',
@@ -355,7 +355,7 @@ describe('http hook', () => {
     spies.log.mockReturnValueOnce(null);
     utils.getEdgeHost.mockReturnValueOnce(edgeHost);
     originalRequestFn.mockImplementationOnce(() => {
-      throw new Error();
+      throw new Error('ssss');
     });
 
     httpHook.httpRequestWrapper(originalRequestFn)(options5, callback5);

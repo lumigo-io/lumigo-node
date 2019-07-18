@@ -51,7 +51,7 @@ export const parseHttpRequestOptions = (options = {}, url) => {
     protocol = options.protocol || (port === 443 && 'https:') || 'http:';
   }
 
-  if (!headers.host) {
+  if (headers && !headers.host) {
     headers = addHeaders(headers, { host });
   }
 
