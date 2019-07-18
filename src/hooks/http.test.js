@@ -90,6 +90,7 @@ describe('http hook', () => {
       headers: {
         x: 'Y',
         z: 'A',
+        host: 'asdf.io',
       },
       host: 'asdf.io',
       method: 'POST',

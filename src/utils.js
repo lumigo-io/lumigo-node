@@ -240,6 +240,9 @@ export const getAwsEdgeHost = () => {
   return `${awsRegion}.${LUMIGO_TRACER_EDGE}`;
 };
 
+export const addHeaders = (currentHeaders, headersToAssign) =>
+  Object.assign(currentHeaders, headersToAssign);
+
 export const getEdgeHost = () => {
   const { edgeHost } = TracerGlobals.getTracerInputs();
   if (edgeHost) {
