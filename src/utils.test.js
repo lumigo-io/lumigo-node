@@ -3,6 +3,8 @@ import { TracerGlobals } from './globals';
 import EventEmitter from 'events';
 import https from 'https';
 import crypto from 'crypto';
+import {getBytes} from "./utils";
+import {getJsonSize} from "./utils";
 
 jest.mock('https');
 jest.mock('../package.json', () => ({
@@ -393,5 +395,18 @@ describe('utils', () => {
       path: '/api/spans',
     };
     expect(utils.getEdgeUrl()).toEqual(expected);
+  });
+
+  test('getBytes', () => {
+    expect(getBytes('¡dooq dǝǝq')).toEqual(13);
+    expect(getBytes('\uD83D\uDCA9')).toEqual(4);
+    expect(getBytes('é\uD83D\uDCA9ä')).toEqual(8);
+    expect(getBytes('')).toEqual(0);
+    expect(getBytes('abc')).toEqual(3);
+    expect(getBytes('abc₫')).toEqual(6);
+  });
+
+  test('getJsonSize', () => {
+    expect(getJsonSize({foo: 'bar'})).toEqual(13);
   });
 });

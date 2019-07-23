@@ -258,5 +258,15 @@ export const getEdgeUrl = () => {
   return { host, path };
 };
 
+//Taken from https://github.com/substack/utf8-length/blob/master/index.js
+export const getBytes = (str) => {
+  return ~-encodeURI(str).split(/%..|./).length
+};
+
+//Taken from https://github.com/bendrucker/json-size/blob/master/index.js
+export const getJsonSize = (obj) => {
+  return getBytes(JSON.stringify(obj))
+};
+
 export const callAfterEmptyEventLoop = (fn, args) =>
   process.prependOnceListener('beforeExit', async () => await fn(...args));
