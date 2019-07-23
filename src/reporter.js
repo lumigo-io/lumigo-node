@@ -48,7 +48,7 @@ export const sendSpans = async spans => {
 };
 
 export const spliceSpan = spans => {
-  if (spans.length > 1) spans.splice(1, 1);
+  if (spans.length > 1) spans.splice(Math.max((spans.length  - 2), 1), 1);
   else spans.splice(0, 1);
 };
 

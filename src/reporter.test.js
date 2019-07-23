@@ -94,11 +94,15 @@ describe('reporter', () => {
   });
 
   test('spliceSpan', async () => {
-    const dummy = 'dummy';
+    const dummy1 = 'dummy1';
+    const dummy2 = 'dummy2';
     const dummyStart = 'dummyStart';
     const dummyEnd = 'dummyEnd';
 
-    let spans = [{ dummyStart }, { dummy }, { dummyEnd }];
+    let spans = [{ dummyStart }, { dummy1 }, { dummy2 }, { dummyEnd }];
+
+    reporter.spliceSpan(spans);
+    expect(spans).toEqual([{ dummyStart }, { dummy1 }, { dummyEnd }]);
 
     reporter.spliceSpan(spans);
     expect(spans).toEqual([{ dummyStart }, { dummyEnd }]);
