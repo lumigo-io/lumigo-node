@@ -1,6 +1,16 @@
 import { TracerGlobals } from './globals';
-import { getEdgeUrl, getTracerInfo, httpReq, isDebug } from './utils';
+import {
+  getEdgeUrl,
+  getJsonSize,
+  getTracerInfo,
+  httpReq,
+  isDebug,
+  isTrimSize,
+} from './utils';
 import * as logger from './logger';
+
+export const MAX_SEND_BYTES = 900 * 1000;
+export const getMaxSendBytes = () => MAX_SEND_BYTES;
 
 export const sendSingleSpan = async span => exports.sendSpans([span]);
 
@@ -22,14 +32,40 @@ export const sendSpans = async spans => {
 
   logger.debug('Edge selected', { host, path });
 
-  const reqBody = JSON.stringify(spans);
+  const reqBody = createSpansRequest(spans);
+
   const roundTripStart = Date.now();
 
-  await httpReq({ method, headers, host, path }, reqBody);
+  if (reqBody) {
+    await httpReq({ method, headers, host, path }, reqBody);
+  }
 
   const roundTripEnd = Date.now();
   const rtt = roundTripEnd - roundTripStart;
 
   isDebug() && logSpans(spans);
   return { rtt };
+};
+
+export const spliceSpan = spans => {
+  if (spans.length > 1) spans.splice(1, 1);
+  else spans.splice(0, 1);
+};
+
+export const createSpansRequest = (spans, maxSendBytes = getMaxSendBytes()) => {
+  let clonedSpans = spans.slice(0);
+
+  if (isTrimSize()) {
+    logger.debug('Starting trim spans before send');
+
+    while (getJsonSize(clonedSpans) > maxSendBytes && clonedSpans.length > 0) {
+      spliceSpan(clonedSpans);
+    }
+
+    logger.debug(
+      `Trimmed ${spans.length - clonedSpans.length} spans, from ${spans.length}`
+    );
+  }
+
+  return clonedSpans.length > 0 ? JSON.stringify(clonedSpans) : undefined;
 };
