@@ -122,6 +122,11 @@ export const isVerboseMode = () =>
 export const isWarm = () =>
   !!(process.env['LUMIGO_IS_WARM'] && process.env.LUMIGO_IS_WARM === 'TRUE');
 
+export const isTrimSize = () =>
+  !!(
+    process.env['LUMIGO_TRIM_SIZE'] && process.env.LUMIGO_TRIM_SIZE === 'TRUE'
+  );
+
 export const isDebug = () => {
   const isDebugFromEnv = !!(
     process.env['LUMIGO_DEBUG'] &&
@@ -143,6 +148,8 @@ export const isSwitchedOff = () => {
 };
 
 export const setWarm = () => (process.env['LUMIGO_IS_WARM'] = 'TRUE');
+
+export const setTrimSize = () => (process.env['LUMIGO_TRIM_SIZE'] = 'TRUE');
 
 export const setVerboseMode = () => (process.env['LUMIGO_VERBOSE'] = 'TRUE');
 
@@ -259,13 +266,13 @@ export const getEdgeUrl = () => {
 };
 
 //Taken from https://github.com/substack/utf8-length/blob/master/index.js
-export const getBytes = (str) => {
-  return ~-encodeURI(str).split(/%..|./).length
+export const getBytes = str => {
+  return ~-encodeURI(str).split(/%..|./).length;
 };
 
 //Taken from https://github.com/bendrucker/json-size/blob/master/index.js
-export const getJsonSize = (obj) => {
-  return getBytes(JSON.stringify(obj))
+export const getJsonSize = obj => {
+  return getBytes(JSON.stringify(obj));
 };
 
 export const callAfterEmptyEventLoop = (fn, args) =>

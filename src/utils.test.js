@@ -3,8 +3,8 @@ import { TracerGlobals } from './globals';
 import EventEmitter from 'events';
 import https from 'https';
 import crypto from 'crypto';
-import {getBytes} from "./utils";
-import {getJsonSize} from "./utils";
+import { getBytes } from './utils';
+import { getJsonSize } from './utils';
 
 jest.mock('https');
 jest.mock('../package.json', () => ({
@@ -173,6 +173,14 @@ describe('utils', () => {
     process.env = { ...oldEnv };
   });
 
+  test('isTrimSize', () => {
+    expect(utils.isTrimSize()).toBe(false);
+    const oldEnv = Object.assign({}, process.env);
+    process.env = { ...oldEnv, LUMIGO_TRIM_SIZE: 'TRUE' };
+    expect(utils.isTrimSize()).toBe(true);
+    process.env = { ...oldEnv };
+  });
+
   test('isDebug', () => {
     expect(utils.isDebug()).toBe(false);
     const oldEnv = Object.assign({}, process.env);
@@ -205,6 +213,14 @@ describe('utils', () => {
     const oldEnv = Object.assign({}, process.env);
     utils.setWarm();
     expect(utils.isWarm()).toBe(true);
+    process.env = { ...oldEnv };
+  });
+
+  test('setTrimSize', () => {
+    expect(utils.isTrimSize()).toBe(false);
+    const oldEnv = Object.assign({}, process.env);
+    utils.setTrimSize();
+    expect(utils.isTrimSize()).toBe(true);
     process.env = { ...oldEnv };
   });
 
@@ -407,6 +423,6 @@ describe('utils', () => {
   });
 
   test('getJsonSize', () => {
-    expect(getJsonSize({foo: 'bar'})).toEqual(13);
+    expect(getJsonSize({ foo: 'bar' })).toEqual(13);
   });
 });
