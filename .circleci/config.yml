@@ -1,6 +1,6 @@
 version:
 defaults: &defaults
-  working_directory: ~/python_tracer
+  working_directory: ~/lumigo-node
   docker:
     - image: lumigo/ci:latest
       auth:
