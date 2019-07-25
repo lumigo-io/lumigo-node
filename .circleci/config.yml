@@ -81,7 +81,7 @@ jobs:
           command: cd ../integration-tests && ./scripts/prepare_env.sh
       - run:
           name: deploy integ-test
-          command: cd ../integration-tests && ./scripts/deploy.sh --spec python
+          command: cd ../integration-tests && ./scripts/deploy.sh --spec node
       - run:
           name: run tests
           command: cd ../integration-tests && export testNode=true && npm run test
