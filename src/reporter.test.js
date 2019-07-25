@@ -2,7 +2,7 @@
 import { TracerGlobals } from './globals';
 import * as reporter from './reporter';
 import * as utils from './utils';
-import { getJsonSize } from './utils';
+import { getJSONSize } from './utils';
 
 jest.mock('../package.json', () => ({
   name: '@lumigo/tracerMock',
@@ -114,28 +114,24 @@ describe('reporter', () => {
     expect(spans).toEqual([]);
   });
 
-  test('getMaxSendBytes', async () => {
-    expect(reporter.getMaxSendBytes()).toEqual(reporter.MAX_SEND_BYTES);
-  });
-
-  test('createSpansRequest', async () => {
+  test('forgeRequestBody', async () => {
     const oldEnv = Object.assign({}, process.env);
 
     const dummy = 'dummy';
     const dummyStart = 'dummyStart';
     const dummyEnd = 'dummyEnd';
     let spans = [{ dummyStart }, { dummy }, { dummyEnd }];
-    const dummyStartSize = getJsonSize(spans.slice(0).splice(1, 2));
+    const dummyStartSize = getJSONSize(spans.slice(0).splice(1, 2));
 
-    expect(reporter.createSpansRequest(spans)).toEqual(JSON.stringify(spans));
+    expect(reporter.forgeRequestBody(spans)).toEqual(JSON.stringify(spans));
 
     utils.setTrimSize();
 
-    expect(reporter.createSpansRequest(spans, dummyStartSize)).toEqual(
+    expect(reporter.forgeRequestBody(spans, dummyStartSize)).toEqual(
       JSON.stringify([{ dummyStart }])
     );
 
-    expect(reporter.createSpansRequest([])).toEqual(undefined);
+    expect(reporter.forgeRequestBody([])).toEqual(undefined);
 
     process.env = { ...oldEnv };
   });

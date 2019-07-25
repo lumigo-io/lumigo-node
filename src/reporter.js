@@ -1,16 +1,15 @@
 import { TracerGlobals } from './globals';
 import {
   getEdgeUrl,
-  getJsonSize,
+  getJSONSize,
   getTracerInfo,
   httpReq,
   isDebug,
-  isTrimSize,
+  isPruneTrace,
 } from './utils';
 import * as logger from './logger';
 
-export const MAX_SEND_BYTES = 900 * 1000;
-export const getMaxSendBytes = () => MAX_SEND_BYTES;
+export const MAX_SENT_BYTES = 900 * 1000;
 
 export const sendSingleSpan = async span => exports.sendSpans([span]);
 
@@ -32,7 +31,7 @@ export const sendSpans = async spans => {
 
   logger.debug('Edge selected', { host, path });
 
-  const reqBody = createSpansRequest(spans);
+  const reqBody = forgeRequestBody(spans);
 
   const roundTripStart = Date.now();
 
@@ -48,17 +47,21 @@ export const sendSpans = async spans => {
 };
 
 export const spliceSpan = spans => {
-  if (spans.length > 1) spans.splice(Math.max((spans.length  - 2), 1), 1);
-  else spans.splice(0, 1);
+  if (spans.length > 1) {
+   spans.splice(Math.max((spans.length  - 2), 1), 1);
+  }
+  else {
+   spans.splice(0, 1);
+  }
 };
 
-export const createSpansRequest = (spans, maxSendBytes = getMaxSendBytes()) => {
+export const forgeRequestBody = (spans, maxSendBytes = MAX_SENT_BYTES) => {
   let clonedSpans = spans.slice(0);
 
-  if (isTrimSize()) {
+  if (isPruneTrace()) {
     logger.debug('Starting trim spans before send');
 
-    while (getJsonSize(clonedSpans) > maxSendBytes && clonedSpans.length > 0) {
+    while (clonedSpans.length > 0 && getJSONSize(clonedSpans) > maxSendBytes) {
       spliceSpan(clonedSpans);
     }
 
