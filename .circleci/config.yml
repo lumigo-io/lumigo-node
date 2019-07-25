@@ -36,7 +36,6 @@ workflows:
             ignore: master
         requires:
           - test
-          -
 jobs:
   test:
     <<: *defaults
