@@ -1,15 +1,45 @@
 version:
-jobs:
-  build:
-    working_directory: ~/repo
-    docker:
+defaults: &defaults
+  working_directory: ~/python_tracer
+  docker:
     - image: lumigo/ci:latest
       auth:
         username: lumigo
         password: $DOCKERHUB_PASSWORD
-    environment:
-        TZ: "Asia/Jerusalem"
+  environment:
+    TZ: "Asia/Jerusalem"
 
+commands:
+  checkout_utils:
+    description: "Checkout various utilities"
+    steps:
+      - run:
+          command: |
+            mkdir ~/.ssh/ && echo -e "Host github.com\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
+            cd ..
+            git clone git@github.com:lumigo-io/common-resources.git
+      - run:
+          command: |
+            cd ..
+            git clone git@github.com:lumigo-io/utils.git
+
+workflows:
+  test-deploy:
+    jobs:
+    - test:
+        filters:
+          branches:
+            ignore: master
+    - integration-test:
+        filters:
+          branches:
+            ignore: master
+        requires:
+          - test
+          -
+jobs:
+  test:
+    <<: *defaults
     steps:
       - checkout # special step to check out source code to working directory
       - restore_cache:
@@ -33,3 +63,26 @@ jobs:
       - store_artifacts:
           path: coverage
           prefix: coverage
+  integration-test:
+    <<: *defaults
+    steps:
+      - checkout_utils
+      - checkout
+      - run:
+          name: deploy env
+          command: ./scripts/ci_deploy.sh
+      - run:
+          name: npm i
+          command: cd ../integration-tests && npm i
+      - run:
+          name: recursive-install
+          command: sudo npm install -g recursive-install
+      - run:
+          name: prepare_env
+          command: cd ../integration-tests && ./scripts/prepare_env.sh
+      - run:
+          name: deploy integ-test
+          command: cd ../integration-tests && ./scripts/deploy.sh --spec python
+      - run:
+          name: run tests
+          command: cd ../integration-tests && export testNode=true && npm run test
