@@ -96,7 +96,7 @@ describe('http hook', () => {
       headers: {
         x: 'Y',
         z: 'A',
-        host: 'asdf1.com',
+        host: 'asdf.io',
       },
       host: 'asdf.io',
       method: 'POST',
@@ -270,8 +270,8 @@ describe('http hook', () => {
       {
         headers: {
           'Content-Type': 'text/plain',
-          'X-Amzn-Trace-Id':
-            'Root=1-00006161-6ac46730d346cad0e53f89d0;Parent=59fa1aeb03c2ec1f;Sampled=1',
+          //'X-Amzn-Trace-Id':
+          //  'Root=1-00006161-6ac46730d346cad0e53f89d0;Parent=59fa1aeb03c2ec1f;Sampled=1',
         },
       },
     ];
@@ -371,12 +371,12 @@ describe('http hook', () => {
       expect.any(Function)
     );
     expect(spies.log).toHaveBeenCalled();
-
     originalRequestFn.mockClear();
 
+    spies.randomBytes.mockReturnValueOnce(Buffer.from('aa'));
     // Regular case
     const options2 = {
-      host: 'asdf1.com',
+      host: 'baba.amazonaws.com',
       port: 443,
       protocol: 'https:',
       path: '/api/where/is/satoshi',
@@ -390,17 +390,24 @@ describe('http hook', () => {
     originalRequestFn.mockReturnValueOnce(clientRequest);
     utils.getEdgeHost.mockReturnValueOnce(edgeHost);
 
+    const expectedHeaders2 = {
+      X: 'Y',
+      ['X-Amzn-Trace-Id']:
+        'Root=1-00006161-6ac46730d346cad0e53f89d0;Parent=59fa1aeb03c2ec1f;Sampled=1',
+    };
+    const expectedOptions2 = Object.assign({}, options2, {
+      headers: expectedHeaders2,
+    });
     expect(
       httpHook.httpRequestWrapper(originalRequestFn)(options2, callback2)
     ).toEqual(clientRequest);
 
     expect(originalRequestFn).toHaveBeenCalledWith(
-      options2,
+      expectedOptions2,
       expect.any(Function)
     );
 
     originalRequestFn.mockClear();
-
     // No callback provided case
     const options4 = {
       host: 'asdf1.com',

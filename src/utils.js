@@ -248,7 +248,7 @@ export const getAwsEdgeHost = () => {
 };
 
 export const addHeaders = (currentHeaders, headersToAssign) =>
-  Object.assign(currentHeaders, headersToAssign);
+  Object.assign({}, currentHeaders, headersToAssign);
 
 export const getEdgeHost = () => {
   const { edgeHost } = TracerGlobals.getTracerInputs();

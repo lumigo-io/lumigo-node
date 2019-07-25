@@ -157,12 +157,6 @@ export const getHookedClientRequestArgs = (
   !!url && hookedClientRequestArgs.push(url);
 
   if (options) {
-    const host = getHostFromOptionsOrUrl(options, url);
-    if (isAwsService(host)) {
-      const { awsXAmznTraceId } = getAWSEnvironment();
-      options.headers['X-Amzn-Trace-Id'] = getPatchedTraceId(awsXAmznTraceId);
-    }
-
     hookedClientRequestArgs.push(options);
   }
 
@@ -191,6 +185,13 @@ export const httpRequestWrapper = originalRequestFn =>
     }
 
     try {
+      // XXX Create a pure function - something like: 'patchOptionsForAWSService'
+      // return the patched options
+      if (isAwsService(host)) {
+        const { awsXAmznTraceId } = getAWSEnvironment();
+        options.headers['X-Amzn-Trace-Id'] = getPatchedTraceId(awsXAmznTraceId);
+      }
+
       const requestData = parseHttpRequestOptions(options, url);
 
       const hookedClientRequestArgs = getHookedClientRequestArgs(
