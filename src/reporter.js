@@ -5,11 +5,11 @@ import {
   getTracerInfo,
   httpReq,
   isDebug,
-  isPruneTrace,
+  isPruneTraceOff,
 } from './utils';
 import * as logger from './logger';
 
-export const MAX_SENT_BYTES = 900 * 1000;
+export const MAX_SENT_BYTES = 1000 * 1000;
 
 export const sendSingleSpan = async span => exports.sendSpans([span]);
 
@@ -46,29 +46,40 @@ export const sendSpans = async spans => {
   return { rtt };
 };
 
-export const spliceSpan = spans => {
-  if (spans.length > 1) {
-   spans.splice(Math.max((spans.length  - 2), 1), 1);
-  }
-  else {
-   spans.splice(0, 1);
-  }
-};
-
 export const forgeRequestBody = (spans, maxSendBytes = MAX_SENT_BYTES) => {
-  let clonedSpans = spans.slice(0);
+  let resultSpans = [];
 
-  if (isPruneTrace()) {
-    logger.debug('Starting trim spans before send');
-
-    while (clonedSpans.length > 0 && getJSONSize(clonedSpans) > maxSendBytes) {
-      spliceSpan(clonedSpans);
-    }
-
-    logger.debug(
-      `Trimmed ${spans.length - clonedSpans.length} spans, from ${spans.length}`
-    );
+  if (isPruneTraceOff() || getJSONSize(spans) <= maxSendBytes) {
+    return spans.length > 0 ? JSON.stringify(spans) : undefined;
   }
 
-  return clonedSpans.length > 0 ? JSON.stringify(clonedSpans) : undefined;
+  logger.debug('Starting trim spans before send');
+
+  const functionEndSpan = spans[spans.length - 1];
+  const errorSpans = spans.filter(
+    span => span.error && span !== functionEndSpan
+  );
+  const normalSpans = spans.filter(
+    span => !span.error && span !== functionEndSpan
+  );
+
+  const orderedSpans = [...errorSpans, ...normalSpans];
+
+  for (let errorSpan of orderedSpans) {
+    let currentSize = getJSONSize(resultSpans) + getJSONSize(functionEndSpan);
+    let spanSize = getJSONSize(errorSpan);
+
+    if (currentSize + spanSize < maxSendBytes) {
+      resultSpans.push(errorSpan);
+    }
+  }
+
+  resultSpans.push(functionEndSpan);
+
+  if (spans.length - resultSpans.length) {
+    // eslint-disable-next-line no-console
+    console.log(`#LUMIGO# - Trimmed spans due to size`);
+  }
+
+  return resultSpans.length > 0 ? JSON.stringify(resultSpans) : undefined;
 };

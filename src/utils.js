@@ -122,9 +122,10 @@ export const isVerboseMode = () =>
 export const isWarm = () =>
   !!(process.env['LUMIGO_IS_WARM'] && process.env.LUMIGO_IS_WARM === 'TRUE');
 
-export const isPruneTrace = () =>
+export const isPruneTraceOff = () =>
   !!(
-    process.env['LUMIGO_PRUNE_TRACE'] && process.env.LUMIGO_PRUNE_TRACE === 'TRUE'
+    process.env['LUMIGO_PRUNE_TRACE_OFF'] &&
+    process.env.LUMIGO_PRUNE_TRACE_OFF === 'TRUE'
   );
 
 export const isDebug = () => {
@@ -149,7 +150,8 @@ export const isSwitchedOff = () => {
 
 export const setWarm = () => (process.env['LUMIGO_IS_WARM'] = 'TRUE');
 
-export const setTrimSize = () => (process.env['LUMIGO_PRUNE_TRACE'] = 'TRUE');
+export const setPruneTraceOff = () =>
+  (process.env['LUMIGO_PRUNE_TRACE_OFF'] = 'TRUE');
 
 export const setVerboseMode = () => (process.env['LUMIGO_VERBOSE'] = 'TRUE');
 

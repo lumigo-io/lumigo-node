@@ -93,43 +93,32 @@ describe('reporter', () => {
     expect(result.rtt).toEqual(1024);
   });
 
-  test('spliceSpan', async () => {
-    const dummy1 = 'dummy1';
-    const dummy2 = 'dummy2';
-    const dummyStart = 'dummyStart';
-    const dummyEnd = 'dummyEnd';
-
-    let spans = [{ dummyStart }, { dummy1 }, { dummy2 }, { dummyEnd }];
-
-    reporter.spliceSpan(spans);
-    expect(spans).toEqual([{ dummyStart }, { dummy1 }, { dummyEnd }]);
-
-    reporter.spliceSpan(spans);
-    expect(spans).toEqual([{ dummyStart }, { dummyEnd }]);
-
-    reporter.spliceSpan(spans);
-    expect(spans).toEqual([{ dummyStart }]);
-
-    reporter.spliceSpan(spans);
-    expect(spans).toEqual([]);
-  });
-
   test('forgeRequestBody', async () => {
     const oldEnv = Object.assign({}, process.env);
 
     const dummy = 'dummy';
-    const dummyStart = 'dummyStart';
     const dummyEnd = 'dummyEnd';
-    let spans = [{ dummyStart }, { dummy }, { dummyEnd }];
-    const dummyStartSize = getJSONSize(spans.slice(0).splice(1, 2));
+    const error = 'error';
+    let spans = [{ dummy }, { dummy }, { dummyEnd }];
+
+    let expectedResult = [{ dummy }, { dummyEnd }];
+    let expectedResultSize = getJSONSize(expectedResult);
+
+    expect(reporter.forgeRequestBody(spans, expectedResultSize)).toEqual(
+      JSON.stringify(expectedResult)
+    );
+
+    spans = [{ dummy }, { dummy, error }, { dummyEnd }];
+    expectedResult = [{ dummy, error }, { dummyEnd }];
+    expectedResultSize = getJSONSize(expectedResult);
+
+    expect(reporter.forgeRequestBody(spans, expectedResultSize)).toEqual(
+      JSON.stringify(expectedResult)
+    );
+
+    utils.setPruneTraceOff();
 
     expect(reporter.forgeRequestBody(spans)).toEqual(JSON.stringify(spans));
-
-    utils.setTrimSize();
-
-    expect(reporter.forgeRequestBody(spans, dummyStartSize)).toEqual(
-      JSON.stringify([{ dummyStart }])
-    );
 
     expect(reporter.forgeRequestBody([])).toEqual(undefined);
 

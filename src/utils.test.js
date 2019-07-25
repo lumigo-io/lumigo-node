@@ -172,11 +172,11 @@ describe('utils', () => {
     process.env = { ...oldEnv };
   });
 
-  test('isPruneTrace', () => {
-    expect(utils.isPruneTrace()).toBe(false);
+  test('isPruneTraceOff', () => {
+    expect(utils.isPruneTraceOff()).toBe(false);
     const oldEnv = Object.assign({}, process.env);
-    process.env = { ...oldEnv, LUMIGO_PRUNE_TRACE: 'TRUE' };
-    expect(utils.isPruneTrace()).toBe(true);
+    process.env = { ...oldEnv, LUMIGO_PRUNE_TRACE_OFF: 'TRUE' };
+    expect(utils.isPruneTraceOff()).toBe(true);
     process.env = { ...oldEnv };
   });
 
@@ -215,11 +215,11 @@ describe('utils', () => {
     process.env = { ...oldEnv };
   });
 
-  test('setTrimSize', () => {
-    expect(utils.isPruneTrace()).toBe(false);
+  test('setPruneTraceOff', () => {
+    expect(utils.isPruneTraceOff()).toBe(false);
     const oldEnv = Object.assign({}, process.env);
-    utils.setTrimSize();
-    expect(utils.isPruneTrace()).toBe(true);
+    utils.setPruneTraceOff();
+    expect(utils.isPruneTraceOff()).toBe(true);
     process.env = { ...oldEnv };
   });
 
