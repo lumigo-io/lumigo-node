@@ -1,6 +1,16 @@
 import { TracerGlobals } from './globals';
-import { getEdgeUrl, getTracerInfo, httpReq, isDebug } from './utils';
+import {
+  getEdgeUrl,
+  getJSONBase64Size,
+  getTracerInfo,
+  httpReq,
+  isDebug,
+  isPruneTraceOff,
+  spanHasErrors,
+} from './utils';
 import * as logger from './logger';
+
+export const MAX_SENT_BYTES = 1000 * 1000;
 
 export const sendSingleSpan = async span => exports.sendSpans([span]);
 
@@ -22,14 +32,56 @@ export const sendSpans = async spans => {
 
   logger.debug('Edge selected', { host, path });
 
-  const reqBody = JSON.stringify(spans);
+  const reqBody = forgeRequestBody(spans);
+
   const roundTripStart = Date.now();
 
-  await httpReq({ method, headers, host, path }, reqBody);
+  if (reqBody) {
+    await httpReq({ method, headers, host, path }, reqBody);
+  }
 
   const roundTripEnd = Date.now();
   const rtt = roundTripEnd - roundTripStart;
 
   isDebug() && logSpans(spans);
   return { rtt };
+};
+
+export const forgeRequestBody = (spans, maxSendBytes = MAX_SENT_BYTES) => {
+  let resultSpans = [];
+
+  if (isPruneTraceOff() || getJSONBase64Size(spans) <= maxSendBytes) {
+    return spans.length > 0 ? JSON.stringify(spans) : undefined;
+  }
+
+  logger.debug('Starting trim spans before send');
+
+  const functionEndSpan = spans[spans.length - 1];
+  const errorSpans = spans.filter(
+    span => spanHasErrors(span) && span !== functionEndSpan
+  );
+  const normalSpans = spans.filter(
+    span => !spanHasErrors(span) && span !== functionEndSpan
+  );
+
+  const orderedSpans = [...errorSpans, ...normalSpans];
+
+  for (let errorSpan of orderedSpans) {
+    let currentSize =
+      getJSONBase64Size(resultSpans) + getJSONBase64Size(functionEndSpan);
+    let spanSize = getJSONBase64Size(errorSpan);
+
+    if (currentSize + spanSize < maxSendBytes) {
+      resultSpans.push(errorSpan);
+    }
+  }
+
+  resultSpans.push(functionEndSpan);
+
+  if (spans.length - resultSpans.length > 0) {
+    // eslint-disable-next-line no-console
+    console.log(`#LUMIGO# - Trimmed spans due to size`);
+  }
+
+  return resultSpans.length > 0 ? JSON.stringify(resultSpans) : undefined;
 };

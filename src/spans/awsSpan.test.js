@@ -481,6 +481,7 @@ describe('awsSpan', () => {
     const responseData = {
       headers: { Peter: 'Parker' },
       body: 'Well, Tony is dead.',
+      statusCode: 200,
       receivedTime,
     };
     const expected = {
@@ -501,6 +502,7 @@ describe('awsSpan', () => {
             body: '"Well, Tony is dead."',
             headers: '{"Peter":"Parker"}',
             receivedTime: 1256,
+            statusCode: 200,
           },
         },
         httpMethod: 'POST',

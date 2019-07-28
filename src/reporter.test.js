@@ -2,6 +2,7 @@
 import { TracerGlobals } from './globals';
 import * as reporter from './reporter';
 import * as utils from './utils';
+import { getJSONBase64Size } from './utils';
 
 jest.mock('../package.json', () => ({
   name: '@lumigo/tracerMock',
@@ -90,5 +91,37 @@ describe('reporter', () => {
       expectedReqBody
     );
     expect(result.rtt).toEqual(1024);
+  });
+
+  test('forgeRequestBody', async () => {
+    const oldEnv = Object.assign({}, process.env);
+
+    const dummy = 'dummy';
+    const dummyEnd = 'dummyEnd';
+    const error = 'error';
+    let spans = [{ dummy }, { dummy }, { dummyEnd }];
+
+    let expectedResult = [{ dummy }, { dummyEnd }];
+    let expectedResultSize = getJSONBase64Size(expectedResult);
+
+    expect(reporter.forgeRequestBody(spans, expectedResultSize)).toEqual(
+      JSON.stringify(expectedResult)
+    );
+
+    spans = [{ dummy }, { dummy, error }, { dummyEnd }];
+    expectedResult = [{ dummy, error }, { dummyEnd }];
+    expectedResultSize = getJSONBase64Size(expectedResult);
+
+    expect(reporter.forgeRequestBody(spans, expectedResultSize)).toEqual(
+      JSON.stringify(expectedResult)
+    );
+
+    utils.setPruneTraceOff();
+
+    expect(reporter.forgeRequestBody(spans)).toEqual(JSON.stringify(spans));
+
+    expect(reporter.forgeRequestBody([])).toEqual(undefined);
+
+    process.env = { ...oldEnv };
   });
 });

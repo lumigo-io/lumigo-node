@@ -3,6 +3,7 @@ import { TracerGlobals } from './globals';
 import EventEmitter from 'events';
 import https from 'https';
 import crypto from 'crypto';
+import { getJSONBase64Size } from './utils';
 
 jest.mock('https');
 jest.mock('../package.json', () => ({
@@ -171,6 +172,14 @@ describe('utils', () => {
     process.env = { ...oldEnv };
   });
 
+  test('isPruneTraceOff', () => {
+    expect(utils.isPruneTraceOff()).toBe(false);
+    const oldEnv = Object.assign({}, process.env);
+    process.env = { ...oldEnv, LUMIGO_PRUNE_TRACE_OFF: 'TRUE' };
+    expect(utils.isPruneTraceOff()).toBe(true);
+    process.env = { ...oldEnv };
+  });
+
   test('isDebug', () => {
     expect(utils.isDebug()).toBe(false);
     const oldEnv = Object.assign({}, process.env);
@@ -203,6 +212,14 @@ describe('utils', () => {
     const oldEnv = Object.assign({}, process.env);
     utils.setWarm();
     expect(utils.isWarm()).toBe(true);
+    process.env = { ...oldEnv };
+  });
+
+  test('setPruneTraceOff', () => {
+    expect(utils.isPruneTraceOff()).toBe(false);
+    const oldEnv = Object.assign({}, process.env);
+    utils.setPruneTraceOff();
+    expect(utils.isPruneTraceOff()).toBe(true);
     process.env = { ...oldEnv };
   });
 
@@ -286,8 +303,8 @@ describe('utils', () => {
     const target = { a: 1, b: 2 };
     const source = { b: 4, c: 5 };
 
-    const returnedTarget = Object.assign(target, source);
-    expect(utils.addHeaders(target, source)).toBe(returnedTarget);
+    const returnedTarget = Object.assign({}, target, source);
+    expect(utils.addHeaders(target, source)).toEqual(returnedTarget);
   });
 
   test('removeLumigoFromStacktrace', () => {
@@ -387,11 +404,112 @@ describe('utils', () => {
     );
   });
 
+  test('spanHasErrors', () => {
+    const regSpan = {
+      account: '985323015126',
+      ended: 1256,
+      id: 'not-a-random-id',
+      info: {
+        api: 'gy415nuibc.execute-api.us-east-1.amazonaws.com',
+        httpInfo: {
+          host: 'your.mind.com',
+          request: {
+            body: '"the first rule of fight club"',
+            headers: '{"Tyler":"Durden"}',
+            host: 'your.mind.com',
+            sendTime: 1234,
+          },
+          response: {
+            body: '"Well, Tony is dead."',
+            headers: '{"Peter":"Parker"}',
+            receivedTime: 1256,
+            statusCode: 200,
+          },
+        },
+        httpMethod: 'POST',
+        token: 'DEADBEEF',
+        transactionId: '64a1b06067c2100c52e51ef4',
+        type: 'http',
+        vendor: 'AWS',
+        version: '$LATEST',
+      },
+    };
+
+    const httpErrorSpan = {
+      account: '985323015126',
+      ended: 1256,
+      id: 'not-a-random-id',
+      info: {
+        api: 'gy415nuibc.execute-api.us-east-1.amazonaws.com',
+        httpInfo: {
+          host: 'your.mind.com',
+          request: {
+            body: '"the first rule of fight club"',
+            headers: '{"Tyler":"Durden"}',
+            host: 'your.mind.com',
+            sendTime: 1234,
+          },
+          response: {
+            body: '"Well, Tony is dead."',
+            headers: '{"Peter":"Parker"}',
+            receivedTime: 1256,
+            statusCode: 500,
+          },
+        },
+        httpMethod: 'POST',
+        token: 'DEADBEEF',
+        transactionId: '64a1b06067c2100c52e51ef4',
+        type: 'http',
+        vendor: 'AWS',
+        version: '$LATEST',
+      },
+    };
+
+    const errorSpan = {
+      account: '985323015126',
+      ended: 1256,
+      id: 'not-a-random-id',
+      error: true,
+      info: {
+        api: 'gy415nuibc.execute-api.us-east-1.amazonaws.com',
+        httpInfo: {
+          host: 'your.mind.com',
+          request: {
+            body: '"the first rule of fight club"',
+            headers: '{"Tyler":"Durden"}',
+            host: 'your.mind.com',
+            sendTime: 1234,
+          },
+          response: {
+            body: '"Well, Tony is dead."',
+            headers: '{"Peter":"Parker"}',
+            receivedTime: 1256,
+          },
+        },
+
+        httpMethod: 'POST',
+        token: 'DEADBEEF',
+        transactionId: '64a1b06067c2100c52e51ef4',
+        type: 'http',
+        vendor: 'AWS',
+        version: '$LATEST',
+      },
+    };
+
+    expect(utils.spanHasErrors(regSpan)).toEqual(false);
+    expect(utils.spanHasErrors(httpErrorSpan)).toEqual(true);
+    expect(utils.spanHasErrors(errorSpan)).toEqual(true);
+  });
+
   test('getEdgeUrl', () => {
     const expected = {
       host: 'us-east-1.lumigo-tracer-edge.golumigo.com',
       path: '/api/spans',
     };
     expect(utils.getEdgeUrl()).toEqual(expected);
+  });
+
+  test('getJSONBase64Size', () => {
+    expect(getJSONBase64Size({ foo: 'bar' })).toEqual(18);
   });
 });

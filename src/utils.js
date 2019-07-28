@@ -122,6 +122,12 @@ export const isVerboseMode = () =>
 export const isWarm = () =>
   !!(process.env['LUMIGO_IS_WARM'] && process.env.LUMIGO_IS_WARM === 'TRUE');
 
+export const isPruneTraceOff = () =>
+  !!(
+    process.env['LUMIGO_PRUNE_TRACE_OFF'] &&
+    process.env.LUMIGO_PRUNE_TRACE_OFF === 'TRUE'
+  );
+
 export const isDebug = () => {
   const isDebugFromEnv = !!(
     process.env['LUMIGO_DEBUG'] &&
@@ -143,6 +149,9 @@ export const isSwitchedOff = () => {
 };
 
 export const setWarm = () => (process.env['LUMIGO_IS_WARM'] = 'TRUE');
+
+export const setPruneTraceOff = () =>
+  (process.env['LUMIGO_PRUNE_TRACE_OFF'] = 'TRUE');
 
 export const setVerboseMode = () => (process.env['LUMIGO_VERBOSE'] = 'TRUE');
 
@@ -241,7 +250,7 @@ export const getAwsEdgeHost = () => {
 };
 
 export const addHeaders = (currentHeaders, headersToAssign) =>
-  Object.assign(currentHeaders, headersToAssign);
+  Object.assign({}, currentHeaders, headersToAssign);
 
 export const getEdgeHost = () => {
   const { edgeHost } = TracerGlobals.getTracerInputs();
@@ -252,10 +261,25 @@ export const getEdgeHost = () => {
   return awsEdgeHost;
 };
 
+export const spanHasErrors = span =>
+  !!(
+    span.error ||
+    (span.info &&
+      span.info.httpInfo &&
+      span.info.httpInfo.response &&
+      span.info.httpInfo.response.statusCode &&
+      span.info.httpInfo.response.statusCode > 400)
+  );
+
 export const getEdgeUrl = () => {
   const host = getEdgeHost();
   const path = SPAN_PATH;
   return { host, path };
+};
+
+//Base64 calculation taken from : https://stackoverflow.com/questions/13378815/base64-length-calculation
+export const getJSONBase64Size = obj => {
+  return Math.ceil((Buffer.byteLength(JSON.stringify(obj), 'utf8') / 3) * 4);
 };
 
 export const callAfterEmptyEventLoop = (fn, args) =>
