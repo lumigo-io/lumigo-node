@@ -94,6 +94,7 @@ describe('reporter', () => {
     );
     expect(result.rtt).toEqual(1024);
 
+    //Test - isSendOnlyIfErrors is on, and no error spans -> no spans sent
     spies.isSendOnlyIfErrors.mockReturnValueOnce(true);
     spies.httpReq.mockClear();
 
@@ -101,6 +102,7 @@ describe('reporter', () => {
     expect(spies.httpReq).toHaveBeenCalledTimes(0);
     expect(result.rtt).toEqual(0);
 
+    //Test - isSendOnlyIfErrors is on, sent spans with errors
     spies.isSendOnlyIfErrors.mockReturnValueOnce(true);
     spies.httpReq.mockClear();
     spies.now.mockReturnValueOnce(0);

@@ -71,6 +71,7 @@ describe('tracer', () => {
     await expect(tracer.startTrace()).resolves.toEqual(null);
     expect(spies.logFatal).toHaveBeenCalledWith('startTrace failure', err1);
 
+    //Test - isSendOnlyIfErrors is on, start span in not sent
     spies.sendSingleSpan.mockClear();
     spies.isSwitchedOff.mockClear();
     spies.getFunctionSpan.mockReturnValueOnce(functionSpan);
