@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+git reset --hard
 set -e
 
 setup_git() {

@@ -92,7 +92,7 @@ jobs:
   deploy:
     <<: *defaults
     steps:
-      - checkout_code
+      - checkout
       - run:
           name: deploy to npm
           command: ./scripts/deploy.sh
