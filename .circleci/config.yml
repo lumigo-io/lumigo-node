@@ -29,11 +29,11 @@ workflows:
     - test:
         filters:
           branches:
-            ignore: master
+            only: master
     - integration-test:
         filters:
           branches:
-            ignore: master
+            only: master
         requires:
           - test
     - deploy:
