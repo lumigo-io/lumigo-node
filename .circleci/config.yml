@@ -29,17 +29,17 @@ workflows:
     - test:
         filters:
           branches:
-            only: master
+            ignore: master
     - integration-test:
         filters:
           branches:
-            only: master
+            ignore: master
         requires:
           - test
     - deploy:
         filters:
           branches:
-            ignore: not
+            only: master
 jobs:
   test:
     <<: *defaults
