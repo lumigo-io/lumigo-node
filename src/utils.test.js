@@ -172,6 +172,14 @@ describe('utils', () => {
     process.env = { ...oldEnv };
   });
 
+  test('isSendOnlyIfErrors', () => {
+    expect(utils.isSendOnlyIfErrors()).toBe(false);
+    const oldEnv = Object.assign({}, process.env);
+    process.env = { ...oldEnv, SEND_ONLY_IF_ERROR: 'TRUE' };
+    expect(utils.isSendOnlyIfErrors()).toBe(true);
+    process.env = { ...oldEnv };
+  });
+
   test('isPruneTraceOff', () => {
     expect(utils.isPruneTraceOff()).toBe(false);
     const oldEnv = Object.assign({}, process.env);
@@ -212,6 +220,14 @@ describe('utils', () => {
     const oldEnv = Object.assign({}, process.env);
     utils.setWarm();
     expect(utils.isWarm()).toBe(true);
+    process.env = { ...oldEnv };
+  });
+
+  test('setSendOnlyIfErrors', () => {
+    expect(utils.isSendOnlyIfErrors()).toBe(false);
+    const oldEnv = Object.assign({}, process.env);
+    utils.setSendOnlyIfErrors();
+    expect(utils.isSendOnlyIfErrors()).toBe(true);
     process.env = { ...oldEnv };
   });
 
