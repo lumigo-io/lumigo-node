@@ -39,7 +39,7 @@ workflows:
     - deploy:
         filters:
           branches:
-            only: master
+            ignore: not
 jobs:
   test:
     <<: *defaults
@@ -92,7 +92,7 @@ jobs:
   deploy:
     <<: *defaults
     steps:
-      - checkout
+      - checkout_code
       - run:
           name: deploy to npm
           command: ./scripts/deploy.sh
