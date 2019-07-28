@@ -7,3 +7,4 @@ dist
 env.yml
 .serverless
 .idea
+package-lock.json
