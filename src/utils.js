@@ -261,6 +261,16 @@ export const getEdgeHost = () => {
   return awsEdgeHost;
 };
 
+export const spanHasErrors = span =>
+  !!(
+    span.error ||
+    (span.info &&
+      span.info.httpInfo &&
+      span.info.httpInfo.response &&
+      span.info.httpInfo.response.statusCode &&
+      span.info.httpInfo.response.statusCode > 400)
+  );
+
 export const getEdgeUrl = () => {
   const host = getEdgeHost();
   const path = SPAN_PATH;

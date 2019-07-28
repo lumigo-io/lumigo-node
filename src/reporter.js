@@ -6,6 +6,7 @@ import {
   httpReq,
   isDebug,
   isPruneTraceOff,
+  spanHasErrors,
 } from './utils';
 import * as logger from './logger';
 
@@ -57,10 +58,10 @@ export const forgeRequestBody = (spans, maxSendBytes = MAX_SENT_BYTES) => {
 
   const functionEndSpan = spans[spans.length - 1];
   const errorSpans = spans.filter(
-    span => span.error && span !== functionEndSpan
+    span => spanHasErrors(span) && span !== functionEndSpan
   );
   const normalSpans = spans.filter(
-    span => !span.error && span !== functionEndSpan
+    span => !spanHasErrors(span) && span !== functionEndSpan
   );
 
   const orderedSpans = [...errorSpans, ...normalSpans];
@@ -77,7 +78,7 @@ export const forgeRequestBody = (spans, maxSendBytes = MAX_SENT_BYTES) => {
 
   resultSpans.push(functionEndSpan);
 
-  if (spans.length - resultSpans.length) {
+  if (spans.length - resultSpans.length > 0) {
     // eslint-disable-next-line no-console
     console.log(`#LUMIGO# - Trimmed spans due to size`);
   }

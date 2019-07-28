@@ -6,8 +6,6 @@ defaults: &defaults
       auth:
         username: lumigo
         password: $DOCKERHUB_PASSWORD
-  environment:
-    TZ: "Asia/Jerusalem"
 
 commands:
   checkout_utils:
