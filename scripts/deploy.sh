@@ -28,5 +28,6 @@ echo "Create release tag"
 push_tags
 echo "Push to NPM"
 echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
+npm run build
 npm publish
 rm .npmrc
