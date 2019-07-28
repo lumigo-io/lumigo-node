@@ -17,6 +17,7 @@ echo "Deleting old node_modules"
 rm -rf node_modules
 echo "Installing dependencies"
 npm i
+npm run build
 rm -rf package-lock.json
 setup_git
 echo "Getting latest changes from git"
@@ -28,6 +29,5 @@ echo "Create release tag"
 push_tags
 echo "Push to NPM"
 echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
-npm run build
 npm publish
 rm .npmrc
