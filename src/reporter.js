@@ -1,7 +1,7 @@
 import { TracerGlobals } from './globals';
 import {
   getEdgeUrl,
-  getJSONSize,
+  getJSONBase64Size,
   getTracerInfo,
   httpReq,
   isDebug,
@@ -49,7 +49,7 @@ export const sendSpans = async spans => {
 export const forgeRequestBody = (spans, maxSendBytes = MAX_SENT_BYTES) => {
   let resultSpans = [];
 
-  if (isPruneTraceOff() || getJSONSize(spans) <= maxSendBytes) {
+  if (isPruneTraceOff() || getJSONBase64Size(spans) <= maxSendBytes) {
     return spans.length > 0 ? JSON.stringify(spans) : undefined;
   }
 
@@ -66,8 +66,9 @@ export const forgeRequestBody = (spans, maxSendBytes = MAX_SENT_BYTES) => {
   const orderedSpans = [...errorSpans, ...normalSpans];
 
   for (let errorSpan of orderedSpans) {
-    let currentSize = getJSONSize(resultSpans) + getJSONSize(functionEndSpan);
-    let spanSize = getJSONSize(errorSpan);
+    let currentSize =
+      getJSONBase64Size(resultSpans) + getJSONBase64Size(functionEndSpan);
+    let spanSize = getJSONBase64Size(errorSpan);
 
     if (currentSize + spanSize < maxSendBytes) {
       resultSpans.push(errorSpan);

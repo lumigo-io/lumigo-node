@@ -3,7 +3,7 @@ import { TracerGlobals } from './globals';
 import EventEmitter from 'events';
 import https from 'https';
 import crypto from 'crypto';
-import { getJSONSize } from './utils';
+import { getJSONBase64Size } from './utils';
 
 jest.mock('https');
 jest.mock('../package.json', () => ({
@@ -412,7 +412,7 @@ describe('utils', () => {
     expect(utils.getEdgeUrl()).toEqual(expected);
   });
 
-  test('getJSONSize', () => {
-    expect(getJSONSize({ foo: 'bar' })).toEqual(13);
+  test('getJSONBase64Size', () => {
+    expect(getJSONBase64Size({ foo: 'bar' })).toEqual(18);
   });
 });

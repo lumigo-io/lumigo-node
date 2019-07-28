@@ -2,7 +2,7 @@
 import { TracerGlobals } from './globals';
 import * as reporter from './reporter';
 import * as utils from './utils';
-import { getJSONSize } from './utils';
+import { getJSONBase64Size } from './utils';
 
 jest.mock('../package.json', () => ({
   name: '@lumigo/tracerMock',
@@ -102,7 +102,7 @@ describe('reporter', () => {
     let spans = [{ dummy }, { dummy }, { dummyEnd }];
 
     let expectedResult = [{ dummy }, { dummyEnd }];
-    let expectedResultSize = getJSONSize(expectedResult);
+    let expectedResultSize = getJSONBase64Size(expectedResult);
 
     expect(reporter.forgeRequestBody(spans, expectedResultSize)).toEqual(
       JSON.stringify(expectedResult)
@@ -110,7 +110,7 @@ describe('reporter', () => {
 
     spans = [{ dummy }, { dummy, error }, { dummyEnd }];
     expectedResult = [{ dummy, error }, { dummyEnd }];
-    expectedResultSize = getJSONSize(expectedResult);
+    expectedResultSize = getJSONBase64Size(expectedResult);
 
     expect(reporter.forgeRequestBody(spans, expectedResultSize)).toEqual(
       JSON.stringify(expectedResult)

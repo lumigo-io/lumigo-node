@@ -267,9 +267,9 @@ export const getEdgeUrl = () => {
   return { host, path };
 };
 
-//Taken from https://github.com/bendrucker/json-size/blob/master/index.js
-export const getJSONSize = obj => {
-  return Buffer.byteLength(JSON.stringify(obj), 'utf8');
+//Base64 calculation taken from : https://stackoverflow.com/questions/13378815/base64-length-calculation
+export const getJSONBase64Size = obj => {
+  return Math.ceil((Buffer.byteLength(JSON.stringify(obj), 'utf8') / 3) * 4);
 };
 
 export const callAfterEmptyEventLoop = (fn, args) =>
