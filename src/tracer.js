@@ -6,6 +6,7 @@ import {
   getEdgeUrl,
   callAfterEmptyEventLoop,
   removeLumigoFromStacktrace,
+  isSendOnlyIfErrors,
 } from './utils';
 import {
   getFunctionSpan,
@@ -39,8 +40,16 @@ export const startTrace = async () => {
       const functionSpan = getFunctionSpan();
       logger.debug('startTrace span created', functionSpan);
 
-      const { rtt } = await sendSingleSpan(functionSpan);
-      return addRttToFunctionSpan(functionSpan, rtt);
+      if (!isSendOnlyIfErrors()) {
+        const { rtt } = await sendSingleSpan(functionSpan);
+        return addRttToFunctionSpan(functionSpan, rtt);
+      } else {
+        SpansContainer.addSpan(functionSpan);
+        logger.debug(
+          "Add start span to spans list without sending it on start because tracer in 'send only if error' mode ."
+        );
+        return null;
+      }
     } else {
       return null;
     }

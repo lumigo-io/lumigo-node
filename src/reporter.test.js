@@ -15,6 +15,7 @@ describe('reporter', () => {
   spies['now'] = jest.spyOn(global.Date, 'now');
   spies['httpReq'] = jest.spyOn(utils, 'httpReq');
   spies['isDebug'] = jest.spyOn(utils, 'isDebug');
+  spies['isSendOnlyIfErrors'] = jest.spyOn(utils, 'isSendOnlyIfErrors');
 
   const oldEnv = Object.assign({}, process.env);
   beforeEach(() => {
@@ -61,6 +62,7 @@ describe('reporter', () => {
 
     const span1 = { a: 'b', c: 'd' };
     const span2 = { e: 'f', g: 'h' };
+    const errorSpan = { a: 'a', b: 'b', error: 'error' };
 
     const pkgNameMock = '@lumigo/tracerMock';
     const pkgVersionMock = '1.2.3';
@@ -79,7 +81,7 @@ describe('reporter', () => {
     spies.now.mockReturnValueOnce(0);
     spies.now.mockReturnValueOnce(1024);
     spies.httpReq.mockImplementationOnce(() => {});
-    const result = await reporter.sendSpans([span1, span2]);
+    let result = await reporter.sendSpans([span1, span2]);
 
     expect(spies.httpReq).toHaveBeenCalledWith(
       {
@@ -89,6 +91,32 @@ describe('reporter', () => {
         headers: expectedHeaders,
       },
       expectedReqBody
+    );
+    expect(result.rtt).toEqual(1024);
+
+    spies.isSendOnlyIfErrors.mockReturnValueOnce(true);
+    spies.httpReq.mockClear();
+
+    result = await reporter.sendSpans([span1, span2]);
+    expect(spies.httpReq).toHaveBeenCalledTimes(0);
+    expect(result.rtt).toEqual(0);
+
+    spies.isSendOnlyIfErrors.mockReturnValueOnce(true);
+    spies.httpReq.mockClear();
+    spies.now.mockReturnValueOnce(0);
+    spies.now.mockReturnValueOnce(1024);
+    spies.httpReq.mockImplementationOnce(() => {});
+
+    result = await reporter.sendSpans([span1, span2, errorSpan]);
+    expect(spies.httpReq).toHaveBeenCalledTimes(1);
+    expect(spies.httpReq).toHaveBeenCalledWith(
+      {
+        host: expectedHost,
+        path: expectedPath,
+        method: expectedMethod,
+        headers: expectedHeaders,
+      },
+      JSON.stringify([span1, span2, errorSpan])
     );
     expect(result.rtt).toEqual(1024);
   });

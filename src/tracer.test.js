@@ -12,6 +12,7 @@ describe('tracer', () => {
   const spies = {};
   spies.isSwitchedOff = jest.spyOn(utils, 'isSwitchedOff');
   spies.isAwsEnvironment = jest.spyOn(utils, 'isAwsEnvironment');
+  spies.isSendOnlyIfErrors = jest.spyOn(utils, 'isSendOnlyIfErrors');
   spies.getContextInfo = jest.spyOn(utils, 'getContextInfo');
   spies.sendSingleSpan = jest.spyOn(reporter, 'sendSingleSpan');
   spies.sendSpans = jest.spyOn(reporter, 'sendSpans');
@@ -69,6 +70,16 @@ describe('tracer', () => {
 
     await expect(tracer.startTrace()).resolves.toEqual(null);
     expect(spies.logFatal).toHaveBeenCalledWith('startTrace failure', err1);
+
+    spies.sendSingleSpan.mockClear();
+    spies.isSwitchedOff.mockClear();
+    spies.getFunctionSpan.mockReturnValueOnce(functionSpan);
+    spies.isAwsEnvironment.mockReturnValueOnce(true);
+    spies.isSendOnlyIfErrors.mockReturnValueOnce(true);
+    await expect(tracer.startTrace()).resolves.toEqual(null);
+
+    expect(spies.sendSingleSpan).toHaveBeenCalledTimes(0);
+    expect(spies.SpansContainer.addSpan).toHaveBeenCalledTimes(1);
   });
 
   test('isCallbacked', async () => {
