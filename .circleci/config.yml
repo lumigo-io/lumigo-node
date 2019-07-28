@@ -36,6 +36,10 @@ workflows:
             ignore: master
         requires:
           - test
+    - deploy:
+        filters:
+          branches:
+            only: master
 jobs:
   test:
     <<: *defaults
@@ -85,3 +89,10 @@ jobs:
       - run:
           name: run tests
           command: cd ../integration-tests && export testNode=true && npm run test
+  deploy:
+    <<: *defaults
+    steps:
+      - checkout
+      - run:
+          name: deploy to npm
+          command: ./scripts/deploy.sh
