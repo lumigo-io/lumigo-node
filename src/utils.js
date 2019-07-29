@@ -122,6 +122,12 @@ export const isVerboseMode = () =>
 export const isWarm = () =>
   !!(process.env['LUMIGO_IS_WARM'] && process.env.LUMIGO_IS_WARM === 'TRUE');
 
+export const isSendOnlyIfErrors = () =>
+  !!(
+    process.env['SEND_ONLY_IF_ERROR'] &&
+    process.env.SEND_ONLY_IF_ERROR === 'TRUE'
+  );
+
 export const isPruneTraceOff = () =>
   !!(
     process.env['LUMIGO_PRUNE_TRACE_OFF'] &&
@@ -149,6 +155,9 @@ export const isSwitchedOff = () => {
 };
 
 export const setWarm = () => (process.env['LUMIGO_IS_WARM'] = 'TRUE');
+
+export const setSendOnlyIfErrors = () =>
+  (process.env['SEND_ONLY_IF_ERROR'] = 'TRUE');
 
 export const setPruneTraceOff = () =>
   (process.env['LUMIGO_PRUNE_TRACE_OFF'] = 'TRUE');

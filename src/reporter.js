@@ -6,6 +6,7 @@ import {
   httpReq,
   isDebug,
   isPruneTraceOff,
+  isSendOnlyIfErrors,
   spanHasErrors,
 } from './utils';
 import * as logger from './logger';
@@ -26,6 +27,17 @@ export const sendSpans = async spans => {
     'User-Agent': `${name}$${version}`,
     'Content-Type': 'application/json',
   };
+
+  if (isSendOnlyIfErrors()) {
+    const spansContainErrors =
+      spans.filter(s => s.error !== undefined).length > 0;
+    if (!spansContainErrors) {
+      logger.debug(
+        'No Spans was sent, `SEND_ONLY_IF_ERROR` is on and no span has error'
+      );
+      return { rtt: 0 };
+    }
+  }
 
   const method = 'POST';
   const { host, path } = getEdgeUrl();
