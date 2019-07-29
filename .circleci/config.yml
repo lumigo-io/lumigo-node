@@ -39,7 +39,7 @@ workflows:
     - deploy:
         filters:
           branches:
-            ignore: ignore
+            only: master
 jobs:
   test:
     <<: *defaults
