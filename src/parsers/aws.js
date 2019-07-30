@@ -30,7 +30,7 @@ export const lambdaParser = (requestData, responseData) => {
 export const snsParser = requestData => {
   const { body: reqBody } = requestData;
   const parsedBody = reqBody ? parseQueryParams(reqBody) : undefined;
-  const resourceName = parsedBody ? parsedBody.get('TopicArn') : undefined;
+  const resourceName = parsedBody ? parsedBody['TopicArn'] : undefined;
   const awsServiceData = { resourceName, targetArn: resourceName };
   return { awsServiceData };
 };
@@ -38,7 +38,7 @@ export const snsParser = requestData => {
 export const sqsParser = requestData => {
   const { body: reqBody } = requestData;
   const parsedBody = reqBody ? parseQueryParams(reqBody) : undefined;
-  const resourceName = parsedBody ? parsedBody.get('QueueUrl') : undefined;
+  const resourceName = parsedBody ? parsedBody['QueueUrl'] : undefined;
   const awsServiceData = { resourceName };
   return { awsServiceData };
 };

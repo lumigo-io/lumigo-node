@@ -533,20 +533,20 @@ describe('utils', () => {
   test('parseQueryParams', () => {
     const queryParams = 'Action=Publish&TopicArn=SomeTopic&Version=2010-03-31';
 
-    const action = parseQueryParams(queryParams).get('Action');
-    const notFound = parseQueryParams(queryParams).get('Actionsss');
+    const action = parseQueryParams(queryParams)['Action'];
+    const notFound = parseQueryParams(queryParams)['Actionsss'];
 
     expect(action).toEqual('Publish');
-    expect(notFound).toEqual(null);
+    expect(notFound).toEqual(undefined);
   });
 
   test('parseQueryParams -> no success flow', () => {
-    const invalid = parseQueryParams('invalid-url').get('Action');
-    const notFound = parseQueryParams(undefined).get('Actionsss');
-    const weirdInput = parseQueryParams(2).get('Actionsss');
+    const invalid = parseQueryParams('invalid-url')['Action'];
+    const notFound = parseQueryParams(undefined)['Actionsss'];
+    const weirdInput = parseQueryParams(2)['Actionsss'];
 
-    expect(invalid).toEqual(null);
-    expect(notFound).toEqual(null);
-    expect(weirdInput).toEqual(null);
+    expect(invalid).toEqual(undefined);
+    expect(notFound).toEqual(undefined);
+    expect(weirdInput).toEqual(undefined);
   });
 });
