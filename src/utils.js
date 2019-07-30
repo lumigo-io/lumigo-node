@@ -293,3 +293,12 @@ export const getJSONBase64Size = obj => {
 
 export const callAfterEmptyEventLoop = (fn, args) =>
   process.prependOnceListener('beforeExit', async () => await fn(...args));
+
+export const parseQueryParams = queryParams => {
+  if (typeof queryParams !== 'string') return {};
+  let obj = {};
+  queryParams.replace(/([^=&]+)=([^&]*)/g, function(m, key, value) {
+    obj[decodeURIComponent(key)] = decodeURIComponent(value);
+  });
+  return obj;
+};

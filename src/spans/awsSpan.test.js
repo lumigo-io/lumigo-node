@@ -363,6 +363,15 @@ describe('awsSpan', () => {
       responseData
     );
 
+    const host5 = `sqs.amazonaws.com`;
+    requestData.host = host5;
+
+    awsSpan.getAwsServiceData(requestData, responseData);
+    expect(awsParsers.sqsParser).toHaveBeenCalledWith(
+      requestData,
+      responseData
+    );
+
     const host4 = `deadbeef.amazonaws.com`;
     requestData.host = host4;
 
