@@ -539,4 +539,14 @@ describe('utils', () => {
     expect(action).toEqual('Publish');
     expect(notFound).toEqual(null);
   });
+
+  test('parseQueryParams -> no success flow', () => {
+    const invalid = parseQueryParams('invalid-url').get('Action');
+    const notFound = parseQueryParams(undefined).get('Actionsss');
+    const weirdInput = parseQueryParams(2).get('Actionsss');
+
+    expect(invalid).toEqual(null);
+    expect(notFound).toEqual(null);
+    expect(weirdInput).toEqual(null);
+  });
 });
