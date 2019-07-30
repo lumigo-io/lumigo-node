@@ -1,6 +1,5 @@
 import { parseQueryParams } from '../utils';
 import parseXml from '../tools/xmlToJson';
-import * as logger from '../logger';
 
 export const dynamodbParser = requestData => {
   const { headers: reqHeaders, body: reqBody } = requestData;
