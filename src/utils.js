@@ -293,3 +293,9 @@ export const getJSONBase64Size = obj => {
 
 export const callAfterEmptyEventLoop = (fn, args) =>
   process.prependOnceListener('beforeExit', async () => await fn(...args));
+
+export const parseQueryParams = queryParams => {
+  // eslint-disable-next-line no-undef
+  const result = new URLSearchParams(queryParams);
+  return result;
+};

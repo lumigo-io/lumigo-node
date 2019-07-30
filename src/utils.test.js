@@ -4,6 +4,7 @@ import EventEmitter from 'events';
 import https from 'https';
 import crypto from 'crypto';
 import { getJSONBase64Size } from './utils';
+import { parseQueryParams } from './utils';
 
 jest.mock('https');
 jest.mock('../package.json', () => ({
@@ -527,5 +528,15 @@ describe('utils', () => {
 
   test('getJSONBase64Size', () => {
     expect(getJSONBase64Size({ foo: 'bar' })).toEqual(18);
+  });
+
+  test('parseQueryParams', () => {
+    const queryParams = 'Action=Publish&TopicArn=SomeTopic&Version=2010-03-31';
+
+    const action = parseQueryParams(queryParams).get('Action');
+    const notFound = parseQueryParams(queryParams).get('Actionsss');
+
+    expect(action).toEqual('Publish');
+    expect(notFound).toEqual(null);
   });
 });
