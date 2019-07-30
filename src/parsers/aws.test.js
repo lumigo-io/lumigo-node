@@ -41,7 +41,7 @@ describe('aws parser', () => {
     expect(aws.lambdaParser(requestData, responseData)).toEqual(expected);
   });
 
-  test('snsParser -> happy flow', () => {
+  test('snsParser -> happy flow (request)', () => {
     const topicArn = 'SOME-TOPIC-ARN';
     const requestData = {
       path: '/',
@@ -68,6 +68,76 @@ describe('aws parser', () => {
     });
   });
 
+  test('snsParser -> happy flow (response)', () => {
+    const response = {
+      statusCode: 200,
+      receivedTime: 1564495048705,
+      body:
+        '<PublishResponse xmlns="http://sns.amazonaws.com/doc/2010-03-31/">\n  <PublishResult>\n    <MessageId>72eaeab7-267d-5bac-8eee-bf0d69758085</MessageId>\n  </PublishResult>\n  <ResponseMetadata>\n    <RequestId>3e7f7a41-4c85-5f51-8160-2ffb038d8478</RequestId>\n  </ResponseMetadata>\n</PublishResponse>\n',
+      headers: {
+        'x-amzn-requestid': '3e7f7a41-4c85-5f51-8160-2ffb038d8478',
+        'x-amzn-trace-id':
+          'Root=1-00007c9f-1f11443016dcb3200b19bbc0;Parent=3bfa041a0ae54e47;Sampled=0',
+        'content-type': 'text/xml',
+        'content-length': '294',
+        date: 'Tue, 30 Jul 2019 13:57:27 GMT',
+      },
+    };
+
+    const result = aws.snsParser({}, response);
+
+    expect(result).toEqual({
+      awsServiceData: {
+        messageId: '72eaeab7-267d-5bac-8eee-bf0d69758085',
+        resourceName: undefined,
+        targetArn: undefined,
+      },
+    });
+  });
+
+  test('snsParser -> happy flow (request + response)', () => {
+    const topicArn = 'SOME-TOPIC-ARN';
+    const requestData = {
+      path: '/',
+      port: 443,
+      host: 'sns.us-west-2.amazonaws.com',
+      body: `Action=Publish&Message=Some%20Message%20to%20SNS&TopicArn=${topicArn}&Version=2010-03-31`,
+      method: 'POST',
+      headers: {
+        'content-length': 137,
+        host: 'sns.us-west-2.amazonaws.com',
+        'x-amz-date': '20190730T080719Z',
+      },
+      protocol: 'https:',
+      sendTime: 1564474039619,
+    };
+
+    const response = {
+      statusCode: 200,
+      receivedTime: 1564495048705,
+      body:
+        '<PublishResponse xmlns="http://sns.amazonaws.com/doc/2010-03-31/">\n  <PublishResult>\n    <MessageId>72eaeab7-267d-5bac-8eee-bf0d69758085</MessageId>\n  </PublishResult>\n  <ResponseMetadata>\n    <RequestId>3e7f7a41-4c85-5f51-8160-2ffb038d8478</RequestId>\n  </ResponseMetadata>\n</PublishResponse>\n',
+      headers: {
+        'x-amzn-requestid': '3e7f7a41-4c85-5f51-8160-2ffb038d8478',
+        'x-amzn-trace-id':
+          'Root=1-00007c9f-1f11443016dcb3200b19bbc0;Parent=3bfa041a0ae54e47;Sampled=0',
+        'content-type': 'text/xml',
+        'content-length': '294',
+        date: 'Tue, 30 Jul 2019 13:57:27 GMT',
+      },
+    };
+
+    const result = aws.snsParser(requestData, response);
+
+    expect(result).toEqual({
+      awsServiceData: {
+        messageId: '72eaeab7-267d-5bac-8eee-bf0d69758085',
+        resourceName: topicArn,
+        targetArn: topicArn,
+      },
+    });
+  });
+
   test('snsParser -> not success and return default values', () => {
     const requestData = {
       path: '/',
@@ -82,6 +152,7 @@ describe('aws parser', () => {
       awsServiceData: {
         resourceName: undefined,
         targetArn: undefined,
+        messageId: undefined,
       },
     });
   });
