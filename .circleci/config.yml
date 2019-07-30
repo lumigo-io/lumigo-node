@@ -39,7 +39,7 @@ workflows:
     - deploy:
         filters:
           branches:
-            ignore: ignore
+            only: master
 jobs:
   test:
     <<: *defaults
@@ -93,6 +93,18 @@ jobs:
     <<: *defaults
     steps:
       - checkout
+      - run:
+            # Avoid annoying double runs after deploy.
+            # See https://discuss.circleci.com/t/job-runs-even-when-tags-ignore-filter-is-triggered-when-combined-with-branches-only/20664
+            name: Check if tagged
+            command: |
+              tags=$(git tag -l --points-at HEAD)
+              echo "Tags $tags"
+              if [[ ! -z "$tags" ]]
+              then
+                echo "A tagged commit, skip..."
+                circleci step halt
+              fi
       - run:
           name: deploy to npm
           command: ./scripts/deploy.sh

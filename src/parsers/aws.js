@@ -1,3 +1,5 @@
+import { parseQueryParams } from '../utils';
+
 export const dynamodbParser = requestData => {
   const { headers: reqHeaders, body: reqBody } = requestData;
   const dynamodbMethod =
@@ -25,12 +27,18 @@ export const lambdaParser = (requestData, responseData) => {
   return { awsServiceData, spanId };
 };
 
-/*eslint-disable */
-export const snsParser = (requestData, responseData) => {
-  return {};
+export const snsParser = requestData => {
+  const { body: reqBody } = requestData;
+  const parsedBody = reqBody ? parseQueryParams(reqBody) : undefined;
+  const resourceName = parsedBody ? parsedBody['TopicArn'] : undefined;
+  const awsServiceData = { resourceName, targetArn: resourceName };
+  return { awsServiceData };
 };
 
-export const kinesisParser = (requestData, responseData) => {
-  return {};
+export const sqsParser = requestData => {
+  const { body: reqBody } = requestData;
+  const parsedBody = reqBody ? parseQueryParams(reqBody) : undefined;
+  const resourceName = parsedBody ? parsedBody['QueueUrl'] : undefined;
+  const awsServiceData = { resourceName };
+  return { awsServiceData };
 };
-/*eslint-enable */

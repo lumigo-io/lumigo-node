@@ -41,11 +41,92 @@ describe('aws parser', () => {
     expect(aws.lambdaParser(requestData, responseData)).toEqual(expected);
   });
 
-  test('snsParser', () => {
-    expect(aws.snsParser()).toEqual({});
+  test('snsParser -> happy flow', () => {
+    const topicArn = 'SOME-TOPIC-ARN';
+    const requestData = {
+      path: '/',
+      port: 443,
+      host: 'sns.us-west-2.amazonaws.com',
+      body: `Action=Publish&Message=Some%20Message%20to%20SNS&TopicArn=${topicArn}&Version=2010-03-31`,
+      method: 'POST',
+      headers: {
+        'content-length': 137,
+        host: 'sns.us-west-2.amazonaws.com',
+        'x-amz-date': '20190730T080719Z',
+      },
+      protocol: 'https:',
+      sendTime: 1564474039619,
+    };
+
+    const result = aws.snsParser(requestData, {});
+
+    expect(result).toEqual({
+      awsServiceData: {
+        resourceName: topicArn,
+        targetArn: topicArn,
+      },
+    });
   });
 
-  test('kinesisParser', () => {
-    expect(aws.kinesisParser()).toEqual({});
+  test('snsParser -> not success and return default values', () => {
+    const requestData = {
+      path: '/',
+      port: 443,
+      host: 'sns.us-west-2.amazonaws.com',
+      sendTime: 1564474039619,
+    };
+
+    const result = aws.snsParser(requestData, {});
+
+    expect(result).toEqual({
+      awsServiceData: {
+        resourceName: undefined,
+        targetArn: undefined,
+      },
+    });
+  });
+
+  test('sqsParser -> happy flow', () => {
+    const queueUrl = 'https://sqs.us-west-2.amazonaws.com/33/random-queue-test';
+    const encodedQueueUrl = encodeURIComponent(queueUrl);
+    const requestData = {
+      path: '/',
+      port: 443,
+      host: 'sqs.us-west-2.amazonaws.com',
+      body: `Action=SendMessage&DelaySeconds=1&MessageBody=Some%20Message%20to%20SQS&QueueUrl=${encodedQueueUrl}`,
+      method: 'POST',
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded; charset=utf-8',
+        'content-length': 172,
+        host: 'sqs.us-west-2.amazonaws.com',
+        'x-amz-date': '20190730T082312Z',
+      },
+      protocol: 'https:',
+      sendTime: 1564474992235,
+    };
+
+    const result = aws.sqsParser(requestData, {});
+
+    expect(result).toEqual({
+      awsServiceData: {
+        resourceName: queueUrl,
+      },
+    });
+  });
+
+  test('sqsParser -> not success and return default values', () => {
+    const requestData = {
+      path: '/',
+      host: 'sqs.us-west-2.amazonaws.com',
+      sendTime: 1564474992235,
+    };
+
+    const result = aws.sqsParser(requestData, {});
+
+    expect(result).toEqual({
+      awsServiceData: {
+        resourceName: undefined,
+      },
+    });
   });
 });
