@@ -1,3 +1,9 @@
+/*
+  XML TO JSON
+  Taken from: https://github.com/alabianca/xml-to-json with tests
+  Be aware, this code is not 100% covered by tests
+*/
+
 module.exports = traverse;
 
 const clean = function cleanXML(xml) {
