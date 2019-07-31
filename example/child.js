@@ -1,32 +1,65 @@
-const axios = require('axios');
-const token = 't_a595aa58c126575c5c41';
-const edgeHost = 'kzc0w7k50d.execute-api.eu-west-1.amazonaws.com';
+const token = 't_2bbf570ddcb4ed8a3630';
+const edgeHost = '336baui8uh.execute-api.us-west-2.amazonaws.com';
 const debug = true;
-const lumigo = require('./lumigo')({ token, edgeHost, debug });
-//const lumigo = require('@lumigo/tracer')({ token, edgeHost, debug });
-//const LumigoTracer = require('@lumigo/tracer');
-//const RellyTracer = new LumigoTracer({ token, host: edgeHost });
+const lumigo = require('@lumigo/tracer')({ token, edgeHost, debug });
 
-const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+const AWS = require('aws-sdk');
 
-const yikes = async () => {
-  await sleep(5000);
-  const { data } = await axios.get('https://sagi.io');
-  console.log('SAGIZZ5');
-};
-const childFn = async (event, context, callback) => {
-  context.callbackWaitsForEmptyEventLoop = true;
-  yikes();
-  callback(null, 'zarathustra5');
-  /*
-  const c = () => {
-    throw new Error('bla');
+const putToDynamoDb = async message => {
+  const dynamodb = new AWS.DynamoDB({
+    region: 'us-west-2',
+  });
+  const params = {
+    TableName: 'dori-table-test',
+    Item: {
+      id: { S: JSON.stringify(Math.random() * 10000) },
+      message: { S: message },
+    },
   };
-  const b = () => c();
-  const a = () => b();
-  a();
-  */
+  await dynamodb.putItem(params).promise();
 };
 
-//exports.handler = RellyTracer.trace(childFn);
+const postToSns = async message => {
+  const sns = new AWS.SNS({
+    region: 'us-east-1',
+  });
+  const topicArn = `arn:aws:sns:us-east-1:335722316285:slave-test-topic`;
+  await sns.publish({ TopicArn: topicArn, Message: message }).promise();
+};
+
+const postToSqs = async message => {
+  const sqs = new AWS.SQS({
+    region: 'us-west-2',
+  });
+  const queueUrl = `https://sqs.us-west-2.amazonaws.com/335722316285/dori-test-sqs`;
+
+  const params = {
+    DelaySeconds: 1,
+    MessageBody: message,
+    QueueUrl: queueUrl,
+  };
+
+  await sqs.sendMessage(params).promise();
+};
+
+const postToS3 = async () => {
+  const S3 = new AWS.S3({
+    region: 'us-west-2',
+  });
+  let keyName = 'tmp.txt';
+  let objectParams = {
+    Bucket: 'dori-test-bucket',
+    Key: keyName,
+    Body: 'Hello Lumigo!',
+  };
+  await S3.putObject(objectParams).promise();
+};
+
+const childFn = async () => {
+  await postToSns('Some Message to SNS');
+  // eslint-disable-next-line no-console
+  console.log('ALL GOOD');
+  return 'ALL GOOD';
+};
+
 exports.handler = lumigo.trace(childFn);
