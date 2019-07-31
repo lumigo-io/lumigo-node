@@ -66,15 +66,15 @@ describe('reporter', () => {
     const spansWithStatusCode = [dummy, genReturnValue(200), dummy];
     const spansWithErrorStatusCode = [dummy, genReturnValue(500), dummy];
     const spansWithError = [dummy, error, dummy];
-    const spansWithOutError = [dummy, dummy];
+    const spansWithoutError = [dummy, dummy];
 
-    const assert = (spans, result) =>
+    const assertSpans = (spans, result) =>
       expect(reporter.isSpansContainsErrors(spans)).toEqual(result);
 
-    assert(spansWithStatusCode, false);
-    assert(spansWithErrorStatusCode, true);
-    assert(spansWithError, true);
-    assert(spansWithOutError, false);
+    assertSpans(spansWithStatusCode, false);
+    assertSpans(spansWithErrorStatusCode, true);
+    assertSpans(spansWithError, true);
+    assertSpans(spansWithoutError, false);
   });
 
   test('sendSpans', async () => {
