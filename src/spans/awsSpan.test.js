@@ -336,8 +336,7 @@ describe('awsSpan', () => {
     const requestData = { a: 'b' };
     const responseData = { d: 'd' };
 
-    const host1 = `dynamodb.amazonaws.com`;
-    requestData.host = host1;
+    requestData.host = `dynamodb.amazonaws.com`;
 
     awsSpan.getAwsServiceData(requestData, responseData);
     expect(awsParsers.dynamodbParser).toHaveBeenCalledWith(
@@ -345,8 +344,7 @@ describe('awsSpan', () => {
       responseData
     );
 
-    const host2 = `sns.amazonaws.com`;
-    requestData.host = host2;
+    requestData.host = `sns.amazonaws.com`;
 
     awsSpan.getAwsServiceData(requestData, responseData);
     expect(awsParsers.snsParser).toHaveBeenCalledWith(
@@ -354,8 +352,7 @@ describe('awsSpan', () => {
       responseData
     );
 
-    const host3 = `lambda.amazonaws.com`;
-    requestData.host = host3;
+    requestData.host = `lambda.amazonaws.com`;
 
     awsSpan.getAwsServiceData(requestData, responseData);
     expect(awsParsers.lambdaParser).toHaveBeenCalledWith(
@@ -363,8 +360,7 @@ describe('awsSpan', () => {
       responseData
     );
 
-    const host5 = `sqs.amazonaws.com`;
-    requestData.host = host5;
+    requestData.host = `sqs.amazonaws.com`;
 
     awsSpan.getAwsServiceData(requestData, responseData);
     expect(awsParsers.sqsParser).toHaveBeenCalledWith(
@@ -372,9 +368,15 @@ describe('awsSpan', () => {
       responseData
     );
 
-    const host4 = `deadbeef.amazonaws.com`;
-    requestData.host = host4;
+    requestData.host = `kinesis.amazonaws.com`;
 
+    awsSpan.getAwsServiceData(requestData, responseData);
+    expect(awsParsers.kinesisParser).toHaveBeenCalledWith(
+      requestData,
+      responseData
+    );
+
+    requestData.host = `deadbeef.amazonaws.com`;
     expect(awsSpan.getAwsServiceData(requestData, responseData)).toEqual({});
   });
 

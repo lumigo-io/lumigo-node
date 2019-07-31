@@ -129,4 +129,36 @@ describe('aws parser', () => {
       },
     });
   });
+
+  test('kinesisParser -> happy flow', () => {
+    const streamName = 'RANDOM-STREAM-NAME';
+    const requestData = {
+      host: 'kinesis.us-west-2.amazonaws.com',
+      sendTime: 1564474992235,
+      body: JSON.stringify({ StreamName: streamName }),
+    };
+
+    const result = aws.kinesisParser(requestData, {});
+
+    expect(result).toEqual({
+      awsServiceData: {
+        resourceName: streamName,
+      },
+    });
+  });
+
+  test('kinesisParser -> not success and return default values', () => {
+    const requestData = {
+      host: 'kinesis.us-west-2.amazonaws.com',
+      sendTime: 1564474992235,
+    };
+
+    const result = aws.kinesisParser(requestData, {});
+
+    expect(result).toEqual({
+      awsServiceData: {
+        resourceName: undefined,
+      },
+    });
+  });
 });

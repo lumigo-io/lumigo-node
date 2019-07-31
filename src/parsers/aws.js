@@ -42,3 +42,12 @@ export const sqsParser = requestData => {
   const awsServiceData = { resourceName };
   return { awsServiceData };
 };
+
+export const kinesisParser = requestData => {
+  const { body: reqBody } = requestData;
+  const reqBodyJSON = (!!reqBody && JSON.parse(reqBody)) || {};
+  const resourceName =
+    (reqBodyJSON['StreamName'] && reqBodyJSON.StreamName) || undefined;
+  const awsServiceData = { resourceName };
+  return { awsServiceData };
+};
