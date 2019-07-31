@@ -55,6 +55,28 @@ describe('reporter', () => {
     expect(result).toEqual(retVal);
   });
 
+  test('isSpansContainsErrors', async () => {
+    const genReturnValue = statusCode => ({
+      returnValue: {
+        statusCode,
+      },
+    });
+    const dummy = { dummy: 'dummy' };
+    const error = { error: 'error' };
+    const spansWithStatusCode = [dummy, genReturnValue(200), dummy];
+    const spansWithErrorStatusCode = [dummy, genReturnValue(500), dummy];
+    const spansWithError = [dummy, error, dummy];
+    const spansWithOutError = [dummy, dummy];
+
+    const assert = (spans, result) =>
+      expect(reporter.isSpansContainsErrors(spans)).toEqual(result);
+
+    assert(spansWithStatusCode, false);
+    assert(spansWithErrorStatusCode, true);
+    assert(spansWithError, true);
+    assert(spansWithOutError, false);
+  });
+
   test('sendSpans', async () => {
     utils.setDebug();
     const token = 'DEADBEEF';
