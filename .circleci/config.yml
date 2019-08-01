@@ -108,4 +108,4 @@ jobs:
               fi
       - run:
           name: deploy to npm + lambda layer
-          command: ./scripts/bd_to_prod.shs
+          command: ./scripts/bd_to_prod.sh
