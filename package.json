@@ -41,7 +41,6 @@
     "jest": "^24.8.0",
     "jest-junit": "^6.4.0",
     "lambda-local": "^1.6.2",
-    "lint-staged": "^9.2.1",
     "mockdate": "^2.0.2",
     "node-fetch": "^2.6.0",
     "prettier": "^1.17.1",
@@ -61,7 +60,6 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "lint-staged",
       "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
     }
   }
