@@ -17,15 +17,16 @@ import {
   snsParser,
   lambdaParser,
   sqsParser,
+  kinesisParser,
 } from '../parsers/aws';
-import { getEventInfo } from '../events';
 import { TracerGlobals } from '../globals';
+import { getEventInfo } from '../events';
 
 export const HTTP_SPAN = 'http';
 export const FUNCTION_SPAN = 'function';
 export const EXTERNAL_SERVICE = 'external';
 
-export const getSpanInfo = event => {
+export const getSpanInfo = () => {
   const tracer = getTracerInfo();
 
   const {
@@ -35,8 +36,8 @@ export const getSpanInfo = event => {
   } = getAWSEnvironment();
 
   const traceId = getTraceId(awsXAmznTraceId);
-  const eventInfo = getEventInfo(event);
-  return { traceId, tracer, logGroupName, logStreamName, ...eventInfo };
+
+  return { traceId, tracer, logGroupName, logStreamName };
 };
 
 export const getBasicSpan = () => {
@@ -90,7 +91,7 @@ export const getFunctionSpan = () => {
   } = TracerGlobals.getHandlerInputs();
 
   const basicSpan = getBasicSpan();
-
+  const info = { ...basicSpan.info, ...getEventInfo(lambdaEvent) };
   const type = FUNCTION_SPAN;
 
   const started = new Date().getTime();
@@ -110,6 +111,7 @@ export const getFunctionSpan = () => {
 
   return {
     ...basicSpan,
+    info,
     id,
     envs,
     name,
@@ -132,7 +134,13 @@ export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
   return Object.assign({}, functionSpan, { id, ended, error, return_value });
 };
 
-export const AWS_PARSED_SERVICES = ['dynamodb', 'sns', 'lambda', 'sqs'];
+export const AWS_PARSED_SERVICES = [
+  'dynamodb',
+  'sns',
+  'lambda',
+  'sqs',
+  'kinesis',
+];
 
 export const getAwsServiceFromHost = host => {
   const service = host.split('.')[0];
@@ -157,6 +165,8 @@ export const getAwsServiceData = (requestData, responseData) => {
       return lambdaParser(requestData, responseData);
     case 'sqs':
       return sqsParser(requestData, responseData);
+    case 'kinesis':
+      return kinesisParser(requestData, responseData);
     default:
       return {};
   }
