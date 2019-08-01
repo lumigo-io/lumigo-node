@@ -17,6 +17,7 @@ import {
   snsParser,
   lambdaParser,
   sqsParser,
+  kinesisParser,
 } from '../parsers/aws';
 import { TracerGlobals } from '../globals';
 import { getEventInfo } from '../events';
@@ -133,7 +134,13 @@ export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
   return Object.assign({}, functionSpan, { id, ended, error, return_value });
 };
 
-export const AWS_PARSED_SERVICES = ['dynamodb', 'sns', 'lambda', 'sqs'];
+export const AWS_PARSED_SERVICES = [
+  'dynamodb',
+  'sns',
+  'lambda',
+  'sqs',
+  'kinesis',
+];
 
 export const getAwsServiceFromHost = host => {
   const service = host.split('.')[0];
@@ -158,6 +165,8 @@ export const getAwsServiceData = (requestData, responseData) => {
       return lambdaParser(requestData, responseData);
     case 'sqs':
       return sqsParser(requestData, responseData);
+    case 'kinesis':
+      return kinesisParser(requestData, responseData);
     default:
       return {};
   }
