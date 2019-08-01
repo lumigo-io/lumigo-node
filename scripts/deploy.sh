@@ -24,11 +24,6 @@ export NODE_ENV=production
 echo "Getting latest changes from git"
 changes=$(git log $(git describe --tags --abbrev=0)..HEAD --oneline)
 echo ${changes}
-echo "Bump patch version"
-npm version patch -m "Bump version to %s -- ${changes}"
-echo "Create release tag"
-push_tags
-echo "Push to NPM"
-echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
-npm publish
+echo "Semantic version deploy"
+npx semantic-release
 rm .npmrc

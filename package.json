@@ -25,6 +25,8 @@
     "@babel/cli": "^7.4.4",
     "@babel/core": "^7.4.4",
     "@babel/preset-env": "^7.4.4",
+    "@semantic-release/changelog": "^3.0.4",
+    "@semantic-release/git": "^7.0.16",
     "aws-sdk": "^2.465.0",
     "babel-eslint": "^10.0.1",
     "clone-response": "^1.0.2",
@@ -46,6 +48,12 @@
     "webpack-cli": "^3.3.4"
   },
   "release": {
-    "branch": "master"
+    "branch": "master",
+    "plugins": [
+      "@semantic-release/commit-analyzer",
+      "@semantic-release/release-notes-generator",
+      "@semantic-release/npm",
+      "@semantic-release/git"
+    ]
   }
 }
