@@ -1,4 +1,5 @@
 import { parseQueryParams } from '../utils';
+import parseXml from '../tools/xmlToJson';
 
 export const dynamodbParser = requestData => {
   const { headers: reqHeaders, body: reqBody } = requestData;
@@ -27,11 +28,21 @@ export const lambdaParser = (requestData, responseData) => {
   return { awsServiceData, spanId };
 };
 
-export const snsParser = requestData => {
+export const snsParser = (requestData, responseData) => {
   const { body: reqBody } = requestData;
-  const parsedBody = reqBody ? parseQueryParams(reqBody) : undefined;
-  const resourceName = parsedBody ? parsedBody['TopicArn'] : undefined;
-  const awsServiceData = { resourceName, targetArn: resourceName };
+  const { body: resBody } = responseData;
+  const parsedRequestBody = reqBody ? parseQueryParams(reqBody) : undefined;
+  const parsedResponseBody = resBody ? parseXml(resBody) : undefined;
+  const resourceName = parsedRequestBody
+    ? parsedRequestBody['TopicArn']
+    : undefined;
+  const messageId = parsedResponseBody
+    ? ((parsedResponseBody['PublishResponse'] || {})['PublishResult'] || {})[
+        'MessageId'
+      ]
+    : undefined;
+
+  const awsServiceData = { resourceName, targetArn: resourceName, messageId };
   return { awsServiceData };
 };
 
@@ -39,6 +50,15 @@ export const sqsParser = requestData => {
   const { body: reqBody } = requestData;
   const parsedBody = reqBody ? parseQueryParams(reqBody) : undefined;
   const resourceName = parsedBody ? parsedBody['QueueUrl'] : undefined;
+  const awsServiceData = { resourceName };
+  return { awsServiceData };
+};
+
+export const kinesisParser = requestData => {
+  const { body: reqBody } = requestData;
+  const reqBodyJSON = (!!reqBody && JSON.parse(reqBody)) || {};
+  const resourceName =
+    (reqBodyJSON['StreamName'] && reqBodyJSON.StreamName) || undefined;
   const awsServiceData = { resourceName };
   return { awsServiceData };
 };
