@@ -25,6 +25,8 @@
     "@babel/cli": "^7.4.4",
     "@babel/core": "^7.4.4",
     "@babel/preset-env": "^7.4.4",
+    "@commitlint/cli": "^8.1.0",
+    "@commitlint/config-conventional": "^8.0.0",
     "@semantic-release/changelog": "^3.0.4",
     "@semantic-release/git": "^7.0.16",
     "aws-sdk": "^2.465.0",
@@ -55,5 +57,10 @@
       "@semantic-release/npm",
       "@semantic-release/git"
     ]
+  },
+  "husky": {
+    "hooks": {
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
+    }
   }
 }
