@@ -92,6 +92,7 @@ jobs:
   deploy:
     <<: *defaults
     steps:
+      - checkout_utils
       - checkout
       - run:
             # Avoid annoying double runs after deploy.
@@ -106,5 +107,5 @@ jobs:
                 circleci step halt
               fi
       - run:
-          name: deploy to npm
-          command: ./scripts/deploy.sh
+          name: deploy to npm + lambda layer
+          command: ./scripts/bd_to_prod.shs

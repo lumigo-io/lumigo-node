@@ -6,12 +6,20 @@
 [`@lumigo/tracer`](https://) is Lumigo's distributed-tracing and performance monitoring agent for Node.js.
 
 
+[embedmd]:# (layer_arn.txt)
+
 ## Usage
 
 Install `@lumigo/tracer`:
 
-~~~sh
+npm: 
+~~~bash
 $ npm i @lumigo/tracer
+~~~
+
+Lambda layer ARN:
+~~~arn
+arn:aws:lambda:YOUR-REGION:114300393969:layer:lumigo-node-tracer:6
 ~~~
 
 Wrap your `handler` (replace `DEADBEEF` with your token):
