@@ -25,6 +25,8 @@
     "@babel/cli": "^7.4.4",
     "@babel/core": "^7.4.4",
     "@babel/preset-env": "^7.4.4",
+    "@commitlint/cli": "^8.1.0",
+    "@commitlint/config-conventional": "^8.0.0",
     "@semantic-release/changelog": "^3.0.4",
     "@semantic-release/git": "^7.0.16",
     "aws-sdk": "^2.465.0",
@@ -39,6 +41,7 @@
     "jest": "^24.8.0",
     "jest-junit": "^6.4.0",
     "lambda-local": "^1.6.2",
+    "lint-staged": "^9.2.1",
     "mockdate": "^2.0.2",
     "node-fetch": "^2.6.0",
     "prettier": "^1.17.1",
@@ -55,5 +58,11 @@
       "@semantic-release/npm",
       "@semantic-release/git"
     ]
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged",
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
+    }
   }
 }
