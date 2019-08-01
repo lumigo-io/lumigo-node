@@ -101,13 +101,6 @@ describe('utils', () => {
     expect(utils.getPatchedTraceId(awsXAmznTraceId)).toEqual(expected);
   });
 
-  test('isAsyncFn', () => {
-    const asyncFn = async x => x;
-    expect(utils.isAsyncFn(asyncFn)).toBe(true);
-    const notAsyncFn = x => x;
-    expect(utils.isAsyncFn(notAsyncFn)).toBe(false);
-  });
-
   test('getAWSEnvironment', () => {
     const oldEnv = Object.assign({}, process.env);
     const awsEnv = {
