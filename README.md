@@ -6,8 +6,6 @@
 [`@lumigo/tracer`](https://) is Lumigo's distributed-tracing and performance monitoring agent for Node.js.
 
 
-[embedmd]:# (layer_arn.txt)
-
 ## Usage
 
 Install `@lumigo/tracer`:
