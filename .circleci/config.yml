@@ -22,6 +22,13 @@ commands:
           command: |
             cd ..
             git clone git@github.com:lumigo-io/utils.git
+  checkout_credentials:
+    description: "Checkout credentials"
+    steps:
+      - run:
+          command: |
+            cd ..
+            git clone git@github.com:lumigo-io/common-resources.git
 
 workflows:
   test-deploy:
@@ -94,6 +101,10 @@ jobs:
     steps:
       - checkout_utils
       - checkout
+      - checkout_credentials
+      - run: echo "export AWS_DEFAULT_REGION=us-west-2" >> $BASH_ENV
+      - run: mkdir -p ~/.aws
+      - run: echo ${KEY} | gpg --batch -d --passphrase-fd 0 ../common-resources/encrypted_files/credentials_integration.enc > ~/.aws/credentials
       - run:
             # Avoid annoying double runs after deploy.
             # See https://discuss.circleci.com/t/job-runs-even-when-tags-ignore-filter-is-triggered-when-combined-with-branches-only/20664
