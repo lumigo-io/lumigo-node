@@ -34,9 +34,9 @@ echo "Creating layer file"
 echo "Creating lumigo-node layer"
 ../utils/common_bash/create_layer.sh lumigo-node-tracer ALL nodejs "nodejs10.x nodejs8.10"
 
-echo "Updating README.MD with new ARN"
-git add README.MD
-git commit -m "Update README.MD layer ARN"
+echo "Updating README.md with new ARN"
+git add README.md
+git commit -m "Update README.md layer ARN"
 
 echo "Push to NPM"
 echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
