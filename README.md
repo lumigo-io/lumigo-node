@@ -19,7 +19,7 @@ $ npm i @lumigo/tracer
 
 Lambda layer ARN:
 ~~~arn
-arn:aws:lambda:YOUR-REGION:724777057400:layer:lumigo-node-tracer:8
+arn:aws:lambda:YOUR-REGION:724777057400:layer:lumigo-node-tracer:9
 ~~~
 
 Wrap your `handler` (replace `DEADBEEF` with your token):
