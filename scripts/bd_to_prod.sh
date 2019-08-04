@@ -21,7 +21,7 @@ echo "Creating layer file"
 ./scripts/prepare_layer_files.sh
 
 echo "Creating lumigo-node layer"
-~/source/utils/common_bash/create_layer.sh lumigo-node-tracer ALL nodejs "nodejs10.x nodejs8.10"
+../utils/common_bash/create_layer.sh lumigo-node-tracer ALL nodejs "nodejs10.x nodejs8.10"
 
 echo "Updating README.MD with new ARN"
 git add README.MD
