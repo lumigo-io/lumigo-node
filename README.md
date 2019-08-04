@@ -12,8 +12,14 @@
 
 Install `@lumigo/tracer`:
 
-~~~sh
+npm: 
+~~~bash
 $ npm i @lumigo/tracer
+~~~
+
+Lambda layer ARN:
+~~~arn
+arn:aws:lambda:YOUR-REGION:114300393969:layer:lumigo-node-tracer:6
 ~~~
 
 Wrap your `handler` (replace `DEADBEEF` with your token):
