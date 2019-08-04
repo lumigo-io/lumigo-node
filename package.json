@@ -1,6 +1,6 @@
 {
   "name": "@lumigo/node-tracer",
-  "version": "1.0.9",
+  "version": "1.1.0",
   "description": "Lumigo Tracer for Node.js v8.x / v10.x Runtimes",
   "main": "dist/lumigo.js",
   "repository": "git@github.com:lumigo-io/lumigo-node.git",
@@ -25,6 +25,10 @@
     "@babel/cli": "^7.4.4",
     "@babel/core": "^7.4.4",
     "@babel/preset-env": "^7.4.4",
+    "@commitlint/cli": "^8.1.0",
+    "@commitlint/config-conventional": "^8.0.0",
+    "@semantic-release/changelog": "^3.0.4",
+    "@semantic-release/git": "^7.0.16",
     "aws-sdk": "^2.465.0",
     "babel-eslint": "^10.0.1",
     "clone-response": "^1.0.2",
@@ -40,8 +44,23 @@
     "mockdate": "^2.0.2",
     "node-fetch": "^2.6.0",
     "prettier": "^1.17.1",
+    "semantic-release": "^15.13.19",
     "shimmer": "^1.2.1",
     "webpack": "^4.35.0",
     "webpack-cli": "^3.3.4"
+  },
+  "release": {
+    "branch": "master",
+    "plugins": [
+      "@semantic-release/commit-analyzer",
+      "@semantic-release/release-notes-generator",
+      "@semantic-release/npm",
+      "@semantic-release/git"
+    ]
+  },
+  "husky": {
+    "hooks": {
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
+    }
   }
 }

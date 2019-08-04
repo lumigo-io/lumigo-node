@@ -18,6 +18,12 @@ export const sendSingleSpan = async span => exports.sendSpans([span]);
 export const logSpans = spans =>
   spans.map(span => logger.debug('Span sent', span.id));
 
+export const isSpansContainsErrors = spans => {
+  const safeGetStatusCode = s => (s['returnValue'] || {})['statusCode'] || 0;
+  const spanHasError = s => s.error !== undefined || safeGetStatusCode(s) > 400;
+  return spans.filter(spanHasError).length > 0;
+};
+
 export const sendSpans = async spans => {
   const { token } = TracerGlobals.getTracerInputs();
   const { name, version } = getTracerInfo();
@@ -28,15 +34,11 @@ export const sendSpans = async spans => {
     'Content-Type': 'application/json',
   };
 
-  if (isSendOnlyIfErrors()) {
-    const spansContainErrors =
-      spans.filter(s => s.error !== undefined).length > 0;
-    if (!spansContainErrors) {
-      logger.debug(
-        'No Spans was sent, `SEND_ONLY_IF_ERROR` is on and no span has error'
-      );
-      return { rtt: 0 };
-    }
+  if (isSendOnlyIfErrors() && !isSpansContainsErrors(spans)) {
+    logger.debug(
+      'No Spans was sent, `SEND_ONLY_IF_ERROR` is on and no span has error'
+    );
+    return { rtt: 0 };
   }
 
   const method = 'POST';

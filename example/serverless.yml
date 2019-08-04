@@ -28,6 +28,10 @@ provider:
       Action:
         - "lambda:InvokeFunction"
         - "lambda:InvokeAsync"
+        - "dynamodb:PutItem"
+        - "sns:*"
+        - "sqs:*"
+        - "s3:*"
       Resource:
         - "*"
 
@@ -47,8 +51,20 @@ provider:
 functions:
   parent:
     handler: parent.handler
+
   child:
     handler: child.handler
+
+  slave-one:
+    handler: slave.handler
+    events:
+      - sns: slave-test-topic
+
+  slave-two:
+    handler: slave.handler
+    events:
+      - sns: slave-test-topic
+
 
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events

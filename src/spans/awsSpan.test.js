@@ -78,11 +78,6 @@ describe('awsSpan', () => {
       tracer: { name: '@lumigo/tracer', version: '0.0.123' },
       logGroupName: '/aws/lambda/aws-nodejs-dev-hello',
       logStreamName: '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',
-      httpMethod: 'POST',
-      resource: '/{proxy+}',
-      stage: 'testStage',
-      api: 'gy415nuibc.execute-api.us-east-1.amazonaws.com',
-      triggeredBy: 'apigw',
     };
     expect(awsSpan.getSpanInfo(exampleApiGatewayEvent)).toEqual(
       expectedSpanInfo
@@ -101,11 +96,6 @@ describe('awsSpan', () => {
         tracer: { name: '@lumigo/tracer', version: '0.0.123' },
         logGroupName: '/aws/lambda/aws-nodejs-dev-hello',
         logStreamName: '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',
-        httpMethod: 'POST',
-        resource: '/{proxy+}',
-        stage: 'testStage',
-        api: 'gy415nuibc.execute-api.us-east-1.amazonaws.com',
-        triggeredBy: 'apigw',
       },
       vendor: 'AWS',
       transactionId: '64a1b06067c2100c52e51ef4',
@@ -336,8 +326,7 @@ describe('awsSpan', () => {
     const requestData = { a: 'b' };
     const responseData = { d: 'd' };
 
-    const host1 = `dynamodb.amazonaws.com`;
-    requestData.host = host1;
+    requestData.host = `dynamodb.amazonaws.com`;
 
     awsSpan.getAwsServiceData(requestData, responseData);
     expect(awsParsers.dynamodbParser).toHaveBeenCalledWith(
@@ -345,8 +334,7 @@ describe('awsSpan', () => {
       responseData
     );
 
-    const host2 = `sns.amazonaws.com`;
-    requestData.host = host2;
+    requestData.host = `sns.amazonaws.com`;
 
     awsSpan.getAwsServiceData(requestData, responseData);
     expect(awsParsers.snsParser).toHaveBeenCalledWith(
@@ -354,8 +342,7 @@ describe('awsSpan', () => {
       responseData
     );
 
-    const host3 = `lambda.amazonaws.com`;
-    requestData.host = host3;
+    requestData.host = `lambda.amazonaws.com`;
 
     awsSpan.getAwsServiceData(requestData, responseData);
     expect(awsParsers.lambdaParser).toHaveBeenCalledWith(
@@ -363,8 +350,7 @@ describe('awsSpan', () => {
       responseData
     );
 
-    const host5 = `sqs.amazonaws.com`;
-    requestData.host = host5;
+    requestData.host = `sqs.amazonaws.com`;
 
     awsSpan.getAwsServiceData(requestData, responseData);
     expect(awsParsers.sqsParser).toHaveBeenCalledWith(
@@ -372,9 +358,15 @@ describe('awsSpan', () => {
       responseData
     );
 
-    const host4 = `deadbeef.amazonaws.com`;
-    requestData.host = host4;
+    requestData.host = `kinesis.amazonaws.com`;
 
+    awsSpan.getAwsServiceData(requestData, responseData);
+    expect(awsParsers.kinesisParser).toHaveBeenCalledWith(
+      requestData,
+      responseData
+    );
+
+    requestData.host = `deadbeef.amazonaws.com`;
     expect(awsSpan.getAwsServiceData(requestData, responseData)).toEqual({});
   });
 
@@ -418,11 +410,6 @@ describe('awsSpan', () => {
         tracer: { name: '@lumigo/tracer', version: '0.0.123' },
         logGroupName: '/aws/lambda/aws-nodejs-dev-hello',
         logStreamName: '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',
-        httpMethod: 'POST',
-        resource: '/{proxy+}',
-        stage: 'testStage',
-        api: 'gy415nuibc.execute-api.us-east-1.amazonaws.com',
-        triggeredBy: 'apigw',
       },
       vendor: 'AWS',
       transactionId: '64a1b06067c2100c52e51ef4',
@@ -452,11 +439,6 @@ describe('awsSpan', () => {
         tracer: { name: '@lumigo/tracer', version: '0.0.123' },
         logGroupName: '/aws/lambda/aws-nodejs-dev-hello',
         logStreamName: '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',
-        httpMethod: 'POST',
-        resource: '/{proxy+}',
-        stage: 'testStage',
-        api: 'gy415nuibc.execute-api.us-east-1.amazonaws.com',
-        triggeredBy: 'apigw',
       },
       vendor: 'AWS',
       transactionId: '64a1b06067c2100c52e51ef4',
@@ -498,7 +480,6 @@ describe('awsSpan', () => {
       ended: 1256,
       id: 'not-a-random-id',
       info: {
-        api: 'gy415nuibc.execute-api.us-east-1.amazonaws.com',
         httpInfo: {
           host: 'your.mind.com',
           request: {
@@ -514,11 +495,8 @@ describe('awsSpan', () => {
             statusCode: 200,
           },
         },
-        httpMethod: 'POST',
         logGroupName: '/aws/lambda/aws-nodejs-dev-hello',
         logStreamName: '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',
-        resource: '/{proxy+}',
-        stage: 'testStage',
         traceId: {
           Parent: '28effe37598bb622',
           Root: '1-5cdcf03a-64a1b06067c2100c52e51ef4',
@@ -529,7 +507,6 @@ describe('awsSpan', () => {
           name: '@lumigo/tracer',
           version: '0.0.123',
         },
-        triggeredBy: 'apigw',
       },
       memoryAllocated: '1024',
       messageVersion: 2,
