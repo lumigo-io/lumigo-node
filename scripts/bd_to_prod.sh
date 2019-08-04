@@ -29,8 +29,13 @@ echo "Getting latest changes from git"
 changes=$(git log $(git describe --tags --abbrev=0)..HEAD --oneline)
 echo ${changes}
 
+echo "Creating layer file"
+./scripts/prepare_layer_files.sh
+
 echo "Creating lumigo-node layer"
-././../utils/common_bash/create_layer.sh lumigo-node-tracer ALL dist "nodejs10.x nodejs8.10"
+././../utils/common_bash/create_layer.sh lumigo-node-tracer us-west-2 dist "nodejs10.x nodejs8.10"
+
+echo "Updating README.MD with new ARN"
 git add README.MD
 git commit -m "Update README.MD layer ARN"
 
