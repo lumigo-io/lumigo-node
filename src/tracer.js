@@ -1,5 +1,5 @@
 import {
-  isAsyncFn,
+  isPromise,
   isSwitchedOff,
   getContextInfo,
   isAwsEnvironment,
@@ -18,11 +18,10 @@ import { TracerGlobals, SpansContainer, clearGlobals } from './globals';
 import startHooks from './hooks';
 import * as logger from './logger';
 
-export const NON_ASYNC_HANDLER_CALLBACKED = 'non_async_callbacked';
-export const NON_ASYNC_HANDLER_ERRORED = 'non_async_errored';
-export const ASYNC_HANDLER_CALLBACKED = 'async_callbacked';
+export const HANDLER_CALLBACKED = 'handler_callbacked';
 export const ASYNC_HANDLER_RESOLVED = 'async_handler_resolved';
 export const ASYNC_HANDLER_REJECTED = 'async_handler_rejected';
+export const NON_ASYNC_HANDLER_ERRORED = 'non_async_errored';
 
 export const startTrace = async () => {
   try {
@@ -71,9 +70,7 @@ export const sendEndTraceSpans = async (functionSpan, handlerReturnValue) => {
 
 export const isCallbacked = handlerReturnValue => {
   const { type } = handlerReturnValue;
-  return (
-    type === ASYNC_HANDLER_CALLBACKED || type === NON_ASYNC_HANDLER_CALLBACKED
-  );
+  return type === HANDLER_CALLBACKED;
 };
 
 export const endTrace = async (functionSpan, handlerReturnValue) => {
@@ -96,29 +93,25 @@ export const endTrace = async (functionSpan, handlerReturnValue) => {
   }
 };
 
-export const asyncCallbackResolver = resolve => (err, data) =>
-  resolve({ err, data, type: ASYNC_HANDLER_CALLBACKED });
-
-export const nonAsyncCallbackResolver = resolve => (err, data) =>
-  resolve({ err, data, type: NON_ASYNC_HANDLER_CALLBACKED });
+export const callbackResolver = resolve => (err, data) =>
+  resolve({ err, data, type: HANDLER_CALLBACKED });
 
 // See https://docs.aws.amazon.com/lambda/latest/dg/nodejs-prog-model-handler.html
 export const promisifyUserHandler = (userHandler, event, context) =>
   new Promise(resolve => {
-    if (isAsyncFn(userHandler)) {
-      return userHandler(event, context, asyncCallbackResolver(resolve))
-        .then(data =>
-          resolve({ err: null, data, type: ASYNC_HANDLER_RESOLVED })
-        )
-        .catch(err =>
-          resolve({ err, data: null, type: ASYNC_HANDLER_REJECTED })
-        );
-    } else {
-      try {
-        userHandler(event, context, nonAsyncCallbackResolver(resolve));
-      } catch (err) {
-        resolve({ err, data: null, type: NON_ASYNC_HANDLER_ERRORED });
+    try {
+      const result = userHandler(event, context, callbackResolver(resolve));
+      if (isPromise(result)) {
+        result
+          .then(data =>
+            resolve({ err: null, data, type: ASYNC_HANDLER_RESOLVED })
+          )
+          .catch(err =>
+            resolve({ err, data: null, type: ASYNC_HANDLER_REJECTED })
+          );
       }
+    } catch (err) {
+      resolve({ err, data: null, type: NON_ASYNC_HANDLER_ERRORED });
     }
   });
 
@@ -161,8 +154,7 @@ export const trace = ({
   const { err, data, type } = cleanedHandlerReturnValue;
 
   switch (type) {
-    case ASYNC_HANDLER_CALLBACKED:
-    case NON_ASYNC_HANDLER_CALLBACKED:
+    case HANDLER_CALLBACKED:
       callback(err, data);
       break;
     case ASYNC_HANDLER_RESOLVED:

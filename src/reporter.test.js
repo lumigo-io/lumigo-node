@@ -10,6 +10,8 @@ jest.mock('../package.json', () => ({
 }));
 
 describe('reporter', () => {
+  jest.spyOn(global.console, 'log');
+  global.console.log.mockImplementation(() => {});
   const spies = {};
   spies['sendSpans'] = jest.spyOn(reporter, 'sendSpans');
   spies['now'] = jest.spyOn(global.Date, 'now');

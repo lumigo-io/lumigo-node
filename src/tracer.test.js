@@ -84,12 +84,8 @@ describe('tracer', () => {
   });
 
   test('isCallbacked', async () => {
-    expect(
-      tracer.isCallbacked({ type: tracer.NON_ASYNC_HANDLER_CALLBACKED })
-    ).toBe(true);
-    expect(tracer.isCallbacked({ type: tracer.ASYNC_HANDLER_CALLBACKED })).toBe(
-      true
-    );
+    expect(tracer.isCallbacked({ type: tracer.HANDLER_CALLBACKED })).toBe(true);
+    expect(tracer.isCallbacked({ type: tracer.HANDLER_CALLBACKED })).toBe(true);
     expect(tracer.isCallbacked({ type: tracer.ASYNC_HANDLER_RESOLVED })).toBe(
       false
     );
@@ -157,7 +153,7 @@ describe('tracer', () => {
 
     const dummySpan = { x: 'y' };
     const functionSpan = { a: 'b', c: 'd' };
-    const handlerReturnValue = { type: tracer.ASYNC_HANDLER_CALLBACKED };
+    const handlerReturnValue = { type: tracer.HANDLER_CALLBACKED };
     const endFunctionSpan = { a: 'b', c: 'd', rtt };
 
     spies.getContextInfo.mockReturnValueOnce({
@@ -203,21 +199,12 @@ describe('tracer', () => {
     expect(spies.clearGlobals).toHaveBeenCalled();
   });
 
-  test('asyncCallbackResolver', () => {
+  test('callbackResolver', () => {
     const resolve = jest.fn();
     const err = 'err';
     const data = 'data';
-    const type = tracer.ASYNC_HANDLER_CALLBACKED;
-    tracer.asyncCallbackResolver(resolve)(err, data);
-    expect(resolve).toHaveBeenCalledWith({ err, data, type });
-  });
-
-  test('nonAsyncCallbackResolver', () => {
-    const resolve = jest.fn();
-    const err = 'err';
-    const data = 'data';
-    const type = tracer.NON_ASYNC_HANDLER_CALLBACKED;
-    tracer.nonAsyncCallbackResolver(resolve)(err, data);
+    const type = tracer.HANDLER_CALLBACKED;
+    tracer.callbackResolver(resolve)(err, data);
     expect(resolve).toHaveBeenCalledWith({ err, data, type });
   });
 
@@ -254,7 +241,7 @@ describe('tracer', () => {
     ).resolves.toEqual({
       err: null,
       data: 'async callbacked?',
-      type: tracer.ASYNC_HANDLER_CALLBACKED,
+      type: tracer.HANDLER_CALLBACKED,
     });
   });
 
@@ -284,7 +271,7 @@ describe('tracer', () => {
     ).resolves.toEqual({
       err: null,
       data: 'non async callbacked?',
-      type: tracer.NON_ASYNC_HANDLER_CALLBACKED,
+      type: tracer.HANDLER_CALLBACKED,
     });
   });
 

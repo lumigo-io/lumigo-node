@@ -80,11 +80,8 @@ export const getPatchedTraceId = awsXAmznTraceId => {
   }-0000${shortId}-${transactionId};Parent=${Parent};Sampled=${Sampled}`;
 };
 
-export const isAsyncFn = fn =>
-  fn &&
-  fn['constructor'] &&
-  fn.constructor['name'] &&
-  fn.constructor.name === 'AsyncFunction';
+export const isPromise = obj =>
+  obj && obj.then && typeof obj.then === 'function';
 
 export const getAWSEnvironment = () => {
   const {
