@@ -24,7 +24,8 @@ export const getApiGatewayData = event => {
   const { stage = null } = requestContext;
 
   const api = headers['Host'] || null;
-  return { httpMethod, resource, stage, api };
+  const messageId = requestContext["requestId"];
+  return { messageId, httpMethod, resource, stage, api };
 };
 
 export const getSnsData = event => {
