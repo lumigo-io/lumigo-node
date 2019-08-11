@@ -32,3 +32,4 @@ const myHandler = async (event, context, callback) => { ... }
 
 exports.handler = lumigo.trace(myHandler)
 ~~~
+
