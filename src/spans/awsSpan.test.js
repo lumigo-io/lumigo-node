@@ -4,7 +4,6 @@ import MockDate from 'mockdate';
 import { TracerGlobals } from '../globals';
 import * as awsParsers from '../parsers/aws';
 import * as utils from '../utils';
-import {awsParser} from "../parsers/aws";
 
 const exampleApiGatewayEvent = require('../testdata/events/apigw-request.json');
 jest.mock('../../package.json', () => ({
