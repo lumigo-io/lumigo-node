@@ -76,6 +76,7 @@ describe('events', () => {
     ).toEqual({
       api: 'gy415nuibc.execute-api.us-east-1.amazonaws.com',
       httpMethod: 'POST',
+      messageId: "deef4878-7910-11e6-8f14-25afc3e9ae33",
       resource: '/{proxy+}',
       stage: 'testStage',
     });
@@ -90,6 +91,7 @@ describe('events', () => {
     expect(events.getEventInfo(exampleApiGatewayEvent)).toEqual({
       api: 'gy415nuibc.execute-api.us-east-1.amazonaws.com',
       httpMethod: 'POST',
+      messageId: "deef4878-7910-11e6-8f14-25afc3e9ae33",
       resource: '/{proxy+}',
       stage: 'testStage',
       triggeredBy: 'apigw',
