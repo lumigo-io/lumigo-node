@@ -65,6 +65,7 @@ export const startTimeoutTimer = () => {
       const { context } = TracerGlobals.getHandlerInputs();
       const { remainingTimeInMillis } = getContextInfo(context);
       if (TIMEOUT_BUFFER_MS < remainingTimeInMillis) {
+        // eslint-disable-next-line no-undef
         return setTimeout(async () => {
           logger.debug('The tracer reached the end of the timeout timer');
           const spans = SpansContainer.getSpansToSend();
@@ -95,6 +96,7 @@ export const isCallbacked = handlerReturnValue => {
 export const endTrace = async (functionSpan, handlerReturnValue) => {
   try {
     if (functionSpan && !isSwitchedOff() && isAwsEnvironment()) {
+      // eslint-disable-next-line no-undef
       TracerGlobals.timeoutTimer && clearTimeout(TracerGlobals.timeoutTimer);
       const { context } = TracerGlobals.getHandlerInputs();
       const { callbackWaitsForEmptyEventLoop } = getContextInfo(context);
