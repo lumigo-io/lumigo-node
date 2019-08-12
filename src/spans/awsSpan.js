@@ -18,6 +18,7 @@ import {
   lambdaParser,
   sqsParser,
   kinesisParser,
+  awsParser,
 } from '../parsers/aws';
 import { TracerGlobals } from '../globals';
 import { getEventInfo } from '../events';
@@ -168,7 +169,7 @@ export const getAwsServiceData = (requestData, responseData) => {
     case 'kinesis':
       return kinesisParser(requestData, responseData);
     default:
-      return {};
+      return awsParser(requestData, responseData);
   }
 };
 

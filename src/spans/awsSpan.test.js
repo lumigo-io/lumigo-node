@@ -125,6 +125,7 @@ describe('awsSpan', () => {
         tracer: { name: '@lumigo/tracer', version: '0.0.123' },
         logGroupName: '/aws/lambda/aws-nodejs-dev-hello',
         logStreamName: '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',
+        messageId: "deef4878-7910-11e6-8f14-25afc3e9ae33",
         httpMethod: 'POST',
         resource: '/{proxy+}',
         stage: 'testStage',
@@ -367,7 +368,11 @@ describe('awsSpan', () => {
     );
 
     requestData.host = `deadbeef.amazonaws.com`;
-    expect(awsSpan.getAwsServiceData(requestData, responseData)).toEqual({});
+    awsSpan.getAwsServiceData(requestData, responseData);
+    expect(awsParsers.awsParser).toHaveBeenCalledWith(
+      requestData,
+      responseData
+    );
   });
 
   test('getHttpInfo', () => {

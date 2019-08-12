@@ -232,4 +232,30 @@ describe('aws parser', () => {
       },
     });
   });
+
+  test('awsParser -> happy flow (with x-amzn-requestid header)', () => {
+    const responseData = {
+      host: '9bis5jsyh2.execute-api.us-west-2.amazonaws.com',
+      headers: {'x-amzn-requestid': "123"},
+    };
+
+    const result = aws.awsParser({}, responseData);
+
+    expect(result).toEqual({
+      awsServiceData: {
+        messageId: "123",
+      },
+    });
+  });
+
+  test('awsParser -> happy flow (without x-amzn-requestid header)', () => {
+    const responseData = {
+      host: '9bis5jsyh2.execute-api.us-west-2.amazonaws.com',
+      headers: {hello: "world"},
+    };
+
+    const result = aws.awsParser({}, responseData);
+
+    expect(result).toEqual({});
+  });
 });

@@ -62,3 +62,11 @@ export const kinesisParser = requestData => {
   const awsServiceData = { resourceName };
   return { awsServiceData };
 };
+
+export const awsParser = (requestData, responseData) => {
+  const { headers: resHeader } = responseData;
+  const messageId = resHeader ? resHeader['x-amzn-requestid'] : undefined;
+
+  const awsServiceData = { messageId };
+  return messageId ? { awsServiceData } : {};
+};
