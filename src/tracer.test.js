@@ -6,6 +6,7 @@ import * as reporter from './reporter';
 import * as awsSpan from './spans/awsSpan';
 import startHooks from './hooks';
 import * as logger from './logger';
+import {shouldSetTimeoutTimer} from "./utils";
 
 jest.mock('./hooks');
 describe('tracer', () => {
@@ -13,6 +14,7 @@ describe('tracer', () => {
   spies.isSwitchedOff = jest.spyOn(utils, 'isSwitchedOff');
   spies.isAwsEnvironment = jest.spyOn(utils, 'isAwsEnvironment');
   spies.isSendOnlyIfErrors = jest.spyOn(utils, 'isSendOnlyIfErrors');
+  spies.shouldSetTimeoutTimer = jest.spyOn(utils, 'shouldSetTimeoutTimer');
   spies.getContextInfo = jest.spyOn(utils, 'getContextInfo');
   spies.sendSingleSpan = jest.spyOn(reporter, 'sendSingleSpan');
   spies.sendSpans = jest.spyOn(reporter, 'sendSpans');
@@ -20,10 +22,8 @@ describe('tracer', () => {
   spies.getEndFunctionSpan = jest.spyOn(awsSpan, 'getEndFunctionSpan');
   spies.addRttToFunctionSpan = jest.spyOn(awsSpan, 'addRttToFunctionSpan');
   spies.SpansContainer = {};
-  spies.SpansContainer.getSpans = jest.spyOn(
-    globals.SpansContainer,
-    'getSpans'
-  );
+  spies.SpansContainer.getSpansToSend = jest.spyOn(globals.SpansContainer, 'getSpansToSend');
+  spies.SpansContainer.clearSpansToSend = jest.spyOn(globals.SpansContainer, 'clearSpansToSend');
   spies.SpansContainer.addSpan = jest.spyOn(globals.SpansContainer, 'addSpan');
   spies.clearGlobals = jest.spyOn(globals, 'clearGlobals');
   spies.logFatal = jest.spyOn(logger, 'fatal');
@@ -40,6 +40,7 @@ describe('tracer', () => {
 
     const rtt = 1234;
     spies.sendSingleSpan.mockReturnValueOnce({ rtt });
+    spies.shouldSetTimeoutTimer.mockReturnValueOnce(false);
 
     const functionSpan = { a: 'b', c: 'd' };
     spies.getFunctionSpan.mockReturnValueOnce(functionSpan);
@@ -71,7 +72,7 @@ describe('tracer', () => {
     await expect(tracer.startTrace()).resolves.toEqual(null);
     expect(spies.logFatal).toHaveBeenCalledWith('startTrace failure', err1);
 
-    //Test - isSendOnlyIfErrors is on, start span in not sent
+    //Test - isSendOnlyIfErrors is on, start span in not sent or saved to the spans list
     spies.sendSingleSpan.mockClear();
     spies.isSwitchedOff.mockClear();
     spies.getFunctionSpan.mockReturnValueOnce(functionSpan);
@@ -80,7 +81,7 @@ describe('tracer', () => {
     await expect(tracer.startTrace()).resolves.toEqual(null);
 
     expect(spies.sendSingleSpan).toHaveBeenCalledTimes(0);
-    expect(spies.SpansContainer.addSpan).toHaveBeenCalledTimes(1);
+    expect(spies.SpansContainer.addSpan).toHaveBeenCalledTimes(0);
   });
 
   test('isCallbacked', async () => {
@@ -108,7 +109,7 @@ describe('tracer', () => {
     });
 
     const spans = [dummySpan, endFunctionSpan];
-    spies.SpansContainer.getSpans.mockReturnValueOnce(spans);
+    spies.SpansContainer.getSpansToSend.mockReturnValueOnce(spans);
     spies.getEndFunctionSpan.mockReturnValueOnce(endFunctionSpan);
 
     const result1 = await tracer.endTrace(functionSpan, handlerReturnValue);
@@ -166,7 +167,7 @@ describe('tracer', () => {
     callAfterEmptyEventLoopSpy.mockReturnValueOnce(null);
 
     const spans = [dummySpan, endFunctionSpan];
-    spies.SpansContainer.getSpans.mockReturnValueOnce(spans);
+    spies.SpansContainer.getSpansToSend.mockReturnValueOnce(spans);
     spies.getEndFunctionSpan.mockReturnValueOnce(endFunctionSpan);
 
     const result1 = await tracer.endTrace(functionSpan, handlerReturnValue);
@@ -206,6 +207,27 @@ describe('tracer', () => {
     const type = tracer.HANDLER_CALLBACKED;
     tracer.callbackResolver(resolve)(err, data);
     expect(resolve).toHaveBeenCalledWith({ err, data, type });
+  });
+
+  test('timeout does not activated in short functions', () => {
+    spies.shouldSetTimeoutTimer.mockReturnValueOnce(true);
+    spies.getContextInfo.mockReturnValueOnce({
+      remainingTimeInMillis: 100,
+    });
+    expect(tracer.startTimeoutTimer()).toEqual(null);
+  });
+
+  test('timeout sends http spans and clear the queue', async () => {
+    spies.shouldSetTimeoutTimer.mockReturnValueOnce(true);
+    spies.getContextInfo.mockReturnValueOnce({
+      remainingTimeInMillis: 3000,
+    });
+    const timeout = tracer.startTimeoutTimer();
+    expect(timeout._idleTimeout).toEqual(2500);
+    await timeout._onTimeout();
+    expect(spies.SpansContainer.getSpansToSend).toHaveBeenCalledTimes(1);
+    expect(spies.SpansContainer.clearSpansToSend).toHaveBeenCalledTimes(1);
+
   });
 
   test('promisifyUserHandler async ', async () => {
