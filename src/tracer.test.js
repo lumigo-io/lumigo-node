@@ -227,6 +227,7 @@ describe('tracer', () => {
     await timeout._onTimeout();
     expect(spies.SpansContainer.getSpansToSend).toHaveBeenCalledTimes(1);
     expect(spies.SpansContainer.clearSpansToSend).toHaveBeenCalledTimes(1);
+    clearTimeout(timeout);
 
   });
 
