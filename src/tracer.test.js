@@ -225,8 +225,8 @@ describe('tracer', () => {
     const timeout = tracer.startTimeoutTimer();
     expect(timeout._idleTimeout).toEqual(2500);
     await timeout._onTimeout();
-    expect(spies.SpansContainer.getSpansToSend).toHaveBeenCalledTimes(1);
-    expect(spies.SpansContainer.clearSpansToSend).toHaveBeenCalledTimes(1);
+    expect(spies.SpansContainer.getSpansToSend).toHaveBeenCalled();
+    expect(spies.SpansContainer.clearSpansToSend).toHaveBeenCalled();
     clearTimeout(timeout);
 
   });
