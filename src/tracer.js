@@ -66,10 +66,10 @@ export const startTimeoutTimer = () => {
       const { remainingTimeInMillis } = getContextInfo(context);
       if (TIMEOUT_BUFFER_MS < remainingTimeInMillis) {
         return setTimeout(async () => {
-          logger.debug('Tracer reached the end of the timeout timer');
+          logger.debug('The tracer reached the end of the timeout timer');
           const spans = SpansContainer.getSpansToSend();
-          SpansContainer.clearSpansToSend();
           await sendSpans(spans);
+          SpansContainer.clearSpansToSend();
         }, remainingTimeInMillis - TIMEOUT_BUFFER_MS);
       }
   }
