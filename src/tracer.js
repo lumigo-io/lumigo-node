@@ -68,9 +68,9 @@ export const startTimeoutTimer = () => {
         // eslint-disable-next-line no-undef
         return setTimeout(async () => {
           logger.debug('The tracer reached the end of the timeout timer');
-          const spans = SpansContainer.getSpansToSend();
+          const spans = SpansContainer.getSpans();
           await sendSpans(spans);
-          SpansContainer.clearSpansToSend();
+          SpansContainer.clearSpans();
         }, remainingTimeInMillis - TIMEOUT_BUFFER_MS);
       }
   }
@@ -82,7 +82,7 @@ export const sendEndTraceSpans = async (functionSpan, handlerReturnValue) => {
   const endFunctionSpan = getEndFunctionSpan(functionSpan, handlerReturnValue);
   SpansContainer.addSpan(endFunctionSpan);
 
-  const spans = SpansContainer.getSpansToSend();
+  const spans = SpansContainer.getSpans();
   await sendSpans(spans);
   logger.debug('Tracer ended');
   clearGlobals();

@@ -22,8 +22,8 @@ describe('tracer', () => {
   spies.getEndFunctionSpan = jest.spyOn(awsSpan, 'getEndFunctionSpan');
   spies.addRttToFunctionSpan = jest.spyOn(awsSpan, 'addRttToFunctionSpan');
   spies.SpansContainer = {};
-  spies.SpansContainer.getSpansToSend = jest.spyOn(globals.SpansContainer, 'getSpansToSend');
-  spies.SpansContainer.clearSpansToSend = jest.spyOn(globals.SpansContainer, 'clearSpansToSend');
+  spies.SpansContainer.getSpans = jest.spyOn(globals.SpansContainer, 'getSpans');
+  spies.SpansContainer.clearSpansToSend = jest.spyOn(globals.SpansContainer, 'clearSpans');
   spies.SpansContainer.addSpan = jest.spyOn(globals.SpansContainer, 'addSpan');
   spies.clearGlobals = jest.spyOn(globals, 'clearGlobals');
   spies.logFatal = jest.spyOn(logger, 'fatal');
@@ -109,7 +109,7 @@ describe('tracer', () => {
     });
 
     const spans = [dummySpan, endFunctionSpan];
-    spies.SpansContainer.getSpansToSend.mockReturnValueOnce(spans);
+    spies.SpansContainer.getSpans.mockReturnValueOnce(spans);
     spies.getEndFunctionSpan.mockReturnValueOnce(endFunctionSpan);
 
     const result1 = await tracer.endTrace(functionSpan, handlerReturnValue);
@@ -167,7 +167,7 @@ describe('tracer', () => {
     callAfterEmptyEventLoopSpy.mockReturnValueOnce(null);
 
     const spans = [dummySpan, endFunctionSpan];
-    spies.SpansContainer.getSpansToSend.mockReturnValueOnce(spans);
+    spies.SpansContainer.getSpans.mockReturnValueOnce(spans);
     spies.getEndFunctionSpan.mockReturnValueOnce(endFunctionSpan);
 
     const result1 = await tracer.endTrace(functionSpan, handlerReturnValue);
@@ -225,7 +225,7 @@ describe('tracer', () => {
     const timeout = tracer.startTimeoutTimer();
     expect(timeout._idleTimeout).toEqual(2500);
     await timeout._onTimeout();
-    expect(spies.SpansContainer.getSpansToSend).toHaveBeenCalled();
+    expect(spies.SpansContainer.getSpans).toHaveBeenCalled();
     expect(spies.SpansContainer.clearSpansToSend).toHaveBeenCalled();
     clearTimeout(timeout);
 

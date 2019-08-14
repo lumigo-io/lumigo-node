@@ -1,20 +1,16 @@
 import { debug } from './logger';
 
 export const SpansContainer = (() => {
-  const allSpans = [];
   const spansToSend = [];
 
   const addSpan = span => {
-    allSpans.push(span);
     spansToSend.push(span);
     debug('Span created', span);
   };
-  const getSpans = () => allSpans;
-  const clearSpans = () => {allSpans.length = 0; spansToSend.length = 0};
-  const getSpansToSend = () => spansToSend;
-  const clearSpansToSend = () => (spansToSend.length = 0);
+  const clearSpans = () => {spansToSend.length = 0};
+  const getSpans = () => spansToSend;
 
-  return { addSpan, getSpans, clearSpans, getSpansToSend, clearSpansToSend };
+  return { addSpan, clearSpans, getSpans };
 })();
 
 export const TracerGlobals = (() => {
