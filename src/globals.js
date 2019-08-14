@@ -7,10 +7,10 @@ export const SpansContainer = (() => {
     spansToSend.push(span);
     debug('Span created', span);
   };
-  const clearSpans = () => {spansToSend.length = 0};
   const getSpans = () => spansToSend;
+  const clearSpans = () => {spansToSend.length = 0};
 
-  return { addSpan, clearSpans, getSpans };
+  return { addSpan, getSpans, clearSpans };
 })();
 
 export const TracerGlobals = (() => {

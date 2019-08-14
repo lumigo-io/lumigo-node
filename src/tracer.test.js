@@ -23,7 +23,7 @@ describe('tracer', () => {
   spies.addRttToFunctionSpan = jest.spyOn(awsSpan, 'addRttToFunctionSpan');
   spies.SpansContainer = {};
   spies.SpansContainer.getSpans = jest.spyOn(globals.SpansContainer, 'getSpans');
-  spies.SpansContainer.clearSpansToSend = jest.spyOn(globals.SpansContainer, 'clearSpans');
+  spies.SpansContainer.clearSpans = jest.spyOn(globals.SpansContainer, 'clearSpans');
   spies.SpansContainer.addSpan = jest.spyOn(globals.SpansContainer, 'addSpan');
   spies.clearGlobals = jest.spyOn(globals, 'clearGlobals');
   spies.logFatal = jest.spyOn(logger, 'fatal');
@@ -226,7 +226,7 @@ describe('tracer', () => {
     expect(timeout._idleTimeout).toEqual(2500);
     await timeout._onTimeout();
     expect(spies.SpansContainer.getSpans).toHaveBeenCalled();
-    expect(spies.SpansContainer.clearSpansToSend).toHaveBeenCalled();
+    expect(spies.SpansContainer.clearSpans).toHaveBeenCalled();
     clearTimeout(timeout);
 
   });
