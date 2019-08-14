@@ -1,14 +1,14 @@
 import { debug } from './logger';
 
 export const SpansContainer = (() => {
-  const spans = [];
+  const spansToSend = [];
 
   const addSpan = span => {
-    spans.push(span);
+    spansToSend.push(span);
     debug('Span created', span);
   };
-  const getSpans = () => spans;
-  const clearSpans = () => (spans.length = 0);
+  const getSpans = () => spansToSend;
+  const clearSpans = () => (spansToSend.length = 0);
 
   return { addSpan, getSpans, clearSpans };
 })();
@@ -21,6 +21,7 @@ export const TracerGlobals = (() => {
     edgeHost: '',
     switchOff: false,
   };
+  let timeoutTimer = undefined;
 
   const setHandlerInputs = ({ event, context }) =>
     Object.assign(handlerInputs, { event, context });
@@ -48,6 +49,7 @@ export const TracerGlobals = (() => {
     });
 
   return {
+    timeoutTimer,
     getTracerInputs,
     setTracerInputs,
     setHandlerInputs,

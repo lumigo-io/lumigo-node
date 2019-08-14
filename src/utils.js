@@ -125,6 +125,12 @@ export const isSendOnlyIfErrors = () =>
     process.env.SEND_ONLY_IF_ERROR === 'TRUE'
   );
 
+export const shouldSetTimeoutTimer = () =>
+  !(
+    process.env['LUMIGO_TIMEOUT_TIMER'] &&
+    process.env.LUMIGO_TIMEOUT_TIMER === 'FALSE'
+  );
+
 export const isPruneTraceOff = () =>
   !!(
     process.env['LUMIGO_PRUNE_TRACE_OFF'] &&
