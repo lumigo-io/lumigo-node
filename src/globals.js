@@ -8,7 +8,7 @@ export const SpansContainer = (() => {
     debug('Span created', span);
   };
   const getSpans = () => spansToSend;
-  const clearSpans = () => {spansToSend.length = 0};
+  const clearSpans = () => (spansToSend.length = 0);
 
   return { addSpan, getSpans, clearSpans };
 })();
