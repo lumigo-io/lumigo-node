@@ -186,9 +186,9 @@ export const pruneData = (data, maxLength) =>
   isString(data) ? prune(data, maxLength) : stringifyAndPrune(data, maxLength);
 
 export const parseErrorObject = err => ({
-  type: err ? err.name : undefined,
-  message: err ? err.message : undefined,
-  stacktrace: err ? err.stack : undefined,
+  type: err && err.name,
+  message: err && err.message,
+  stacktrace: err && err.stack,
 });
 
 export const lowerCaseObjectKeys = o =>
