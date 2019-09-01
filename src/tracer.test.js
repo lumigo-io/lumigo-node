@@ -6,7 +6,7 @@ import * as reporter from './reporter';
 import * as awsSpan from './spans/awsSpan';
 import startHooks from './hooks';
 import * as logger from './logger';
-import {shouldSetTimeoutTimer} from "./utils";
+import { shouldSetTimeoutTimer } from './utils';
 
 jest.mock('./hooks');
 describe('tracer', () => {
@@ -22,8 +22,14 @@ describe('tracer', () => {
   spies.getEndFunctionSpan = jest.spyOn(awsSpan, 'getEndFunctionSpan');
   spies.addRttToFunctionSpan = jest.spyOn(awsSpan, 'addRttToFunctionSpan');
   spies.SpansContainer = {};
-  spies.SpansContainer.getSpans = jest.spyOn(globals.SpansContainer, 'getSpans');
-  spies.SpansContainer.clearSpans = jest.spyOn(globals.SpansContainer, 'clearSpans');
+  spies.SpansContainer.getSpans = jest.spyOn(
+    globals.SpansContainer,
+    'getSpans'
+  );
+  spies.SpansContainer.clearSpans = jest.spyOn(
+    globals.SpansContainer,
+    'clearSpans'
+  );
   spies.SpansContainer.addSpan = jest.spyOn(globals.SpansContainer, 'addSpan');
   spies.clearGlobals = jest.spyOn(globals, 'clearGlobals');
   spies.logFatal = jest.spyOn(logger, 'fatal');
@@ -228,7 +234,6 @@ describe('tracer', () => {
     expect(spies.SpansContainer.getSpans).toHaveBeenCalled();
     expect(spies.SpansContainer.clearSpans).toHaveBeenCalled();
     clearTimeout(timeout);
-
   });
 
   test('promisifyUserHandler async ', async () => {

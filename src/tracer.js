@@ -61,18 +61,18 @@ export const startTrace = async () => {
 };
 
 export const startTimeoutTimer = () => {
-  if(shouldSetTimeoutTimer()) {
-      const { context } = TracerGlobals.getHandlerInputs();
-      const { remainingTimeInMillis } = getContextInfo(context);
-      if (TIMEOUT_BUFFER_MS < remainingTimeInMillis) {
-        // eslint-disable-next-line no-undef
-        return setTimeout(async () => {
-          logger.debug('The tracer reached the end of the timeout timer');
-          const spans = SpansContainer.getSpans();
-          await sendSpans(spans);
-          SpansContainer.clearSpans();
-        }, remainingTimeInMillis - TIMEOUT_BUFFER_MS);
-      }
+  if (shouldSetTimeoutTimer()) {
+    const { context } = TracerGlobals.getHandlerInputs();
+    const { remainingTimeInMillis } = getContextInfo(context);
+    if (TIMEOUT_BUFFER_MS < remainingTimeInMillis) {
+      // eslint-disable-next-line no-undef
+      return setTimeout(async () => {
+        logger.debug('The tracer reached the end of the timeout timer');
+        const spans = SpansContainer.getSpans();
+        await sendSpans(spans);
+        SpansContainer.clearSpans();
+      }, remainingTimeInMillis - TIMEOUT_BUFFER_MS);
+    }
   }
   logger.debug('Skip setting timeout timer.');
   return null;

@@ -3,8 +3,7 @@ import { TracerGlobals } from './globals';
 import EventEmitter from 'events';
 import https from 'https';
 import crypto from 'crypto';
-import { getJSONBase64Size } from './utils';
-import { parseQueryParams } from './utils';
+import { getJSONBase64Size, parseQueryParams, parseErrorObject } from './utils';
 
 jest.mock('https');
 jest.mock('../package.json', () => ({
@@ -277,10 +276,38 @@ describe('utils', () => {
     expect(utils.pruneData('abcdefg', 3)).toEqual('abc');
   });
 
-  test('stringifyError', () => {
-    const err = new Error('baba');
-    const error = JSON.stringify(err, Object.getOwnPropertyNames(err));
-    expect(utils.stringifyError(err)).toEqual(error);
+  test('parseErrorObject', () => {
+    //Default error
+    const err1 = new Error('baba');
+    const result1 = parseErrorObject(err1);
+
+    expect(result1.type).toEqual('Error');
+    expect(result1.message).toEqual('baba');
+    expect(result1.stacktrace.length).toBeGreaterThan(0);
+
+    //Custom error
+    const err2 = new EvalError('eval');
+    const result2 = parseErrorObject(err2);
+
+    expect(result2.type).toEqual('EvalError');
+    expect(result2.message).toEqual('eval');
+    expect(result2.stacktrace.length).toBeGreaterThan(0);
+
+    //Handle missing fields
+    const err3 = {};
+    const result3 = parseErrorObject(err3);
+
+    expect(result3.type).toEqual(undefined);
+    expect(result3.message).toEqual(undefined);
+    expect(result3.stacktrace).toEqual(undefined);
+
+    //Handle undefined
+    const err4 = undefined;
+    const result4 = parseErrorObject(err4);
+
+    expect(result4.type).toEqual(undefined);
+    expect(result4.message).toEqual(undefined);
+    expect(result4.stacktrace).toEqual(undefined);
   });
 
   test('lowerCaseObjectKeys', () => {

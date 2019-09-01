@@ -1,5 +1,5 @@
 import * as awsSpan from './awsSpan.js';
-import { stringifyError } from '../utils';
+import { parseErrorObject } from '../utils';
 import MockDate from 'mockdate';
 import { TracerGlobals } from '../globals';
 import * as awsParsers from '../parsers/aws';
@@ -125,7 +125,7 @@ describe('awsSpan', () => {
         tracer: { name: '@lumigo/tracer', version: '0.0.123' },
         logGroupName: '/aws/lambda/aws-nodejs-dev-hello',
         logStreamName: '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',
-        messageId: "deef4878-7910-11e6-8f14-25afc3e9ae33",
+        messageId: 'deef4878-7910-11e6-8f14-25afc3e9ae33',
         httpMethod: 'POST',
         resource: '/{proxy+}',
         stage: 'testStage',
@@ -289,7 +289,7 @@ describe('awsSpan', () => {
       vendor: 'AWS',
       version: '$LATEST',
       envs: null,
-      error: stringifyError(err),
+      error: parseErrorObject(err),
       event: null,
       maxFinishTime: 895093323456,
       return_value: null,
