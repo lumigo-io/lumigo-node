@@ -185,10 +185,11 @@ export const stringifyAndPrune = (obj, maxLength = MAX_ENTITY_SIZE) =>
 export const pruneData = (data, maxLength) =>
   isString(data) ? prune(data, maxLength) : stringifyAndPrune(data, maxLength);
 
-export const stringifyError = err => {
-  const error = JSON.stringify(err, Object.getOwnPropertyNames(err));
-  return error;
-};
+export const parseErrorObject = err => ({
+  type: err ? err.name : undefined,
+  message: err ? err.message : undefined,
+  stacktrace: err ? err.stack : undefined,
+});
 
 export const lowerCaseObjectKeys = o =>
   o

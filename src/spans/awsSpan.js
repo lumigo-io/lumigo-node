@@ -6,11 +6,11 @@ import {
   getRandomId,
   getAccountId,
   getTracerInfo,
-  stringifyError,
   getContextInfo,
   getAWSEnvironment,
   stringifyAndPrune,
   isAwsService,
+  parseErrorObject,
 } from '../utils';
 import {
   dynamodbParser,
@@ -129,7 +129,7 @@ export const removeStartedFromId = id => id.split('_')[0];
 export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
   const { err, data } = handlerReturnValue;
   const id = removeStartedFromId(functionSpan.id);
-  const error = err ? stringifyError(err) : undefined;
+  const error = err ? parseErrorObject(err) : undefined;
   const ended = new Date().getTime();
   const return_value = data ? pruneData(data) : null;
   return Object.assign({}, functionSpan, { id, ended, error, return_value });
