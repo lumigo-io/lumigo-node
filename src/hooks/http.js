@@ -55,7 +55,7 @@ export const parseHttpRequestOptions = (options = {}, url) => {
     headers = addHeaders(headers, { host });
   }
 
-  let uri = `${host}${path}`;
+  const uri = `${host}${path}`;
 
   return {
     path,
