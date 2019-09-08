@@ -55,9 +55,12 @@ export const parseHttpRequestOptions = (options = {}, url) => {
     headers = addHeaders(headers, { host });
   }
 
+  let uri = `${host}${path}`;
+
   return {
     path,
     port,
+    uri,
     host,
     body: '', // XXX Filled by the httpRequestEndWrapper ( / Write)
     method,
