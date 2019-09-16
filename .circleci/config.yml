@@ -79,7 +79,11 @@ jobs:
           name: generate updated layers-arn table file
           command: |
             cd ../larn && npm i -g
-            larn -r nodejs10.x --filter lumigo-node-tracer
+            larn -r nodejs10.x --filter lumigo-node-tracer -p ~/lumigo-node
+            cd ../lumigo-node
+            git add LAYERS.md
+            git commit -m "feat(layers-table): layers md"
+            git push --set-upstream origin RD-1249-update-layer-arn-version-per-region
       - run:
           name: deploy env
           command: ./scripts/ci_deploy.sh
@@ -122,6 +126,9 @@ jobs:
           name: generate updated layers-arn table file
           command: |
             cd ../larn && npm i -g
-            larn -r nodejs10.x --filter lumigo-node-tracer
-            git push origin master
+            larn -r nodejs10.x --filter lumigo-node-tracer -p ~/lumigo-node
+            cd ../lumigo-node
+            git add LAYERS.md
+            git commit -m "feat(layers-table): layers md"
+            git push --set-upstream origin master
 
