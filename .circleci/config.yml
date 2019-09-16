@@ -22,6 +22,10 @@ commands:
           command: |
             cd ..
             git clone git@github.com:lumigo-io/utils.git
+      - run:
+          command: |
+            cd ..
+            git clone git@github.com:lumigo-io/larn.git
 
 workflows:
   test-deploy:
@@ -109,3 +113,10 @@ jobs:
       - run:
           name: deploy to npm + lambda layer
           command: ./scripts/bd_to_prod.sh
+      - run:
+          name: generate updated layers-arn table file
+          command: |
+            cd ../larn && npm i -g
+            larn -r nodejs10.x --filter lumigo-node-tracer
+            git push origin master
+
