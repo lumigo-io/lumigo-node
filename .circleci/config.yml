@@ -76,6 +76,11 @@ jobs:
       - checkout_utils
       - checkout
       - run:
+          name: generate updated layers-arn table file
+          command: |
+            cd ../larn && npm i -g
+            larn -r nodejs10.x --filter lumigo-node-tracer
+      - run:
           name: deploy env
           command: ./scripts/ci_deploy.sh
       - run:
