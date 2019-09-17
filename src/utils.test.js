@@ -334,6 +334,10 @@ describe('utils', () => {
     const s2 = 'xyz';
     const host2 = `${s2}.cloud.google.com`;
     expect(utils.isAwsService(host2)).toBe(false);
+
+    const host3 = 'api.rti.dev.toyota.com';
+    const responseData = {headers: {"x-amzn-requestid": "1234"}};
+    expect(utils.isAwsService(host3, responseData)).toBe(true);
   });
 
   test('addHeaders', () => {

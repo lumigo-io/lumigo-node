@@ -211,7 +211,12 @@ export const getRandomId = () => {
   return `${p1}-${p2}-${p3}-${p4}-${p5}`;
 };
 
-export const isAwsService = host => !!(host && host.includes('amazonaws.com'));
+export const isAwsService = (host, responseData) => {
+  if (!!(host && host.includes('amazonaws.com'))) {
+    return true;
+  }
+  return !!(responseData && responseData.headers && responseData.headers['x-amzn-requestid']);
+};
 
 export const removeLumigoFromStacktrace = handleReturnValue => {
   const { err, data, type } = handleReturnValue;
