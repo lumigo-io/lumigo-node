@@ -339,8 +339,8 @@ describe('utils', () => {
     const responseData = {headers: {"x-amzn-requestid": "1234"}};
     expect(utils.isAwsService(host3, responseData)).toBe(true);
 
-    const responseData4 = {headers: {"x-amz-request-id": "1234"}};
-    expect(utils.isAwsService(host3, responseData4)).toBe(true);
+    const responseData2 = {headers: {"x-amz-request-id": "1234"}};
+    expect(utils.isAwsService(host3, responseData2)).toBe(true);
   });
 
   test('addHeaders', () => {
