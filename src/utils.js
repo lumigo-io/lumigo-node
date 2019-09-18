@@ -215,7 +215,7 @@ export const isAwsService = (host, responseData) => {
   if (host && host.includes('amazonaws.com')) {
     return true;
   }
-  return !!(responseData && responseData.headers && responseData.headers['x-amzn-requestid']);
+  return !!(responseData && responseData.headers && (responseData.headers['x-amzn-requestid'] || responseData.headers['x-amz-request-id']));
 };
 
 export const removeLumigoFromStacktrace = handleReturnValue => {
