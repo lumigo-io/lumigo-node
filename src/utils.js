@@ -125,11 +125,8 @@ export const isSendOnlyIfErrors = () =>
     process.env.SEND_ONLY_IF_ERROR === 'TRUE'
   );
 
-export const shouldSetTimeoutTimer = () =>
-  !(
-    process.env['LUMIGO_TIMEOUT_TIMER'] &&
-    process.env.LUMIGO_TIMEOUT_TIMER === 'FALSE'
-  );
+//Currently disabled via bug - will fix on https://lumigo.atlassian.net/browse/RD-1345
+export const shouldSetTimeoutTimer = () => false;
 
 export const isPruneTraceOff = () =>
   !!(
@@ -215,7 +212,12 @@ export const isAwsService = (host, responseData) => {
   if (host && host.includes('amazonaws.com')) {
     return true;
   }
-  return !!(responseData && responseData.headers && (responseData.headers['x-amzn-requestid'] || responseData.headers['x-amz-request-id']));
+  return !!(
+    responseData &&
+    responseData.headers &&
+    (responseData.headers['x-amzn-requestid'] ||
+      responseData.headers['x-amz-request-id'])
+  );
 };
 
 export const removeLumigoFromStacktrace = handleReturnValue => {
