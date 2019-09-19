@@ -34,6 +34,13 @@ echo "Creating layer file"
 echo "Creating lumigo-node layer"
 ../utils/common_bash/create_layer.sh lumigo-node-tracer ALL nodejs "nodejs10.x nodejs8.10"
 
+echo "Creating layer latest version arn table md file (LAYERS.md)"
+cd ../larn && npm i -g
+larn -r nodejs10.x --filter lumigo-node-tracer -p ~/lumigo-node
+cd ../lumigo-node
+git add LAYERS.md
+git commit -m "feat(layers-table): layers md"
+
 echo "Push to NPM"
 echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
 npm run semantic-release
