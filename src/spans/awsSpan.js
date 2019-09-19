@@ -205,7 +205,7 @@ export const getHttpSpanTimings = (requestData, responseData) => {
 export const getHttpSpan = (requestData, responseData) => {
   const { host } = requestData;
 
-  const { awsServiceData, spanId } = isAwsService(host)
+  const { awsServiceData, spanId } = isAwsService(host, responseData)
     ? getAwsServiceData(requestData, responseData)
     : {};
 
