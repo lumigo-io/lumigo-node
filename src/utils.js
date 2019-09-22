@@ -318,6 +318,9 @@ const keyToOmitRegexes = () =>
     [".*pass.*", ".*key.*"].concat(JSON.parse(process.env.BLACKLIST_REGEX || "[]")).map(x => new RegExp(x, 'i'));
 
 export const omitKeys = obj => {
+  if (obj instanceof Array) {
+    return obj.map(omitKeys)
+  }
   if (typeof obj === "string") {
     try {
       return omitKeys(JSON.parse(obj));

@@ -591,7 +591,7 @@ describe('utils', () => {
     const unsafeInnerObj = {"hello": "world", "inner": {"secretPassword": "abc"}};
     expect(omitKeys(unsafeInnerObj)).toEqual({"hello": "world", "inner": {"secretPassword": "****"}});
 
-    process.env.BLACKLIST_REGEX = ['["evilPlan"]'];
+    process.env.BLACKLIST_REGEX = ['[".*evilPlan.*"]'];
     const unpredictedObj = {"hello": "world", "evilPlan": {"take": "over", "the": "world"}};
     expect(omitKeys(unpredictedObj)).toEqual({"hello": "world", "evilPlan": "****"});
 
@@ -603,5 +603,8 @@ describe('utils', () => {
 
     const notString = 5;
     expect(omitKeys(notString)).toEqual(notString);
+
+    const unsafeList = [{"password": "123"}, {"hello": "world"}];
+    expect(omitKeys(unsafeList)).toEqual([{"password": "****"}, {"hello": "world"}]);
   });
 });
