@@ -311,3 +311,25 @@ export const parseQueryParams = queryParams => {
   });
   return obj;
 };
+
+const keyToOmitRegexes = () =>
+    [".*pass.*", ".*key.*"].concat(JSON.parse(process.env.BLACKLIST_REGEX || "[]")).map(x => new RegExp(x, 'i'));
+
+export const omitKeys = obj => {
+  if (typeof obj === "string") {
+    try {
+      return omitKeys(JSON.parse(obj));
+    } catch {
+      return obj;
+    }
+  }
+  if (typeof obj !== "object") {
+    return obj;
+  }
+  return Object.keys(obj).reduce((newObj, key) => {
+    let value = omitKeys(obj[key]);
+    let shouldOmitKey = keyToOmitRegexes().some(regex => regex.test(key));
+    newObj[key] = shouldOmitKey ? "****" : value;
+    return newObj;
+  }, {});
+};

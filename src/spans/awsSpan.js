@@ -11,6 +11,7 @@ import {
   stringifyAndPrune,
   isAwsService,
   parseErrorObject,
+  omitKeys,
 } from '../utils';
 import {
   dynamodbParser,
@@ -98,8 +99,8 @@ export const getFunctionSpan = () => {
   const started = new Date().getTime();
   const ended = started; // Indicates a StartSpan.
 
-  const event = stringifyAndPrune(lambdaEvent);
-  const envs = stringifyAndPrune(process.env);
+  const event = stringifyAndPrune(omitKeys(lambdaEvent));
+  const envs = stringifyAndPrune(omitKeys(process.env));
 
   const {
     functionName: name,
@@ -131,7 +132,7 @@ export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
   const id = removeStartedFromId(functionSpan.id);
   const error = err ? parseErrorObject(err) : undefined;
   const ended = new Date().getTime();
-  const return_value = data ? pruneData(data) : null;
+  const return_value = data ? pruneData(omitKeys(data)) : null;
   return Object.assign({}, functionSpan, { id, ended, error, return_value });
 };
 
@@ -177,12 +178,12 @@ export const getHttpInfo = (requestData, responseData) => {
   const { host } = requestData;
 
   const request = Object.assign({}, requestData);
-  request.headers = stringifyAndPrune(request.headers);
-  request.body = stringifyAndPrune(request.body);
+  request.headers = stringifyAndPrune(omitKeys(request.headers));
+  request.body = stringifyAndPrune(omitKeys(request.body));
 
   const response = Object.assign({}, responseData);
-  response.headers = stringifyAndPrune(response.headers);
-  response.body = stringifyAndPrune(response.body);
+  response.headers = stringifyAndPrune(omitKeys(response.headers));
+  response.body = stringifyAndPrune(omitKeys(response.body));
 
   return { host, request, response };
 };
