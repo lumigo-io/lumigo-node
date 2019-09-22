@@ -6,7 +6,8 @@ import {
   httpReq,
   isDebug,
   isPruneTraceOff,
-  isSendOnlyIfErrors, omitKeys,
+  isSendOnlyIfErrors,
+  omitKeys,
   spanHasErrors,
 } from './utils';
 import * as logger from './logger';
