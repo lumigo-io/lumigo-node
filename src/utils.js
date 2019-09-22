@@ -331,9 +331,10 @@ export const omitKeys = obj => {
   if (!obj || typeof obj !== "object") {
     return obj;
   }
+  const regexes = keyToOmitRegexes();
   return Object.keys(obj).reduce((newObj, key) => {
     let value = omitKeys(obj[key]);
-    let shouldOmitKey = keyToOmitRegexes().some(regex => regex.test(key));
+    let shouldOmitKey = regexes.some(regex => regex.test(key));
     newObj[key] = shouldOmitKey ? "****" : value;
     return newObj;
   }, {});
