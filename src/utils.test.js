@@ -606,5 +606,8 @@ describe('utils', () => {
 
     const unsafeList = [{"password": "123"}, {"hello": "world"}];
     expect(omitKeys(unsafeList)).toEqual([{"password": "****"}, {"hello": "world"}]);
+
+    const nullObject = null;
+    expect(omitKeys(nullObject)).toEqual(null);
   });
 });

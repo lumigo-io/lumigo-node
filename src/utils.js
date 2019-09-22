@@ -328,7 +328,7 @@ export const omitKeys = obj => {
       return obj;
     }
   }
-  if (typeof obj !== "object") {
+  if (!obj || typeof obj !== "object") {
     return obj;
   }
   return Object.keys(obj).reduce((newObj, key) => {
