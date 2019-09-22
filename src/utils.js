@@ -315,7 +315,7 @@ export const parseQueryParams = queryParams => {
 };
 
 const keyToOmitRegexes = () =>
-    [".*pass.*", ".*key.*"].concat(JSON.parse(process.env.BLACKLIST_REGEX || "[]")).map(x => new RegExp(x, 'i'));
+    JSON.parse(process.env.LUMIGO_BLACKLIST_REGEX || '[".*pass.*", ".*key.*"]').map(x => new RegExp(x, 'i'));
 
 export const omitKeys = obj => {
   if (obj instanceof Array) {

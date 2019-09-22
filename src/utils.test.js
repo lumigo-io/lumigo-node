@@ -591,9 +591,10 @@ describe('utils', () => {
     const unsafeInnerObj = {"hello": "world", "inner": {"secretPassword": "abc"}};
     expect(omitKeys(unsafeInnerObj)).toEqual({"hello": "world", "inner": {"secretPassword": "****"}});
 
-    process.env.BLACKLIST_REGEX = ['[".*evilPlan.*"]'];
-    const unpredictedObj = {"hello": "world", "evilPlan": {"take": "over", "the": "world"}};
-    expect(omitKeys(unpredictedObj)).toEqual({"hello": "world", "evilPlan": "****"});
+    process.env.LUMIGO_BLACKLIST_REGEX = ['[".*evilPlan.*"]'];
+    const unpredictedObj = {"password": "abc", "evilPlan": {"take": "over", "the": "world"}};
+    expect(omitKeys(unpredictedObj)).toEqual({"password": "abc", "evilPlan": "****"});
+    process.env.LUMIGO_BLACKLIST_REGEX = undefined;
 
     const unsafeString = '{"hello": "world", "password": "abc"}';
     expect(omitKeys(unsafeString)).toEqual({"hello": "world", "password": "****"});
