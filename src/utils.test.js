@@ -337,10 +337,10 @@ describe('utils', () => {
     expect(utils.isAwsService(host2)).toBe(false);
 
     const host3 = 'api.rti.dev.toyota.com';
-    const responseData = {headers: {"x-amzn-requestid": "1234"}};
+    const responseData = { headers: { 'x-amzn-requestid': '1234' } };
     expect(utils.isAwsService(host3, responseData)).toBe(true);
 
-    const responseData2 = {headers: {"x-amz-request-id": "1234"}};
+    const responseData2 = { headers: { 'x-amz-request-id': '1234' } };
     expect(utils.isAwsService(host3, responseData2)).toBe(true);
   });
 
