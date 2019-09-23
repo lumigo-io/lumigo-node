@@ -378,7 +378,7 @@ describe('awsSpan', () => {
   test('getHttpInfo', () => {
     const requestData = {
       host: 'your.mind.com',
-      headers: { Tyler: 'Durden' },
+      headers: { Tyler: 'Durden', secretKey: 'lumigo' },
       body: 'the first rule of fight club',
     };
     const responseData = {
@@ -389,7 +389,7 @@ describe('awsSpan', () => {
       host: 'your.mind.com',
       request: {
         body: '"the first rule of fight club"',
-        headers: '{"Tyler":"Durden"}',
+        headers: '{"Tyler":"Durden","secretKey":"****"}',
         host: 'your.mind.com',
       },
       response: {

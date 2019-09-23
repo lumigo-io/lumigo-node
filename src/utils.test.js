@@ -4,6 +4,7 @@ import EventEmitter from 'events';
 import https from 'https';
 import crypto from 'crypto';
 import { getJSONBase64Size, parseQueryParams, parseErrorObject } from './utils';
+import {omitKeys} from "./utils";
 
 jest.mock('https');
 jest.mock('../package.json', () => ({
@@ -575,5 +576,42 @@ describe('utils', () => {
     expect(invalid).toEqual(undefined);
     expect(notFound).toEqual(undefined);
     expect(weirdInput).toEqual(undefined);
+  });
+
+  test('omitKeys', () => {
+    const safeObj = {"hello": "world", "inner": {"check": "abc"}};
+    expect(omitKeys(safeObj)).toEqual(safeObj);
+
+    const unsafeObj = {"hello": "world", "password": "abc"};
+    expect(omitKeys(unsafeObj)).toEqual({"hello": "world", "password": "****"});
+
+    const unsafeInsensitiveObj = {"hello": "world", "secretPassword": "abc"};
+    expect(omitKeys(unsafeInsensitiveObj)).toEqual({"hello": "world", "secretPassword": "****"});
+
+    const unsafeInnerObj = {"hello": "world", "inner": {"secretPassword": "abc"}};
+    expect(omitKeys(unsafeInnerObj)).toEqual({"hello": "world", "inner": {"secretPassword": "****"}});
+
+    process.env.LUMIGO_BLACKLIST_REGEX = ['[".*evilPlan.*"]'];
+    const unpredictedObj = {"password": "abc", "evilPlan": {"take": "over", "the": "world"}};
+    expect(omitKeys(unpredictedObj)).toEqual({"password": "abc", "evilPlan": "****"});
+    process.env.LUMIGO_BLACKLIST_REGEX = undefined;
+
+    const unsafeString = '{"hello": "world", "password": "abc"}';
+    expect(omitKeys(unsafeString)).toEqual({"hello": "world", "password": "****"});
+
+    const notJsonString = '{"hello": "w';
+    expect(omitKeys(notJsonString)).toEqual(notJsonString);
+
+    const notString = 5;
+    expect(omitKeys(notString)).toEqual(notString);
+
+    const stringNotObject = "5";
+    expect(omitKeys(stringNotObject)).toEqual(stringNotObject);
+
+    const unsafeList = [{"password": "123"}, {"hello": "world"}];
+    expect(omitKeys(unsafeList)).toEqual([{"password": "****"}, {"hello": "world"}]);
+
+    const nullObject = null;
+    expect(omitKeys(nullObject)).toEqual(null);
   });
 });

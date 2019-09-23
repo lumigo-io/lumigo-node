@@ -7,6 +7,7 @@ import {
   isDebug,
   isPruneTraceOff,
   isSendOnlyIfErrors,
+  omitKeys,
   spanHasErrors,
 } from './utils';
 import * as logger from './logger';
@@ -63,6 +64,8 @@ export const sendSpans = async spans => {
 
 export const forgeRequestBody = (spans, maxSendBytes = MAX_SENT_BYTES) => {
   let resultSpans = [];
+
+  spans = spans.map(omitKeys);  // extra validation
 
   if (isPruneTraceOff() || getJSONBase64Size(spans) <= maxSendBytes) {
     return spans.length > 0 ? JSON.stringify(spans) : undefined;
