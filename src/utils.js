@@ -323,7 +323,8 @@ export const omitKeys = obj => {
   }
   if (typeof obj === "string") {
     try {
-      return omitKeys(JSON.parse(obj));
+      const parsedObject = JSON.parse(obj);
+      return typeof parsedObject === "object" ? omitKeys(parsedObject) : obj;
     } catch (e) {
       return obj;
     }

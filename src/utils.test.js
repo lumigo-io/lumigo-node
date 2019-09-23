@@ -605,6 +605,9 @@ describe('utils', () => {
     const notString = 5;
     expect(omitKeys(notString)).toEqual(notString);
 
+    const stringNotObject = "5";
+    expect(omitKeys(stringNotObject)).toEqual(stringNotObject);
+
     const unsafeList = [{"password": "123"}, {"hello": "world"}];
     expect(omitKeys(unsafeList)).toEqual([{"password": "****"}, {"hello": "world"}]);
 
