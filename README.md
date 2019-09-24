@@ -11,16 +11,19 @@
 
 ## Usage 
 
+### With Lambda Layers:
+* Use the latest ARN version [from this table](https://github.com/lumigo-io/lumigo-node/blob/master/LAYERS.md)
+### With Serverless framework:
+* Install the [**serverless-lumigo-plugin**](https://github.com/lumigo-io/serverless-lumigo-plugin/blob/master/README.md)
+
+### Manually:
 Install `@lumigo/tracer`:
 
-npm: 
+ npm: 
 ~~~bash
 $ npm i @lumigo/tracer
 ~~~
-
-Lambda layer ARN [from this table](https://github.com/lumigo-io/lumigo-node/blob/master/LAYERS.md)
-
-
+    
 Wrap your `handler` (replace `DEADBEEF` with your token):
 
 ~~~js
