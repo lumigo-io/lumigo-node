@@ -65,7 +65,7 @@ export const kinesisParser = (requestData, responseData) => {
   if (resBodyJSON["SequenceNumber"]) {
     awsServiceData.messageId = resBodyJSON["SequenceNumber"];
   }
-  if (resBodyJSON["Records"]) {
+  if (Array.isArray(resBodyJSON["Records"])) {
     awsServiceData.messageIds = resBodyJSON["Records"].map(r => r["SequenceNumber"]).filter(x => !!x);
   }
   return { awsServiceData };
