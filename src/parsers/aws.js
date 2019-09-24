@@ -54,12 +54,20 @@ export const sqsParser = requestData => {
   return { awsServiceData };
 };
 
-export const kinesisParser = requestData => {
+export const kinesisParser = (requestData, responseData) => {
   const { body: reqBody } = requestData;
+  const { body: resBody } = responseData;
   const reqBodyJSON = (!!reqBody && JSON.parse(reqBody)) || {};
+  const resBodyJSON = (!!resBody && JSON.parse(resBody)) || {};
   const resourceName =
     (reqBodyJSON['StreamName'] && reqBodyJSON.StreamName) || undefined;
   const awsServiceData = { resourceName };
+  if (resBodyJSON["SequenceNumber"]) {
+    awsServiceData.messageId = resBodyJSON["SequenceNumber"];
+  }
+  if (resBodyJSON["Records"]) {
+    awsServiceData.messageIds = resBodyJSON["Records"].map(r => r["SequenceNumber"]).filter(x => !!x);
+  }
   return { awsServiceData };
 };
 
