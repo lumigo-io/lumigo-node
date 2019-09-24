@@ -53,9 +53,11 @@ describe('events', () => {
       arn: 'arn:aws:sqs:us-west-2:123456789012:SQSQueue',
     });
 
-    expect(events.getRelevantEventData('kinesis', exampleKinesisEvent)).toEqual(
-      { arn: 'arn:aws:kinesis:us-east-1:123456789012:stream/simple-stream' }
-    );
+    expect(events.getRelevantEventData('kinesis', exampleKinesisEvent)).toEqual({
+      arn: 'arn:aws:kinesis:us-east-1:123456789012:stream/simple-stream',
+      messageIds: ['49568167373333333333333333333333333333333333333333333333',
+                   '49568167373333333334444444444444444444444444444444444444']
+    });
     expect(
       events.getRelevantEventData('dynamodb', exampleDynamoDBEvent)
     ).toEqual({
