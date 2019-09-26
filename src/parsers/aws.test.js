@@ -201,19 +201,44 @@ describe('aws parser', () => {
     });
   });
 
-  test('kinesisParser -> happy flow', () => {
+  test('kinesisParser -> happy flow single put', () => {
     const streamName = 'RANDOM-STREAM-NAME';
     const requestData = {
       host: 'kinesis.us-west-2.amazonaws.com',
       sendTime: 1564474992235,
       body: JSON.stringify({ StreamName: streamName }),
     };
+    const responseData = {
+      body: JSON.stringify({ SequenceNumber: '1' }),
+    };
 
-    const result = aws.kinesisParser(requestData, {});
+    const result = aws.kinesisParser(requestData, responseData);
 
     expect(result).toEqual({
       awsServiceData: {
         resourceName: streamName,
+        messageId: '1',
+      },
+    });
+  });
+
+  test('kinesisParser -> happy flow batch put', () => {
+    const streamName = 'RANDOM-STREAM-NAME';
+    const requestData = {
+      host: 'kinesis.us-west-2.amazonaws.com',
+      sendTime: 1564474992235,
+      body: JSON.stringify({ StreamName: streamName }),
+    };
+    const responseData = {
+      body: JSON.stringify({ "Records": [{SequenceNumber: '1'}, {SequenceNumber: '2'}, {Error: true}] }),
+    };
+
+    const result = aws.kinesisParser(requestData, responseData);
+
+    expect(result).toEqual({
+      awsServiceData: {
+        resourceName: streamName,
+        messageIds: ['1', '2'],
       },
     });
   });

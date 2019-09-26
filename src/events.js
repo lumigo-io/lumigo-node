@@ -33,12 +33,19 @@ export const getSnsData = event => {
   return { arn, messageId };
 };
 
+export const getKinesisData = event => {
+  const arn = event.Records[0].eventSourceARN;
+  const messageIds = (event.Records || []).map(r=> (r["kinesis"] || {})["sequenceNumber"]).filter(x => !!x);
+  return { arn, messageIds };
+};
+
 export const getRelevantEventData = (triggeredBy, event) => {
   switch (triggeredBy) {
     case 'sqs':
-    case 'kinesis':
     case 'dynamodb':
       return { arn: event.Records[0].eventSourceARN };
+    case 'kinesis':
+      return getKinesisData(event);
     case 'sns':
       return getSnsData(event);
     case 's3':
