@@ -24,7 +24,7 @@ export const getApiGatewayData = event => {
   const { stage = null } = requestContext;
 
   const api = headers['Host'] || null;
-  const messageId = requestContext["requestId"];
+  const messageId = requestContext['requestId'];
   return { messageId, httpMethod, resource, stage, api };
 };
 
@@ -35,7 +35,9 @@ export const getSnsData = event => {
 
 export const getKinesisData = event => {
   const arn = event.Records[0].eventSourceARN;
-  const messageIds = (event.Records || []).map(r=> (r["kinesis"] || {})["sequenceNumber"]).filter(x => !!x);
+  const messageIds = (event.Records || [])
+    .map(r => (r['kinesis'] || {})['sequenceNumber'])
+    .filter(x => !!x);
   return { arn, messageIds };
 };
 

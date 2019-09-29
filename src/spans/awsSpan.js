@@ -67,7 +67,7 @@ export const getBasicSpan = () => {
   const account = awsAccountId;
 
   const readiness = isWarm() ? 'warm' : 'cold';
-  if (readiness === 'warm') {
+  if (readiness === 'cold') {
     setWarm();
   }
 

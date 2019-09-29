@@ -230,7 +230,13 @@ describe('aws parser', () => {
       body: JSON.stringify({ StreamName: streamName }),
     };
     const responseData = {
-      body: JSON.stringify({ "Records": [{SequenceNumber: '1'}, {SequenceNumber: '2'}, {Error: true}] }),
+      body: JSON.stringify({
+        Records: [
+          { SequenceNumber: '1' },
+          { SequenceNumber: '2' },
+          { Error: true },
+        ],
+      }),
     };
 
     const result = aws.kinesisParser(requestData, responseData);
