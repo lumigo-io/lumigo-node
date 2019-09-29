@@ -53,11 +53,15 @@ describe('events', () => {
       arn: 'arn:aws:sqs:us-west-2:123456789012:SQSQueue',
     });
 
-    expect(events.getRelevantEventData('kinesis', exampleKinesisEvent)).toEqual({
-      arn: 'arn:aws:kinesis:us-east-1:123456789012:stream/simple-stream',
-      messageIds: ['49568167373333333333333333333333333333333333333333333333',
-                   '49568167373333333334444444444444444444444444444444444444']
-    });
+    expect(events.getRelevantEventData('kinesis', exampleKinesisEvent)).toEqual(
+      {
+        arn: 'arn:aws:kinesis:us-east-1:123456789012:stream/simple-stream',
+        messageIds: [
+          '49568167373333333333333333333333333333333333333333333333',
+          '49568167373333333334444444444444444444444444444444444444',
+        ],
+      }
+    );
     expect(
       events.getRelevantEventData('dynamodb', exampleDynamoDBEvent)
     ).toEqual({
@@ -78,7 +82,7 @@ describe('events', () => {
     ).toEqual({
       api: 'gy415nuibc.execute-api.us-east-1.amazonaws.com',
       httpMethod: 'POST',
-      messageId: "deef4878-7910-11e6-8f14-25afc3e9ae33",
+      messageId: 'deef4878-7910-11e6-8f14-25afc3e9ae33',
       resource: '/{proxy+}',
       stage: 'testStage',
     });
@@ -93,7 +97,7 @@ describe('events', () => {
     expect(events.getEventInfo(exampleApiGatewayEvent)).toEqual({
       api: 'gy415nuibc.execute-api.us-east-1.amazonaws.com',
       httpMethod: 'POST',
-      messageId: "deef4878-7910-11e6-8f14-25afc3e9ae33",
+      messageId: 'deef4878-7910-11e6-8f14-25afc3e9ae33',
       resource: '/{proxy+}',
       stage: 'testStage',
       triggeredBy: 'apigw',

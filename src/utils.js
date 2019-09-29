@@ -315,28 +315,30 @@ export const parseQueryParams = queryParams => {
 };
 
 const keyToOmitRegexes = () =>
-    JSON.parse(process.env.LUMIGO_BLACKLIST_REGEX || '[".*pass.*", ".*key.*"]').map(x => new RegExp(x, 'i'));
+  JSON.parse(
+    process.env.LUMIGO_BLACKLIST_REGEX || '[".*pass.*", ".*key.*"]'
+  ).map(x => new RegExp(x, 'i'));
 
 export const omitKeys = obj => {
   if (obj instanceof Array) {
-    return obj.map(omitKeys)
+    return obj.map(omitKeys);
   }
-  if (typeof obj === "string") {
+  if (typeof obj === 'string') {
     try {
       const parsedObject = JSON.parse(obj);
-      return typeof parsedObject === "object" ? omitKeys(parsedObject) : obj;
+      return typeof parsedObject === 'object' ? omitKeys(parsedObject) : obj;
     } catch (e) {
       return obj;
     }
   }
-  if (!obj || typeof obj !== "object") {
+  if (!obj || typeof obj !== 'object') {
     return obj;
   }
   const regexes = keyToOmitRegexes();
   return Object.keys(obj).reduce((newObj, key) => {
     let value = omitKeys(obj[key]);
     let shouldOmitKey = regexes.some(regex => regex.test(key));
-    newObj[key] = shouldOmitKey ? "****" : value;
+    newObj[key] = shouldOmitKey ? '****' : value;
     return newObj;
   }, {});
 };

@@ -62,11 +62,13 @@ export const kinesisParser = (requestData, responseData) => {
   const resourceName =
     (reqBodyJSON['StreamName'] && reqBodyJSON.StreamName) || undefined;
   const awsServiceData = { resourceName };
-  if (resBodyJSON["SequenceNumber"]) {
-    awsServiceData.messageId = resBodyJSON["SequenceNumber"];
+  if (resBodyJSON['SequenceNumber']) {
+    awsServiceData.messageId = resBodyJSON['SequenceNumber'];
   }
-  if (Array.isArray(resBodyJSON["Records"])) {
-    awsServiceData.messageIds = resBodyJSON["Records"].map(r => r["SequenceNumber"]).filter(x => !!x);
+  if (Array.isArray(resBodyJSON['Records'])) {
+    awsServiceData.messageIds = resBodyJSON['Records']
+      .map(r => r['SequenceNumber'])
+      .filter(x => !!x);
   }
   return { awsServiceData };
 };
