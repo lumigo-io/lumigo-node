@@ -582,8 +582,19 @@ describe('utils', () => {
     const safeObj = { hello: 'world', inner: { check: 'abc' } };
     expect(omitKeys(safeObj)).toEqual(safeObj);
 
-    const unsafeObj = { hello: 'world', password: 'abc' };
-    expect(omitKeys(unsafeObj)).toEqual({ hello: 'world', password: '****' });
+    for (const unsafeKey of [
+      'password',
+      'secretPassword',
+      'secretName',
+      'credential',
+      'passphrase',
+    ]) {
+      const unsafeObj = { hello: 'world' };
+      unsafeObj[unsafeKey] = 'value';
+      const afterOmitted = { hello: 'world' };
+      afterOmitted[unsafeKey] = '****';
+      expect(omitKeys(unsafeObj)).toEqual(afterOmitted);
+    }
 
     const unsafeInsensitiveObj = { hello: 'world', secretPassword: 'abc' };
     expect(omitKeys(unsafeInsensitiveObj)).toEqual({
