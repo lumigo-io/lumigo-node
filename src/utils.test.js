@@ -619,16 +619,6 @@ describe('utils', () => {
       password: '****',
     });
     
-    //Added test case for common blacklisted words 
-    const unsafeString = '{"hello": "world", "password": "abc" , "mysecret" : "lumigo" , "ocredential" : "asda-324-sdfdf" , "opassphrase" : "wre@#WEWE"}';
-    expect(omitKeys(unsafeString)).toEqual({
-      hello: 'world',
-      password: '****',
-      mysecret: '****',
-      ocredential: '****',
-      opassphrase: '****',
-    });
-
     const notJsonString = '{"hello": "w';
     expect(omitKeys(notJsonString)).toEqual(notJsonString);
 
