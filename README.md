@@ -36,5 +36,5 @@ exports.handler = lumigo.trace(myHandler)
 
 ## Configuration
 * You can turn on the debug logs by setting the environment variable `LUMIGO_DEBUG=TRUE`
-* You can prevent lumigo from sending keys that answer specific regexes by defining `LUMIGO_BLACKLIST_REGEX=["regex1", "regex2"]`. By default, we use the default regexes `[".*pass.*", ".*key.*"]`. All the regexes are case-insensitive.
+* You can prevent lumigo from sending keys that answer specific regexes by defining `LUMIGO_BLACKLIST_REGEX=["regex1", "regex2"]`. By default, we use the default regexes `[".*pass.*", ".*key.*", ".*secret.*", ".*credential.*", ".*passphrase.*"]`. All the regexes are case-insensitive.
 * In case of need, there is a kill switch, that stops all the interventions of lumigo immediately, without changing the code. Simply add an environment variable `LUMIGO_SWITCH_OFF=TRUE`.
