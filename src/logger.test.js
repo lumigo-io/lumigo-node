@@ -53,11 +53,11 @@ describe('logger', () => {
 
   test('printPendingLogs', () => {
     const pendingSet = new Set([
-      {
+      JSON.stringify({
         type: 'INFO',
         message: 'msg',
         obj: {},
-      },
+      }),
     ]);
     const printedSet = new Set([]);
     logger.printPendingLogs(pendingSet, printedSet);
