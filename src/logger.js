@@ -1,9 +1,66 @@
 import { isDebug } from './utils';
 
 const LOG_PREFIX = '#LUMIGO#';
+const DUPLICATE_LOGS_TO_EMERGENCY_MODE = 3;
 
-export const invokeLog = type => (msg, obj = undefined) =>
-  isDebug() && exports.log(type, msg, obj);
+const printedLogSet = new Set([]);
+const pendingLogSet = new Set([]);
+let duplicateLogsCount = 0;
+
+export const invokeLog = type => (msg, obj = undefined) => {
+  if (isEmergencyMode() || isDebug()) {
+    safePrint(printedLogSet, type, msg, obj);
+  } else {
+    const logObj = buildLogObject(type, msg, obj);
+    handlePendingLogs(pendingLogSet, printedLogSet, logObj);
+  }
+  if (isEmergencyMode()) {
+    printPendingLogs(pendingLogSet, printedLogSet);
+  }
+};
+
+export const safePrint = (printedLogSet, type, message, obj) => {
+  const logObj = buildLogObject(type, message, obj);
+  if (!printedLogSet.has(JSON.stringify(logObj))) {
+    exports.log(type, message, obj);
+    printedLogSet.add(JSON.stringify(logObj));
+  } else {
+    duplicateLogsCount++;
+  }
+};
+
+export const printPendingLogs = (pendingLogSet, printedLogSet) => {
+  pendingLogSet.forEach(({ type, message, obj }) => {
+    safePrint(printedLogSet, type, message, obj);
+  });
+  pendingLogSet.clear();
+};
+
+export const buildLogObject = (type, message, obj) => ({
+  type,
+  message,
+  obj,
+});
+
+export const isEmergencyMode = () =>
+  duplicateLogsCount >= DUPLICATE_LOGS_TO_EMERGENCY_MODE;
+
+export const resetLogger = () => {
+  duplicateLogsCount = 0;
+  printedLogSet.clear();
+  pendingLogSet.clear();
+};
+
+export const handlePendingLogs = (pendingLogSet, printedLogSet, logObj) => {
+  if (
+    !printedLogSet.has(JSON.stringify(logObj)) &&
+    !pendingLogSet.has(JSON.stringify(logObj))
+  ) {
+    pendingLogSet.add(JSON.stringify(logObj));
+  } else {
+    duplicateLogsCount++;
+  }
+};
 
 export const info = exports.invokeLog('INFO');
 
