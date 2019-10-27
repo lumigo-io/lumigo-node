@@ -30,7 +30,8 @@ export const safePrint = (printedLogSet, type, message, obj) => {
 };
 
 export const printPendingLogs = (pendingLogSet, printedLogSet) => {
-  pendingLogSet.forEach(({ type, message, obj }) => {
+  pendingLogSet.forEach(logObj => {
+    const { type, message, obj } = JSON.parse(logObj);
     safePrint(printedLogSet, type, message, obj);
   });
   pendingLogSet.clear();
