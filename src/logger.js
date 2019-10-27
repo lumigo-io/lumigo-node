@@ -1,7 +1,7 @@
 import { isDebug } from './utils';
 
 const LOG_PREFIX = '#LUMIGO#';
-const DUPLICATE_LOGS_TO_EMERGENCY_MODE = 3;
+const DUPLICATE_LOGS_TO_EMERGENCY_MODE = 10;
 
 const printedLogSet = new Set([]);
 const pendingLogSet = new Set([]);
@@ -12,7 +12,7 @@ export const invokeLog = type => (msg, obj = undefined) => {
     safePrint(printedLogSet, type, msg, obj);
   } else {
     const logObj = buildLogObject(type, msg, obj);
-    handlePendingLogs(pendingLogSet, printedLogSet, logObj);
+    addToPendingLogs(pendingLogSet, printedLogSet, logObj);
   }
   if (isEmergencyMode()) {
     printPendingLogs(pendingLogSet, printedLogSet);
@@ -51,7 +51,7 @@ export const resetLogger = () => {
   pendingLogSet.clear();
 };
 
-export const handlePendingLogs = (pendingLogSet, printedLogSet, logObj) => {
+export const addToPendingLogs = (pendingLogSet, printedLogSet, logObj) => {
   if (
     !printedLogSet.has(JSON.stringify(logObj)) &&
     !pendingLogSet.has(JSON.stringify(logObj))

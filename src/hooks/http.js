@@ -13,6 +13,7 @@ import {
 import { getHttpSpan } from '../spans/awsSpan';
 import cloneResponse from 'clone-response';
 import { URL } from 'url';
+import * as logger from '../logger';
 
 export const hostBlaclist = new Set(['127.0.0.1']);
 export const isBlacklisted = host =>
@@ -188,6 +189,7 @@ export const httpRequestWrapper = originalRequestFn =>
     }
 
     try {
+      logger.debug('hooking request', { url, options, host });
       // XXX Create a pure function - something like: 'patchOptionsForAWSService'
       // return the patched options
       if (isAwsService(host)) {
@@ -216,8 +218,7 @@ export const httpRequestWrapper = originalRequestFn =>
       }
       return clientRequest;
     } catch (err) {
-      // eslint-disable-next-line
-      console.log(`##LUMIGO## hook error`, err);
+      logger.fatal('hook error', err);
       return originalRequestFn.apply(this, args);
     }
   };

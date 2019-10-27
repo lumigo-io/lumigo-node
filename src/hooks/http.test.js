@@ -21,6 +21,8 @@ import * as globals from '../globals';
 jest.mock('../globals');
 
 jest.mock('../reporter');
+jest.spyOn(utils, 'isDebug');
+utils.isDebug.mockImplementation(() => true);
 
 describe('http hook', () => {
   process.env['AWS_REGION'] = 'us-east-x';

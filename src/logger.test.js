@@ -44,10 +44,9 @@ describe('logger', () => {
   test('safePrint updated isEmergencyMode', () => {
     utils.setDebug();
     const logSet = new Set([]);
-    logger.safePrint(logSet, 'INFO', 'msg', {});
-    logger.safePrint(logSet, 'INFO', 'msg', {});
-    logger.safePrint(logSet, 'INFO', 'msg', {});
-    logger.safePrint(logSet, 'INFO', 'msg', {});
+    for (let i = 0; i < 11; i++) {
+      logger.safePrint(logSet, 'INFO', 'msg', {});
+    }
     const isEmergencyMode = logger.isEmergencyMode();
     expect(isEmergencyMode).toBe(true);
   });
@@ -76,7 +75,7 @@ describe('logger', () => {
     });
   });
 
-  test('handlePendingLogs add log to pending list if needed', () => {
+  test('addToPendingLogs add log to pending list if needed', () => {
     const pendingSet = new Set([]);
     const printedSet = new Set([]);
     const logObj = {
@@ -84,13 +83,13 @@ describe('logger', () => {
       msg: 'msg',
       obj: {},
     };
-    logger.handlePendingLogs(pendingSet, printedSet, logObj);
+    logger.addToPendingLogs(pendingSet, printedSet, logObj);
     expect(pendingSet.size).toBe(1);
     expect(printedSet.size).toBe(0);
     expect(pendingSet.has(JSON.stringify(logObj))).toBe(true);
   });
 
-  test('handlePendingLogs dont add log to pending list if not needed', () => {
+  test('addToPendingLogs dont add log to pending list if not needed', () => {
     const logObj = {
       type: 'type',
       msg: 'msg',
@@ -98,12 +97,12 @@ describe('logger', () => {
     };
     const pendingSet = new Set([]);
     const printedSet = new Set([JSON.stringify(logObj)]);
-    logger.handlePendingLogs(pendingSet, printedSet, logObj);
+    logger.addToPendingLogs(pendingSet, printedSet, logObj);
     expect(pendingSet.size).toBe(0);
     expect(printedSet.size).toBe(1);
   });
 
-  test('handlePendingLogs updated isEmergencyMode', () => {
+  test('addToPendingLogs updated isEmergencyMode', () => {
     const logObj = {
       type: 'type',
       msg: 'msg',
@@ -111,12 +110,25 @@ describe('logger', () => {
     };
     const pendingSet = new Set([]);
     const printedSet = new Set([JSON.stringify(logObj)]);
-    logger.handlePendingLogs(pendingSet, printedSet, logObj);
-    logger.handlePendingLogs(pendingSet, printedSet, logObj);
-    logger.handlePendingLogs(pendingSet, printedSet, logObj);
-    logger.handlePendingLogs(pendingSet, printedSet, logObj);
+    for (let i = 0; i < 11; i++) {
+      logger.addToPendingLogs(pendingSet, printedSet, logObj);
+    }
     const isEmergencyMode = logger.isEmergencyMode();
     expect(isEmergencyMode).toBe(true);
+  });
+
+  test('invokeLog print pending logs', () => {
+    const logObj = {
+      type: 'type',
+      msg: 'msg',
+      obj: {},
+    };
+    const pendingSet = new Set([]);
+    const printedSet = new Set([JSON.stringify(logObj)]);
+    for (let i = 0; i < 11; i++) {
+      logger.addToPendingLogs(pendingSet, printedSet, logObj);
+    }
+    logger.invokeLog('info')('msg', {});
   });
 
   test('info', () => {
