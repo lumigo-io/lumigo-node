@@ -618,7 +618,7 @@ describe('utils', () => {
       hello: 'world',
       password: '****',
     });
-    
+
     const notJsonString = '{"hello": "w';
     expect(omitKeys(notJsonString)).toEqual(notJsonString);
 

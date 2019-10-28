@@ -13,6 +13,7 @@ import {
 import { getHttpSpan } from '../spans/awsSpan';
 import cloneResponse from 'clone-response';
 import { URL } from 'url';
+import { fclone } from '../tools/fclone';
 
 export const hostBlaclist = new Set(['127.0.0.1']);
 export const isBlacklisted = host =>
@@ -90,7 +91,9 @@ export const wrappedHttpResponseCallback = (
       body,
       headers: lowerCaseObjectKeys(headers),
     };
-    const httpSpan = getHttpSpan(requestData, responseData);
+    const fixedRequestData = fclone(requestData);
+    const fixedResponseData = fclone(responseData);
+    const httpSpan = getHttpSpan(fixedRequestData, fixedResponseData);
     SpansContainer.addSpan(httpSpan);
   });
 
