@@ -436,6 +436,35 @@ describe('http hook', () => {
       'on',
       expect.any(Function)
     );
+
+    //Circular object
+    const a6 = {};
+    const b6 = { a6 };
+    a6.b6 = b6;
+    const options6 = {
+      host: 'asdf1.com',
+      port: 443,
+      protocol: 'https:',
+      path: '/api/where/is/satoshi',
+      method: 'POST',
+      headers: { X: 'Y' },
+      a6,
+    };
+
+    const clientRequest6 = { a: 'b' };
+    originalRequestFn.mockReturnValueOnce(clientRequest6);
+    utils.getEdgeHost.mockReturnValueOnce(edgeHost);
+    expect(httpHook.httpRequestWrapper(originalRequestFn)(options6)).toEqual(
+      clientRequest6
+    );
+
+    expect(originalRequestFn).toHaveBeenCalledWith(options4);
+
+    expect(shimmer.wrap).toHaveBeenCalledWith(
+      clientRequest6,
+      'on',
+      expect.any(Function)
+    );
   });
 
   test('httpGetWrapper', () => {

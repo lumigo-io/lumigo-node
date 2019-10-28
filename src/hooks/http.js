@@ -150,6 +150,7 @@ export const httpRequestArguments = args => {
       callback = args[1];
     }
   }
+  options = fclone(options);
   return { url, options, callback };
 };
 
