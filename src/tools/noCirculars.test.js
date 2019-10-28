@@ -1,8 +1,8 @@
 'use strict';
 
-import { fclone } from './fclone';
+import { noCirculars } from './noCirculars';
 
-describe('fclone', function() {
+describe('noCirculars', function() {
   beforeEach(function() {
     let a = {};
     a.a = a;
@@ -21,13 +21,13 @@ describe('fclone', function() {
   describe('will clone', function() {
     it('a string', function() {
       let i = '';
-      let o = fclone(i);
+      let o = noCirculars(i);
       expect(o).toEqual(i);
     });
 
     it('an object', function() {
       let t = { foo: 'bar', bar: 'foo' };
-      let o = fclone(t);
+      let o = noCirculars(t);
 
       delete t.foo;
 
@@ -39,7 +39,7 @@ describe('fclone', function() {
       let a = {};
       let b = { a };
       a.b = b;
-      let c = fclone(a);
+      let c = noCirculars(a);
       expect(c).toEqual({
         b: {
           a: '[Circular]',
@@ -56,7 +56,7 @@ describe('fclone', function() {
       }
       Child.prototype = new Base();
 
-      let z = fclone(new Child());
+      let z = noCirculars(new Child());
       expect(z).toHaveProperty('child', true);
       expect(z).not.toHaveProperty('base');
     });
@@ -64,7 +64,7 @@ describe('fclone', function() {
     it('an array-like object', function() {
       let t = { length: 3, 0: 'test', 1: 'test', 2: 'test' };
 
-      let o = fclone(t);
+      let o = noCirculars(t);
 
       expect(o).toEqual(t);
     });

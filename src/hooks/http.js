@@ -13,7 +13,7 @@ import {
 import { getHttpSpan } from '../spans/awsSpan';
 import cloneResponse from 'clone-response';
 import { URL } from 'url';
-import { fclone } from '../tools/fclone';
+import { noCirculars } from '../tools/noCirculars';
 import * as logger from '../logger';
 
 export const hostBlaclist = new Set(['127.0.0.1']);
@@ -92,8 +92,8 @@ export const wrappedHttpResponseCallback = (
       body,
       headers: lowerCaseObjectKeys(headers),
     };
-    const fixedRequestData = fclone(requestData);
-    const fixedResponseData = fclone(responseData);
+    const fixedRequestData = noCirculars(requestData);
+    const fixedResponseData = noCirculars(responseData);
     const httpSpan = getHttpSpan(fixedRequestData, fixedResponseData);
     SpansContainer.addSpan(httpSpan);
   });
@@ -150,7 +150,7 @@ export const httpRequestArguments = args => {
       callback = args[1];
     }
   }
-  options = fclone(options);
+  options = noCirculars(options);
   return { url, options, callback };
 };
 
