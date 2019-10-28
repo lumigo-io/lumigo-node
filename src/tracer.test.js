@@ -90,14 +90,6 @@ describe('tracer', () => {
     expect(spies.SpansContainer.addSpan).toHaveBeenCalledTimes(0);
   });
 
-  test('isCallbacked', async () => {
-    expect(tracer.isCallbacked({ type: tracer.HANDLER_CALLBACKED })).toBe(true);
-    expect(tracer.isCallbacked({ type: tracer.HANDLER_CALLBACKED })).toBe(true);
-    expect(tracer.isCallbacked({ type: tracer.ASYNC_HANDLER_RESOLVED })).toBe(
-      false
-    );
-  });
-
   test('endTrace; callbackWaitsForEmptyEventLoop is false', async () => {
     spies.isSwitchedOff.mockReturnValueOnce(false);
     spies.isAwsEnvironment.mockReturnValueOnce(true);

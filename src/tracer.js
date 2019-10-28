@@ -88,11 +88,6 @@ export const sendEndTraceSpans = async (functionSpan, handlerReturnValue) => {
   clearGlobals();
 };
 
-export const isCallbacked = handlerReturnValue => {
-  const { type } = handlerReturnValue;
-  return type === HANDLER_CALLBACKED;
-};
-
 export const endTrace = async (functionSpan, handlerReturnValue) => {
   try {
     if (functionSpan && !isSwitchedOff() && isAwsEnvironment()) {
