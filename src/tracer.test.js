@@ -6,7 +6,7 @@ import * as reporter from './reporter';
 import * as awsSpan from './spans/awsSpan';
 import startHooks from './hooks';
 import * as logger from './logger';
-import { shouldSetTimeoutTimer } from './utils';
+import { shouldSetTimeoutTimer, isAwsEnvironment } from './utils';
 
 jest.mock('./hooks');
 describe('tracer', () => {
@@ -396,5 +396,29 @@ describe('tracer', () => {
     ).rejects.toEqual(new Error(retVal));
 
     expect(startHooks).toHaveBeenCalled();
+  });
+
+  test('trace; async resolved with callbackWaitsForEmptyEventLoop ', async () => {
+    const token = 'DEADBEEF';
+    const retVal = 5;
+
+    spies.isSwitchedOff.mockReturnValue(false);
+    spies.isAwsEnvironment.mockReturnValue(true);
+    spies.getFunctionSpan.mockReturnValue({id: "123_started"});
+    spies.sendSingleSpan.mockReturnValue({ rtt: 123 });
+    spies.SpansContainer.getSpans.mockReturnValue([{id: "123"}]);
+    spies.getContextInfo.mockReturnValue({ callbackWaitsForEmptyEventLoop: true });
+    const callAfterEmptyEventLoopSpy = jest.spyOn(
+      utils,
+      'callAfterEmptyEventLoop'
+    );
+
+    const userHandler6 = async (event, context, callback) => retVal;
+    await tracer.trace({ token })(userHandler6)({}, {}, jest.fn());
+
+    expect(callAfterEmptyEventLoopSpy).toHaveBeenCalledWith(
+      tracer.sendEndTraceSpans,
+      [{"id": "123_started", "reporter_rtt": 123}, {"data": retVal, "err": null, "type": "async_handler_resolved"}]
+    );
   });
 });

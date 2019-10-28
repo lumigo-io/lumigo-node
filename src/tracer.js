@@ -101,7 +101,7 @@ export const endTrace = async (functionSpan, handlerReturnValue) => {
       const { context } = TracerGlobals.getHandlerInputs();
       const { callbackWaitsForEmptyEventLoop } = getContextInfo(context);
 
-      if (isCallbacked(handlerReturnValue) && callbackWaitsForEmptyEventLoop) {
+      if (callbackWaitsForEmptyEventLoop) {
         const fn = sendEndTraceSpans;
         const args = [functionSpan, handlerReturnValue];
         callAfterEmptyEventLoop(fn, args);
