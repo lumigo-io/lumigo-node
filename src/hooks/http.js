@@ -14,6 +14,7 @@ import { getHttpSpan } from '../spans/awsSpan';
 import cloneResponse from 'clone-response';
 import { URL } from 'url';
 import { fclone } from '../tools/fclone';
+import * as logger from '../logger';
 
 export const hostBlaclist = new Set(['127.0.0.1']);
 export const isBlacklisted = host =>
@@ -191,6 +192,7 @@ export const httpRequestWrapper = originalRequestFn =>
     }
 
     try {
+      logger.debug('Starting hook', { host, url, options });
       // XXX Create a pure function - something like: 'patchOptionsForAWSService'
       // return the patched options
       if (isAwsService(host)) {
