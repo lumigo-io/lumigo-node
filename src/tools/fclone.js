@@ -1,4 +1,5 @@
 const fclone = obj => {
+  if (obj === undefined) return undefined;
   const getCircularReplacer = () => {
     // eslint-disable-next-line no-undef
     const seen = new WeakSet();
@@ -12,7 +13,6 @@ const fclone = obj => {
       return value;
     };
   };
-
   const s = JSON.stringify(obj, getCircularReplacer());
   return JSON.parse(s);
 };
