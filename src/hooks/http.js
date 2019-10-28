@@ -13,6 +13,8 @@ import {
 import { getHttpSpan } from '../spans/awsSpan';
 import cloneResponse from 'clone-response';
 import { URL } from 'url';
+import { noCirculars } from '../tools/noCirculars';
+import * as logger from '../logger';
 
 export const hostBlaclist = new Set(['127.0.0.1']);
 export const isBlacklisted = host =>
@@ -90,7 +92,9 @@ export const wrappedHttpResponseCallback = (
       body,
       headers: lowerCaseObjectKeys(headers),
     };
-    const httpSpan = getHttpSpan(requestData, responseData);
+    const fixedRequestData = noCirculars(requestData);
+    const fixedResponseData = noCirculars(responseData);
+    const httpSpan = getHttpSpan(fixedRequestData, fixedResponseData);
     SpansContainer.addSpan(httpSpan);
   });
 
@@ -181,21 +185,26 @@ export const isAlreadyTraced = callback =>
 export const httpRequestWrapper = originalRequestFn =>
   function(...args) {
     const { url, options, callback } = httpRequestArguments(args);
-    const host = getHostFromOptionsOrUrl(options, url);
+    const fixedOptions = noCirculars(options);
+    const host = getHostFromOptionsOrUrl(fixedOptions, url);
 
     if (isBlacklisted(host) || isAlreadyTraced(callback)) {
       return originalRequestFn.apply(this, args);
     }
 
     try {
+      const headers = fixedOptions.headers;
+      logger.debug('Starting hook', { host, url, headers });
       // XXX Create a pure function - something like: 'patchOptionsForAWSService'
       // return the patched options
       if (isAwsService(host)) {
         const { awsXAmznTraceId } = getAWSEnvironment();
-        options.headers['X-Amzn-Trace-Id'] = getPatchedTraceId(awsXAmznTraceId);
+        const traceId = getPatchedTraceId(awsXAmznTraceId);
+        options.headers['X-Amzn-Trace-Id'] = traceId;
+        fixedOptions.headers['X-Amzn-Trace-Id'] = traceId;
       }
 
-      const requestData = parseHttpRequestOptions(options, url);
+      const requestData = parseHttpRequestOptions(fixedOptions, url);
 
       const hookedClientRequestArgs = getHookedClientRequestArgs(
         url,
