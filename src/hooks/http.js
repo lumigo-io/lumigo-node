@@ -193,7 +193,8 @@ export const httpRequestWrapper = originalRequestFn =>
     }
 
     try {
-      logger.debug('Starting hook', { host, url, fixedOptions });
+      const headers = fixedOptions.headers;
+      logger.debug('Starting hook', { host, url, headers });
       // XXX Create a pure function - something like: 'patchOptionsForAWSService'
       // return the patched options
       if (isAwsService(host)) {
