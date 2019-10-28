@@ -1,3 +1,10 @@
+function fromEntries(iterable) {
+  return [...iterable].reduce((obj, [key, val]) => {
+    obj[key] = val;
+    return obj;
+  }, {});
+}
+
 const noCirculars = v => {
   const set = new Set();
   const noCirculars = v => {
@@ -6,7 +13,7 @@ const noCirculars = v => {
       if (set.has(v)) return '[Circular]';
       set.add(v);
 
-      return Object.fromEntries(
+      return fromEntries(
         Object.entries(v).map(([k, v]) => [k, noCirculars(v)])
       );
     }
