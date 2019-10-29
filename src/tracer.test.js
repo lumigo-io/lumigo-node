@@ -16,11 +16,13 @@ describe('tracer', () => {
   spies.isSendOnlyIfErrors = jest.spyOn(utils, 'isSendOnlyIfErrors');
   spies.shouldSetTimeoutTimer = jest.spyOn(utils, 'shouldSetTimeoutTimer');
   spies.getContextInfo = jest.spyOn(utils, 'getContextInfo');
+  spies.lumigoWarnings = jest.spyOn(utils, 'lumigoWarnings');
   spies.sendSingleSpan = jest.spyOn(reporter, 'sendSingleSpan');
   spies.sendSpans = jest.spyOn(reporter, 'sendSpans');
   spies.getFunctionSpan = jest.spyOn(awsSpan, 'getFunctionSpan');
   spies.getEndFunctionSpan = jest.spyOn(awsSpan, 'getEndFunctionSpan');
   spies.addRttToFunctionSpan = jest.spyOn(awsSpan, 'addRttToFunctionSpan');
+  spies.getCurrentTransactionId = jest.spyOn(awsSpan, 'getCurrentTransactionId');
   spies.SpansContainer = {};
   spies.SpansContainer.getSpans = jest.spyOn(
     globals.SpansContainer,
@@ -396,5 +398,23 @@ describe('tracer', () => {
     ).rejects.toEqual(new Error(retVal));
 
     expect(startHooks).toHaveBeenCalled();
+  });
+
+  test('sendEndTraceSpans; dont clear globals in case of a leak', async () => {
+    spies.sendSpans.mockImplementation(() => {});
+    spies.getEndFunctionSpan.mockReturnValue({x: 'y'});
+    spies.getCurrentTransactionId.mockReturnValue("123");
+
+    TracerGlobals.setTracerInputs({ token: "123" });
+    spies.SpansContainer.getSpans.mockReturnValueOnce([{transactionId: "123", id: "1"}, {transactionId: "123", id: "2"}]);
+    await tracer.sendEndTraceSpans({ id: "1_started" }, {err: null, data: null});
+    expect(spies.lumigoWarnings).not.toHaveBeenCalled();
+    expect(TracerGlobals.getTracerInputs().token).toEqual("");
+
+    TracerGlobals.setTracerInputs({ token: "123" });
+    spies.SpansContainer.getSpans.mockReturnValueOnce([{transactionId: "123", id: "1"}, {transactionId: "456", id: "2"}]);
+    await tracer.sendEndTraceSpans({ id: "1_started" }, {err: null, data: null});
+    expect(spies.lumigoWarnings).toHaveBeenCalled();
+    expect(TracerGlobals.getTracerInputs().token).toEqual("123");
   });
 });

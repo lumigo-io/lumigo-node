@@ -1,6 +1,7 @@
 import { TracerGlobals } from './globals';
 import https from 'https';
 import crypto from 'crypto';
+import * as logger from "./logger";
 
 export const SPAN_PATH = '/api/spans';
 export const LUMIGO_TRACER_EDGE = 'lumigo-tracer-edge.golumigo.com';
@@ -342,4 +343,14 @@ export const omitKeys = obj => {
     newObj[key] = shouldOmitKey ? '****' : value;
     return newObj;
   }, {});
+};
+
+export const lumigoWarnings = msg => {
+  if (process.env.LUMIGO_WARNINGS === "off") {
+    logger.debug('Does not warn the user about', msg);
+    return false;
+  }
+  // eslint-disable-next-line no-console
+  console.log("Lumigo Warning:", msg);
+  return true;
 };

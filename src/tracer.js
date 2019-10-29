@@ -7,12 +7,12 @@ import {
   callAfterEmptyEventLoop,
   removeLumigoFromStacktrace,
   isSendOnlyIfErrors,
-  shouldSetTimeoutTimer,
+  shouldSetTimeoutTimer, lumigoWarnings,
 } from './utils';
 import {
   getFunctionSpan,
   getEndFunctionSpan,
-  addRttToFunctionSpan,
+  addRttToFunctionSpan, getCurrentTransactionId,
 } from './spans/awsSpan';
 import { sendSingleSpan, sendSpans } from './reporter';
 import { TracerGlobals, SpansContainer, clearGlobals } from './globals';
@@ -85,7 +85,13 @@ export const sendEndTraceSpans = async (functionSpan, handlerReturnValue) => {
   const spans = SpansContainer.getSpans();
   await sendSpans(spans);
   logger.debug('Tracer ended');
-  clearGlobals();
+  const currentTransactionId = getCurrentTransactionId();
+  if (spans.some(s => s.transactionId !== currentTransactionId)){
+    lumigoWarnings("Code leak detected. More information is available in: ");
+    SpansContainer.clearSpans();
+  } else {
+    clearGlobals();
+  }
 };
 
 export const isCallbacked = handlerReturnValue => {

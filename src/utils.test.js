@@ -4,7 +4,7 @@ import EventEmitter from 'events';
 import https from 'https';
 import crypto from 'crypto';
 import { getJSONBase64Size, parseQueryParams, parseErrorObject } from './utils';
-import { omitKeys } from './utils';
+import { omitKeys, lumigoWarnings } from './utils';
 
 jest.mock('https');
 jest.mock('../package.json', () => ({
@@ -636,5 +636,13 @@ describe('utils', () => {
 
     const nullObject = null;
     expect(omitKeys(nullObject)).toEqual(null);
+  });
+
+  test('lumigoWarnings; not print to the console if the environment variable exists', () => {
+    process.env.LUMIGO_WARNINGS = "off";
+    expect(lumigoWarnings("msg")).toEqual(false);
+
+    process.env.LUMIGO_WARNINGS = undefined;
+    expect(lumigoWarnings("msg")).toEqual(true);
   });
 });
