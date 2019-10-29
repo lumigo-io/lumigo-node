@@ -7,6 +7,7 @@ import * as awsSpan from './spans/awsSpan';
 import startHooks from './hooks';
 import * as logger from './logger';
 import { shouldSetTimeoutTimer } from './utils';
+import { TracerGlobals } from './globals';
 
 jest.mock('./hooks');
 describe('tracer', () => {
