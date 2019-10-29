@@ -7,12 +7,14 @@ import {
   callAfterEmptyEventLoop,
   removeLumigoFromStacktrace,
   isSendOnlyIfErrors,
-  shouldSetTimeoutTimer, lumigoWarnings,
+  shouldSetTimeoutTimer,
+  lumigoWarnings,
 } from './utils';
 import {
   getFunctionSpan,
   getEndFunctionSpan,
-  addRttToFunctionSpan, getCurrentTransactionId,
+  addRttToFunctionSpan,
+  getCurrentTransactionId,
 } from './spans/awsSpan';
 import { sendSingleSpan, sendSpans } from './reporter';
 import { TracerGlobals, SpansContainer, clearGlobals } from './globals';
