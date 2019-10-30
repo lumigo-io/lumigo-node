@@ -88,7 +88,7 @@ export const sendEndTraceSpans = async (functionSpan, handlerReturnValue) => {
   logger.debug('Tracer ended');
   const currentTransactionId = getCurrentTransactionId();
   if (spans.some(s => s.transactionId !== currentTransactionId)){
-    logger.warnClient("Code leak detected. More information is available in: ");
+    logger.warnClient("Execution leak detected. More information is available in: ");
     SpansContainer.clearSpans();
   } else {
     clearGlobals();
