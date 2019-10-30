@@ -42,6 +42,11 @@ export const getSpanInfo = () => {
   return { traceId, tracer, logGroupName, logStreamName };
 };
 
+export const getCurrentTransactionId = () => {
+  const { event: lambdaEvent } = TracerGlobals.getHandlerInputs();
+  return getSpanInfo(lambdaEvent).traceId.transactionId;
+};
+
 export const getBasicSpan = () => {
   const {
     event: lambdaEvent,
@@ -50,8 +55,7 @@ export const getBasicSpan = () => {
   const { token } = TracerGlobals.getTracerInputs();
 
   const info = getSpanInfo(lambdaEvent);
-  const { traceId } = info;
-  const { transactionId } = traceId;
+  const transactionId = getCurrentTransactionId();
 
   const awsAccountId = getAccountId(lambdaContext);
 

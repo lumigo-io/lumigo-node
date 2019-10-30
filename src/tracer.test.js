@@ -7,6 +7,7 @@ import * as awsSpan from './spans/awsSpan';
 import startHooks from './hooks';
 import * as logger from './logger';
 import { shouldSetTimeoutTimer } from './utils';
+import { TracerGlobals } from './globals';
 
 jest.mock('./hooks');
 describe('tracer', () => {
@@ -21,6 +22,7 @@ describe('tracer', () => {
   spies.getFunctionSpan = jest.spyOn(awsSpan, 'getFunctionSpan');
   spies.getEndFunctionSpan = jest.spyOn(awsSpan, 'getEndFunctionSpan');
   spies.addRttToFunctionSpan = jest.spyOn(awsSpan, 'addRttToFunctionSpan');
+  spies.getCurrentTransactionId = jest.spyOn(awsSpan, 'getCurrentTransactionId');
   spies.SpansContainer = {};
   spies.SpansContainer.getSpans = jest.spyOn(
     globals.SpansContainer,
@@ -32,6 +34,7 @@ describe('tracer', () => {
   );
   spies.SpansContainer.addSpan = jest.spyOn(globals.SpansContainer, 'addSpan');
   spies.clearGlobals = jest.spyOn(globals, 'clearGlobals');
+  spies.warnClient = jest.spyOn(logger, 'warnClient');
   spies.logFatal = jest.spyOn(logger, 'fatal');
 
   beforeEach(() => {
@@ -396,5 +399,23 @@ describe('tracer', () => {
     ).rejects.toEqual(new Error(retVal));
 
     expect(startHooks).toHaveBeenCalled();
+  });
+
+  test('sendEndTraceSpans; dont clear globals in case of a leak', async () => {
+    spies.sendSpans.mockImplementation(() => {});
+    spies.getEndFunctionSpan.mockReturnValue({x: 'y'});
+    spies.getCurrentTransactionId.mockReturnValue("123");
+
+    TracerGlobals.setTracerInputs({ token: "123" });
+    spies.SpansContainer.getSpans.mockReturnValueOnce([{transactionId: "123", id: "1"}, {transactionId: "123", id: "2"}]);
+    await tracer.sendEndTraceSpans({ id: "1_started" }, {err: null, data: null});
+    expect(spies.warnClient).not.toHaveBeenCalled();
+    expect(TracerGlobals.getTracerInputs().token).toEqual("");
+
+    TracerGlobals.setTracerInputs({ token: "123" });
+    spies.SpansContainer.getSpans.mockReturnValueOnce([{transactionId: "123", id: "1"}, {transactionId: "456", id: "2"}]);
+    await tracer.sendEndTraceSpans({ id: "1_started" }, {err: null, data: null});
+    expect(spies.warnClient).toHaveBeenCalled();
+    expect(TracerGlobals.getTracerInputs().token).toEqual("123");
   });
 });

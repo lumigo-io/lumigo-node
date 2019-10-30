@@ -90,4 +90,12 @@ describe('logger', () => {
       `${logObject}`
     );
   });
+
+  test('lumigoWarnings; not print to the console if the environment variable exists', () => {
+    process.env.LUMIGO_WARNINGS = "off";
+    expect(logger.warnClient("msg")).toEqual(false);
+
+    process.env.LUMIGO_WARNINGS = undefined;
+    expect(logger.warnClient("msg")).toEqual(true);
+  });
 });
