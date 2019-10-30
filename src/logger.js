@@ -1,6 +1,7 @@
 import { isDebug } from './utils';
 
 const LOG_PREFIX = '#LUMIGO#';
+const WARN_CLIENT_PREFIX = "Lumigo Warning";
 
 export const invokeLog = type => (msg, obj = undefined) =>
   isDebug() && exports.log(type, msg, obj);
@@ -24,4 +25,14 @@ export const log = (levelname, message, obj) => {
     // eslint-disable-next-line
     console.log(logMsg);
   }
+};
+
+export const warnClient = msg => {
+  if (process.env.LUMIGO_WARNINGS === "off") {
+    debug('Does not warn the user about', msg);
+    return false;
+  }
+  // eslint-disable-next-line no-console
+  console.log(`${WARN_CLIENT_PREFIX}: ${msg}`);
+  return true;
 };

@@ -8,7 +8,6 @@ import {
   removeLumigoFromStacktrace,
   isSendOnlyIfErrors,
   shouldSetTimeoutTimer,
-  lumigoWarnings,
 } from './utils';
 import {
   getFunctionSpan,
@@ -89,7 +88,7 @@ export const sendEndTraceSpans = async (functionSpan, handlerReturnValue) => {
   logger.debug('Tracer ended');
   const currentTransactionId = getCurrentTransactionId();
   if (spans.some(s => s.transactionId !== currentTransactionId)){
-    lumigoWarnings("Code leak detected. More information is available in: ");
+    logger.warnClient("Code leak detected. More information is available in: ");
     SpansContainer.clearSpans();
   } else {
     clearGlobals();
