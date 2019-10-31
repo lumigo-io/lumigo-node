@@ -264,6 +264,24 @@ describe('aws parser', () => {
     });
   });
 
+  test('kinesisParser -> invalid response and return default values', () => {
+    const requestData = {
+      host: 'kinesis.us-west-2.amazonaws.com',
+      sendTime: 1564474992235,
+    };
+
+    const responseData = {
+      body: "<hello",
+    };
+    const result = aws.kinesisParser(requestData, responseData);
+
+    expect(result).toEqual({
+      awsServiceData: {
+        resourceName: undefined,
+      },
+    });
+  });
+
   test('awsParser -> happy flow (with x-amzn-requestid header)', () => {
     const responseData = {
       host: '9bis5jsyh2.execute-api.us-west-2.amazonaws.com',

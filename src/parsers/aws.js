@@ -1,6 +1,6 @@
 import { parseQueryParams } from '../utils';
 import parseXml from '../tools/xmlToJson';
-
+import * as logger from '../logger';
 export const dynamodbParser = requestData => {
   const { headers: reqHeaders, body: reqBody } = requestData;
   const dynamodbMethod =
@@ -58,7 +58,13 @@ export const kinesisParser = (requestData, responseData) => {
   const { body: reqBody } = requestData;
   const { body: resBody } = responseData;
   const reqBodyJSON = (!!reqBody && JSON.parse(reqBody)) || {};
-  const resBodyJSON = (!!resBody && JSON.parse(resBody)) || {};
+  let resBodyJSON = {};
+  try {
+    resBodyJSON = (!!resBody && JSON.parse(resBody)) || {};
+  } catch (e) {
+    logger.info(`Unable to parse response, ${e}`);
+    resBodyJSON = {};
+  }
   const resourceName =
     (reqBodyJSON['StreamName'] && reqBodyJSON.StreamName) || undefined;
   const awsServiceData = { resourceName };
