@@ -5,6 +5,7 @@ import https from 'https';
 import crypto from 'crypto';
 import { getJSONBase64Size, parseQueryParams, parseErrorObject } from './utils';
 import { omitKeys } from './utils';
+import { MAX_ENTITY_SIZE } from './utils';
 
 jest.mock('https');
 jest.mock('../package.json', () => ({
@@ -187,6 +188,21 @@ describe('utils', () => {
     const oldEnv = Object.assign({}, process.env);
     process.env = { ...oldEnv, LUMIGO_DEBUG: 'TRUE' };
     expect(utils.isDebug()).toBe(true);
+    process.env = { ...oldEnv };
+  });
+
+  test('getEventEntitySize', () => {
+    expect(utils.getEventEntitySize()).toBe(MAX_ENTITY_SIZE);
+    const oldEnv = Object.assign({}, process.env);
+    process.env = { ...oldEnv, MAX_EVENT_ENTITY_SIZE: ' 2048' };
+    expect(utils.getEventEntitySize()).toBe(2048);
+    process.env = { ...oldEnv };
+  });
+
+  test('getEventEntitySize NaN', () => {
+    const oldEnv = Object.assign({}, process.env);
+    process.env = { ...oldEnv, MAX_EVENT_ENTITY_SIZE: 'A 2048' };
+    expect(utils.getEventEntitySize()).toBe(MAX_ENTITY_SIZE);
     process.env = { ...oldEnv };
   });
 

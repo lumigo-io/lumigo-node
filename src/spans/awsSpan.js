@@ -11,7 +11,7 @@ import {
   stringifyAndPrune,
   isAwsService,
   parseErrorObject,
-  omitKeys,
+  omitKeys, getEventEntitySize,
 } from '../utils';
 import {
   dynamodbParser,
@@ -103,7 +103,7 @@ export const getFunctionSpan = () => {
   const started = new Date().getTime();
   const ended = started; // Indicates a StartSpan.
 
-  const event = stringifyAndPrune(omitKeys(lambdaEvent));
+  const event = stringifyAndPrune(omitKeys(lambdaEvent), getEventEntitySize());
   const envs = stringifyAndPrune(omitKeys(process.env));
 
   const {
