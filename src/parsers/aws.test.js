@@ -271,7 +271,7 @@ describe('aws parser', () => {
     };
 
     const responseData = {
-      body: "<hello",
+      body: '<hello',
     };
     const result = aws.kinesisParser(requestData, responseData);
 

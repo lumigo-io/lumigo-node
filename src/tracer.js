@@ -87,8 +87,10 @@ export const sendEndTraceSpans = async (functionSpan, handlerReturnValue) => {
   await sendSpans(spans);
   logger.debug('Tracer ended');
   const currentTransactionId = getCurrentTransactionId();
-  if (spans.some(s => s.transactionId !== currentTransactionId)){
-    logger.warnClient("Execution leak detected. More information is available in: https://docs.lumigo.io/docs");
+  if (spans.some(s => s.transactionId !== currentTransactionId)) {
+    logger.warnClient(
+      'Execution leak detected. More information is available in: https://docs.lumigo.io/docs'
+    );
     SpansContainer.clearSpans();
   } else {
     clearGlobals();

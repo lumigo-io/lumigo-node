@@ -11,7 +11,8 @@ import {
   stringifyAndPrune,
   isAwsService,
   parseErrorObject,
-  omitKeys, getEventEntitySize,
+  omitKeys,
+  getEventEntitySize,
 } from '../utils';
 import {
   dynamodbParser,
