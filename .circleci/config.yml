@@ -59,6 +59,9 @@ jobs:
           paths:
             - ./node_modules
       - run:
+          name: prettier
+          command: npm run prettier:ci
+      - run:
           name: test
           command: npm test
       - run:

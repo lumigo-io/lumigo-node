@@ -173,6 +173,10 @@ export const isString = x =>
 
 export const MAX_ENTITY_SIZE = 1024;
 
+export const getEventEntitySize = () => {
+  return parseInt(process.env['MAX_EVENT_ENTITY_SIZE']) || MAX_ENTITY_SIZE;
+};
+
 export const prune = (str, maxLength = MAX_ENTITY_SIZE) =>
   str.substr(0, maxLength);
 

@@ -22,7 +22,10 @@ describe('tracer', () => {
   spies.getFunctionSpan = jest.spyOn(awsSpan, 'getFunctionSpan');
   spies.getEndFunctionSpan = jest.spyOn(awsSpan, 'getEndFunctionSpan');
   spies.addRttToFunctionSpan = jest.spyOn(awsSpan, 'addRttToFunctionSpan');
-  spies.getCurrentTransactionId = jest.spyOn(awsSpan, 'getCurrentTransactionId');
+  spies.getCurrentTransactionId = jest.spyOn(
+    awsSpan,
+    'getCurrentTransactionId'
+  );
   spies.SpansContainer = {};
   spies.SpansContainer.getSpans = jest.spyOn(
     globals.SpansContainer,
@@ -403,19 +406,31 @@ describe('tracer', () => {
 
   test('sendEndTraceSpans; dont clear globals in case of a leak', async () => {
     spies.sendSpans.mockImplementation(() => {});
-    spies.getEndFunctionSpan.mockReturnValue({x: 'y'});
-    spies.getCurrentTransactionId.mockReturnValue("123");
+    spies.getEndFunctionSpan.mockReturnValue({ x: 'y' });
+    spies.getCurrentTransactionId.mockReturnValue('123');
 
-    TracerGlobals.setTracerInputs({ token: "123" });
-    spies.SpansContainer.getSpans.mockReturnValueOnce([{transactionId: "123", id: "1"}, {transactionId: "123", id: "2"}]);
-    await tracer.sendEndTraceSpans({ id: "1_started" }, {err: null, data: null});
+    TracerGlobals.setTracerInputs({ token: '123' });
+    spies.SpansContainer.getSpans.mockReturnValueOnce([
+      { transactionId: '123', id: '1' },
+      { transactionId: '123', id: '2' },
+    ]);
+    await tracer.sendEndTraceSpans(
+      { id: '1_started' },
+      { err: null, data: null }
+    );
     expect(spies.warnClient).not.toHaveBeenCalled();
-    expect(TracerGlobals.getTracerInputs().token).toEqual("");
+    expect(TracerGlobals.getTracerInputs().token).toEqual('');
 
-    TracerGlobals.setTracerInputs({ token: "123" });
-    spies.SpansContainer.getSpans.mockReturnValueOnce([{transactionId: "123", id: "1"}, {transactionId: "456", id: "2"}]);
-    await tracer.sendEndTraceSpans({ id: "1_started" }, {err: null, data: null});
+    TracerGlobals.setTracerInputs({ token: '123' });
+    spies.SpansContainer.getSpans.mockReturnValueOnce([
+      { transactionId: '123', id: '1' },
+      { transactionId: '456', id: '2' },
+    ]);
+    await tracer.sendEndTraceSpans(
+      { id: '1_started' },
+      { err: null, data: null }
+    );
     expect(spies.warnClient).toHaveBeenCalled();
-    expect(TracerGlobals.getTracerInputs().token).toEqual("123");
+    expect(TracerGlobals.getTracerInputs().token).toEqual('123');
   });
 });
