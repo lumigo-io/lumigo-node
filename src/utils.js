@@ -125,8 +125,11 @@ export const isSendOnlyIfErrors = () =>
     process.env.SEND_ONLY_IF_ERROR === 'TRUE'
   );
 
-//Currently disabled via bug - will fix on https://lumigo.atlassian.net/browse/RD-1345
-export const shouldSetTimeoutTimer = () => false;
+export const shouldSetTimeoutTimer = () =>
+  !(
+    process.env['LUMIGO_TIMEOUT_TIMER'] &&
+    process.env.LUMIGO_TIMEOUT_TIMER === 'FALSE'
+  );
 
 export const isPruneTraceOff = () =>
   !!(
