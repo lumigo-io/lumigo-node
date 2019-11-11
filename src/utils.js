@@ -321,18 +321,14 @@ export const parseQueryParams = queryParams => {
   return obj;
 };
 
-const domainScrubbers = () => {
-  return JSON.parse(
+const domainScrubbers = () =>
+  JSON.parse(
     process.env.LUMIGO_DOMAINS_SCRUBBER ||
       '["secretsmanager.*.amazonaws.com", "ssm.*.amazonaws.com", "kms.*.amazonaws.com"]'
   ).map(x => new RegExp(x, 'i'));
-};
 
 export const shouldScrubDomain = url => {
-  if (url) {
-    return domainScrubbers().some(regex => url.match(regex));
-  }
-  return false;
+  return !!url && domainScrubbers().some(regex => url.match(regex));
 };
 
 const keyToOmitRegexes = () =>

@@ -595,20 +595,20 @@ describe('utils', () => {
   });
 
   test('shouldScrubDomain', () => {
-    let bad_url = undefined;
-    let first_url = 'http://example.com/';
-    let second_url = 'http://test.second.io/';
-    let third_url = 'http://test.third.io/';
+    let undefined_url = undefined;
+    let url_with_first = 'http://first.com/';
+    let url_with_second = 'http://test.second.io/';
+    let url_with_third = 'http://test.third.io/';
 
-    expect(shouldScrubDomain(bad_url)).toEqual(false);
-    expect(shouldScrubDomain(first_url)).toEqual(false);
+    expect(shouldScrubDomain(undefined_url)).toEqual(false);
+    expect(shouldScrubDomain(url_with_first)).toEqual(false);
 
-    process.env.LUMIGO_DOMAINS_SCRUBBER = ['["example"]'];
-    expect(shouldScrubDomain(first_url)).toEqual(true);
+    process.env.LUMIGO_DOMAINS_SCRUBBER = ['["first"]'];
+    expect(shouldScrubDomain(url_with_first)).toEqual(true);
 
-    process.env.LUMIGO_DOMAINS_SCRUBBER = ['["example", "second"]'];
-    expect(shouldScrubDomain(second_url)).toEqual(true);
-    expect(shouldScrubDomain(third_url)).toEqual(false);
+    process.env.LUMIGO_DOMAINS_SCRUBBER = ['["first", "second"]'];
+    expect(shouldScrubDomain(url_with_second)).toEqual(true);
+    expect(shouldScrubDomain(url_with_third)).toEqual(false);
   });
 
   test('omitKeys', () => {

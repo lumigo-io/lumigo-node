@@ -464,7 +464,7 @@ describe('awsSpan', () => {
       },
     };
 
-    process.env.LUMIGO_DOMAINS_SCRUBBER = ['["mind"]'];
+    process.env.LUMIGO_DOMAINS_SCRUBBER = '["mind"]';
     expect(awsSpan.getHttpInfo(requestData, responseData)).toEqual(
       scrubbed_expected
     );
