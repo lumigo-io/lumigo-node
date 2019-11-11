@@ -4,7 +4,7 @@ import EventEmitter from 'events';
 import https from 'https';
 import crypto from 'crypto';
 import { getJSONBase64Size, parseQueryParams, parseErrorObject } from './utils';
-import { omitKeys } from './utils';
+import { omitKeys, shouldScrubDomain } from './utils';
 import { MAX_ENTITY_SIZE } from './utils';
 
 jest.mock('https');
@@ -592,6 +592,23 @@ describe('utils', () => {
     expect(invalid).toEqual(undefined);
     expect(notFound).toEqual(undefined);
     expect(weirdInput).toEqual(undefined);
+  });
+
+  test('shouldScrubDomain', () => {
+    let bad_url = undefined;
+    let first_url = 'http://example.com/';
+    let second_url = 'http://test.second.io/';
+    let third_url = 'http://test.third.io/';
+
+    expect(shouldScrubDomain(bad_url)).toEqual(false);
+    expect(shouldScrubDomain(first_url)).toEqual(false);
+
+    process.env.LUMIGO_DOMAINS_SCRUBBER = ['["example"]'];
+    expect(shouldScrubDomain(first_url)).toEqual(true);
+
+    process.env.LUMIGO_DOMAINS_SCRUBBER = ['["example", "second"]'];
+    expect(shouldScrubDomain(second_url)).toEqual(true);
+    expect(shouldScrubDomain(third_url)).toEqual(false);
   });
 
   test('omitKeys', () => {
