@@ -433,4 +433,22 @@ describe('tracer', () => {
     expect(spies.warnClient).toHaveBeenCalled();
     expect(TracerGlobals.getTracerInputs().token).toEqual('123');
   });
+
+  test('can not wrap twice', async () => {
+    const event = { a: 'b', c: 'd' };
+    const context = { e: 'f', g: 'h' };
+    const token = 'DEADBEEF';
+
+    const userHandler = async (event, context, callback) => {
+      return 1;
+    };
+    await expect(
+      tracer.trace({ token })(tracer.trace({ token })(userHandler))(
+        event,
+        context
+      )
+    ).resolves.toEqual(1);
+
+    expect(startHooks).toHaveBeenCalledTimes(1);
+  });
 });

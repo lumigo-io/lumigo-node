@@ -162,6 +162,11 @@ export const trace = ({
     eventFilter,
   });
 
+  if (context.wrapped_by_lumigo) {
+    return userHandler(event, context, callback);
+  }
+  context.wrapped_by_lumigo = true;
+
   startHooks();
 
   const pStartTrace = startTrace();
