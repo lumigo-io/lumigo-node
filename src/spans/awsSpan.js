@@ -13,6 +13,7 @@ import {
   parseErrorObject,
   omitKeys,
   getEventEntitySize,
+  shouldScrubDomain,
 } from '../utils';
 import {
   dynamodbParser,
@@ -183,12 +184,25 @@ export const getHttpInfo = (requestData, responseData) => {
   const { host } = requestData;
 
   const request = Object.assign({}, requestData);
-  request.headers = stringifyAndPrune(omitKeys(request.headers));
-  request.body = stringifyAndPrune(omitKeys(request.body));
-
   const response = Object.assign({}, responseData);
-  response.headers = stringifyAndPrune(omitKeys(response.headers));
-  response.body = stringifyAndPrune(omitKeys(response.body));
+
+  if (
+    shouldScrubDomain(host) ||
+    (request.host && shouldScrubDomain(request.host)) ||
+    (response.host && shouldScrubDomain(response.host))
+  ) {
+    request.body = 'The data is not available';
+    response.body = 'The data is not available';
+    delete request.headers;
+    delete response.headers;
+    delete request.uri;
+  } else {
+    request.headers = stringifyAndPrune(omitKeys(request.headers));
+    request.body = stringifyAndPrune(omitKeys(request.body));
+
+    response.headers = stringifyAndPrune(omitKeys(response.headers));
+    response.body = stringifyAndPrune(omitKeys(response.body));
+  }
 
   return { host, request, response };
 };

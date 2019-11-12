@@ -452,6 +452,22 @@ describe('awsSpan', () => {
     };
 
     expect(awsSpan.getHttpInfo(requestData, responseData)).toEqual(expected);
+
+    const scrubbed_expected = {
+      host: 'your.mind.com',
+      request: {
+        body: 'The data is not available',
+        host: 'your.mind.com',
+      },
+      response: {
+        body: 'The data is not available',
+      },
+    };
+
+    process.env.LUMIGO_DOMAINS_SCRUBBER = '["mind"]';
+    expect(awsSpan.getHttpInfo(requestData, responseData)).toEqual(
+      scrubbed_expected
+    );
   });
 
   test('getBasicHttpSpan', () => {
