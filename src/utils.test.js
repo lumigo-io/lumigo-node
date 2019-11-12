@@ -596,19 +596,21 @@ describe('utils', () => {
 
   test('shouldScrubDomain', () => {
     let undefined_url = undefined;
-    let url_with_first = 'http://first.com/';
-    let url_with_second = 'http://test.second.io/';
-    let url_with_third = 'http://test.third.io/';
+    let secrets_manager_url = 'secretsmanager-test.amazonaws.com';
+    let google_url = 'http://google.com/';
+    let facebook_url = 'http://test.facebook.io/';
+    let instagram_url = 'http://test.instagram.io/';
 
     expect(shouldScrubDomain(undefined_url)).toEqual(false);
-    expect(shouldScrubDomain(url_with_first)).toEqual(false);
+    expect(shouldScrubDomain(secrets_manager_url)).toEqual(true); // checking default scrubbing configuration
+    expect(shouldScrubDomain(google_url)).toEqual(false);
 
-    process.env.LUMIGO_DOMAINS_SCRUBBER = ['["first"]'];
-    expect(shouldScrubDomain(url_with_first)).toEqual(true);
+    process.env.LUMIGO_DOMAINS_SCRUBBER = '["google"]';
+    expect(shouldScrubDomain(google_url)).toEqual(true);
 
-    process.env.LUMIGO_DOMAINS_SCRUBBER = ['["first", "second"]'];
-    expect(shouldScrubDomain(url_with_second)).toEqual(true);
-    expect(shouldScrubDomain(url_with_third)).toEqual(false);
+    process.env.LUMIGO_DOMAINS_SCRUBBER = '["google", "facebook"]';
+    expect(shouldScrubDomain(facebook_url)).toEqual(true);
+    expect(shouldScrubDomain(instagram_url)).toEqual(false);
   });
 
   test('omitKeys', () => {
