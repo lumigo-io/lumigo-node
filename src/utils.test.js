@@ -4,7 +4,7 @@ import EventEmitter from 'events';
 import https from 'https';
 import crypto from 'crypto';
 import { getJSONBase64Size, parseQueryParams, parseErrorObject } from './utils';
-import { omitKeys } from './utils';
+import { omitKeys, shouldScrubDomain } from './utils';
 import { MAX_ENTITY_SIZE } from './utils';
 
 jest.mock('https');
@@ -592,6 +592,25 @@ describe('utils', () => {
     expect(invalid).toEqual(undefined);
     expect(notFound).toEqual(undefined);
     expect(weirdInput).toEqual(undefined);
+  });
+
+  test('shouldScrubDomain', () => {
+    let undefined_url = undefined;
+    let secrets_manager_url = 'secretsmanager-test.amazonaws.com';
+    let google_url = 'http://google.com/';
+    let facebook_url = 'http://test.facebook.io/';
+    let instagram_url = 'http://test.instagram.io/';
+
+    expect(shouldScrubDomain(undefined_url)).toEqual(false);
+    expect(shouldScrubDomain(secrets_manager_url)).toEqual(true); // checking default scrubbing configuration
+    expect(shouldScrubDomain(google_url)).toEqual(false);
+
+    process.env.LUMIGO_DOMAINS_SCRUBBER = '["google"]';
+    expect(shouldScrubDomain(google_url)).toEqual(true);
+
+    process.env.LUMIGO_DOMAINS_SCRUBBER = '["google", "facebook"]';
+    expect(shouldScrubDomain(facebook_url)).toEqual(true);
+    expect(shouldScrubDomain(instagram_url)).toEqual(false);
   });
 
   test('omitKeys', () => {
