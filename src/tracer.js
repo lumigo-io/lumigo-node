@@ -67,12 +67,14 @@ export const startTimeoutTimer = () => {
     const { remainingTimeInMillis } = getContextInfo(context);
     if (TIMEOUT_BUFFER_MS < remainingTimeInMillis) {
       // eslint-disable-next-line no-undef
-      return setTimeout(async () => {
+      const timeoutTimer = setTimeout(async () => {
         logger.debug('The tracer reached the end of the timeout timer');
         const spans = SpansContainer.getSpans();
         await sendSpans(spans);
         SpansContainer.clearSpans();
       }, remainingTimeInMillis - TIMEOUT_BUFFER_MS);
+      timeoutTimer.unref();
+      return timeoutTimer;
     }
   }
   logger.debug('Skip setting timeout timer.');
