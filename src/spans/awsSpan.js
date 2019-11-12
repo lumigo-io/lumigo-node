@@ -192,10 +192,10 @@ export const getHttpInfo = (requestData, responseData) => {
     (response.host && shouldScrubDomain(response.host))
   ) {
     request.body = 'The data is not available';
-    delete request.headers;
-    delete request.uri;
     response.body = 'The data is not available';
+    delete request.headers;
     delete response.headers;
+    delete request.uri;
   } else {
     request.headers = stringifyAndPrune(omitKeys(request.headers));
     request.body = stringifyAndPrune(omitKeys(request.body));
