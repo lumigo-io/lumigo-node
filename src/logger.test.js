@@ -87,7 +87,22 @@ describe('logger', () => {
     expect(global.console.log).toHaveBeenCalledTimes(1);
     expect(global.console.log).toHaveBeenCalledWith(
       `#LUMIGO# - ${logLevel} - "${logMessage}"`,
-      `${logObject}`
+      logObject
+    );
+
+    global.console.log.mockClear();
+    global.console.log.mockImplementationOnce(() => {
+      throw new Error();
+    });
+
+    logger.log(logLevel, logMessage, logObject);
+    expect(global.console.log).toHaveBeenCalledTimes(2);
+    expect(global.console.log).toHaveBeenCalledWith(
+      `#LUMIGO# - ${logLevel} - "${logMessage}"`,
+      logObject
+    );
+    expect(global.console.log).toHaveBeenCalledWith(
+      `#LUMIGO# - ${logLevel} - "${logMessage}"`
     );
   });
 

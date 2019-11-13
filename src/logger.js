@@ -18,9 +18,13 @@ export const log = (levelname, message, obj) => {
   const escapedMessage = JSON.stringify(message, null, 2);
   const logMsg = `${LOG_PREFIX} - ${levelname} - ${escapedMessage}`;
   if (obj) {
-    const escapedObject = JSON.stringify(obj, null, 2);
-    // eslint-disable-next-line
-    console.log(logMsg, escapedObject);
+    try {
+      // eslint-disable-next-line
+      console.log(logMsg, obj);
+    } catch (e) {
+      // eslint-disable-next-line
+      console.log(logMsg);
+    }
   } else {
     // eslint-disable-next-line
     console.log(logMsg);
