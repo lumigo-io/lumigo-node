@@ -6,6 +6,7 @@ export const SPAN_PATH = '/api/spans';
 export const LUMIGO_TRACER_EDGE = 'lumigo-tracer-edge.golumigo.com';
 export const LUMIGO_DEFAULT_DOMAIN_SCRUBBERS =
   '["secretsmanager.*.amazonaws.com", "ssm.*.amazonaws.com", "kms.*.amazonaws.com"]';
+export const LUMIGO_REPORT_ERROR_STRING = '[LUMIGO_ERROR]';
 
 export const getContextInfo = context => {
   const remainingTimeInMillis = context.getRemainingTimeInMillis();

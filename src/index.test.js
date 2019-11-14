@@ -1,15 +1,26 @@
 /* eslint-disable */
 import * as tracer from './tracer';
 import * as utils from './utils';
+import { LUMIGO_REPORT_ERROR_STRING } from './utils';
 
 describe('index', () => {
   const spies = {};
   spies.trace = jest.spyOn(tracer, 'trace');
+  spies.log = jest.spyOn(console, 'log');
   spies.setSwitchOff = jest.spyOn(utils, 'setSwitchOff');
   spies.setVerboseMode = jest.spyOn(utils, 'setVerboseMode');
 
   beforeEach(() => {
     Object.keys(spies).map(x => spies[x].mockClear());
+  });
+
+  test('report error', () => {
+    const lumigo = require('./index')({});
+    let msg = 'oh no! - an error';
+    lumigo.report_error(msg);
+    expect(spies.log).toHaveBeenCalledWith(
+      `${LUMIGO_REPORT_ERROR_STRING} ${msg}`
+    );
   });
 
   test('init tracer', () => {
