@@ -363,8 +363,8 @@ export const omitKeys = obj => {
   }, {});
 };
 
-export const report_error = msg => {
-  let msg_with_initals = `${LUMIGO_REPORT_ERROR_STRING} ${msg}`;
+export const reportError = msg => {
+  let msgWithInitals = `${LUMIGO_REPORT_ERROR_STRING} ${msg}`;
   // eslint-disable-next-line no-console
-  console.log(msg_with_initals);
+  console.log(msgWithInitals);
 };

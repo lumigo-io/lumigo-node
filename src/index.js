@@ -1,5 +1,5 @@
 import { trace } from './tracer';
-import { setSwitchOff, setVerboseMode, report_error } from './utils';
+import { setSwitchOff, setVerboseMode, reportError } from './utils';
 import { debug } from './logger';
 
 debug('Tracer imported');
@@ -17,8 +17,8 @@ module.exports = function({
 
   return {
     trace: trace({ token, debug, edgeHost, switchOff, eventFilter }),
-    report_error: msg => {
-      report_error(msg);
+    reportError: msg => {
+      reportError(msg);
     },
   };
 };

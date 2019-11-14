@@ -17,7 +17,7 @@ describe('index', () => {
   test('report error', () => {
     const lumigo = require('./index')({});
     let msg = 'oh no! - an error';
-    lumigo.report_error(msg);
+    lumigo.reportError(msg);
     expect(spies.log).toHaveBeenCalledWith(
       `${LUMIGO_REPORT_ERROR_STRING} ${msg}`
     );
