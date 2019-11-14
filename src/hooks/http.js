@@ -226,7 +226,7 @@ export const httpRequestWrapper = originalRequestFn =>
       return clientRequest;
     } catch (err) {
       // eslint-disable-next-line
-      console.log(`##LUMIGO## hook error`, err);
+      logger.info('hook error', err);
       return originalRequestFn.apply(this, args);
     }
   };
