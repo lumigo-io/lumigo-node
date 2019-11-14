@@ -1,9 +1,5 @@
 import { trace } from './tracer';
-import {
-  setSwitchOff,
-  setVerboseMode,
-  LUMIGO_REPORT_ERROR_STRING,
-} from './utils';
+import { setSwitchOff, setVerboseMode, report_error } from './utils';
 import { debug } from './logger';
 
 debug('Tracer imported');
@@ -25,10 +21,4 @@ module.exports = function({
       report_error(msg);
     },
   };
-};
-
-const report_error = msg => {
-  let msg_with_initals = `${LUMIGO_REPORT_ERROR_STRING} ${msg}`;
-  // eslint-disable-next-line no-console
-  console.log(msg_with_initals);
 };
