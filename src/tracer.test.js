@@ -451,4 +451,19 @@ describe('tracer', () => {
 
     expect(startHooks).toHaveBeenCalledTimes(1);
   });
+
+  test('handler call the original function', async () => {
+    process.env.ORIGINAL_HANDLER_KEY = '';
+    expect(() => tracer.handler({}, {})).toThrow(Error);
+
+    process.env.ORIGINAL_HANDLER_KEY = 'not/Existing.handler';
+    expect(() => tracer.handler({}, {})).toThrow(Error);
+
+    tracer.bla = () => 1;
+    process.env.ORIGINAL_HANDLER_KEY =
+      './testdata/functions/example_handler.my_handler';
+    expect(tracer.handler({}, {})).resolves.toEqual({ hello: 'world' });
+
+    expect(startHooks).toHaveBeenCalledTimes(1);
+  });
 });
