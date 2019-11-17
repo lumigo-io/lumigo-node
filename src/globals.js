@@ -32,7 +32,7 @@ export const TracerGlobals = (() => {
     Object.assign(handlerInputs, { event: {}, context: {} });
 
   const setTracerInputs = ({
-    token = '',
+    token = process.env.LUMIGO_TRACER_TOKEN || '',
     debug = false,
     edgeHost = '',
     switchOff = false,

@@ -11,6 +11,19 @@ describe('globals', () => {
     expect(globals.SpansContainer.getSpans()).toEqual([]);
   });
 
+  test('setGlobals token', () => {
+    const token = 'fromParameters';
+    process.env.LUMIGO_TRACER_TOKEN = 'fromEnvs';
+
+    globals.TracerGlobals.setTracerInputs({ token });
+    expect(globals.TracerGlobals.getTracerInputs().token).toEqual(
+      'fromParameters'
+    );
+
+    globals.TracerGlobals.setTracerInputs({});
+    expect(globals.TracerGlobals.getTracerInputs().token).toEqual('fromEnvs');
+  });
+
   test('TracerGlobals', () => {
     const event = { a: 'b', c: 'd' };
     const context = { e: 'f', g: 'h' };
