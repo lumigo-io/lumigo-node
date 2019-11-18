@@ -37,6 +37,8 @@ describe('tracer', () => {
   spies.clearGlobals = jest.spyOn(globals, 'clearGlobals');
   spies.warnClient = jest.spyOn(logger, 'warnClient');
   spies.logFatal = jest.spyOn(logger, 'fatal');
+  spies.log = jest.spyOn(console, 'log');
+  spies.log.mockImplementation(() => {});
 
   beforeEach(() => {
     startHooks.mockClear();
@@ -158,13 +160,8 @@ describe('tracer', () => {
     spies.isSwitchedOff.mockReturnValueOnce(false);
     spies.isAwsEnvironment.mockReturnValueOnce(true);
 
-    const rtt = 1234;
-    spies.sendSpans.mockImplementationOnce(() => {});
-
-    const dummySpan = { x: 'y' };
     const functionSpan = { a: 'b', c: 'd' };
     const handlerReturnValue = { type: tracer.HANDLER_CALLBACKED };
-    const endFunctionSpan = { a: 'b', c: 'd', rtt };
 
     spies.getContextInfo.mockReturnValueOnce({
       callbackWaitsForEmptyEventLoop: true,
@@ -174,10 +171,6 @@ describe('tracer', () => {
       'callAfterEmptyEventLoop'
     );
     callAfterEmptyEventLoopSpy.mockReturnValueOnce(null);
-
-    const spans = [dummySpan, endFunctionSpan];
-    spies.SpansContainer.getSpans.mockReturnValueOnce(spans);
-    spies.getEndFunctionSpan.mockReturnValueOnce(endFunctionSpan);
 
     const result1 = await tracer.endTrace(functionSpan, handlerReturnValue);
     expect(result1).toEqual(undefined);
