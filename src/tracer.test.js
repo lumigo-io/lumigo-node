@@ -6,7 +6,6 @@ import * as reporter from './reporter';
 import * as awsSpan from './spans/awsSpan';
 import startHooks from './hooks';
 import * as logger from './logger';
-import { shouldSetTimeoutTimer } from './utils';
 import { TracerGlobals } from './globals';
 
 jest.mock('./hooks');
@@ -15,7 +14,6 @@ describe('tracer', () => {
   spies.isSwitchedOff = jest.spyOn(utils, 'isSwitchedOff');
   spies.isAwsEnvironment = jest.spyOn(utils, 'isAwsEnvironment');
   spies.isSendOnlyIfErrors = jest.spyOn(utils, 'isSendOnlyIfErrors');
-  spies.shouldSetTimeoutTimer = jest.spyOn(utils, 'shouldSetTimeoutTimer');
   spies.getContextInfo = jest.spyOn(utils, 'getContextInfo');
   spies.sendSingleSpan = jest.spyOn(reporter, 'sendSingleSpan');
   spies.sendSpans = jest.spyOn(reporter, 'sendSpans');
@@ -52,7 +50,6 @@ describe('tracer', () => {
 
     const rtt = 1234;
     spies.sendSingleSpan.mockReturnValueOnce({ rtt });
-    spies.shouldSetTimeoutTimer.mockReturnValueOnce(false);
 
     const functionSpan = { a: 'b', c: 'd' };
     spies.getFunctionSpan.mockReturnValueOnce(functionSpan);
@@ -219,27 +216,6 @@ describe('tracer', () => {
     const type = tracer.HANDLER_CALLBACKED;
     tracer.callbackResolver(resolve)(err, data);
     expect(resolve).toHaveBeenCalledWith({ err, data, type });
-  });
-
-  test('timeout does not activated in short functions', () => {
-    spies.shouldSetTimeoutTimer.mockReturnValueOnce(true);
-    spies.getContextInfo.mockReturnValueOnce({
-      remainingTimeInMillis: 100,
-    });
-    expect(tracer.startTimeoutTimer()).toEqual(null);
-  });
-
-  test('timeout sends http spans and clear the queue', async () => {
-    spies.shouldSetTimeoutTimer.mockReturnValueOnce(true);
-    spies.getContextInfo.mockReturnValueOnce({
-      remainingTimeInMillis: 3000,
-    });
-    const timeout = tracer.startTimeoutTimer();
-    expect(timeout._idleTimeout).toEqual(2500);
-    await timeout._onTimeout();
-    expect(spies.SpansContainer.getSpans).toHaveBeenCalled();
-    expect(spies.SpansContainer.clearSpans).toHaveBeenCalled();
-    clearTimeout(timeout);
   });
 
   test('promisifyUserHandler async ', async () => {

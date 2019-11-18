@@ -127,8 +127,6 @@ export const isSendOnlyIfErrors = () =>
     process.env.SEND_ONLY_IF_ERROR === 'TRUE'
   );
 
-export const shouldSetTimeoutTimer = () => false;
-
 export const isPruneTraceOff = () =>
   !!(
     process.env['LUMIGO_PRUNE_TRACE_OFF'] &&
@@ -253,11 +251,8 @@ export const removeLumigoFromStacktrace = handleReturnValue => {
   return { err, data, type };
 };
 
-export const httpsAgent = new https.Agent({ keepAlive: true });
-
 export const httpReq = (options = {}, reqBody) =>
   new Promise((resolve, reject) => {
-    options.agent = httpsAgent;
     const req = https.request(options, res => {
       const { statusCode } = res;
       let data = '';

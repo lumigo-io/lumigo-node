@@ -7,7 +7,6 @@ import {
   callAfterEmptyEventLoop,
   removeLumigoFromStacktrace,
   isSendOnlyIfErrors,
-  shouldSetTimeoutTimer,
 } from './utils';
 import {
   getFunctionSpan,
@@ -24,7 +23,6 @@ export const HANDLER_CALLBACKED = 'handler_callbacked';
 export const ASYNC_HANDLER_RESOLVED = 'async_handler_resolved';
 export const ASYNC_HANDLER_REJECTED = 'async_handler_rejected';
 export const NON_ASYNC_HANDLER_ERRORED = 'non_async_errored';
-const TIMEOUT_BUFFER_MS = 500;
 
 export const startTrace = async () => {
   try {
@@ -44,7 +42,6 @@ export const startTrace = async () => {
 
       if (!isSendOnlyIfErrors()) {
         const { rtt } = await sendSingleSpan(functionSpan);
-        TracerGlobals.timeoutTimer = startTimeoutTimer();
         return addRttToFunctionSpan(functionSpan, rtt);
       } else {
         logger.debug(
@@ -59,26 +56,6 @@ export const startTrace = async () => {
     logger.fatal('startTrace failure', err);
     return null;
   }
-};
-
-export const startTimeoutTimer = () => {
-  if (shouldSetTimeoutTimer()) {
-    const { context } = TracerGlobals.getHandlerInputs();
-    const { remainingTimeInMillis } = getContextInfo(context);
-    if (TIMEOUT_BUFFER_MS < remainingTimeInMillis) {
-      // eslint-disable-next-line no-undef
-      const timeoutTimer = setTimeout(async () => {
-        logger.debug('The tracer reached the end of the timeout timer');
-        const spans = SpansContainer.getSpans();
-        await sendSpans(spans);
-        SpansContainer.clearSpans();
-      }, remainingTimeInMillis - TIMEOUT_BUFFER_MS);
-      timeoutTimer.unref();
-      return timeoutTimer;
-    }
-  }
-  logger.debug('Skip setting timeout timer.');
-  return null;
 };
 
 export const sendEndTraceSpans = async (functionSpan, handlerReturnValue) => {
@@ -107,8 +84,6 @@ export const isCallbacked = handlerReturnValue => {
 export const endTrace = async (functionSpan, handlerReturnValue) => {
   try {
     if (functionSpan && !isSwitchedOff() && isAwsEnvironment()) {
-      // eslint-disable-next-line no-undef
-      TracerGlobals.timeoutTimer && clearTimeout(TracerGlobals.timeoutTimer);
       const { context } = TracerGlobals.getHandlerInputs();
       const { callbackWaitsForEmptyEventLoop } = getContextInfo(context);
 
