@@ -6,7 +6,6 @@ import * as reporter from './reporter';
 import * as awsSpan from './spans/awsSpan';
 import startHooks from './hooks';
 import * as logger from './logger';
-import { shouldSetTimeoutTimer } from './utils';
 import { TracerGlobals } from './globals';
 
 jest.mock('./hooks');
@@ -15,7 +14,6 @@ describe('tracer', () => {
   spies.isSwitchedOff = jest.spyOn(utils, 'isSwitchedOff');
   spies.isAwsEnvironment = jest.spyOn(utils, 'isAwsEnvironment');
   spies.isSendOnlyIfErrors = jest.spyOn(utils, 'isSendOnlyIfErrors');
-  spies.shouldSetTimeoutTimer = jest.spyOn(utils, 'shouldSetTimeoutTimer');
   spies.getContextInfo = jest.spyOn(utils, 'getContextInfo');
   spies.sendSingleSpan = jest.spyOn(reporter, 'sendSingleSpan');
   spies.sendSpans = jest.spyOn(reporter, 'sendSpans');
@@ -39,6 +37,8 @@ describe('tracer', () => {
   spies.clearGlobals = jest.spyOn(globals, 'clearGlobals');
   spies.warnClient = jest.spyOn(logger, 'warnClient');
   spies.logFatal = jest.spyOn(logger, 'fatal');
+  spies.log = jest.spyOn(console, 'log');
+  spies.log.mockImplementation(() => {});
 
   beforeEach(() => {
     startHooks.mockClear();
@@ -52,7 +52,6 @@ describe('tracer', () => {
 
     const rtt = 1234;
     spies.sendSingleSpan.mockReturnValueOnce({ rtt });
-    spies.shouldSetTimeoutTimer.mockReturnValueOnce(false);
 
     const functionSpan = { a: 'b', c: 'd' };
     spies.getFunctionSpan.mockReturnValueOnce(functionSpan);
@@ -110,18 +109,18 @@ describe('tracer', () => {
 
     const rtt = 1234;
     spies.sendSpans.mockImplementationOnce(() => {});
+    spies.getCurrentTransactionId.mockReturnValue('x');
 
-    const dummySpan = { x: 'y' };
-    const functionSpan = { a: 'b', c: 'd' };
+    const dummySpan = { x: 'y', transactionId: 'x' };
+    const functionSpan = { a: 'b', c: 'd', transactionId: 'x' };
     const handlerReturnValue = 'Satoshi was here1';
-    const endFunctionSpan = { a: 'b', c: 'd', rtt };
+    const endFunctionSpan = { a: 'b', c: 'd', rtt, transactionId: 'x' };
 
     spies.getContextInfo.mockReturnValueOnce({
       callbackWaitsForEmptyEventLoop: false,
     });
 
-    const spans = [dummySpan, endFunctionSpan];
-    spies.SpansContainer.getSpans.mockReturnValueOnce(spans);
+    spies.SpansContainer.getSpans.mockReturnValueOnce([dummySpan]);
     spies.getEndFunctionSpan.mockReturnValueOnce(endFunctionSpan);
 
     const result1 = await tracer.endTrace(functionSpan, handlerReturnValue);
@@ -133,7 +132,7 @@ describe('tracer', () => {
       functionSpan,
       handlerReturnValue
     );
-    expect(spies.sendSpans).toHaveBeenCalledWith(spans);
+    expect(spies.sendSpans).toHaveBeenCalledWith([dummySpan, endFunctionSpan]);
     expect(spies.clearGlobals).toHaveBeenCalled();
 
     spies.isAwsEnvironment.mockReturnValueOnce(false);
@@ -161,34 +160,16 @@ describe('tracer', () => {
     spies.isSwitchedOff.mockReturnValueOnce(false);
     spies.isAwsEnvironment.mockReturnValueOnce(true);
 
-    const rtt = 1234;
-    spies.sendSpans.mockImplementationOnce(() => {});
-
-    const dummySpan = { x: 'y' };
     const functionSpan = { a: 'b', c: 'd' };
     const handlerReturnValue = { type: tracer.HANDLER_CALLBACKED };
-    const endFunctionSpan = { a: 'b', c: 'd', rtt };
 
     spies.getContextInfo.mockReturnValueOnce({
       callbackWaitsForEmptyEventLoop: true,
     });
-    const callAfterEmptyEventLoopSpy = jest.spyOn(
-      utils,
-      'callAfterEmptyEventLoop'
-    );
-    callAfterEmptyEventLoopSpy.mockReturnValueOnce(null);
-
-    const spans = [dummySpan, endFunctionSpan];
-    spies.SpansContainer.getSpans.mockReturnValueOnce(spans);
-    spies.getEndFunctionSpan.mockReturnValueOnce(endFunctionSpan);
 
     const result1 = await tracer.endTrace(functionSpan, handlerReturnValue);
     expect(result1).toEqual(undefined);
 
-    expect(callAfterEmptyEventLoopSpy).toHaveBeenCalledWith(
-      tracer.sendEndTraceSpans,
-      [functionSpan, handlerReturnValue]
-    );
     expect(spies.isSwitchedOff).toHaveBeenCalled();
     expect(spies.isAwsEnvironment).toHaveBeenCalled();
 
@@ -219,27 +200,6 @@ describe('tracer', () => {
     const type = tracer.HANDLER_CALLBACKED;
     tracer.callbackResolver(resolve)(err, data);
     expect(resolve).toHaveBeenCalledWith({ err, data, type });
-  });
-
-  test('timeout does not activated in short functions', () => {
-    spies.shouldSetTimeoutTimer.mockReturnValueOnce(true);
-    spies.getContextInfo.mockReturnValueOnce({
-      remainingTimeInMillis: 100,
-    });
-    expect(tracer.startTimeoutTimer()).toEqual(null);
-  });
-
-  test('timeout sends http spans and clear the queue', async () => {
-    spies.shouldSetTimeoutTimer.mockReturnValueOnce(true);
-    spies.getContextInfo.mockReturnValueOnce({
-      remainingTimeInMillis: 3000,
-    });
-    const timeout = tracer.startTimeoutTimer();
-    expect(timeout._idleTimeout).toEqual(2500);
-    await timeout._onTimeout();
-    expect(spies.SpansContainer.getSpans).toHaveBeenCalled();
-    expect(spies.SpansContainer.clearSpans).toHaveBeenCalled();
-    clearTimeout(timeout);
   });
 
   test('promisifyUserHandler async ', async () => {
@@ -406,7 +366,7 @@ describe('tracer', () => {
 
   test('sendEndTraceSpans; dont clear globals in case of a leak', async () => {
     spies.sendSpans.mockImplementation(() => {});
-    spies.getEndFunctionSpan.mockReturnValue({ x: 'y' });
+    spies.getEndFunctionSpan.mockReturnValue({ x: 'y', transactionId: '123' });
     spies.getCurrentTransactionId.mockReturnValue('123');
 
     TracerGlobals.setTracerInputs({ token: '123' });
@@ -431,6 +391,5 @@ describe('tracer', () => {
       { err: null, data: null }
     );
     expect(spies.warnClient).toHaveBeenCalled();
-    expect(TracerGlobals.getTracerInputs().token).toEqual('123');
   });
 });
