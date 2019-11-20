@@ -1,10 +1,8 @@
 import {
   isPromise,
   isSwitchedOff,
-  getContextInfo,
   isAwsEnvironment,
   getEdgeUrl,
-  callAfterEmptyEventLoop,
   removeLumigoFromStacktrace,
   isSendOnlyIfErrors,
 } from './utils';
@@ -23,6 +21,8 @@ export const HANDLER_CALLBACKED = 'handler_callbacked';
 export const ASYNC_HANDLER_RESOLVED = 'async_handler_resolved';
 export const ASYNC_HANDLER_REJECTED = 'async_handler_rejected';
 export const NON_ASYNC_HANDLER_ERRORED = 'non_async_errored';
+export const LEAK_MESSAGE =
+  'Execution leak detected. More information is available in: https://docs.lumigo.io/docs/execution-leak-detected';
 
 export const startTrace = async () => {
   try {
@@ -60,20 +60,15 @@ export const startTrace = async () => {
 
 export const sendEndTraceSpans = async (functionSpan, handlerReturnValue) => {
   const endFunctionSpan = getEndFunctionSpan(functionSpan, handlerReturnValue);
-  SpansContainer.addSpan(endFunctionSpan);
-
-  const spans = SpansContainer.getSpans();
-  await sendSpans(spans);
-  logger.debug('Tracer ended');
+  const spans = [...SpansContainer.getSpans(), endFunctionSpan];
   const currentTransactionId = getCurrentTransactionId();
-  if (spans.some(s => s.transactionId !== currentTransactionId)) {
-    logger.warnClient(
-      'Execution leak detected. More information is available in: https://docs.lumigo.io/docs'
-    );
-    SpansContainer.clearSpans();
-  } else {
-    clearGlobals();
-  }
+  const spansToSend = spans.filter(
+    span => span.transactionId === currentTransactionId
+  );
+  await sendSpans(spansToSend);
+  spansToSend.length !== spans.length && logger.warnClient(LEAK_MESSAGE);
+  logger.debug('Tracer ended');
+  clearGlobals();
 };
 
 export const isCallbacked = handlerReturnValue => {
@@ -84,16 +79,7 @@ export const isCallbacked = handlerReturnValue => {
 export const endTrace = async (functionSpan, handlerReturnValue) => {
   try {
     if (functionSpan && !isSwitchedOff() && isAwsEnvironment()) {
-      const { context } = TracerGlobals.getHandlerInputs();
-      const { callbackWaitsForEmptyEventLoop } = getContextInfo(context);
-
-      if (isCallbacked(handlerReturnValue) && callbackWaitsForEmptyEventLoop) {
-        const fn = sendEndTraceSpans;
-        const args = [functionSpan, handlerReturnValue];
-        callAfterEmptyEventLoop(fn, args);
-      } else {
-        await sendEndTraceSpans(functionSpan, handlerReturnValue);
-      }
+      await sendEndTraceSpans(functionSpan, handlerReturnValue);
     }
   } catch (err) {
     logger.fatal('endTrace failure', err);

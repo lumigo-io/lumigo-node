@@ -302,9 +302,6 @@ export const getJSONBase64Size = obj => {
   return Math.ceil((Buffer.byteLength(JSON.stringify(obj), 'utf8') / 3) * 4);
 };
 
-export const callAfterEmptyEventLoop = (fn, args) =>
-  process.prependOnceListener('beforeExit', async () => await fn(...args));
-
 export const parseQueryParams = queryParams => {
   if (typeof queryParams !== 'string') return {};
   let obj = {};

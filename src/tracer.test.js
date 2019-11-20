@@ -109,18 +109,18 @@ describe('tracer', () => {
 
     const rtt = 1234;
     spies.sendSpans.mockImplementationOnce(() => {});
+    spies.getCurrentTransactionId.mockReturnValue('x');
 
-    const dummySpan = { x: 'y' };
-    const functionSpan = { a: 'b', c: 'd' };
+    const dummySpan = { x: 'y', transactionId: 'x' };
+    const functionSpan = { a: 'b', c: 'd', transactionId: 'x' };
     const handlerReturnValue = 'Satoshi was here1';
-    const endFunctionSpan = { a: 'b', c: 'd', rtt };
+    const endFunctionSpan = { a: 'b', c: 'd', rtt, transactionId: 'x' };
 
     spies.getContextInfo.mockReturnValueOnce({
       callbackWaitsForEmptyEventLoop: false,
     });
 
-    const spans = [dummySpan, endFunctionSpan];
-    spies.SpansContainer.getSpans.mockReturnValueOnce(spans);
+    spies.SpansContainer.getSpans.mockReturnValueOnce([dummySpan]);
     spies.getEndFunctionSpan.mockReturnValueOnce(endFunctionSpan);
 
     const result1 = await tracer.endTrace(functionSpan, handlerReturnValue);
@@ -132,7 +132,7 @@ describe('tracer', () => {
       functionSpan,
       handlerReturnValue
     );
-    expect(spies.sendSpans).toHaveBeenCalledWith(spans);
+    expect(spies.sendSpans).toHaveBeenCalledWith([dummySpan, endFunctionSpan]);
     expect(spies.clearGlobals).toHaveBeenCalled();
 
     spies.isAwsEnvironment.mockReturnValueOnce(false);
@@ -166,19 +166,10 @@ describe('tracer', () => {
     spies.getContextInfo.mockReturnValueOnce({
       callbackWaitsForEmptyEventLoop: true,
     });
-    const callAfterEmptyEventLoopSpy = jest.spyOn(
-      utils,
-      'callAfterEmptyEventLoop'
-    );
-    callAfterEmptyEventLoopSpy.mockReturnValueOnce(null);
 
     const result1 = await tracer.endTrace(functionSpan, handlerReturnValue);
     expect(result1).toEqual(undefined);
 
-    expect(callAfterEmptyEventLoopSpy).toHaveBeenCalledWith(
-      tracer.sendEndTraceSpans,
-      [functionSpan, handlerReturnValue]
-    );
     expect(spies.isSwitchedOff).toHaveBeenCalled();
     expect(spies.isAwsEnvironment).toHaveBeenCalled();
 
@@ -375,7 +366,7 @@ describe('tracer', () => {
 
   test('sendEndTraceSpans; dont clear globals in case of a leak', async () => {
     spies.sendSpans.mockImplementation(() => {});
-    spies.getEndFunctionSpan.mockReturnValue({ x: 'y' });
+    spies.getEndFunctionSpan.mockReturnValue({ x: 'y', transactionId: '123' });
     spies.getCurrentTransactionId.mockReturnValue('123');
 
     TracerGlobals.setTracerInputs({ token: '123' });
@@ -400,6 +391,5 @@ describe('tracer', () => {
       { err: null, data: null }
     );
     expect(spies.warnClient).toHaveBeenCalled();
-    expect(TracerGlobals.getTracerInputs().token).toEqual('123');
   });
 });
