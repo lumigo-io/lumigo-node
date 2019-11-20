@@ -37,6 +37,7 @@ describe('http hook', () => {
   spies.getEdgeHost = jest.spyOn(utils, 'getEdgeHost');
   spies.randomBytes = jest.spyOn(crypto, 'randomBytes');
   spies.log = jest.spyOn(console, 'log');
+  spies.log.mockImplementation(() => {});
 
   test('isBlacklisted', () => {
     const host = 'asdf';
