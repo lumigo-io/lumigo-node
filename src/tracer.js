@@ -62,12 +62,19 @@ export const sendEndTraceSpans = async (functionSpan, handlerReturnValue) => {
   const endFunctionSpan = getEndFunctionSpan(functionSpan, handlerReturnValue);
   const spans = [...SpansContainer.getSpans(), endFunctionSpan];
   const currentTransactionId = getCurrentTransactionId();
-  const spansToSend = spans.filter(
-    span => span.transactionId === currentTransactionId
-  );
+  const spansToSend = [];
+  const filteredSpans = [];
+  spans.forEach(span => {
+    span.transactionId === currentTransactionId
+      ? spansToSend.push(span)
+      : filteredSpans.push(span);
+  });
   await sendSpans(spansToSend);
   const hasSpansFromPreviousInvocation = spansToSend.length !== spans.length;
-  hasSpansFromPreviousInvocation && logger.warnClient(LEAK_MESSAGE);
+  if (hasSpansFromPreviousInvocation) {
+    logger.warnClient(LEAK_MESSAGE);
+    filteredSpans.forEach(span => logger.debug('Leaked span: ', span));
+  }
   logger.debug('Tracer ended');
   clearGlobals();
 };
