@@ -15,9 +15,7 @@ module.exports = function({
   verbose && setVerboseMode();
   switchOff && setSwitchOff();
 
-  return {
-    trace: trace({ token, debug, edgeHost, switchOff, eventFilter }),
-  };
+  return { trace: trace({ token, debug, edgeHost, switchOff, eventFilter }) };
 };
 
 module.exports.reportError = reportError;
