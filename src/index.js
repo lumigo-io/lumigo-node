@@ -17,8 +17,9 @@ module.exports = function({
 
   return {
     trace: trace({ token, debug, edgeHost, switchOff, eventFilter }),
-    reportError: msg => {
-      reportError(msg);
-    },
   };
+};
+
+module.exports.reportError = msg => {
+  reportError(msg);
 };

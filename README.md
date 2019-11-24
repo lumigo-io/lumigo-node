@@ -43,6 +43,7 @@ Note that if you do specify a domains list - the default list will be overridden
 
 
 ## Logging Programmatic Errors
-You can use `tracer.reportError("msg")` function to write logs which will be visible in the platform.
+You can use `reportError("msg")` function to write logs which will be visible in the platform.<br/>
+Add `const reporter = require('@lumigo/tracer');`.<br/>
 
-use `tracer.reportError("msg")` from anywhere in your lambda code.
+Then use `reporter.reportError(msg);` from anywhere in your lambda code.

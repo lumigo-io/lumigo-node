@@ -15,7 +15,7 @@ describe('index', () => {
   });
 
   test('report error', () => {
-    const lumigo = require('./index')({});
+    const lumigo = require('./index');
     let msg = 'oh no! - an error';
     lumigo.reportError(msg);
     expect(spies.log).toHaveBeenCalledWith(
@@ -33,7 +33,6 @@ describe('index', () => {
     const verbose = true;
 
     const lumigo1 = require('./index')({ token, edgeHost, verbose });
-    expect(lumigo1.trace).toEqual(retVal);
     expect(spies.trace).toHaveBeenCalledWith({
       debug,
       token,
