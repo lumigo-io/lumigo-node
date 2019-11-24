@@ -2,11 +2,13 @@
 import * as tracer from './tracer';
 import * as utils from './utils';
 import { LUMIGO_REPORT_ERROR_STRING } from './utils';
+import * as logger from './logger';
 
 describe('index', () => {
   const spies = {};
   spies.trace = jest.spyOn(tracer, 'trace');
   spies.log = jest.spyOn(console, 'log');
+  spies.debug = jest.spyOn(logger, 'debug');
   spies.setSwitchOff = jest.spyOn(utils, 'setSwitchOff');
   spies.setVerboseMode = jest.spyOn(utils, 'setVerboseMode');
 
