@@ -18,4 +18,5 @@ module.exports = function({
   return { trace: trace({ token, debug, edgeHost, switchOff, eventFilter }) };
 };
 
-module.exports.reportError = reportError;
+// eslint-disable-next-line no-undef
+global.lumigoReportError = reportError;
