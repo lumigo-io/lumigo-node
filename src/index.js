@@ -20,6 +20,4 @@ module.exports = function({
   };
 };
 
-module.exports.reportError = msg => {
-  reportError(msg);
-};
+module.exports.reportError = reportError;

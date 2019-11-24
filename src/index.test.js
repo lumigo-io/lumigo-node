@@ -15,12 +15,14 @@ describe('index', () => {
   });
 
   test('report error', () => {
-    const reportError = require('./index').reportError;
+    const { reportError } = require('./index');
     let msg = 'oh no! - an error';
     reportError(msg);
-    expect(spies.log).toHaveBeenCalledWith(
-      `${LUMIGO_REPORT_ERROR_STRING} ${msg}`
-    );
+    expect(spies.log).toHaveBeenCalledWith(LUMIGO_REPORT_ERROR_STRING, msg);
+
+    let obj_msg = {};
+    reportError(obj_msg);
+    expect(spies.log).toHaveBeenCalledWith(LUMIGO_REPORT_ERROR_STRING, obj_msg);
   });
 
   test('init tracer', () => {
