@@ -355,4 +355,3 @@ export const reportError = msg => {
   // eslint-disable-next-line no-console
   console.log(LUMIGO_REPORT_ERROR_STRING, msg);
 };
-git 
