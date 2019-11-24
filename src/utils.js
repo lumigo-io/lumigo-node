@@ -358,6 +358,6 @@ export const reportError = msg => {
     console.log(LUMIGO_REPORT_ERROR_STRING, msg);
   } catch {
     // not printing the msg
-    logger.debug('failed to print using reportError', { msg });
+    // logger.debug('failed to print using reportError', { msg });
   }
 };
