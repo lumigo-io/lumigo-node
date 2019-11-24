@@ -25,6 +25,17 @@ describe('index', () => {
     let obj_msg = {};
     reportError(obj_msg);
     expect(spies.log).toHaveBeenCalledWith(LUMIGO_REPORT_ERROR_STRING, obj_msg);
+
+    let throws_msg = {};
+    const spy = jest.spyOn(console, 'log').mockImplementation(() => {
+      throw new Error();
+    });
+    reportError(throws_msg);
+    spy.mockRestore();
+    expect(logger.debug).toHaveBeenCalledWith(
+      'failed to print using reportError',
+      { msg: {} }
+    );
   });
 
   test('init tracer', () => {
