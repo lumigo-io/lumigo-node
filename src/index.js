@@ -18,7 +18,6 @@ module.exports = function({
   switchOff && setSwitchOff();
 
   return {
-    trace: trace({ token, debug, edgeHost, switchOff, eventFilter }),
-    reportError: reportError,
+    trace: trace({ token, debug, edgeHost, switchOff, eventFilter })
   };
 };
