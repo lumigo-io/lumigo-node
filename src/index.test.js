@@ -22,6 +22,7 @@ describe('index', () => {
     const verbose = true;
 
     const lumigo1 = require('./index')({ token, edgeHost, verbose });
+    expect(lumigo1.trace).toEqual(retVal);
     expect(spies.trace).toHaveBeenCalledWith({
       debug,
       token,
