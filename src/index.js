@@ -12,17 +12,13 @@ module.exports = function({
   verbose = false,
   switchOff = false,
 }) {
-  if (token === 'not-good') {
-    return {
-      reportError: reportError,
-    };
-  } else {
-    verbose && setVerboseMode();
-    switchOff && setSwitchOff();
+  // eslint-disable-next-line no-undef
+  global.reportError = reportError;
+  verbose && setVerboseMode();
+  switchOff && setSwitchOff();
 
-    return {
-      trace: trace({ token, debug, edgeHost, switchOff, eventFilter }),
-      reportError: reportError,
-    };
-  }
+  return {
+    trace: trace({ token, debug, edgeHost, switchOff, eventFilter }),
+    reportError: reportError,
+  };
 };

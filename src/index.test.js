@@ -16,35 +16,24 @@ describe('index', () => {
     Object.keys(spies).map(x => spies[x].mockClear());
   });
 
-  test('checks second require returns only report error', () => {
-    const token = 'DEADBEEF';
-    const edgeHost = 'zarathustra.com';
-    const verbose = true;
-    const lumigo1 = require('./index')({ token, edgeHost, verbose });
-    const lumigo2 = require('./index')({});
-
-    expect(Object.keys(lumigo1)).toEqual(['trace', 'reportError']);
-    expect(Object.keys(lumigo2)).toEqual(['reportError']);
-  });
-
   test('report error', () => {
     const token = 'DEADBEEF';
     const edgeHost = 'zarathustra.com';
     const verbose = true;
-    const lumigo = require('./index')({ token, edgeHost, verbose });
+    require('./index')({ token, edgeHost, verbose });
     let msg = 'oh no! - an error';
-    lumigo.reportError(msg);
+    reportError(msg);
     expect(spies.log).toHaveBeenCalledWith(LUMIGO_REPORT_ERROR_STRING, msg);
 
     let obj_msg = {};
-    lumigo.reportError(obj_msg);
+    reportError(obj_msg);
     expect(spies.log).toHaveBeenCalledWith(LUMIGO_REPORT_ERROR_STRING, obj_msg);
 
     let throws_msg = {};
     const spy = jest.spyOn(console, 'log').mockImplementation(() => {
       throw new Error();
     });
-    lumigo.reportError(throws_msg);
+    reportError(throws_msg);
     spy.mockRestore();
     expect(spies.debug).toHaveBeenCalledWith(
       'failed to print using reportError',
