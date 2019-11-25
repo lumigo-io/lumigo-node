@@ -1,5 +1,9 @@
 import { trace } from './tracer';
-import { setSwitchOff, setVerboseMode, reportError } from './utils';
+import {
+  setSwitchOff,
+  setVerboseMode,
+  LUMIGO_REPORT_ERROR_STRING,
+} from './utils';
 import { debug } from './logger';
 
 debug('Tracer imported');
@@ -19,4 +23,12 @@ module.exports = function({
 };
 
 // eslint-disable-next-line no-undef
-global.lumigoReportError = reportError;
+global.lumigoReportError = function(msg) {
+  try {
+    // eslint-disable-next-line no-console
+    console.log(LUMIGO_REPORT_ERROR_STRING, msg);
+  } catch {
+    // not printing the msg
+    debug('failed to print using reportError', { msg });
+  }
+};

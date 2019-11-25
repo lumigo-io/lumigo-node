@@ -1,7 +1,6 @@
 import { TracerGlobals } from './globals';
 import https from 'https';
 import crypto from 'crypto';
-import * as logger from './logger';
 
 export const SPAN_PATH = '/api/spans';
 export const LUMIGO_TRACER_EDGE = 'lumigo-tracer-edge.golumigo.com';
@@ -350,14 +349,4 @@ export const omitKeys = obj => {
     newObj[key] = shouldOmitKey ? '****' : value;
     return newObj;
   }, {});
-};
-
-export const reportError = msg => {
-  try {
-    // eslint-disable-next-line no-console
-    console.log(LUMIGO_REPORT_ERROR_STRING, msg);
-  } catch {
-    // not printing the msg
-    logger.debug('failed to print using reportError', { msg });
-  }
 };
