@@ -43,6 +43,4 @@ Note that if you do specify a domains list - the default list will be overridden
 
 
 ## Logging Programmatic Errors
-You can use `lumigoReportError("msg")` function to write logs which will be visible in the platform.<br/>
-
-Simple use `lumigoReportError(msg);` from anywhere in your lambda code.
+In order to log custom errors which will be visible in the platform, you can use `console.log("[LUMIGO_LOG] <YOUR_MESSAGE>");` from anywhere in your lambda code.
