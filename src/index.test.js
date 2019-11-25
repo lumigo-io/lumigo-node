@@ -8,12 +8,23 @@ describe('index', () => {
   const spies = {};
   spies.trace = jest.spyOn(tracer, 'trace');
   spies.log = jest.spyOn(console, 'log');
-  spies.debug = jest.spyOn(console, 'debug');
+  spies.debug = jest.spyOn(logger, 'debug');
   spies.setSwitchOff = jest.spyOn(utils, 'setSwitchOff');
   spies.setVerboseMode = jest.spyOn(utils, 'setVerboseMode');
 
   beforeEach(() => {
     Object.keys(spies).map(x => spies[x].mockClear());
+  });
+
+  test('checks second require returns only report error', () => {
+    const token = 'DEADBEEF';
+    const edgeHost = 'zarathustra.com';
+    const verbose = true;
+    const lumigo1 = require('./index')({ token, edgeHost, verbose });
+    const lumigo2 = require('./index')({});
+
+    expect(Object.keys(lumigo1)).toEqual(['trace', 'reportError']);
+    expect(Object.keys(lumigo2)).toEqual(['reportError']);
   });
 
   test('report error', () => {

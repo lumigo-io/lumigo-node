@@ -1,39 +1,28 @@
 import { trace } from './tracer';
-import {
-  setSwitchOff,
-  setVerboseMode,
-  LUMIGO_REPORT_ERROR_STRING,
-} from './utils';
+import { setSwitchOff, setVerboseMode, reportError } from './utils';
 import { debug } from './logger';
 
 debug('Tracer imported');
 
 module.exports = function({
-  token,
+  token = 'not-good',
   debug = false,
   edgeHost = '',
   eventFilter = {},
   verbose = false,
   switchOff = false,
 }) {
-  verbose && setVerboseMode();
-  switchOff && setSwitchOff();
+  if (token === 'not-good') {
+    return {
+      reportError: reportError,
+    };
+  } else {
+    verbose && setVerboseMode();
+    switchOff && setSwitchOff();
 
-  // eslint-disable-next-line no-undef
-  global.lumigoReportError = function(msg) {
-    try {
-      // eslint-disable-next-line no-console
-      console.log(LUMIGO_REPORT_ERROR_STRING, msg);
-    } catch {
-      // not printing the msg
-      // eslint-disable-next-line no-console
-      console.debug('failed to print using reportError', { msg });
-    }
-  };
-
-  return {
-    trace: trace({ token, debug, edgeHost, switchOff, eventFilter }),
-    // eslint-disable-next-line no-undef
-    reportError: global.lumigoReportError,
-  };
+    return {
+      trace: trace({ token, debug, edgeHost, switchOff, eventFilter }),
+      reportError: reportError,
+    };
+  }
 };
