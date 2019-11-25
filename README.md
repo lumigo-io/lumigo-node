@@ -40,3 +40,7 @@ exports.handler = lumigo.trace(myHandler)
 * Similarly, you can prevent lumigo from sending the entire headers and body of specific domains using the environment variable LUMIGO_DOMAINS_SCRUBBER=[".*secret.*"] (give it a list which is a json parsable). By default, we will use ["secretsmanager\..*\.amazonaws\.com", "ssm\..*\.amazonaws\.com", "kms\..*\.amazonaws\.com"].
 Note that if you do specify a domains list - the default list will be overridden.
 * In case of need, there is a kill switch, that stops all the interventions of lumigo immediately, without changing the code. Simply add an environment variable `LUMIGO_SWITCH_OFF=TRUE`.
+
+
+## Logging Programmatic Errors
+In order to log custom errors which will be visible in the platform, you can use `console.log("[LUMIGO_LOG] <YOUR_MESSAGE>");` from anywhere in your lambda code.
