@@ -36,9 +36,11 @@ echo "Creating lumigo-node layer"
 
 echo "Creating layer latest version arn table md file (LAYERS.md)"
 cd ../larn && npm i -g
-larn -r nodejs10.x --filter lumigo-node-tracer -p ~/lumigo-node
+larn -r nodejs10.x -n layers/LAYERS10x --filter lumigo-node-tracer -p ~/lumigo-node
+larn -r nodejs8.10 -n layers/LAYERS810 --filter lumigo-node-tracer -p ~/lumigo-node
 cd ../lumigo-node
-git add LAYERS.md
+git add layers/LAYERS10x.md
+git add layers/LAYERS810.md
 git commit -m "feat(layers-table): layers md"
 
 echo "Push to NPM"
