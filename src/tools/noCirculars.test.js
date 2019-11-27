@@ -68,5 +68,13 @@ describe('noCirculars', function() {
 
       expect(o).toEqual(t);
     });
+
+    it('object with array', function() {
+      let t = { a: [1, 2] };
+
+      let o = noCirculars(t);
+
+      expect(o).toEqual(t);
+    });
   });
 });
