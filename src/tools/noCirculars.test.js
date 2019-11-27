@@ -70,11 +70,21 @@ describe('noCirculars', function() {
     });
 
     it('object with array', function() {
-      let t = { a: [1, 2] };
+      const dummy = {};
+      const circular = { dummy };
+      dummy['circular'] = circular;
 
-      let o = noCirculars(t);
-
-      expect(o).toEqual(t);
+      let t = { a: [circular, 2] };
+      expect(noCirculars(t)).toEqual({
+        a: [
+          {
+            dummy: {
+              circular: '[Circular]',
+            },
+          },
+          2,
+        ],
+      });
     });
   });
 });
