@@ -34,7 +34,7 @@ export const TracerGlobals = (() => {
   const setTracerInputs = ({
     token = process.env.LUMIGO_TRACER_TOKEN || '',
     debug = false,
-    edgeHost = '',
+    edgeHost = process.env.LUMIGO_TRACER_HOST || '',
     switchOff = false,
   }) => Object.assign(tracerInputs, { token, debug, edgeHost, switchOff });
 
