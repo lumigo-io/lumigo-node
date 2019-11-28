@@ -654,6 +654,13 @@ describe('utils', () => {
       { hello: 'world' },
     ]);
 
+    const dummy = {};
+    const circularObject = { dummy };
+    dummy['circularObject'] = circularObject;
+    expect(omitKeys(circularObject)).toEqual({
+      dummy: { circularObject: '[Circular]' },
+    });
+
     const nullObject = null;
     expect(omitKeys(nullObject)).toEqual(null);
   });

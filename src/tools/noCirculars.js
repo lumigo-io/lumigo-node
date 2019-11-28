@@ -8,7 +8,7 @@ function fromEntries(iterable) {
 const noCirculars = v => {
   const set = new Set();
   const noCirculars = v => {
-    if (Array.isArray(noCirculars)) return v.map(noCirculars);
+    if (Array.isArray(v)) return v.map(noCirculars);
     if (typeof v === 'object' && v !== null) {
       if (set.has(v)) return '[Circular]';
       set.add(v);

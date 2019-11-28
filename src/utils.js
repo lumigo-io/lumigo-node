@@ -1,6 +1,7 @@
 import { TracerGlobals } from './globals';
 import https from 'https';
 import crypto from 'crypto';
+import { noCirculars } from './tools/noCirculars';
 
 export const SPAN_PATH = '/api/spans';
 export const LUMIGO_TRACER_EDGE = 'lumigo-tracer-edge.golumigo.com';
@@ -341,6 +342,7 @@ export const omitKeys = obj => {
   if (!obj || typeof obj !== 'object') {
     return obj;
   }
+  obj = noCirculars(obj);
   const regexes = keyToOmitRegexes();
   return Object.keys(obj).reduce((newObj, key) => {
     let value = omitKeys(obj[key]);
