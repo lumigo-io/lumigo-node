@@ -24,7 +24,6 @@ export const HANDLER_CALLBACKED = 'handler_callbacked';
 export const ASYNC_HANDLER_RESOLVED = 'async_handler_resolved';
 export const ASYNC_HANDLER_REJECTED = 'async_handler_rejected';
 export const NON_ASYNC_HANDLER_ERRORED = 'non_async_errored';
-export const ORIGINAL_HANDLER_KEY = 'LUMIGO_ORIGINAL_HANDLER';
 const TIMEOUT_BUFFER_MS = 500;
 
 export const startTrace = async () => {
@@ -204,23 +203,3 @@ export const trace = ({
   }
 };
 
-export const handler = (event, context, callback) => {
-  const originalHandler = process.env[ORIGINAL_HANDLER_KEY];
-  if (!originalHandler) {
-    throw Error(
-      'Could not load the original handler. Are you sure that the handler is correct?'
-    );
-  }
-  const handlerParts = originalHandler.split('.');
-  const moduleName = handlerParts.slice(0, -1).join('.');
-  const functionName = handlerParts.slice(-1);
-  let module;
-  try {
-    module = require(moduleName);
-  } catch (e) {
-    throw Error(
-      "Could not find the original handler. Please follow lumigo's docs: https://docs.lumigo.io/"
-    );
-  }
-  return trace({})(module[functionName])(event, context, callback);
-};
