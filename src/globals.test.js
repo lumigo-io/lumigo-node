@@ -24,6 +24,21 @@ describe('globals', () => {
     expect(globals.TracerGlobals.getTracerInputs().token).toEqual('fromEnvs');
   });
 
+  test('setGlobals edgeHost', () => {
+    const edgeHost = 'fromParameters';
+    process.env.LUMIGO_TRACER_HOST = 'fromEnvs';
+
+    globals.TracerGlobals.setTracerInputs({ edgeHost });
+    expect(globals.TracerGlobals.getTracerInputs().edgeHost).toEqual(
+      'fromParameters'
+    );
+
+    globals.TracerGlobals.setTracerInputs({});
+    expect(globals.TracerGlobals.getTracerInputs().edgeHost).toEqual(
+      'fromEnvs'
+    );
+  });
+
   test('TracerGlobals', () => {
     const event = { a: 'b', c: 'd' };
     const context = { e: 'f', g: 'h' };
