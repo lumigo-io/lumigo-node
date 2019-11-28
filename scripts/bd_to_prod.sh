@@ -41,7 +41,7 @@ larn -r nodejs8.10 -n layers/LAYERS810 --filter lumigo-node-tracer -p ~/lumigo-n
 cd ../lumigo-node
 git add layers/LAYERS10x.md
 git add layers/LAYERS810.md
-git commit -m "feat(layers-table): layers md"
+git commit -m "docs: layers md"
 
 echo "Push to NPM"
 echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
