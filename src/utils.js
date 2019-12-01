@@ -1,6 +1,7 @@
 import { TracerGlobals } from './globals';
 import https from 'https';
 import crypto from 'crypto';
+import { noCirculars } from './tools/noCirculars';
 
 export const SPAN_PATH = '/api/spans';
 export const LUMIGO_TRACER_EDGE = 'lumigo-tracer-edge.golumigo.com';
@@ -127,8 +128,6 @@ export const isSendOnlyIfErrors = () =>
     process.env.SEND_ONLY_IF_ERROR === 'TRUE'
   );
 
-export const shouldSetTimeoutTimer = () => false;
-
 export const isPruneTraceOff = () =>
   !!(
     process.env['LUMIGO_PRUNE_TRACE_OFF'] &&
@@ -253,11 +252,8 @@ export const removeLumigoFromStacktrace = handleReturnValue => {
   return { err, data, type };
 };
 
-export const httpsAgent = new https.Agent({ keepAlive: true });
-
 export const httpReq = (options = {}, reqBody) =>
   new Promise((resolve, reject) => {
-    options.agent = httpsAgent;
     const req = https.request(options, res => {
       const { statusCode } = res;
       let data = '';
@@ -307,9 +303,6 @@ export const getJSONBase64Size = obj => {
   return Math.ceil((Buffer.byteLength(JSON.stringify(obj), 'utf8') / 3) * 4);
 };
 
-export const callAfterEmptyEventLoop = (fn, args) =>
-  process.prependOnceListener('beforeExit', async () => await fn(...args));
-
 export const parseQueryParams = queryParams => {
   if (typeof queryParams !== 'string') return {};
   let obj = {};
@@ -349,6 +342,7 @@ export const omitKeys = obj => {
   if (!obj || typeof obj !== 'object') {
     return obj;
   }
+  obj = noCirculars(obj);
   const regexes = keyToOmitRegexes();
   return Object.keys(obj).reduce((newObj, key) => {
     let value = omitKeys(obj[key]);

@@ -68,5 +68,23 @@ describe('noCirculars', function() {
 
       expect(o).toEqual(t);
     });
+
+    it('object with array', function() {
+      const dummy = {};
+      const circular = { dummy };
+      dummy['circular'] = circular;
+
+      let t = { a: [circular, 2] };
+      expect(noCirculars(t)).toEqual({
+        a: [
+          {
+            dummy: {
+              circular: '[Circular]',
+            },
+          },
+          2,
+        ],
+      });
+    });
   });
 });

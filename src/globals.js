@@ -21,7 +21,6 @@ export const TracerGlobals = (() => {
     edgeHost: '',
     switchOff: false,
   };
-  let timeoutTimer = undefined;
 
   const setHandlerInputs = ({ event, context }) =>
     Object.assign(handlerInputs, { event, context });
@@ -49,7 +48,6 @@ export const TracerGlobals = (() => {
     });
 
   return {
-    timeoutTimer,
     getTracerInputs,
     setTracerInputs,
     setHandlerInputs,
