@@ -185,15 +185,14 @@ export const isAlreadyTraced = callback =>
 export const httpRequestWrapper = originalRequestFn =>
   function(...args) {
     const { url, options, callback } = httpRequestArguments(args);
-    const fixedOptions = noCirculars(options);
-    const host = getHostFromOptionsOrUrl(fixedOptions, url);
+    const host = getHostFromOptionsOrUrl(options, url);
 
     if (isBlacklisted(host) || isAlreadyTraced(callback)) {
       return originalRequestFn.apply(this, args);
     }
 
     try {
-      const headers = fixedOptions.headers;
+      const headers = options.headers;
       logger.debug('Starting hook', { host, url, headers });
       // XXX Create a pure function - something like: 'patchOptionsForAWSService'
       // return the patched options
@@ -201,10 +200,9 @@ export const httpRequestWrapper = originalRequestFn =>
         const { awsXAmznTraceId } = getAWSEnvironment();
         const traceId = getPatchedTraceId(awsXAmznTraceId);
         options.headers['X-Amzn-Trace-Id'] = traceId;
-        fixedOptions.headers['X-Amzn-Trace-Id'] = traceId;
       }
 
-      const requestData = parseHttpRequestOptions(fixedOptions, url);
+      const requestData = parseHttpRequestOptions(options, url);
 
       const hookedClientRequestArgs = getHookedClientRequestArgs(
         url,
