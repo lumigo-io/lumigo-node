@@ -133,10 +133,10 @@ export const trace = ({
     eventFilter,
   });
 
-  if (context.wrapped_by_lumigo) {
+  if (context.__wrappedByLumigo) {
     return userHandler(event, context, callback);
   }
-  context.wrapped_by_lumigo = true;
+  context.__wrappedByLumigo = true;
 
   startHooks();
 

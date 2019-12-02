@@ -398,16 +398,18 @@ describe('tracer', () => {
     const context = { e: 'f', g: 'h' };
     const token = 'DEADBEEF';
 
-    const userHandler = async (event, context, callback) => {
-      return 1;
-    };
-    await expect(
-      tracer.trace({ token })(tracer.trace({ token })(userHandler))(
-        event,
-        context
-      )
-    ).resolves.toEqual(1);
+    const userHandlerAsync = async (event, context, callback) => 1;
+    const result = tracer.trace({ token })(
+      tracer.trace({ token })(userHandlerAsync)
+    )(event, context);
+    await expect(result).resolves.toEqual(1);
+    expect(startHooks).toHaveBeenCalledTimes(1);
 
+    const userHandlerSync = (event, context, callback) => 2;
+    const result2 = tracer.trace({ token })(
+      tracer.trace({ token })(userHandlerSync)
+    )(event, context);
+    await expect(result2).resolves.toEqual(2);
     expect(startHooks).toHaveBeenCalledTimes(1);
   });
 });

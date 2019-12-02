@@ -24,6 +24,58 @@ describe('globals', () => {
     expect(globals.TracerGlobals.getTracerInputs().token).toEqual('fromEnvs');
   });
 
+  test('setGlobals debug', () => {
+    process.env.LUMIGO_DEBUG = 'TRUE';
+    globals.TracerGlobals.setTracerInputs({ debug: true });
+    expect(globals.TracerGlobals.getTracerInputs().debug).toEqual(true);
+
+    process.env.LUMIGO_DEBUG = 'TRUE';
+    globals.TracerGlobals.setTracerInputs({ debug: false });
+    expect(globals.TracerGlobals.getTracerInputs().debug).toEqual(true);
+
+    process.env.LUMIGO_DEBUG = 'TRUE';
+    globals.TracerGlobals.setTracerInputs({});
+    expect(globals.TracerGlobals.getTracerInputs().debug).toEqual(true);
+
+    process.env.LUMIGO_DEBUG = '';
+    globals.TracerGlobals.setTracerInputs({ debug: true });
+    expect(globals.TracerGlobals.getTracerInputs().debug).toEqual(true);
+
+    process.env.LUMIGO_DEBUG = '';
+    globals.TracerGlobals.setTracerInputs({ debug: false });
+    expect(globals.TracerGlobals.getTracerInputs().debug).toEqual(false);
+
+    process.env.LUMIGO_DEBUG = '';
+    globals.TracerGlobals.setTracerInputs({});
+    expect(globals.TracerGlobals.getTracerInputs().debug).toEqual(false);
+  });
+
+  test('setGlobals switchOff', () => {
+    process.env.LUMIGO_SWITCH_OFF = 'TRUE';
+    globals.TracerGlobals.setTracerInputs({ switchOff: true });
+    expect(globals.TracerGlobals.getTracerInputs().switchOff).toEqual(true);
+
+    process.env.LUMIGO_SWITCH_OFF = 'TRUE';
+    globals.TracerGlobals.setTracerInputs({ switchOff: false });
+    expect(globals.TracerGlobals.getTracerInputs().switchOff).toEqual(true);
+
+    process.env.LUMIGO_SWITCH_OFF = 'TRUE';
+    globals.TracerGlobals.setTracerInputs({});
+    expect(globals.TracerGlobals.getTracerInputs().switchOff).toEqual(true);
+
+    process.env.LUMIGO_SWITCH_OFF = '';
+    globals.TracerGlobals.setTracerInputs({ switchOff: true });
+    expect(globals.TracerGlobals.getTracerInputs().switchOff).toEqual(true);
+
+    process.env.LUMIGO_SWITCH_OFF = '';
+    globals.TracerGlobals.setTracerInputs({ switchOff: false });
+    expect(globals.TracerGlobals.getTracerInputs().switchOff).toEqual(false);
+
+    process.env.LUMIGO_SWITCH_OFF = '';
+    globals.TracerGlobals.setTracerInputs({});
+    expect(globals.TracerGlobals.getTracerInputs().switchOff).toEqual(false);
+  });
+
   test('setGlobals edgeHost', () => {
     const edgeHost = 'fromParameters';
     process.env.LUMIGO_TRACER_HOST = 'fromEnvs';

@@ -1,5 +1,5 @@
 {
-  "name": "lumigo_auto_instrument",
+  "name": "lumigo-auto-instrument",
   "version": "1.0.0",
   "description": "Lumigo's special handler for auto-wrapping",
   "main": "index.js",

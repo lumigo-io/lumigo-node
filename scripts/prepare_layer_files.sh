@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-pushd auto_instrument_handler
+pushd auto-instrument-handler
 auto_inst="$(npm pack)"
 popd
 mkdir -p nodejs

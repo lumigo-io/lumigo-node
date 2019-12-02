@@ -56,7 +56,7 @@ jobs:
           command: npm install
       - run:
           name: install-npm-inner
-          command: cd auto_instrument_handler; npm install
+          command: pushd auto-instrument-handler; npm install; popd
       - save_cache:
           key: dependency-cache-{{ checksum "package.json" }}
           paths:
