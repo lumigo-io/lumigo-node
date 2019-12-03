@@ -395,21 +395,30 @@ describe('tracer', () => {
 
   test('can not wrap twice', async () => {
     const event = { a: 'b', c: 'd' };
-    const context = { e: 'f', g: 'h' };
     const token = 'DEADBEEF';
 
     const userHandlerAsync = async (event, context, callback) => 1;
     const result = tracer.trace({ token })(
       tracer.trace({ token })(userHandlerAsync)
-    )(event, context);
+    )(event, {});
     await expect(result).resolves.toEqual(1);
     expect(startHooks).toHaveBeenCalledTimes(1);
 
-    const userHandlerSync = (event, context, callback) => 2;
+
+    let callBackCalled = false;
+    const callback = (err, val) => {
+      expect(val).toEqual(2);
+      callBackCalled = true;
+    };
+    const userHandlerSync = (event, context, callback) => {
+      setTimeout(() => {
+        callback(null, 2);
+      },0);
+    };
     const result2 = tracer.trace({ token })(
       tracer.trace({ token })(userHandlerSync)
-    )(event, context);
-    await expect(result2).resolves.toEqual(2);
-    expect(startHooks).toHaveBeenCalledTimes(1);
+    )(event, {}, callback);
+    await expect(result2).resolves.toEqual(undefined);
+    expect(callBackCalled).toEqual(true);
   });
 });
