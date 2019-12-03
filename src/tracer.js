@@ -147,7 +147,12 @@ export const trace = ({
   });
 
   if (context.__wrappedByLumigo) {
-    const { err, data, type } = await promisifyUserHandler(userHandler, event, context, callback);
+    const { err, data, type } = await promisifyUserHandler(
+      userHandler,
+      event,
+      context,
+      callback
+    );
     return performPromisifyType(err, data, type, callback);
   }
   context.__wrappedByLumigo = true;

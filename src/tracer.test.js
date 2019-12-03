@@ -404,7 +404,6 @@ describe('tracer', () => {
     await expect(result).resolves.toEqual(1);
     expect(startHooks).toHaveBeenCalledTimes(1);
 
-
     let callBackCalled = false;
     const callback = (err, val) => {
       expect(val).toEqual(2);
@@ -413,7 +412,7 @@ describe('tracer', () => {
     const userHandlerSync = (event, context, callback) => {
       setTimeout(() => {
         callback(null, 2);
-      },0);
+      }, 0);
     };
     const result2 = tracer.trace({ token })(
       tracer.trace({ token })(userHandlerSync)
