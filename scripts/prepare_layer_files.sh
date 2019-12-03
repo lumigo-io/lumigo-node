@@ -7,5 +7,5 @@ tracer="$(npm pack)"
 pushd nodejs
 npm init --yes
 npm install --save "./../${tracer}"
-npm install --save "./../auto_instrument_handler/${auto_inst}"
+npm install --save "./../auto-instrument-handler/${auto_inst}"
 popd
