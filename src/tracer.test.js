@@ -413,6 +413,7 @@ describe('tracer', () => {
       setTimeout(() => {
         callback(null, 2);
       }, 0);
+      return 1;  // we should ignore this!
     };
     const result2 = tracer.trace({ token })(
       tracer.trace({ token })(userHandlerSync)
