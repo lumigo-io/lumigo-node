@@ -117,8 +117,8 @@ export const httpRequestEndWrapper = requestData => originalEndFn =>
 
 export const httpRequestOnWrapper = requestData => originalOnFn =>
   function(event, callback) {
+    let wrappedCallback = callback;
     if (event === 'response' && callback && !callback.__lumigoSentinel) {
-      let wrappedCallback;
       try {
         wrappedCallback = exports.wrappedHttpResponseCallback(
           requestData,
@@ -127,11 +127,9 @@ export const httpRequestOnWrapper = requestData => originalOnFn =>
         wrappedCallback.__lumigoSentinel = true;
       } catch (err) {
         logger.warn('Failed at wrapping with wrappedHttpResponseCallback', err);
-        return originalOnFn.apply(this, [event, callback]);
       }
-      return originalOnFn.apply(this, [event, wrappedCallback]);
     }
-    return originalOnFn.apply(this, [event, callback]);
+    return originalOnFn.apply(this, [event, wrappedCallback]);
   };
 
 // http/s.request can be called with either (options, callback) or (url, options, callback)
