@@ -124,16 +124,20 @@ export const trace = ({
   switchOff,
   eventFilter,
 }) => userHandler => async (event, context, callback) => {
-  TracerGlobals.setHandlerInputs({ event, context });
-  TracerGlobals.setTracerInputs({
-    token,
-    debug,
-    edgeHost,
-    switchOff,
-    eventFilter,
-  });
+  try {
+    TracerGlobals.setHandlerInputs({ event, context });
+    TracerGlobals.setTracerInputs({
+      token,
+      debug,
+      edgeHost,
+      switchOff,
+      eventFilter,
+    });
 
-  startHooks();
+    startHooks();
+  } catch (err) {
+    logger.fatal('Failed to start tracer', err);
+  }
 
   const pStartTrace = startTrace();
   const pUserHandler = promisifyUserHandler(

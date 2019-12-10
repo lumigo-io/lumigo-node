@@ -392,4 +392,15 @@ describe('tracer', () => {
     );
     expect(spies.warnClient).toHaveBeenCalled();
   });
+
+  test('No exception at initialization', async done => {
+    startHooks.mockImplementationOnce(() => {
+      throw new Error('Mocked error');
+    });
+    const handler = jest.fn(() => done());
+    await tracer.trace({})(handler)({}, {});
+
+    // No exception.
+    expect(handler).toHaveBeenCalledOnce();
+  });
 });
