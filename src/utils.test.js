@@ -669,11 +669,11 @@ describe('utils', () => {
     expect(omitKeys(nullObject)).toEqual(null);
   });
 
-  test('safeExecute Run function', () => {
+  test('safeExecute run function', () => {
     expect(safeExecute(() => 5)()).toEqual(5);
   });
 
-  test('safeExecute Catch exception', () => {
+  test('safeExecute catch exception', () => {
     safeExecute(() => {
       throw new Error('Mocked error');
     })();
