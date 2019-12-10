@@ -98,4 +98,12 @@ describe('logger', () => {
     process.env.LUMIGO_WARNINGS = undefined;
     expect(logger.warnClient('msg')).toEqual(true);
   });
+
+  test('isDebug', () => {
+    expect(logger.isDebug()).toBe(false);
+    const oldEnv = Object.assign({}, process.env);
+    process.env = { ...oldEnv, LUMIGO_DEBUG: 'TRUE' };
+    expect(logger.isDebug()).toBe(true);
+    process.env = { ...oldEnv };
+  });
 });

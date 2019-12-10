@@ -21,8 +21,10 @@ import * as globals from '../globals';
 jest.mock('../globals');
 
 jest.mock('../reporter');
-jest.spyOn(utils, 'isDebug');
-utils.isDebug.mockImplementation(() => true);
+
+import * as logger from '../logger';
+jest.spyOn(logger, 'isDebug');
+logger.isDebug.mockImplementation(() => true);
 
 describe('http hook', () => {
   process.env['AWS_REGION'] = 'us-east-x';
@@ -151,6 +153,29 @@ describe('http hook', () => {
       receivedTime,
     });
     expect(globals.SpansContainer.addSpan).toHaveBeenCalledWith(httpSpan);
+  });
+
+  test('wrappedHttpResponseCallback no exception in response.on(end)', () => {
+    const clonedResponse1 = new EventEmitter();
+    clonedResponse1.on = (name, callback) => callback();
+    cloneResponse.mockReturnValueOnce(clonedResponse1);
+    awsSpan.getHttpSpan.mockImplementationOnce(() => {
+      throw new Error('Mocked error');
+    });
+
+    httpHook.wrappedHttpResponseCallback({}, () => null)({});
+    // No exception.
+  });
+
+  test('wrappedHttpResponseCallback no exception', () => {
+    const clonedResponse1 = new EventEmitter();
+    clonedResponse1.on = () => {
+      throw new Error('Mocked error');
+    };
+    cloneResponse.mockReturnValueOnce(clonedResponse1);
+
+    httpHook.wrappedHttpResponseCallback({}, () => null)({});
+    // No exception.
   });
 
   test('httpRequestEndWrapper', () => {
@@ -504,5 +529,18 @@ describe('http hook', () => {
       'get',
       expect.any(Function)
     );
+  });
+
+  test('httpRequestWrapper no exception', () => {
+    httpHook.httpRequestWrapper(() => {})(/* No argument */);
+    // No exception.
+  });
+
+  test('httpRequestOnWrapper no exception', () => {
+    spies.wrappedHttpResponseCallback.mockImplementationOnce(() => {
+      throw new Error('Mocked error');
+    });
+    httpHook.httpRequestOnWrapper({})(() => true)('response', () => true);
+    // No exception.
   });
 });

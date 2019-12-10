@@ -2,6 +2,7 @@ import { TracerGlobals } from './globals';
 import https from 'https';
 import crypto from 'crypto';
 import { noCirculars } from './tools/noCirculars';
+import * as logger from './logger';
 
 export const SPAN_PATH = '/api/spans';
 export const LUMIGO_TRACER_EDGE = 'lumigo-tracer-edge.golumigo.com';
@@ -134,15 +135,6 @@ export const isPruneTraceOff = () =>
     process.env.LUMIGO_PRUNE_TRACE_OFF === 'TRUE'
   );
 
-export const isDebug = () => {
-  const isDebugFromEnv = !!(
-    process.env['LUMIGO_DEBUG'] &&
-    process.env.LUMIGO_DEBUG.toUpperCase() === 'TRUE'
-  );
-  const { debug: isDebugFromTracerInput } = TracerGlobals.getTracerInputs();
-  return isDebugFromEnv || isDebugFromTracerInput;
-};
-
 export const isSwitchedOff = () => {
   const isSwitchedOffFromEnv = !!(
     process.env['LUMIGO_SWITCH_OFF'] && process.env.LUMIGO_SWITCH_OFF === 'TRUE'
@@ -225,31 +217,36 @@ export const isAwsService = (host, responseData) => {
 };
 
 export const removeLumigoFromStacktrace = handleReturnValue => {
-  const { err, data, type } = handleReturnValue;
-  if (!err || !err.stack) {
+  try {
+    const { err, data, type } = handleReturnValue;
+    if (!err || !err.stack) {
+      return handleReturnValue;
+    }
+    const { stack } = err;
+    const stackArr = stack.split('\n');
+
+    const pattern = '/dist/lumigo.js:';
+    const reducer = (acc, v, i) => {
+      if (v.includes(pattern)) {
+        acc.push(i);
+      }
+      return acc;
+    };
+
+    const pattrenIndices = stackArr.reduce(reducer, []);
+
+    const minIndex = pattrenIndices.shift();
+    const maxIndex = pattrenIndices.pop();
+    const nrItemsToRemove = maxIndex - minIndex + 1;
+
+    stackArr.splice(minIndex, nrItemsToRemove);
+    err.stack = stackArr.join('\n');
+
+    return { err, data, type };
+  } catch (err) {
+    logger.warn('Failed to remove Lumigo from stacktrace', err);
     return handleReturnValue;
   }
-  const { stack } = err;
-  const stackArr = stack.split('\n');
-
-  const pattern = '/dist/lumigo.js:';
-  const reducer = (acc, v, i) => {
-    if (v.includes(pattern)) {
-      acc.push(i);
-    }
-    return acc;
-  };
-
-  const pattrenIndices = stackArr.reduce(reducer, []);
-
-  const minIndex = pattrenIndices.shift();
-  const maxIndex = pattrenIndices.pop();
-  const nrItemsToRemove = maxIndex - minIndex + 1;
-
-  stackArr.splice(minIndex, nrItemsToRemove);
-  err.stack = stackArr.join('\n');
-
-  return { err, data, type };
 };
 
 export const httpReq = (options = {}, reqBody) =>
@@ -350,4 +347,15 @@ export const omitKeys = obj => {
     newObj[key] = shouldOmitKey ? '****' : value;
     return newObj;
   }, {});
+};
+
+export const safeExecute = (
+  callback,
+  message = 'Error in Lumigo tracer'
+) => () => {
+  try {
+    return callback();
+  } catch (err) {
+    logger.warn(message, err);
+  }
 };

@@ -9,6 +9,7 @@ import {
   isAwsService,
   getEdgeHost,
   addHeaders,
+  safeExecute,
 } from '../utils';
 import { getHttpSpan } from '../spans/awsSpan';
 import cloneResponse from 'clone-response';
@@ -78,25 +79,32 @@ export const wrappedHttpResponseCallback = (
 ) => response => {
   const clonedResponse = cloneResponse(response);
   const clonedResponsePassThrough = cloneResponse(response);
-  const { headers, statusCode } = clonedResponse;
-  const receivedTime = new Date().getTime();
+  try {
+    const { headers, statusCode } = clonedResponse;
+    const receivedTime = new Date().getTime();
 
-  let body = '';
-  clonedResponse.on('data', chunk => (body += chunk));
+    let body = '';
+    clonedResponse.on('data', chunk => (body += chunk));
 
-  let responseData = {};
-  clonedResponse.on('end', () => {
-    responseData = {
-      statusCode,
-      receivedTime,
-      body,
-      headers: lowerCaseObjectKeys(headers),
-    };
-    const fixedRequestData = noCirculars(requestData);
-    const fixedResponseData = noCirculars(responseData);
-    const httpSpan = getHttpSpan(fixedRequestData, fixedResponseData);
-    SpansContainer.addSpan(httpSpan);
-  });
+    let responseData = {};
+    clonedResponse.on(
+      'end',
+      safeExecute(() => {
+        responseData = {
+          statusCode,
+          receivedTime,
+          body,
+          headers: lowerCaseObjectKeys(headers),
+        };
+        const fixedRequestData = noCirculars(requestData);
+        const fixedResponseData = noCirculars(responseData);
+        const httpSpan = getHttpSpan(fixedRequestData, fixedResponseData);
+        SpansContainer.addSpan(httpSpan);
+      })
+    );
+  } catch (err) {
+    logger.warn('Failed at wrappedHttpResponseCallback');
+  }
 
   callback && callback(clonedResponsePassThrough);
 };
@@ -110,12 +118,17 @@ export const httpRequestEndWrapper = requestData => originalEndFn =>
 export const httpRequestOnWrapper = requestData => originalOnFn =>
   function(event, callback) {
     if (event === 'response' && callback && !callback.__lumigoSentinel) {
-      const wrappedCallback = exports.wrappedHttpResponseCallback(
-        requestData,
-        callback
-      );
-      wrappedCallback.__lumigoSentinel = true;
-
+      let wrappedCallback;
+      try {
+        wrappedCallback = exports.wrappedHttpResponseCallback(
+          requestData,
+          callback
+        );
+        wrappedCallback.__lumigoSentinel = true;
+      } catch (err) {
+        logger.warn('Failed at wrapping with wrappedHttpResponseCallback', err);
+        return originalOnFn.apply(this, [event, callback]);
+      }
       return originalOnFn.apply(this, [event, wrappedCallback]);
     }
     return originalOnFn.apply(this, [event, callback]);
@@ -184,10 +197,17 @@ export const isAlreadyTraced = callback =>
 
 export const httpRequestWrapper = originalRequestFn =>
   function(...args) {
-    const { url, options, callback } = httpRequestArguments(args);
-    const host = getHostFromOptionsOrUrl(options, url);
+    let isTraceDisabled, url, options, callback, host;
+    try {
+      ({ url, options, callback } = httpRequestArguments(args));
+      host = getHostFromOptionsOrUrl(options, url);
+      isTraceDisabled = isBlacklisted(host) || isAlreadyTraced(callback);
+    } catch (err) {
+      logger.warn('request parsing error', err);
+      isTraceDisabled = true;
+    }
 
-    if (isBlacklisted(host) || isAlreadyTraced(callback)) {
+    if (isTraceDisabled) {
       return originalRequestFn.apply(this, args);
     }
 

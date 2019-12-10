@@ -1,11 +1,18 @@
 import * as utils from './utils';
+import {
+  getJSONBase64Size,
+  MAX_ENTITY_SIZE,
+  omitKeys,
+  parseErrorObject,
+  parseQueryParams,
+  shouldScrubDomain,
+} from './utils';
 import { TracerGlobals } from './globals';
 import EventEmitter from 'events';
 import https from 'https';
 import crypto from 'crypto';
-import { getJSONBase64Size, parseQueryParams, parseErrorObject } from './utils';
-import { omitKeys, shouldScrubDomain } from './utils';
-import { MAX_ENTITY_SIZE } from './utils';
+import { isDebug } from './logger';
+import { safeExecute } from './utils';
 
 jest.mock('https');
 jest.mock('../package.json', () => ({
@@ -183,14 +190,6 @@ describe('utils', () => {
     process.env = { ...oldEnv };
   });
 
-  test('isDebug', () => {
-    expect(utils.isDebug()).toBe(false);
-    const oldEnv = Object.assign({}, process.env);
-    process.env = { ...oldEnv, LUMIGO_DEBUG: 'TRUE' };
-    expect(utils.isDebug()).toBe(true);
-    process.env = { ...oldEnv };
-  });
-
   test('getEventEntitySize', () => {
     expect(utils.getEventEntitySize()).toBe(MAX_ENTITY_SIZE);
     const oldEnv = Object.assign({}, process.env);
@@ -258,10 +257,10 @@ describe('utils', () => {
   });
 
   test('setDebug', () => {
-    expect(utils.isDebug()).toBe(false);
+    expect(isDebug()).toBe(false);
     const oldEnv = Object.assign({}, process.env);
     utils.setDebug();
-    expect(utils.isDebug()).toBe(true);
+    expect(isDebug()).toBe(true);
     process.env = { ...oldEnv };
   });
 
@@ -407,6 +406,11 @@ describe('utils', () => {
     expect(
       utils.removeLumigoFromStacktrace({ err: null, data: 'y', type: 'x' })
     ).toEqual({ err: null, data: 'y', type: 'x' });
+  });
+
+  test('removeLumigoFromStacktrace no exception', () => {
+    utils.removeLumigoFromStacktrace(null);
+    // No exception.
   });
 
   test('httpReq', async () => {
@@ -663,5 +667,16 @@ describe('utils', () => {
 
     const nullObject = null;
     expect(omitKeys(nullObject)).toEqual(null);
+  });
+
+  test('safeExecute Run function', () => {
+    expect(safeExecute(() => 5)()).toEqual(5);
+  });
+
+  test('safeExecute Catch exception', () => {
+    safeExecute(() => {
+      throw new Error('Mocked error');
+    })();
+    // No exception.
   });
 });
