@@ -35,7 +35,23 @@ export const TracerGlobals = (() => {
     debug = false,
     edgeHost = '',
     switchOff = false,
-  }) => Object.assign(tracerInputs, { token, debug, edgeHost, switchOff });
+  }) =>
+    Object.assign(tracerInputs, {
+      token: token || process.env.LUMIGO_TRACER_TOKEN,
+      debug:
+        debug ||
+        !!(
+          process.env['LUMIGO_DEBUG'] &&
+          process.env.LUMIGO_DEBUG.toUpperCase() === 'TRUE'
+        ),
+      edgeHost: edgeHost || process.env.LUMIGO_TRACER_HOST,
+      switchOff:
+        switchOff ||
+        !!(
+          process.env['LUMIGO_SWITCH_OFF'] &&
+          process.env.LUMIGO_SWITCH_OFF === 'TRUE'
+        ),
+    });
 
   const getTracerInputs = () => tracerInputs;
 

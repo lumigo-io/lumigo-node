@@ -183,14 +183,6 @@ describe('utils', () => {
     process.env = { ...oldEnv };
   });
 
-  test('isDebug', () => {
-    expect(utils.isDebug()).toBe(false);
-    const oldEnv = Object.assign({}, process.env);
-    process.env = { ...oldEnv, LUMIGO_DEBUG: 'TRUE' };
-    expect(utils.isDebug()).toBe(true);
-    process.env = { ...oldEnv };
-  });
-
   test('getEventEntitySize', () => {
     expect(utils.getEventEntitySize()).toBe(MAX_ENTITY_SIZE);
     const oldEnv = Object.assign({}, process.env);
@@ -204,25 +196,6 @@ describe('utils', () => {
     process.env = { ...oldEnv, MAX_EVENT_ENTITY_SIZE: 'A 2048' };
     expect(utils.getEventEntitySize()).toBe(MAX_ENTITY_SIZE);
     process.env = { ...oldEnv };
-  });
-
-  test('isSwitchedOff', () => {
-    expect(utils.isSwitchedOff()).toBe(false);
-
-    const oldEnv = Object.assign({}, process.env);
-    process.env = { ...oldEnv, LUMIGO_SWITCH_OFF: 'TRUE' };
-    expect(utils.isSwitchedOff()).toBe(true);
-
-    process.env = { ...oldEnv };
-    expect(utils.isSwitchedOff()).toBe(false);
-
-    TracerGlobals.setTracerInputs({ token: '', edgeHost: '', switchOff: true });
-    expect(utils.isSwitchedOff()).toBe(true);
-    TracerGlobals.setTracerInputs({
-      token: '',
-      edgeHost: '',
-      switchOff: false,
-    });
   });
 
   test('setWarm', () => {
@@ -253,6 +226,7 @@ describe('utils', () => {
     expect(utils.isSwitchedOff()).toBe(false);
     const oldEnv = Object.assign({}, process.env);
     utils.setSwitchOff();
+    TracerGlobals.setTracerInputs({});
     expect(utils.isSwitchedOff()).toBe(true);
     process.env = { ...oldEnv };
   });
@@ -261,6 +235,7 @@ describe('utils', () => {
     expect(utils.isDebug()).toBe(false);
     const oldEnv = Object.assign({}, process.env);
     utils.setDebug();
+    TracerGlobals.setTracerInputs({});
     expect(utils.isDebug()).toBe(true);
     process.env = { ...oldEnv };
   });

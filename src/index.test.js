@@ -41,7 +41,7 @@ describe('index', () => {
     expect(spies.trace).toHaveBeenCalledWith({
       debug,
       token,
-      edgeHost: '',
+      edgeHost: undefined,
       switchOff: true,
       eventFilter: {},
     });

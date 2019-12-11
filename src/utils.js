@@ -135,23 +135,11 @@ export const isPruneTraceOff = () =>
   );
 
 export const isDebug = () => {
-  const isDebugFromEnv = !!(
-    process.env['LUMIGO_DEBUG'] &&
-    process.env.LUMIGO_DEBUG.toUpperCase() === 'TRUE'
-  );
-  const { debug: isDebugFromTracerInput } = TracerGlobals.getTracerInputs();
-  return isDebugFromEnv || isDebugFromTracerInput;
+  return TracerGlobals.getTracerInputs().debug;
 };
 
 export const isSwitchedOff = () => {
-  const isSwitchedOffFromEnv = !!(
-    process.env['LUMIGO_SWITCH_OFF'] && process.env.LUMIGO_SWITCH_OFF === 'TRUE'
-  );
-  const {
-    switchOff: isSwitchedOffFromTracerInput,
-  } = TracerGlobals.getTracerInputs();
-
-  return isSwitchedOffFromEnv || isSwitchedOffFromTracerInput;
+  return TracerGlobals.getTracerInputs().switchOff;
 };
 
 export const setWarm = () => (process.env['LUMIGO_IS_WARM'] = 'TRUE');
