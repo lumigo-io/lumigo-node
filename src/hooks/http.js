@@ -195,14 +195,14 @@ export const isAlreadyTraced = callback =>
 
 export const httpRequestWrapper = originalRequestFn =>
   function(...args) {
-    let isTraceDisabled, url, options, callback, host;
+    let url, options, callback, host;
+    let isTraceDisabled = true;
     try {
       ({ url, options, callback } = httpRequestArguments(args));
       host = getHostFromOptionsOrUrl(options, url);
       isTraceDisabled = isBlacklisted(host) || isAlreadyTraced(callback);
     } catch (err) {
       logger.warn('request parsing error', err);
-      isTraceDisabled = true;
     }
 
     if (isTraceDisabled) {
