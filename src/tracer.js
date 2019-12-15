@@ -5,6 +5,7 @@ import {
   getEdgeUrl,
   removeLumigoFromStacktrace,
   isSendOnlyIfErrors,
+  safeExecute,
 } from './utils';
 import {
   getFunctionSpan,
@@ -117,6 +118,19 @@ export const promisifyUserHandler = (userHandler, event, context) =>
     }
   });
 
+const performPromisifyType = (err, data, type, callback) => {
+  switch (type) {
+    case HANDLER_CALLBACKED:
+      callback(err, data);
+      break;
+    case ASYNC_HANDLER_RESOLVED:
+      return data;
+    case NON_ASYNC_HANDLER_ERRORED:
+    case ASYNC_HANDLER_REJECTED:
+      throw err;
+  }
+};
+
 export const trace = ({
   token,
   debug,
@@ -133,11 +147,21 @@ export const trace = ({
       switchOff,
       eventFilter,
     });
-
-    startHooks();
   } catch (err) {
     logger.fatal('Failed to start tracer', err);
   }
+  if (context.__wrappedByLumigo) {
+    const { err, data, type } = await promisifyUserHandler(
+      userHandler,
+      event,
+      context,
+      callback
+    );
+    return performPromisifyType(err, data, type, callback);
+  }
+  context.__wrappedByLumigo = true;
+
+  safeExecute(startHooks)();
 
   const pStartTrace = startTrace();
   const pUserHandler = promisifyUserHandler(
@@ -159,14 +183,5 @@ export const trace = ({
   await endTrace(functionSpan, cleanedHandlerReturnValue);
   const { err, data, type } = cleanedHandlerReturnValue;
 
-  switch (type) {
-    case HANDLER_CALLBACKED:
-      callback(err, data);
-      break;
-    case ASYNC_HANDLER_RESOLVED:
-      return data;
-    case NON_ASYNC_HANDLER_ERRORED:
-    case ASYNC_HANDLER_REJECTED:
-      throw err;
-  }
+  return performPromisifyType(err, data, type, callback);
 };

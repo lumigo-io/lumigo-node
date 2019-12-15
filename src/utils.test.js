@@ -205,25 +205,6 @@ describe('utils', () => {
     process.env = { ...oldEnv };
   });
 
-  test('isSwitchedOff', () => {
-    expect(utils.isSwitchedOff()).toBe(false);
-
-    const oldEnv = Object.assign({}, process.env);
-    process.env = { ...oldEnv, LUMIGO_SWITCH_OFF: 'TRUE' };
-    expect(utils.isSwitchedOff()).toBe(true);
-
-    process.env = { ...oldEnv };
-    expect(utils.isSwitchedOff()).toBe(false);
-
-    TracerGlobals.setTracerInputs({ token: '', edgeHost: '', switchOff: true });
-    expect(utils.isSwitchedOff()).toBe(true);
-    TracerGlobals.setTracerInputs({
-      token: '',
-      edgeHost: '',
-      switchOff: false,
-    });
-  });
-
   test('setWarm', () => {
     expect(utils.isWarm()).toBe(false);
     const oldEnv = Object.assign({}, process.env);
@@ -252,6 +233,7 @@ describe('utils', () => {
     expect(utils.isSwitchedOff()).toBe(false);
     const oldEnv = Object.assign({}, process.env);
     utils.setSwitchOff();
+    TracerGlobals.setTracerInputs({});
     expect(utils.isSwitchedOff()).toBe(true);
     process.env = { ...oldEnv };
   });
@@ -260,6 +242,7 @@ describe('utils', () => {
     expect(isDebug()).toBe(false);
     const oldEnv = Object.assign({}, process.env);
     utils.setDebug();
+    TracerGlobals.setTracerInputs({});
     expect(isDebug()).toBe(true);
     process.env = { ...oldEnv };
   });

@@ -54,6 +54,9 @@ jobs:
       - run:
           name: install-npm-wee
           command: npm install
+      - run:
+          name: install-npm-inner
+          command: pushd auto-instrument-handler; npm install; popd
       - save_cache:
           key: dependency-cache-{{ checksum "package.json" }}
           paths:

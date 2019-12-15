@@ -1,6 +1,7 @@
 /* eslint-disable */
 import * as logger from './logger';
 import * as utils from './utils';
+import { TracerGlobals } from './globals';
 
 jest.spyOn(global.console, 'log');
 global.console.log.mockImplementation(() => {});
@@ -18,6 +19,7 @@ describe('logger', () => {
 
   test('info', () => {
     utils.setDebug();
+    TracerGlobals.setTracerInputs({});
     logger.info();
     expect(spies.log).toHaveBeenCalledTimes(1);
     expect(spies.log).toHaveBeenCalledWith('INFO', undefined, undefined);
@@ -25,6 +27,7 @@ describe('logger', () => {
 
   test('debug', () => {
     utils.setDebug();
+    TracerGlobals.setTracerInputs({});
     logger.debug();
     expect(spies.log).toHaveBeenCalledTimes(1);
     expect(spies.log).toHaveBeenCalledWith('DEBUG', undefined, undefined);
@@ -32,6 +35,7 @@ describe('logger', () => {
 
   test('warn', () => {
     utils.setDebug();
+    TracerGlobals.setTracerInputs({});
     logger.warn();
     expect(spies.log).toHaveBeenCalledTimes(1);
     expect(spies.log).toHaveBeenCalledWith('WARNING', undefined, undefined);
@@ -39,6 +43,7 @@ describe('logger', () => {
 
   test('fatal', () => {
     utils.setDebug();
+    TracerGlobals.setTracerInputs({});
     logger.fatal();
     expect(spies.log).toHaveBeenCalledTimes(1);
     expect(spies.log).toHaveBeenCalledWith('FATAL', undefined, undefined);
@@ -46,6 +51,7 @@ describe('logger', () => {
 
   test('invokeLog', () => {
     const oldEnv = Object.assign({}, process.env);
+    TracerGlobals.setTracerInputs({});
     const logLevel = 'LOG_LEVEL';
     const logMessage = 'info test';
     const logObject = 1;
@@ -56,6 +62,7 @@ describe('logger', () => {
     expect(spies.log).toHaveBeenCalledTimes(0);
 
     utils.setDebug();
+    TracerGlobals.setTracerInputs({});
 
     expect(typedInvokeLogFn).toBeInstanceOf(Function);
 
@@ -97,13 +104,5 @@ describe('logger', () => {
 
     process.env.LUMIGO_WARNINGS = undefined;
     expect(logger.warnClient('msg')).toEqual(true);
-  });
-
-  test('isDebug', () => {
-    expect(logger.isDebug()).toBe(false);
-    const oldEnv = Object.assign({}, process.env);
-    process.env = { ...oldEnv, LUMIGO_DEBUG: 'TRUE' };
-    expect(logger.isDebug()).toBe(true);
-    process.env = { ...oldEnv };
   });
 });

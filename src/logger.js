@@ -4,12 +4,8 @@ const LOG_PREFIX = '#LUMIGO#';
 const WARN_CLIENT_PREFIX = 'Lumigo Warning';
 
 export const isDebug = () => {
-  const isDebugFromEnv = !!(
-    process.env['LUMIGO_DEBUG'] &&
-    process.env.LUMIGO_DEBUG.toUpperCase() === 'TRUE'
-  );
-  const { debug: isDebugFromTracerInput } = TracerGlobals.getTracerInputs();
-  return isDebugFromEnv || isDebugFromTracerInput;
+  let tracerInputs = TracerGlobals.getTracerInputs();
+  return tracerInputs.debug;
 };
 
 export const invokeLog = type => (msg, obj = undefined) =>

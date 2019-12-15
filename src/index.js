@@ -7,7 +7,7 @@ debug('Tracer imported');
 module.exports = function({
   token,
   debug = false,
-  edgeHost = '',
+  edgeHost,
   eventFilter = {},
   verbose = false,
   switchOff = false,

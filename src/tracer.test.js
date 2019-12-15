@@ -393,6 +393,35 @@ describe('tracer', () => {
     expect(spies.warnClient).toHaveBeenCalled();
   });
 
+  test('can not wrap twice', async () => {
+    const event = { a: 'b', c: 'd' };
+    const token = 'DEADBEEF';
+
+    const userHandlerAsync = async (event, context, callback) => 1;
+    const result = tracer.trace({ token })(
+      tracer.trace({ token })(userHandlerAsync)
+    )(event, {});
+    await expect(result).resolves.toEqual(1);
+    expect(startHooks).toHaveBeenCalledTimes(1);
+
+    let callBackCalled = false;
+    const callback = (err, val) => {
+      expect(val).toEqual(2);
+      callBackCalled = true;
+    };
+    const userHandlerSync = (event, context, callback) => {
+      setTimeout(() => {
+        callback(null, 2);
+      }, 0);
+      return 1; // we should ignore this!
+    };
+    const result2 = tracer.trace({ token })(
+      tracer.trace({ token })(userHandlerSync)
+    )(event, {}, callback);
+    await expect(result2).resolves.toEqual(undefined);
+    expect(callBackCalled).toEqual(true);
+  });
+
   test('No exception at initialization', async done => {
     startHooks.mockImplementationOnce(() => {
       throw new Error('Mocked error');
