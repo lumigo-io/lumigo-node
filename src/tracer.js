@@ -5,6 +5,7 @@ import {
   getEdgeUrl,
   removeLumigoFromStacktrace,
   isSendOnlyIfErrors,
+  safeExecute,
 } from './utils';
 import {
   getFunctionSpan,
@@ -137,15 +138,18 @@ export const trace = ({
   switchOff,
   eventFilter,
 }) => userHandler => async (event, context, callback) => {
-  TracerGlobals.setHandlerInputs({ event, context });
-  TracerGlobals.setTracerInputs({
-    token,
-    debug,
-    edgeHost,
-    switchOff,
-    eventFilter,
-  });
-
+  try {
+    TracerGlobals.setHandlerInputs({ event, context });
+    TracerGlobals.setTracerInputs({
+      token,
+      debug,
+      edgeHost,
+      switchOff,
+      eventFilter,
+    });
+  } catch (err) {
+    logger.fatal('Failed to start tracer', err);
+  }
   if (context.__wrappedByLumigo) {
     const { err, data, type } = await promisifyUserHandler(
       userHandler,
@@ -157,7 +161,7 @@ export const trace = ({
   }
   context.__wrappedByLumigo = true;
 
-  startHooks();
+  safeExecute(startHooks)();
 
   const pStartTrace = startTrace();
   const pUserHandler = promisifyUserHandler(

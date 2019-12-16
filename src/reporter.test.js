@@ -2,6 +2,7 @@
 import { TracerGlobals } from './globals';
 import * as reporter from './reporter';
 import * as utils from './utils';
+import * as logger from './logger';
 import { getJSONBase64Size } from './utils';
 
 jest.mock('../package.json', () => ({
@@ -16,7 +17,7 @@ describe('reporter', () => {
   spies['sendSpans'] = jest.spyOn(reporter, 'sendSpans');
   spies['now'] = jest.spyOn(global.Date, 'now');
   spies['httpReq'] = jest.spyOn(utils, 'httpReq');
-  spies['isDebug'] = jest.spyOn(utils, 'isDebug');
+  spies['isDebug'] = jest.spyOn(logger, 'isDebug');
   spies['isSendOnlyIfErrors'] = jest.spyOn(utils, 'isSendOnlyIfErrors');
 
   const oldEnv = Object.assign({}, process.env);

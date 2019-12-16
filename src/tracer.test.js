@@ -421,4 +421,28 @@ describe('tracer', () => {
     await expect(result2).resolves.toEqual(undefined);
     expect(callBackCalled).toEqual(true);
   });
+
+  test('No exception at startHooks', async done => {
+    startHooks.mockImplementationOnce(() => {
+      throw new Error('Mocked error');
+    });
+    const handler = jest.fn(() => done());
+    await tracer.trace({})(handler)({}, {});
+
+    // No exception.
+    expect(handler).toHaveBeenCalledOnce();
+  });
+
+  test('No exception at initialization', async done => {
+    const mockedTracerGlobals = jest.spyOn(TracerGlobals, 'setHandlerInputs');
+    mockedTracerGlobals.mockImplementation(() => {
+      throw new Error('Mocked error');
+    });
+    const handler = jest.fn(() => done());
+
+    await tracer.trace({})(handler)({}, {});
+
+    // No exception.
+    expect(handler).toHaveBeenCalledOnce();
+  });
 });

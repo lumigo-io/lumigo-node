@@ -1,10 +1,15 @@
-import { isDebug } from './utils';
+import { TracerGlobals } from './globals';
 
 const LOG_PREFIX = '#LUMIGO#';
 const WARN_CLIENT_PREFIX = 'Lumigo Warning';
 
+export const isDebug = () => {
+  let tracerInputs = TracerGlobals.getTracerInputs();
+  return tracerInputs.debug;
+};
+
 export const invokeLog = type => (msg, obj = undefined) =>
-  isDebug() && exports.log(type, msg, obj);
+  exports.isDebug() && exports.log(type, msg, obj);
 
 export const info = exports.invokeLog('INFO');
 

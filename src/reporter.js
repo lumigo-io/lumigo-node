@@ -4,13 +4,13 @@ import {
   getJSONBase64Size,
   getTracerInfo,
   httpReq,
-  isDebug,
   isPruneTraceOff,
   isSendOnlyIfErrors,
   omitKeys,
   spanHasErrors,
 } from './utils';
 import * as logger from './logger';
+import { isDebug } from './logger';
 
 export const MAX_SENT_BYTES = 1000 * 1000;
 
