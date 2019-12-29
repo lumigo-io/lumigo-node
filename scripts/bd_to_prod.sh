@@ -32,7 +32,7 @@ echo "Creating layer file"
 ./scripts/prepare_layer_files.sh
 
 echo "Creating lumigo-node layer"
-../utils/common_bash/create_layer.sh lumigo-node-tracer ALL nodejs "nodejs10.x nodejs8.10 node12.x"
+../utils/common_bash/create_layer.sh lumigo-node-tracer ALL nodejs "nodejs10.x node12.x"
 
 echo "Creating layer latest version arn table md file (LAYERS.md)"
 cd ../larn && npm i -g
