@@ -46,10 +46,3 @@ git commit -m "docs: layers md"
 echo "Push to NPM"
 echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
 npm run semantic-release
-echo "Pushing beta version to npm"
-BETA_VERSION="$(npm view @lumigo/tracer dist-tags.beta)"
-BETA_VERSION=${BETA_VERSION:-0.0.0}
-npm version --no-git-tag-version $BETA_VERSION
-npm version --no-git-tag-version prepatch --preid beta
-npm publish --tag beta
-rm .npmrc

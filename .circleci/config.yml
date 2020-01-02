@@ -40,6 +40,10 @@ workflows:
             ignore: master
         requires:
           - test
+    - deploy-beta:
+        filters:
+          branches:
+            only: master
     - deploy:
         filters:
           branches:
@@ -99,6 +103,26 @@ jobs:
       - run:
           name: run tests
           command: cd ../integration-tests && export testNode=true && npm run test
+  deploy-beta:
+    <<: *defaults
+    steps:
+      - checkout_utils
+      - checkout
+      - run:
+            # Avoid annoying double runs after deploy.
+            # See https://discuss.circleci.com/t/job-runs-even-when-tags-ignore-filter-is-triggered-when-combined-with-branches-only/20664
+            name: Check if tagged
+            command: |
+              tags=$(git tag -l --points-at HEAD)
+              echo "Tags $tags"
+              if [[ ! -z "$tags" ]]
+              then
+                echo "A tagged commit, skip..."
+                circleci step halt
+              fi
+      - run:
+          name: deploy beta to npm + release with delay
+          command: ./scripts/bd_to_beta.sh
   deploy:
     <<: *defaults
     steps:
