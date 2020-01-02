@@ -206,6 +206,7 @@ export const httpRequestWrapper = originalRequestFn =>
     }
 
     if (isTraceDisabled) {
+      logger.debug('Tracing is disabled, running original request for', url);
       return originalRequestFn.apply(this, args);
     }
 
@@ -241,7 +242,6 @@ export const httpRequestWrapper = originalRequestFn =>
       }
       return clientRequest;
     } catch (err) {
-      // eslint-disable-next-line
       logger.info('hook error', err);
       return originalRequestFn.apply(this, args);
     }
