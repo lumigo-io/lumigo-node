@@ -14,6 +14,8 @@ import {
   omitKeys,
   getEventEntitySize,
   shouldScrubDomain,
+  getInvokedArn,
+  getInvokedVersion,
 } from '../utils';
 import {
   dynamodbParser,
@@ -60,6 +62,8 @@ export const getBasicSpan = () => {
   const transactionId = getCurrentTransactionId();
 
   const awsAccountId = getAccountId(lambdaContext);
+  const invokedArn = getInvokedArn();
+  const invokedVersion = getInvokedVersion();
 
   const {
     awsRegion: region,
@@ -89,6 +93,8 @@ export const getBasicSpan = () => {
     messageVersion,
     token,
     region,
+    invokedArn,
+    invokedVersion,
   };
 };
 

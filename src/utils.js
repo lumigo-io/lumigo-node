@@ -136,7 +136,30 @@ export const isPruneTraceOff = () =>
   );
 
 export const isSwitchedOff = () => {
-  return TracerGlobals.getTracerInputs().switchOff;
+  return TracerGlobals.getTracerInputs().switchOff || !isValidAlias();
+};
+
+export const getValidAliasesOrEmptyArray = () =>
+  process.env['VALID_ALIASES'] || [];
+
+export const getHandlerContext = () =>
+  TracerGlobals.getHandlerInputs().context || {};
+
+export const getInvokedArn = () => getHandlerContext().invokedFunctionArn || '';
+export const getInvokedVersion = () =>
+  getHandlerContext().functionVersion || '';
+
+export const getInvokedAliasOrNull = () =>
+  safeExecute(() => {
+    return getInvokedArn().split(':').length >= 8
+      ? getInvokedArn().split(':')[7]
+      : null;
+  })();
+
+export const isValidAlias = () => {
+  const validAliases = getValidAliasesOrEmptyArray();
+  const currentAlias = getInvokedAliasOrNull();
+  return validAliases.length === 0 || validAliases.includes(currentAlias);
 };
 
 export const setWarm = () => (process.env['LUMIGO_IS_WARM'] = 'TRUE');
@@ -150,6 +173,9 @@ export const setPruneTraceOff = () =>
 export const setVerboseMode = () => (process.env['LUMIGO_VERBOSE'] = 'TRUE');
 
 export const setSwitchOff = () => (process.env['LUMIGO_SWITCH_OFF'] = 'TRUE');
+
+export const setValidAliases = aliases =>
+  (process.env['VALID_ALIASES'] = aliases);
 
 export const setDebug = () => (process.env['LUMIGO_DEBUG'] = 'TRUE');
 

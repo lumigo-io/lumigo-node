@@ -229,6 +229,95 @@ describe('utils', () => {
     process.env = { ...oldEnv };
   });
 
+  test('isSwitchedOffInvalidAlias', () => {
+    expect(utils.isSwitchedOff()).toBe(false);
+    const oldEnv = Object.assign({}, process.env);
+    TracerGlobals.setHandlerInputs({
+      event: {},
+      context: {
+        invokedFunctionArn: 'arn:aws:lambda:region:account:function:name:alias',
+      },
+    });
+    utils.setValidAliases(['wrong']);
+    expect(utils.isSwitchedOff()).toBe(true);
+    TracerGlobals.clearHandlerInputs();
+    process.env = { ...oldEnv };
+  });
+
+  test('isSwitchedOffValidAlias', () => {
+    expect(utils.isSwitchedOff()).toBe(false);
+    const oldEnv = Object.assign({}, process.env);
+    TracerGlobals.setHandlerInputs({
+      event: {},
+      context: {
+        invokedFunctionArn: 'arn:aws:lambda:region:account:function:name:alias',
+      },
+    });
+    utils.setValidAliases(['alias']);
+    expect(utils.isSwitchedOff()).toBe(false);
+    TracerGlobals.clearHandlerInputs();
+    process.env = { ...oldEnv };
+  });
+
+  test('setValidAliases', () => {
+    expect(utils.getValidAliasesOrEmptyArray().length).toEqual(0);
+    utils.setValidAliases(['alias']);
+    expect(utils.getValidAliasesOrEmptyArray()).toEqual(['alias']);
+    utils.setValidAliases(undefined);
+  });
+
+  test('getInvokedAliasOrNull', () => {
+    expect(utils.getInvokedAliasOrNull()).toBe(null);
+    const oldEnv = Object.assign({}, process.env);
+    TracerGlobals.setHandlerInputs({
+      event: {},
+      context: {
+        invokedFunctionArn: 'arn:aws:lambda:region:account:function:name:alias',
+      },
+    });
+    expect(utils.getInvokedAliasOrNull()).toEqual('alias');
+    TracerGlobals.setHandlerInputs({
+      event: {},
+      context: {
+        invokedFunctionArn: 'arn:aws:lambda:region:account:function:name',
+      },
+    });
+    expect(utils.getInvokedAliasOrNull()).toEqual(null);
+    TracerGlobals.setHandlerInputs({
+      event: {},
+      context: {
+        invokedFunctionArn: 'bad-arn',
+      },
+    });
+    expect(utils.getInvokedAliasOrNull()).toEqual(null);
+    TracerGlobals.setHandlerInputs({
+      event: {},
+      context: {
+        no: 'arn',
+      },
+    });
+    expect(utils.getInvokedAliasOrNull()).toEqual(null);
+    TracerGlobals.clearHandlerInputs();
+    process.env = { ...oldEnv };
+  });
+
+  test('isValidAlias', () => {
+    expect(utils.isValidAlias()).toEqual(true);
+    TracerGlobals.setHandlerInputs({
+      event: {},
+      context: {
+        invokedFunctionArn: 'arn:aws:lambda:region:account:function:name:3',
+      },
+    });
+    utils.setValidAliases([]);
+    expect(utils.isValidAlias()).toEqual(true);
+    utils.setValidAliases(['1', '2']);
+    expect(utils.isValidAlias()).toEqual(false);
+    utils.setValidAliases(['1', '2', '3']);
+    expect(utils.isValidAlias()).toEqual(true);
+    utils.setValidAliases(undefined);
+  });
+
   test('setSwitchOff', () => {
     expect(utils.isSwitchedOff()).toBe(false);
     const oldEnv = Object.assign({}, process.env);
