@@ -178,10 +178,6 @@ workflows:
         filters:
           branches:
             only: master
-    - deploy:
-        filters:
-          branches:
-            only: master
   version: 2
 
 # The original config.yml file:
@@ -228,10 +224,6 @@ workflows:
 #         requires:
 #           - test
 #     - deploy-beta:
-#         filters:
-#           branches:
-#             only: master
-#     - deploy:
 #         filters:
 #           branches:
 #             only: master
