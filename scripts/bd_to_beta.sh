@@ -23,6 +23,11 @@ npm version --no-git-tag-version prepatch --preid beta
 npm publish --tag beta
 rm .npmrc
 
+echo "Deploy to staging"
+curl -u "$CIRCLECI_TOKEN": \
+     -d build_parameters[CIRCLE_JOB]=force-deploy \
+     https://circleci.com/api/v1.1/project/github/lumigo-io/backend-monitoring/tree/master
+
 echo "Release with delay"
 AWS_ACCESS_KEY_ID=$STAGING_AWS_ACCESS_KEY_ID \
 AWS_SECRET_ACCESS_KEY=$STAGING_AWS_SECRET_ACCESS_KEY \
