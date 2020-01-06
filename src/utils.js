@@ -143,7 +143,7 @@ export const isSwitchedOff = () =>
 export const getValidAliases = () =>
   safeExecute(() => {
     return JSON.parse(process.env['LUMIGO_VALID_ALIASES'] || '[]');
-  })();
+  })() || [];
 
 export const getHandlerContext = () =>
   TracerGlobals.getHandlerInputs().context || {};
@@ -157,7 +157,7 @@ export const getInvokedAliasOrNull = () =>
     return getInvokedArn().split(':').length >= 8
       ? getInvokedArn().split(':')[7]
       : null;
-  })();
+  })() || null;
 
 export const isValidAlias = () => {
   const validAliases = getValidAliases();
