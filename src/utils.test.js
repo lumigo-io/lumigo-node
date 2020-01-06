@@ -238,7 +238,7 @@ describe('utils', () => {
         invokedFunctionArn: 'arn:aws:lambda:region:account:function:name:alias',
       },
     });
-    utils.setValidAliases(['wrong']);
+    process.env['LUMIGO_VALID_ALIASES'] = '["wrong"]';
     expect(utils.isSwitchedOff()).toBe(true);
     TracerGlobals.clearHandlerInputs();
     process.env = { ...oldEnv };
@@ -253,17 +253,10 @@ describe('utils', () => {
         invokedFunctionArn: 'arn:aws:lambda:region:account:function:name:alias',
       },
     });
-    utils.setValidAliases(['alias']);
+    process.env['LUMIGO_VALID_ALIASES'] = '["alias"]';
     expect(utils.isSwitchedOff()).toBe(false);
     TracerGlobals.clearHandlerInputs();
     process.env = { ...oldEnv };
-  });
-
-  test('setValidAliases', () => {
-    expect(utils.getValidAliasesOrEmptyArray().length).toEqual(0);
-    utils.setValidAliases(['alias']);
-    expect(utils.getValidAliasesOrEmptyArray()).toEqual(['alias']);
-    utils.setValidAliases(undefined);
   });
 
   test('getInvokedAliasOrNull', () => {
@@ -309,13 +302,13 @@ describe('utils', () => {
         invokedFunctionArn: 'arn:aws:lambda:region:account:function:name:3',
       },
     });
-    utils.setValidAliases([]);
+    process.env['LUMIGO_VALID_ALIASES'] = '[]';
     expect(utils.isValidAlias()).toEqual(true);
-    utils.setValidAliases(['1', '2']);
+    process.env['LUMIGO_VALID_ALIASES'] = '["1", "2"]';
     expect(utils.isValidAlias()).toEqual(false);
-    utils.setValidAliases(['1', '2', '3']);
+    process.env['LUMIGO_VALID_ALIASES'] = '["1", "2", "3"]';
     expect(utils.isValidAlias()).toEqual(true);
-    utils.setValidAliases(undefined);
+    process.env['LUMIGO_VALID_ALIASES'] = undefined;
   });
 
   test('setSwitchOff', () => {
