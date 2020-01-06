@@ -229,6 +229,17 @@ describe('utils', () => {
     process.env = { ...oldEnv };
   });
 
+  test('getInvokedAliasOrNullInvalidArn', () => {
+    TracerGlobals.setHandlerInputs({
+      event: {},
+      context: {
+        invokedFunctionArn: 'bad-format',
+      },
+    });
+    expect(utils.getInvokedAliasOrNull()).toEqual(null);
+    TracerGlobals.clearHandlerInputs();
+  });
+
   test('isSwitchedOffInvalidAlias', () => {
     expect(utils.isSwitchedOff()).toBe(false);
     const oldEnv = Object.assign({}, process.env);
