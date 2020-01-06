@@ -139,7 +139,7 @@ export const isSwitchedOff = () => {
   return TracerGlobals.getTracerInputs().switchOff || !isValidAlias();
 };
 
-export const getValidAliasesOrEmptyArray = () =>
+export const getValidAliases = () =>
   JSON.parse(process.env['LUMIGO_VALID_ALIASES'] || '[]');
 
 export const getHandlerContext = () =>
@@ -157,11 +157,12 @@ export const getInvokedAliasOrNull = () =>
   })();
 
 export const isValidAlias = () => {
-  const validAliases = getValidAliasesOrEmptyArray();
+  const validAliases = getValidAliases();
   const currentAlias = getInvokedAliasOrNull();
-  const validAlias = validAliases.length === 0 || validAliases.includes(currentAlias);
+  const validAlias =
+    validAliases.length === 0 || validAliases.includes(currentAlias);
   if (!validAlias) {
-   logger.info(`Alias is invalid, alias: ${currentAlias}`);
+    logger.info(`Alias is invalid, alias: ${currentAlias}`);
   }
   return validAlias;
 };

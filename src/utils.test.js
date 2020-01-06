@@ -299,14 +299,15 @@ describe('utils', () => {
     TracerGlobals.setHandlerInputs({
       event: {},
       context: {
-        invokedFunctionArn: 'arn:aws:lambda:region:account:function:name:3',
+        invokedFunctionArn:
+          'arn:aws:lambda:region:account:function:name:currentAlias',
       },
     });
     process.env['LUMIGO_VALID_ALIASES'] = '[]';
     expect(utils.isValidAlias()).toEqual(true);
     process.env['LUMIGO_VALID_ALIASES'] = '["1", "2"]';
     expect(utils.isValidAlias()).toEqual(false);
-    process.env['LUMIGO_VALID_ALIASES'] = '["1", "2", "3"]';
+    process.env['LUMIGO_VALID_ALIASES'] = '["1", "2", "currentAlias"]';
     expect(utils.isValidAlias()).toEqual(true);
     process.env['LUMIGO_VALID_ALIASES'] = undefined;
   });
