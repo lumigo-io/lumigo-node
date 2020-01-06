@@ -135,12 +135,15 @@ export const isPruneTraceOff = () =>
     process.env.LUMIGO_PRUNE_TRACE_OFF === 'TRUE'
   );
 
-export const isSwitchedOff = () => {
-  return TracerGlobals.getTracerInputs().switchOff || !isValidAlias();
-};
+export const isSwitchedOff = () =>
+  safeExecute(() => {
+    return TracerGlobals.getTracerInputs().switchOff || !isValidAlias();
+  })();
 
 export const getValidAliases = () =>
-  JSON.parse(process.env['LUMIGO_VALID_ALIASES'] || '[]');
+  safeExecute(() => {
+    return JSON.parse(process.env['LUMIGO_VALID_ALIASES'] || '[]');
+  })();
 
 export const getHandlerContext = () =>
   TracerGlobals.getHandlerInputs().context || {};
