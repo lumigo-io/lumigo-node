@@ -156,7 +156,7 @@ export const setDebug = () => (process.env['LUMIGO_DEBUG'] = 'TRUE');
 export const isString = x =>
   Object.prototype.toString.call(x) === '[object String]';
 
-export const MAX_ENTITY_SIZE = 1024;
+export const MAX_ENTITY_SIZE = 1024; //test
 
 export const getEventEntitySize = () => {
   return parseInt(process.env['MAX_EVENT_ENTITY_SIZE']) || MAX_ENTITY_SIZE;
