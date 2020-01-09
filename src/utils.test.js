@@ -229,6 +229,100 @@ describe('utils', () => {
     process.env = { ...oldEnv };
   });
 
+  test('getInvokedAliasOrNullInvalidArn', () => {
+    TracerGlobals.setHandlerInputs({
+      event: {},
+      context: {
+        invokedFunctionArn: 'bad-format',
+      },
+    });
+    expect(utils.getInvokedAliasOrNull()).toEqual(null);
+    TracerGlobals.clearHandlerInputs();
+  });
+
+  test('isSwitchedOffInvalidAlias', () => {
+    expect(utils.isSwitchedOff()).toBe(false);
+    const oldEnv = Object.assign({}, process.env);
+    TracerGlobals.setHandlerInputs({
+      event: {},
+      context: {
+        invokedFunctionArn: 'arn:aws:lambda:region:account:function:name:alias',
+      },
+    });
+    process.env['LUMIGO_VALID_ALIASES'] = '["wrong"]';
+    expect(utils.isSwitchedOff()).toBe(true);
+    TracerGlobals.clearHandlerInputs();
+    process.env = { ...oldEnv };
+  });
+
+  test('isSwitchedOffValidAlias', () => {
+    expect(utils.isSwitchedOff()).toBe(false);
+    const oldEnv = Object.assign({}, process.env);
+    TracerGlobals.setHandlerInputs({
+      event: {},
+      context: {
+        invokedFunctionArn: 'arn:aws:lambda:region:account:function:name:alias',
+      },
+    });
+    process.env['LUMIGO_VALID_ALIASES'] = '["alias"]';
+    expect(utils.isSwitchedOff()).toBe(false);
+    TracerGlobals.clearHandlerInputs();
+    process.env = { ...oldEnv };
+  });
+
+  test('getInvokedAliasOrNull', () => {
+    expect(utils.getInvokedAliasOrNull()).toBe(null);
+    const oldEnv = Object.assign({}, process.env);
+    TracerGlobals.setHandlerInputs({
+      event: {},
+      context: {
+        invokedFunctionArn: 'arn:aws:lambda:region:account:function:name:alias',
+      },
+    });
+    expect(utils.getInvokedAliasOrNull()).toEqual('alias');
+    TracerGlobals.setHandlerInputs({
+      event: {},
+      context: {
+        invokedFunctionArn: 'arn:aws:lambda:region:account:function:name',
+      },
+    });
+    expect(utils.getInvokedAliasOrNull()).toEqual(null);
+    TracerGlobals.setHandlerInputs({
+      event: {},
+      context: {
+        invokedFunctionArn: 'bad-arn',
+      },
+    });
+    expect(utils.getInvokedAliasOrNull()).toEqual(null);
+    TracerGlobals.setHandlerInputs({
+      event: {},
+      context: {
+        no: 'arn',
+      },
+    });
+    expect(utils.getInvokedAliasOrNull()).toEqual(null);
+    TracerGlobals.clearHandlerInputs();
+    process.env = { ...oldEnv };
+  });
+
+  test('isValidAlias', () => {
+    expect(utils.isValidAlias()).toEqual(true);
+    TracerGlobals.setHandlerInputs({
+      event: {},
+      context: {
+        invokedFunctionArn:
+          'arn:aws:lambda:region:account:function:name:currentAlias',
+      },
+    });
+    process.env['LUMIGO_VALID_ALIASES'] = '[]';
+    expect(utils.isValidAlias()).toEqual(true);
+    process.env['LUMIGO_VALID_ALIASES'] = '["1", "2"]';
+    expect(utils.isValidAlias()).toEqual(false);
+    process.env['LUMIGO_VALID_ALIASES'] = '["1", "2", "currentAlias"]';
+    expect(utils.isValidAlias()).toEqual(true);
+    process.env['LUMIGO_VALID_ALIASES'] = undefined;
+  });
+
   test('setSwitchOff', () => {
     expect(utils.isSwitchedOff()).toBe(false);
     const oldEnv = Object.assign({}, process.env);
