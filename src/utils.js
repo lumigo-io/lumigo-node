@@ -68,7 +68,7 @@ export const getTraceId = awsXAmznTraceId => {
     throw new Error(`Either Root, Parent or Sampled weren't found in traceId.`);
   }
 
-  const transactionId = traceId.Root.split('-')[2];
+  const transactionId = traceId.Root.split('-')[2]; //test
 
   traceId.transactionId = transactionId;
 
