@@ -31,6 +31,10 @@ echo ${KEY} | gpg --batch -d --passphrase-fd 0 ${enc_location} > ~/.aws/credenti
 echo "Creating layer file"
 ./scripts/prepare_layer_files.sh
 
+echo "Push to NPM"
+echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
+npm run semantic-release
+
 echo "Creating lumigo-node layer"
 ../utils/common_bash/create_layer.sh lumigo-node-tracer ALL nodejs "nodejs10.x nodejs12.x"
 
@@ -41,8 +45,5 @@ larn -r nodejs12.x -n layers/LAYERS12x --filter lumigo-node-tracer -p ~/lumigo-n
 cd ../lumigo-node
 git add layers/LAYERS10x.md
 git add layers/LAYERS12x.md
-git commit -m "docs: layers md"
-
-echo "Push to NPM"
-echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
-npm run semantic-release
+git commit -m "docs: layers md [skip ci]"
+git push origin master
