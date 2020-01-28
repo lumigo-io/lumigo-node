@@ -279,7 +279,7 @@ describe('utils', () => {
         invokedFunctionArn: 'arn:aws:lambda:region:account:function:name:alias',
       },
     });
-    expect(utils.getInvokedAliasOrNull()).toEqual('alias');
+    expect(utils.getInvokedAliasOrNull()).toEqual(null); // if `LUMIGO_VALID_ALIASES` isn't valid/ exists, the alias won't return
     TracerGlobals.setHandlerInputs({
       event: {},
       context: {
@@ -321,6 +321,47 @@ describe('utils', () => {
     process.env['LUMIGO_VALID_ALIASES'] = '["1", "2", "currentAlias"]';
     expect(utils.isValidAlias()).toEqual(true);
     process.env['LUMIGO_VALID_ALIASES'] = undefined;
+  });
+
+  test('getPosition', () => {
+    expect(utils.getPosition('abcabcabc', 'a', '3')).toEqual(6);
+  });
+
+  test('invokedFunctionArnWithoutAlias', () => {
+    expect(
+      utils.invokedFunctionArnWithoutAlias(
+        'arn:aws:lambda:region:account:function:name:alias'
+      )
+    ).toEqual('arn:aws:lambda:region:account:function:name');
+    expect(
+      utils.invokedFunctionArnWithoutAlias(
+        'arn:aws:lambda:region:account:function:name'
+      )
+    ).toEqual('arn:aws:lambda:region:account:function:name');
+  });
+
+  test('getInvokedArn', () => {
+    const oldEnv = Object.assign({}, process.env);
+    TracerGlobals.setHandlerInputs({
+      event: {},
+      context: {
+        invokedFunctionArn: 'arn:aws:lambda:region:account:function:name:alias',
+      },
+    });
+    process.env['LUMIGO_VALID_ALIASES'] = undefined;
+    expect(utils.getInvokedArn()).toEqual(
+      'arn:aws:lambda:region:account:function:name'
+    );
+    process.env['LUMIGO_VALID_ALIASES'] = [];
+    expect(utils.getInvokedArn()).toEqual(
+      'arn:aws:lambda:region:account:function:name'
+    );
+    process.env['LUMIGO_VALID_ALIASES'] = '["alias"]';
+    expect(utils.getInvokedArn()).toEqual(
+      'arn:aws:lambda:region:account:function:name:alias'
+    );
+    TracerGlobals.clearHandlerInputs();
+    process.env = { ...oldEnv };
   });
 
   test('setSwitchOff', () => {

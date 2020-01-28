@@ -148,7 +148,15 @@ export const getValidAliases = () =>
 export const getHandlerContext = () =>
   TracerGlobals.getHandlerInputs().context || {};
 
-export const getInvokedArn = () => getHandlerContext().invokedFunctionArn || '';
+export const getInvokedArn = () =>
+  getValidAliases().length === 0
+    ? invokedFunctionArnWithoutAlias(getHandlerContext().invokedFunctionArn)
+    : getHandlerContext().invokedFunctionArn;
+export const invokedFunctionArnWithoutAlias = invokedArn =>
+  invokedArn.substring(0, getPosition(invokedArn, ':', 7));
+export const getPosition = (string, subString, index) => {
+  return string.split(subString, index).join(subString).length;
+};
 export const getInvokedVersion = () =>
   getHandlerContext().functionVersion || '';
 
