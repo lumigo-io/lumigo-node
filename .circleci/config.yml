@@ -80,13 +80,13 @@ jobs:
         command: sudo npm install -g recursive-install
     - run:
         name: prepare_env
-        command: cd ../integration-tests && ./scripts/prepare_env.sh
+        command: cd ../integration-tests && ./scripts/parallel_prepare_env.sh
     - run:
         name: deploy integ-test
-        command: cd ../integration-tests && ./scripts/deploy.sh --spec node
+        command: cd ../integration-tests && ./scripts/parallel_deploy.sh --spec node
     - run:
         name: run tests
-        command: cd ../integration-tests && export testNode=true && npm run test
+        command: cd ../integration-tests && export testNode=true && npm run test-parallel
   deploy-beta:
     working_directory: ~/lumigo-node
     docker:
@@ -275,13 +275,13 @@ workflows:
 #           command: sudo npm install -g recursive-install
 #       - run:
 #           name: prepare_env
-#           command: cd ../integration-tests && ./scripts/prepare_env.sh
+#           command: cd ../integration-tests && ./scripts/parallel_prepare_env.sh
 #       - run:
 #           name: deploy integ-test
-#           command: cd ../integration-tests && ./scripts/deploy.sh --spec node
+#           command: cd ../integration-tests && ./scripts/parallel_deploy.sh --spec node
 #       - run:
 #           name: run tests
-#           command: cd ../integration-tests && export testNode=true && npm run test
+#           command: cd ../integration-tests && export testNode=true && npm run test-parallel
 #   deploy-beta:
 #     <<: *defaults
 #     steps:
