@@ -6,6 +6,9 @@ import {
   parseErrorObject,
   parseQueryParams,
   shouldScrubDomain,
+  keyToOmitRegexes,
+  LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP,
+  LUMIGO_SECRET_MASKING_REGEX,
 } from './utils';
 import { TracerGlobals } from './globals';
 import EventEmitter from 'events';
@@ -679,6 +682,19 @@ describe('utils', () => {
     expect(shouldScrubDomain(instagram_url)).toEqual(false);
   });
 
+  test('keyToOmitRegexes', () => {
+    process.env[LUMIGO_SECRET_MASKING_REGEX] = ['[".*evilPlan.*"]'];
+    expect(keyToOmitRegexes().map(p => String(p))).toEqual(['/.*evilPlan.*/i']);
+    process.env[LUMIGO_SECRET_MASKING_REGEX] = undefined;
+    process.env[LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP] = [
+      '[".*evilPlan2.*"]',
+    ];
+    expect(keyToOmitRegexes().map(p => String(p))).toEqual([
+      '/.*evilPlan2.*/i',
+    ]);
+    process.env[LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP] = undefined;
+  });
+
   test('omitKeys', () => {
     const safeObj = { hello: 'world', inner: { check: 'abc' } };
     expect(omitKeys(safeObj)).toEqual(safeObj);
@@ -703,7 +719,7 @@ describe('utils', () => {
       inner: { secretPassword: '****' },
     });
 
-    process.env.LUMIGO_BLACKLIST_REGEX = ['[".*evilPlan.*"]'];
+    process.env[LUMIGO_SECRET_MASKING_REGEX] = ['[".*evilPlan.*"]'];
     const unpredictedObj = {
       password: 'abc',
       evilPlan: { take: 'over', the: 'world' },
@@ -712,7 +728,7 @@ describe('utils', () => {
       password: 'abc',
       evilPlan: '****',
     });
-    process.env.LUMIGO_BLACKLIST_REGEX = undefined;
+    process.env[LUMIGO_SECRET_MASKING_REGEX] = undefined;
 
     const unsafeString = '{"hello": "world", "password": "abc"}';
     expect(omitKeys(unsafeString)).toEqual({
