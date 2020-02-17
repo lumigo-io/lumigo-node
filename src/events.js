@@ -41,9 +41,18 @@ export const getKinesisData = event => {
   return { arn, messageIds };
 };
 
+export const getSqsData = event => {
+  const arn = event.Records[0].eventSourceARN;
+  const messageIds = (event.Records || [])
+    .map(r => r['messageId'])
+    .filter(x => !!x);
+  return { arn, messageIds };
+};
+
 export const getRelevantEventData = (triggeredBy, event) => {
   switch (triggeredBy) {
     case 'sqs':
+      return getSqsData(event);
     case 'dynamodb':
       return { arn: event.Records[0].eventSourceARN };
     case 'kinesis':

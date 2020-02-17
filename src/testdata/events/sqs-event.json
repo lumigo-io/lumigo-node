@@ -35,6 +35,22 @@
           "dataType" : "String"
         }
       }
+    },
+    {
+        "messageId": "MessageID_2",
+        "receiptHandle": "123",
+        "body": "[1111]",
+        "attributes": {
+            "ApproximateReceiveCount": "1",
+            "SentTimestamp": "1581928747791",
+            "SenderId": "AIDAIMMNHF5CDX6M5F32U",
+            "ApproximateFirstReceiveTimestamp": "1581928747810"
+        },
+        "messageAttributes": {},
+        "md5OfBody": "96c90ad597253980967ce03d05bc09ff",
+        "eventSource": "aws:sqs",
+        "eventSourceARN": "arn:aws:sqs:us-west-2:723663554526:saart-test",
+        "awsRegion": "us-west-2"
     }
   ]
 }

@@ -51,6 +51,7 @@ describe('events', () => {
   test('getRelevantEventData', () => {
     expect(events.getRelevantEventData('sqs', exampleSqsEvent)).toEqual({
       arn: 'arn:aws:sqs:us-west-2:123456789012:SQSQueue',
+      messageIds: ['MessageID_1', 'MessageID_2'],
     });
 
     expect(events.getRelevantEventData('kinesis', exampleKinesisEvent)).toEqual(
