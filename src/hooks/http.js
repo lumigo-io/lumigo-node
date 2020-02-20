@@ -242,7 +242,7 @@ export const httpRequestWrapper = originalRequestFn =>
       return clientRequest;
     } catch (err) {
       // eslint-disable-next-line
-      logger.info('hook error', err);
+      logger.warn('hook error', err);
       return originalRequestFn.apply(this, args);
     }
   };

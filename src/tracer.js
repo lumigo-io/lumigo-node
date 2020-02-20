@@ -54,7 +54,7 @@ export const startTrace = async () => {
       return null;
     }
   } catch (err) {
-    logger.fatal('startTrace failure', err);
+    logger.warn('startTrace failure', err);
     return null;
   }
 };
@@ -91,7 +91,7 @@ export const endTrace = async (functionSpan, handlerReturnValue) => {
       await sendEndTraceSpans(functionSpan, handlerReturnValue);
     }
   } catch (err) {
-    logger.fatal('endTrace failure', err);
+    logger.warn('endTrace failure', err);
     clearGlobals();
   }
 };
@@ -148,7 +148,7 @@ export const trace = ({
       eventFilter,
     });
   } catch (err) {
-    logger.fatal('Failed to start tracer', err);
+    logger.warn('Failed to start tracer', err);
   }
   if (context.__wrappedByLumigo) {
     const { err, data, type } = await promisifyUserHandler(
