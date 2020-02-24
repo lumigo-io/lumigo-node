@@ -7,12 +7,12 @@ import * as logger from './logger';
 export const SPAN_PATH = '/api/spans';
 export const LUMIGO_TRACER_EDGE = 'lumigo-tracer-edge.golumigo.com';
 export const LUMIGO_DEFAULT_DOMAIN_SCRUBBERS =
-  '["secretsmanager.*.amazonaws.com", "ssm.*.amazonaws.com", "kms.*.amazonaws.com"]';
+  '["secretsmanager.*.amazonaws.com", "ssm.*.amazonaws.com", "kms.*.amazonaws.com", "sts..*amazonaws.com"]';
 export const LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP =
   'LUMIGO_BLACKLIST_REGEX';
 export const LUMIGO_SECRET_MASKING_REGEX = 'LUMIGO_SECRET_MASKING_REGEX';
 export const OMITTING_KEYS_REGEXES =
-  '[".*pass.*", ".*key.*", ".*secret.*", ".*credential.*", ".*passphrase.*"]';
+  '[".*pass.*", ".*key.*", ".*secret.*", ".*credential.*", ".*passphrase.*", "SessionToken", "x-amz-security-token", "Signature", "Credential", "Authorization"]';
 
 export const getContextInfo = context => {
   const remainingTimeInMillis = context.getRemainingTimeInMillis();
