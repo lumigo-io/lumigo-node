@@ -36,7 +36,7 @@ describe('tracer', () => {
   spies.SpansContainer.addSpan = jest.spyOn(globals.SpansContainer, 'addSpan');
   spies.clearGlobals = jest.spyOn(globals, 'clearGlobals');
   spies.warnClient = jest.spyOn(logger, 'warnClient');
-  spies.logFatal = jest.spyOn(logger, 'fatal');
+  spies.logWarn = jest.spyOn(logger, 'warn');
   spies.log = jest.spyOn(console, 'log');
   spies.log.mockImplementation(() => {});
 
@@ -74,14 +74,14 @@ describe('tracer', () => {
     const result2 = await tracer.startTrace();
     expect(result2).toEqual(null);
 
-    spies.logFatal.mockImplementationOnce(() => {});
+    spies.logWarn.mockImplementationOnce(() => {});
     const err1 = new Error('stam1');
     spies.isSwitchedOff.mockImplementationOnce(() => {
       throw err1;
     });
 
     await expect(tracer.startTrace()).resolves.toEqual(null);
-    expect(spies.logFatal).toHaveBeenCalledWith('startTrace failure', err1);
+    expect(spies.logWarn).toHaveBeenCalledWith('startTrace failure', err1);
 
     //Test - isSendOnlyIfErrors is on, start span in not sent or saved to the spans list
     spies.sendSingleSpan.mockClear();
@@ -144,7 +144,7 @@ describe('tracer', () => {
 
     spies.clearGlobals.mockClear();
 
-    spies.logFatal.mockImplementationOnce(() => {});
+    spies.logWarn.mockImplementationOnce(() => {});
     const err2 = new Error('stam2');
     spies.isSwitchedOff.mockImplementationOnce(() => {
       throw err2;
@@ -152,7 +152,7 @@ describe('tracer', () => {
 
     await tracer.endTrace(functionSpan, handlerReturnValue);
 
-    expect(spies.logFatal).toHaveBeenCalledWith('endTrace failure', err2);
+    expect(spies.logWarn).toHaveBeenCalledWith('endTrace failure', err2);
     expect(spies.clearGlobals).toHaveBeenCalled();
   });
 
@@ -181,7 +181,7 @@ describe('tracer', () => {
 
     spies.clearGlobals.mockClear();
 
-    spies.logFatal.mockImplementationOnce(() => {});
+    spies.logWarn.mockImplementationOnce(() => {});
     const err2 = new Error('stam2');
     spies.isSwitchedOff.mockImplementationOnce(() => {
       throw err2;
@@ -189,7 +189,7 @@ describe('tracer', () => {
 
     await tracer.endTrace(functionSpan, handlerReturnValue);
 
-    expect(spies.logFatal).toHaveBeenCalledWith('endTrace failure', err2);
+    expect(spies.logWarn).toHaveBeenCalledWith('endTrace failure', err2);
     expect(spies.clearGlobals).toHaveBeenCalled();
   });
 
