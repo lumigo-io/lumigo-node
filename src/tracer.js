@@ -163,6 +163,7 @@ export const trace = ({
   edgeHost,
   switchOff,
   eventFilter,
+  stepFunction,
 }) => userHandler => async (event, context, callback) => {
   try {
     TracerGlobals.setHandlerInputs({ event, context });
@@ -172,6 +173,7 @@ export const trace = ({
       edgeHost,
       switchOff,
       eventFilter,
+      stepFunction,
     });
   } catch (err) {
     logger.warn('Failed to start tracer', err);
