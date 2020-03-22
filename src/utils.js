@@ -13,6 +13,8 @@ export const LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP =
 export const LUMIGO_SECRET_MASKING_REGEX = 'LUMIGO_SECRET_MASKING_REGEX';
 export const OMITTING_KEYS_REGEXES =
   '[".*pass.*", ".*key.*", ".*secret.*", ".*credential.*", ".*passphrase.*", "SessionToken", "x-amz-security-token", "Signature", "Credential", "Authorization"]';
+export const LUMIGO_EVENT_KEY = '_lumigo';
+export const STEP_FUNCTION_UID_KEY = 'step_function_uid';
 
 export const getContextInfo = context => {
   const remainingTimeInMillis = context.getRemainingTimeInMillis();
@@ -145,6 +147,9 @@ export const isSwitchedOff = () =>
     return TracerGlobals.getTracerInputs().switchOff || !isValidAlias();
   })();
 
+export const isStepFunction = () =>
+  safeExecute(() => TracerGlobals.getTracerInputs().isStepFunction)();
+
 export const getValidAliases = () =>
   safeExecute(() => {
     return JSON.parse(process.env['LUMIGO_VALID_ALIASES'] || '[]');
@@ -199,7 +204,7 @@ export const getEventEntitySize = () => {
 };
 
 export const prune = (str, maxLength = MAX_ENTITY_SIZE) =>
-  str.substr(0, maxLength);
+  (str || '').substr(0, maxLength);
 
 export const stringifyAndPrune = (obj, maxLength = MAX_ENTITY_SIZE) =>
   prune(JSON.stringify(obj), maxLength);
@@ -388,4 +393,24 @@ export const safeExecute = (
   } catch (err) {
     logger.warn(message, err);
   }
+};
+
+export const getLumigoEventKey = event => {
+  const noCircularEvent = noCirculars(event);
+  return recursiveGetLumigoEventKey(noCircularEvent);
+};
+
+const recursiveGetLumigoEventKey = noCircularEvent => {
+  let foundValue = undefined;
+  Object.keys(noCircularEvent).some(function(k) {
+    if (k === LUMIGO_EVENT_KEY) {
+      foundValue = noCircularEvent[k];
+      return true;
+    }
+    if (noCircularEvent[k] && typeof noCircularEvent[k] === 'object') {
+      foundValue = recursiveGetLumigoEventKey(noCircularEvent[k]);
+      return foundValue !== undefined;
+    }
+  });
+  return foundValue;
 };

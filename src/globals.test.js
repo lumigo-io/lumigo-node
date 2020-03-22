@@ -91,6 +91,19 @@ describe('globals', () => {
     );
   });
 
+  test('setGlobals stepFunction', () => {
+    globals.TracerGlobals.setTracerInputs({ stepFunction: true });
+    expect(globals.TracerGlobals.getTracerInputs().isStepFunction).toBeTruthy();
+
+    process.env.LUMIGO_STEP_FUNCTION = 'True';
+    globals.TracerGlobals.setTracerInputs({});
+    expect(globals.TracerGlobals.getTracerInputs().isStepFunction).toBeTruthy();
+    process.env.LUMIGO_STEP_FUNCTION = undefined;
+
+    globals.TracerGlobals.setTracerInputs({});
+    expect(globals.TracerGlobals.getTracerInputs().isStepFunction).toBeFalsy;
+  });
+
   test('TracerGlobals', () => {
     const event = { a: 'b', c: 'd' };
     const context = { e: 'f', g: 'h' };
@@ -109,17 +122,20 @@ describe('globals', () => {
     const debug = true;
     const token = 'abcdefg';
     const edgeHost = 'zarathustra.com';
+    const isStepFunction = false;
     globals.TracerGlobals.setTracerInputs({
       token,
       debug,
       edgeHost,
       switchOff,
+      isStepFunction,
     });
     expect(globals.TracerGlobals.getTracerInputs()).toEqual({
       token,
       debug,
       edgeHost,
       switchOff,
+      isStepFunction,
     });
     globals.TracerGlobals.clearTracerInputs();
     expect(globals.TracerGlobals.getTracerInputs()).toEqual({
@@ -127,6 +143,7 @@ describe('globals', () => {
       debug: false,
       edgeHost: '',
       switchOff: false,
+      isStepFunction: false,
     });
   });
 
@@ -162,6 +179,7 @@ describe('globals', () => {
       debug: false,
       edgeHost: '',
       switchOff: false,
+      isStepFunction: false,
     });
   });
 });

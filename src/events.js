@@ -1,3 +1,9 @@
+import {
+  isStepFunction,
+  getLumigoEventKey,
+  STEP_FUNCTION_UID_KEY,
+} from './utils';
+
 export const getTriggeredBy = event => {
   if (event && event['Records']) {
     // XXX Parses s3, sns, ses, kinesis, dynamodb event sources.
@@ -14,6 +20,10 @@ export const getTriggeredBy = event => {
 
   if (event && event['httpMethod']) {
     return 'apigw';
+  }
+
+  if (isStepFunction() && event && !!getLumigoEventKey(event)) {
+    return 'stepFunction';
   }
 
   return 'invocation';
@@ -54,6 +64,8 @@ export const getRelevantEventData = (triggeredBy, event) => {
       return { arn: event.Records[0].s3.bucket.arn };
     case 'apigw':
       return getApiGatewayData(event);
+    case 'stepFunction':
+      return { messageId: getLumigoEventKey(event)[STEP_FUNCTION_UID_KEY] };
     case 'invocation':
     default:
       return {};

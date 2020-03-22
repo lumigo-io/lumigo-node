@@ -5,7 +5,11 @@ import {
   getEdgeUrl,
   removeLumigoFromStacktrace,
   isSendOnlyIfErrors,
+  isStepFunction,
   safeExecute,
+  getRandomId,
+  LUMIGO_EVENT_KEY,
+  STEP_FUNCTION_UID_KEY,
 } from './utils';
 import {
   getFunctionSpan,
@@ -17,6 +21,7 @@ import { sendSingleSpan, sendSpans } from './reporter';
 import { TracerGlobals, SpansContainer, clearGlobals } from './globals';
 import startHooks from './hooks';
 import * as logger from './logger';
+import { addStepFunctionEvent } from './hooks/http';
 
 export const HANDLER_CALLBACKED = 'handler_callbacked';
 export const ASYNC_HANDLER_RESOLVED = 'async_handler_resolved';
@@ -131,6 +136,27 @@ const performPromisifyType = (err, data, type, callback) => {
   }
 };
 
+export const performStepFunctionLogic = handlerReturnValue => {
+  return (
+    safeExecute(() => {
+      if (!isStepFunction()) {
+        return handlerReturnValue;
+      }
+      const messageId = getRandomId();
+
+      addStepFunctionEvent(messageId);
+
+      const { data } = handlerReturnValue;
+      const modifiedData = Object.assign(
+        { [LUMIGO_EVENT_KEY]: { [STEP_FUNCTION_UID_KEY]: messageId } },
+        data
+      );
+      logger.debug(`Added key ${LUMIGO_EVENT_KEY} to the user's return value`);
+      return { ...handlerReturnValue, data: modifiedData };
+    })() || handlerReturnValue
+  );
+};
+
 export const trace = ({
   token,
   debug,
@@ -176,8 +202,10 @@ export const trace = ({
     pUserHandler,
   ]);
 
+  const modifiedReturnValue = performStepFunctionLogic(handlerReturnValue);
+
   const cleanedHandlerReturnValue = removeLumigoFromStacktrace(
-    handlerReturnValue
+    modifiedReturnValue
   );
 
   await endTrace(functionSpan, cleanedHandlerReturnValue);

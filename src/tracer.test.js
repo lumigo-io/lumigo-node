@@ -5,8 +5,11 @@ import * as globals from './globals';
 import * as reporter from './reporter';
 import * as awsSpan from './spans/awsSpan';
 import startHooks from './hooks';
+import * as http from './hooks/http';
 import * as logger from './logger';
 import { TracerGlobals } from './globals';
+import { STEP_FUNCTION_UID_KEY } from './utils';
+import { LUMIGO_EVENT_KEY } from './utils';
 
 jest.mock('./hooks');
 describe('tracer', () => {
@@ -14,7 +17,10 @@ describe('tracer', () => {
   spies.isSwitchedOff = jest.spyOn(utils, 'isSwitchedOff');
   spies.isAwsEnvironment = jest.spyOn(utils, 'isAwsEnvironment');
   spies.isSendOnlyIfErrors = jest.spyOn(utils, 'isSendOnlyIfErrors');
+  spies.isStepFunction = jest.spyOn(utils, 'isStepFunction');
   spies.getContextInfo = jest.spyOn(utils, 'getContextInfo');
+  spies.getRandomId = jest.spyOn(utils, 'getRandomId');
+  spies.addStepFunctionEvent = jest.spyOn(http, 'addStepFunctionEvent');
   spies.sendSingleSpan = jest.spyOn(reporter, 'sendSingleSpan');
   spies.sendSpans = jest.spyOn(reporter, 'sendSpans');
   spies.getFunctionSpan = jest.spyOn(awsSpan, 'getFunctionSpan');
@@ -444,5 +450,53 @@ describe('tracer', () => {
 
     // No exception.
     expect(handler).toHaveBeenCalledOnce();
+  });
+
+  test('performStepFunctionLogic - Happy flow', () => {
+    spies.getRandomId.mockReturnValueOnce('123');
+    spies.isStepFunction.mockReturnValueOnce(true);
+    spies.addStepFunctionEvent.mockImplementationOnce(() => {});
+
+    const result = tracer.performStepFunctionLogic({
+      data: { hello: 'world' },
+    });
+
+    expect(result).toEqual({
+      data: {
+        hello: 'world',
+        [LUMIGO_EVENT_KEY]: { [STEP_FUNCTION_UID_KEY]: '123' },
+      },
+    });
+    expect(spies.addStepFunctionEvent).toBeCalledWith('123');
+    spies.addStepFunctionEvent.mockClear();
+  });
+
+  test('performStepFunctionLogic - Not step function', () => {
+    spies.getRandomId.mockReturnValueOnce('123');
+    spies.isStepFunction.mockReturnValueOnce(false);
+
+    const result2 = tracer.performStepFunctionLogic({
+      data: { hello: 'world' },
+    });
+
+    expect(result2).toEqual({ data: { hello: 'world' } });
+    expect(spies.addStepFunctionEvent).not.toBeCalled();
+    spies.addStepFunctionEvent.mockClear();
+  });
+
+  test('performStepFunctionLogic - Error should be contained', () => {
+    spies.getRandomId.mockReturnValueOnce('123');
+    spies.isStepFunction.mockReturnValueOnce(true);
+    spies.addStepFunctionEvent.mockImplementationOnce(() => {
+      throw new Error('stam1');
+    });
+
+    const result3 = tracer.performStepFunctionLogic({
+      data: { hello: 'world' },
+    });
+
+    expect(result3).toEqual({ data: { hello: 'world' } });
+    expect(spies.addStepFunctionEvent).toBeCalled();
+    spies.addStepFunctionEvent.mockClear();
   });
 });

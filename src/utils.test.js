@@ -9,13 +9,15 @@ import {
   keyToOmitRegexes,
   LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP,
   LUMIGO_SECRET_MASKING_REGEX,
+  safeExecute,
+  getLumigoEventKey,
+  LUMIGO_EVENT_KEY,
 } from './utils';
 import { TracerGlobals } from './globals';
 import EventEmitter from 'events';
 import https from 'https';
 import crypto from 'crypto';
 import { isDebug } from './logger';
-import { safeExecute } from './utils';
 
 jest.mock('https');
 jest.mock('../package.json', () => ({
@@ -352,6 +354,7 @@ describe('utils', () => {
   test('prune', () => {
     expect(utils.prune('abcdefg', 3)).toEqual('abc');
     expect(utils.prune('abcdefg')).toEqual('abcdefg');
+    expect(utils.prune(undefined)).toEqual('');
   });
 
   test('stringifyAndPrune', () => {
@@ -771,5 +774,21 @@ describe('utils', () => {
       throw new Error('Mocked error');
     })();
     // No exception.
+  });
+
+  test('getLumigoEventKey', () => {
+    expect(getLumigoEventKey({ a: 1 })).toEqual(undefined);
+    expect(getLumigoEventKey({ a: 1, [LUMIGO_EVENT_KEY]: { b: 2 } })).toEqual({
+      b: 2,
+    });
+    expect(
+      getLumigoEventKey({ a: 1, b: { [LUMIGO_EVENT_KEY]: { c: 3 } } })
+    ).toEqual({ c: 3 });
+
+    const circular = { a: 1 };
+    circular.b = circular;
+    expect(getLumigoEventKey(circular)).toEqual(undefined);
+    circular[LUMIGO_EVENT_KEY] = { c: 3 };
+    expect(getLumigoEventKey(circular)).toEqual({ c: 3 });
   });
 });

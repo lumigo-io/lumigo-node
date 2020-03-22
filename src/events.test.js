@@ -1,3 +1,5 @@
+import * as utils from './utils';
+
 const events = require('./events');
 const exampleS3Event = require('./testdata/events/s3-event.json');
 const exampleSnsEvent = require('./testdata/events/sns-event.json');
@@ -106,6 +108,18 @@ describe('events', () => {
     expect(events.getEventInfo(exampleS3Event)).toEqual({
       arn: 'arn:aws:s3:::mybucket',
       triggeredBy: 's3',
+    });
+
+    jest.spyOn(utils, 'isStepFunction');
+    utils.isStepFunction.mockReturnValueOnce(true);
+    expect(
+      events.getEventInfo({
+        data: 1,
+        [utils.LUMIGO_EVENT_KEY]: { [utils.STEP_FUNCTION_UID_KEY]: '123' },
+      })
+    ).toEqual({
+      triggeredBy: 'stepFunction',
+      messageId: '123',
     });
   });
 });

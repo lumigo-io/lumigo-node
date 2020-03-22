@@ -20,6 +20,7 @@ export const TracerGlobals = (() => {
     debug: false,
     edgeHost: '',
     switchOff: false,
+    isStepFunction: false,
   };
 
   const setHandlerInputs = ({ event, context }) =>
@@ -35,6 +36,7 @@ export const TracerGlobals = (() => {
     debug = false,
     edgeHost = '',
     switchOff = false,
+    stepFunction = false,
   }) =>
     Object.assign(tracerInputs, {
       token: token || process.env.LUMIGO_TRACER_TOKEN,
@@ -51,6 +53,12 @@ export const TracerGlobals = (() => {
           process.env['LUMIGO_SWITCH_OFF'] &&
           process.env.LUMIGO_SWITCH_OFF === 'TRUE'
         ),
+      isStepFunction:
+        stepFunction ||
+        !!(
+          process.env['LUMIGO_STEP_FUNCTION'] &&
+          process.env.LUMIGO_STEP_FUNCTION.toUpperCase() === 'TRUE'
+        ),
     });
 
   const getTracerInputs = () => tracerInputs;
@@ -61,6 +69,7 @@ export const TracerGlobals = (() => {
       debug: false,
       edgeHost: '',
       switchOff: false,
+      isStepFunction: false,
     });
 
   return {
