@@ -5,7 +5,11 @@ import {
   getEdgeUrl,
   removeLumigoFromStacktrace,
   isSendOnlyIfErrors,
+  isStepFunction,
   safeExecute,
+  getRandomId,
+  LUMIGO_EVENT_KEY,
+  STEP_FUNCTION_UID_KEY,
 } from './utils';
 import {
   getFunctionSpan,
@@ -17,6 +21,7 @@ import { sendSingleSpan, sendSpans } from './reporter';
 import { TracerGlobals, SpansContainer, clearGlobals } from './globals';
 import startHooks from './hooks';
 import * as logger from './logger';
+import { addStepFunctionEvent } from './hooks/http';
 
 export const HANDLER_CALLBACKED = 'handler_callbacked';
 export const ASYNC_HANDLER_RESOLVED = 'async_handler_resolved';
@@ -131,12 +136,31 @@ const performPromisifyType = (err, data, type, callback) => {
   }
 };
 
+export const performStepFunctionLogic = handlerReturnValue => {
+  return (
+    safeExecute(() => {
+      const { err, data, type } = handlerReturnValue;
+      const messageId = getRandomId();
+
+      addStepFunctionEvent(messageId);
+
+      const modifiedData = Object.assign(
+        { [LUMIGO_EVENT_KEY]: { [STEP_FUNCTION_UID_KEY]: messageId } },
+        data
+      );
+      logger.debug(`Added key ${LUMIGO_EVENT_KEY} to the user's return value`);
+      return { err, type, data: modifiedData };
+    })() || handlerReturnValue
+  );
+};
+
 export const trace = ({
   token,
   debug,
   edgeHost,
   switchOff,
   eventFilter,
+  stepFunction,
 }) => userHandler => async (event, context, callback) => {
   try {
     TracerGlobals.setHandlerInputs({ event, context });
@@ -146,6 +170,7 @@ export const trace = ({
       edgeHost,
       switchOff,
       eventFilter,
+      stepFunction,
     });
   } catch (err) {
     logger.warn('Failed to start tracer', err);
@@ -171,10 +196,14 @@ export const trace = ({
     callback
   );
 
-  const [functionSpan, handlerReturnValue] = await Promise.all([
+  let [functionSpan, handlerReturnValue] = await Promise.all([
     pStartTrace,
     pUserHandler,
   ]);
+
+  if (isStepFunction()) {
+    handlerReturnValue = performStepFunctionLogic(handlerReturnValue);
+  }
 
   const cleanedHandlerReturnValue = removeLumigoFromStacktrace(
     handlerReturnValue

@@ -13,6 +13,10 @@ export const LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP =
 export const LUMIGO_SECRET_MASKING_REGEX = 'LUMIGO_SECRET_MASKING_REGEX';
 export const OMITTING_KEYS_REGEXES =
   '[".*pass.*", ".*key.*", ".*secret.*", ".*credential.*", ".*passphrase.*", "SessionToken", "x-amz-security-token", "Signature", "Credential", "Authorization"]';
+export const LUMIGO_EVENT_KEY = '_lumigo';
+export const STEP_FUNCTION_UID_KEY = 'step_function_uid';
+export const GET_KEY_DEPTH_ENV_KEY = 'LUMIGO_KEY_DEPTH';
+export const DEFAULT_GET_KEY_DEPTH = 3;
 
 export const getContextInfo = context => {
   const remainingTimeInMillis = context.getRemainingTimeInMillis();
@@ -145,6 +149,9 @@ export const isSwitchedOff = () =>
     return TracerGlobals.getTracerInputs().switchOff || !isValidAlias();
   })();
 
+export const isStepFunction = () =>
+  safeExecute(() => TracerGlobals.getTracerInputs().isStepFunction)();
+
 export const getValidAliases = () =>
   safeExecute(() => {
     return JSON.parse(process.env['LUMIGO_VALID_ALIASES'] || '[]');
@@ -199,7 +206,7 @@ export const getEventEntitySize = () => {
 };
 
 export const prune = (str, maxLength = MAX_ENTITY_SIZE) =>
-  str.substr(0, maxLength);
+  (str || '').substr(0, maxLength);
 
 export const stringifyAndPrune = (obj, maxLength = MAX_ENTITY_SIZE) =>
   prune(JSON.stringify(obj), maxLength);
@@ -388,4 +395,31 @@ export const safeExecute = (
   } catch (err) {
     logger.warn(message, err);
   }
+};
+
+export const recursiveGetKey = (event, keyToSearch) => {
+  return recursiveGetKeyByDepth(event, keyToSearch, recursiveGetKeyDepth());
+};
+
+const recursiveGetKeyDepth = () => {
+  return parseInt(process.env[GET_KEY_DEPTH_ENV_KEY]) || DEFAULT_GET_KEY_DEPTH;
+};
+
+const recursiveGetKeyByDepth = (event, keyToSearch, maxDepth) => {
+  if (maxDepth === 0) {
+    return undefined;
+  }
+  let foundValue = undefined;
+  const examineKey = k => {
+    if (k === keyToSearch) {
+      foundValue = event[k];
+      return true;
+    }
+    if (event[k] && typeof event[k] === 'object') {
+      foundValue = recursiveGetKeyByDepth(event[k], keyToSearch, maxDepth - 1);
+      return foundValue !== undefined;
+    }
+  };
+  Object.keys(event).some(examineKey);
+  return foundValue;
 };

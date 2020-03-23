@@ -543,4 +543,28 @@ describe('http hook', () => {
     httpHook.httpRequestOnWrapper({})(() => true)('response', () => true);
     // No exception.
   });
+
+  test('addStepFunctionEvent', () => {
+    globals.SpansContainer.addSpan = jest.fn(() => {});
+    awsSpan.getHttpSpan.mockReturnValueOnce({
+      id: '123',
+      type: 'http',
+      started: 123,
+      info: { additional: 'bla' },
+    });
+
+    httpHook.addStepFunctionEvent('123');
+
+    expect(globals.SpansContainer.addSpan).toHaveBeenCalledWith({
+      id: '123',
+      type: 'http',
+      info: {
+        resourceName: 'StepFunction',
+        httpInfo: { host: 'StepFunction' },
+        messageId: '123',
+        additional: 'bla',
+      },
+      started: 123,
+    });
+  });
 });

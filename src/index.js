@@ -11,9 +11,19 @@ module.exports = function({
   eventFilter = {},
   verbose = false,
   switchOff = false,
+  stepFunction = false,
 }) {
   verbose && setVerboseMode();
   switchOff && setSwitchOff();
 
-  return { trace: trace({ token, debug, edgeHost, switchOff, eventFilter }) };
+  return {
+    trace: trace({
+      token,
+      debug,
+      edgeHost,
+      switchOff,
+      eventFilter,
+      stepFunction,
+    }),
+  };
 };

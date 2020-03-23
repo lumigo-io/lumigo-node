@@ -254,6 +254,17 @@ export const httpGetWrapper = httpModule => (/* originalGetFn */) =>
     return req;
   };
 
+export const addStepFunctionEvent = messageId => {
+  const httpSpan = getHttpSpan({}, {});
+  const stepInfo = Object.assign(httpSpan.info, {
+    resourceName: 'StepFunction',
+    httpInfo: { host: 'StepFunction' },
+    messageId: messageId,
+  });
+  const stepSpan = Object.assign(httpSpan, { info: stepInfo });
+  SpansContainer.addSpan(stepSpan);
+};
+
 export default () => {
   shimmer.wrap(http, 'get', httpGetWrapper(http));
   shimmer.wrap(https, 'get', httpGetWrapper(https));

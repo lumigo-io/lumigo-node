@@ -9,13 +9,15 @@ import {
   keyToOmitRegexes,
   LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP,
   LUMIGO_SECRET_MASKING_REGEX,
+  safeExecute,
+  recursiveGetKey,
 } from './utils';
 import { TracerGlobals } from './globals';
 import EventEmitter from 'events';
 import https from 'https';
 import crypto from 'crypto';
 import { isDebug } from './logger';
-import { safeExecute } from './utils';
+import { GET_KEY_DEPTH_ENV_KEY } from './utils';
 
 jest.mock('https');
 jest.mock('../package.json', () => ({
@@ -352,6 +354,7 @@ describe('utils', () => {
   test('prune', () => {
     expect(utils.prune('abcdefg', 3)).toEqual('abc');
     expect(utils.prune('abcdefg')).toEqual('abcdefg');
+    expect(utils.prune(undefined)).toEqual('');
   });
 
   test('stringifyAndPrune', () => {
@@ -771,5 +774,30 @@ describe('utils', () => {
       throw new Error('Mocked error');
     })();
     // No exception.
+  });
+
+  test('recursiveGetKey', () => {
+    expect(recursiveGetKey({ a: 1 }, 'key')).toEqual(undefined);
+    expect(recursiveGetKey({ a: 1, key: { b: 2 } }, 'key')).toEqual({
+      b: 2,
+    });
+    expect(recursiveGetKey({ a: 1, b: { key: { c: 3 } } }, 'key')).toEqual({
+      c: 3,
+    });
+
+    const circular = { a: 1 };
+    circular.b = circular;
+    expect(recursiveGetKey(circular, 'key')).toEqual(undefined);
+    circular.key = { c: 3 };
+    expect(recursiveGetKey(circular, 'key')).toEqual({ c: 3 });
+
+    const tooDeep = { a: { b: { c: { d: { e: { key: "I'm here" } } } } } };
+    process.env[GET_KEY_DEPTH_ENV_KEY] = undefined;
+    expect(recursiveGetKey(tooDeep, 'key')).toEqual(undefined);
+    process.env[GET_KEY_DEPTH_ENV_KEY] = 'bla';
+    expect(recursiveGetKey(tooDeep, 'key')).toEqual(undefined);
+    process.env[GET_KEY_DEPTH_ENV_KEY] = '8';
+    expect(recursiveGetKey(tooDeep, 'key')).toEqual("I'm here");
+    process.env[GET_KEY_DEPTH_ENV_KEY] = undefined;
   });
 });

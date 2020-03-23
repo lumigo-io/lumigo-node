@@ -1,3 +1,10 @@
+import {
+  isStepFunction,
+  recursiveGetKey,
+  STEP_FUNCTION_UID_KEY,
+  LUMIGO_EVENT_KEY,
+} from './utils';
+
 export const getTriggeredBy = event => {
   if (event && event['Records']) {
     // XXX Parses s3, sns, ses, kinesis, dynamodb event sources.
@@ -14,6 +21,10 @@ export const getTriggeredBy = event => {
 
   if (event && event['httpMethod']) {
     return 'apigw';
+  }
+
+  if (isStepFunction() && event && !!recursiveGetKey(event, LUMIGO_EVENT_KEY)) {
+    return 'stepFunction';
   }
 
   return 'invocation';
@@ -54,6 +65,12 @@ export const getRelevantEventData = (triggeredBy, event) => {
       return { arn: event.Records[0].s3.bucket.arn };
     case 'apigw':
       return getApiGatewayData(event);
+    case 'stepFunction':
+      return {
+        messageId: recursiveGetKey(event, LUMIGO_EVENT_KEY)[
+          STEP_FUNCTION_UID_KEY
+        ],
+      };
     case 'invocation':
     default:
       return {};
