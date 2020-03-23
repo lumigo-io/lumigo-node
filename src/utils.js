@@ -15,6 +15,8 @@ export const OMITTING_KEYS_REGEXES =
   '[".*pass.*", ".*key.*", ".*secret.*", ".*credential.*", ".*passphrase.*", "SessionToken", "x-amz-security-token", "Signature", "Credential", "Authorization"]';
 export const LUMIGO_EVENT_KEY = '_lumigo';
 export const STEP_FUNCTION_UID_KEY = 'step_function_uid';
+export const GET_KEY_DEPTH_ENV_KEY = 'LUMIGO_KEY_DEPTH';
+export const DEFAULT_GET_KEY_DEPTH = 3;
 
 export const getContextInfo = context => {
   const remainingTimeInMillis = context.getRemainingTimeInMillis();
@@ -396,22 +398,28 @@ export const safeExecute = (
 };
 
 export const recursiveGetKey = (event, keyToSearch) => {
-  const noCircularEvent = noCirculars(event);
-  return noCircularGetKey(noCircularEvent, keyToSearch);
+  return recursiveGetKeyByDepth(event, keyToSearch, recursiveGetKeyDepth());
 };
 
-const noCircularGetKey = (noCircularEvent, keyToSearch) => {
+const recursiveGetKeyDepth = () => {
+  return parseInt(process.env[GET_KEY_DEPTH_ENV_KEY]) || DEFAULT_GET_KEY_DEPTH;
+};
+
+const recursiveGetKeyByDepth = (event, keyToSearch, maxDepth) => {
+  if (maxDepth === 0) {
+    return undefined;
+  }
   let foundValue = undefined;
   const examineKey = k => {
     if (k === keyToSearch) {
-      foundValue = noCircularEvent[k];
+      foundValue = event[k];
       return true;
     }
-    if (noCircularEvent[k] && typeof noCircularEvent[k] === 'object') {
-      foundValue = noCircularGetKey(noCircularEvent[k], keyToSearch);
+    if (event[k] && typeof event[k] === 'object') {
+      foundValue = recursiveGetKeyByDepth(event[k], keyToSearch, maxDepth - 1);
       return foundValue !== undefined;
     }
   };
-  Object.keys(noCircularEvent).some(examineKey);
+  Object.keys(event).some(examineKey);
   return foundValue;
 };

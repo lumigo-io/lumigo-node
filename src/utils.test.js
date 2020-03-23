@@ -17,6 +17,7 @@ import EventEmitter from 'events';
 import https from 'https';
 import crypto from 'crypto';
 import { isDebug } from './logger';
+import { GET_KEY_DEPTH_ENV_KEY } from './utils';
 
 jest.mock('https');
 jest.mock('../package.json', () => ({
@@ -775,7 +776,7 @@ describe('utils', () => {
     // No exception.
   });
 
-  test('getLumigoEventKey', () => {
+  test('recursiveGetKey', () => {
     expect(recursiveGetKey({ a: 1 }, 'key')).toEqual(undefined);
     expect(recursiveGetKey({ a: 1, key: { b: 2 } }, 'key')).toEqual({
       b: 2,
@@ -789,5 +790,14 @@ describe('utils', () => {
     expect(recursiveGetKey(circular, 'key')).toEqual(undefined);
     circular.key = { c: 3 };
     expect(recursiveGetKey(circular, 'key')).toEqual({ c: 3 });
+
+    const tooDeep = { a: { b: { c: { d: { e: { key: "I'm here" } } } } } };
+    process.env[GET_KEY_DEPTH_ENV_KEY] = undefined;
+    expect(recursiveGetKey(tooDeep, 'key')).toEqual(undefined);
+    process.env[GET_KEY_DEPTH_ENV_KEY] = 'bla';
+    expect(recursiveGetKey(tooDeep, 'key')).toEqual(undefined);
+    process.env[GET_KEY_DEPTH_ENV_KEY] = '8';
+    expect(recursiveGetKey(tooDeep, 'key')).toEqual("I'm here");
+    process.env[GET_KEY_DEPTH_ENV_KEY] = undefined;
   });
 });
