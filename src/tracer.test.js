@@ -450,52 +450,44 @@ describe('tracer', () => {
 
     // No exception.
     expect(handler).toHaveBeenCalledOnce();
+    mockedTracerGlobals.mockClear();
   });
 
-  test('performStepFunctionLogic - Happy flow', () => {
+  test('performStepFunctionLogic - performStepFunctionLogic doesnt call if not step function', async () => {
+    const handler = jest.fn(async () => {});
+
+    await tracer.trace({ stepFunction: false })(handler)({}, {});
+
+    expect(spies.addStepFunctionEvent).not.toBeCalled();
+  });
+
+  test('performStepFunctionLogic - Happy flow', async () => {
+    const handler = jest.fn(async () => ({ hello: 'world' }));
     spies.getRandomId.mockReturnValueOnce('123');
     spies.isStepFunction.mockReturnValueOnce(true);
     spies.addStepFunctionEvent.mockImplementationOnce(() => {});
 
-    const result = tracer.performStepFunctionLogic({
-      data: { hello: 'world' },
-    });
+    const result = await tracer.trace({})(handler)({}, {});
 
     expect(result).toEqual({
-      data: {
-        hello: 'world',
-        [LUMIGO_EVENT_KEY]: { [STEP_FUNCTION_UID_KEY]: '123' },
-      },
+      hello: 'world',
+      [LUMIGO_EVENT_KEY]: { [STEP_FUNCTION_UID_KEY]: '123' },
     });
     expect(spies.addStepFunctionEvent).toBeCalledWith('123');
     spies.addStepFunctionEvent.mockClear();
   });
 
-  test('performStepFunctionLogic - Not step function', () => {
-    spies.getRandomId.mockReturnValueOnce('123');
-    spies.isStepFunction.mockReturnValueOnce(false);
-
-    const result2 = tracer.performStepFunctionLogic({
-      data: { hello: 'world' },
-    });
-
-    expect(result2).toEqual({ data: { hello: 'world' } });
-    expect(spies.addStepFunctionEvent).not.toBeCalled();
-    spies.addStepFunctionEvent.mockClear();
-  });
-
-  test('performStepFunctionLogic - Error should be contained', () => {
+  test('performStepFunctionLogic - Error should be contained', async () => {
+    const handler = jest.fn(async () => ({ hello: 'world' }));
     spies.getRandomId.mockReturnValueOnce('123');
     spies.isStepFunction.mockReturnValueOnce(true);
     spies.addStepFunctionEvent.mockImplementationOnce(() => {
       throw new Error('stam1');
     });
 
-    const result3 = tracer.performStepFunctionLogic({
-      data: { hello: 'world' },
-    });
+    const result3 = await tracer.trace({})(handler)({}, {});
 
-    expect(result3).toEqual({ data: { hello: 'world' } });
+    expect(result3).toEqual({ hello: 'world' });
     expect(spies.addStepFunctionEvent).toBeCalled();
     spies.addStepFunctionEvent.mockClear();
   });

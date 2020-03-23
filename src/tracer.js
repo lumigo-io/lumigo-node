@@ -139,20 +139,17 @@ const performPromisifyType = (err, data, type, callback) => {
 export const performStepFunctionLogic = handlerReturnValue => {
   return (
     safeExecute(() => {
-      if (!isStepFunction()) {
-        return handlerReturnValue;
-      }
+      const { err, data, type } = handlerReturnValue;
       const messageId = getRandomId();
 
       addStepFunctionEvent(messageId);
 
-      const { data } = handlerReturnValue;
       const modifiedData = Object.assign(
         { [LUMIGO_EVENT_KEY]: { [STEP_FUNCTION_UID_KEY]: messageId } },
         data
       );
       logger.debug(`Added key ${LUMIGO_EVENT_KEY} to the user's return value`);
-      return { ...handlerReturnValue, data: modifiedData };
+      return { err, type, data: modifiedData };
     })() || handlerReturnValue
   );
 };
@@ -199,15 +196,17 @@ export const trace = ({
     callback
   );
 
-  const [functionSpan, handlerReturnValue] = await Promise.all([
+  let [functionSpan, handlerReturnValue] = await Promise.all([
     pStartTrace,
     pUserHandler,
   ]);
 
-  const modifiedReturnValue = performStepFunctionLogic(handlerReturnValue);
+  if (isStepFunction()) {
+    handlerReturnValue = performStepFunctionLogic(handlerReturnValue);
+  }
 
   const cleanedHandlerReturnValue = removeLumigoFromStacktrace(
-    modifiedReturnValue
+    handlerReturnValue
   );
 
   await endTrace(functionSpan, cleanedHandlerReturnValue);

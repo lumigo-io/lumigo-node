@@ -1,7 +1,8 @@
 import {
   isStepFunction,
-  getLumigoEventKey,
+  recursiveGetKey,
   STEP_FUNCTION_UID_KEY,
+  LUMIGO_EVENT_KEY,
 } from './utils';
 
 export const getTriggeredBy = event => {
@@ -22,7 +23,7 @@ export const getTriggeredBy = event => {
     return 'apigw';
   }
 
-  if (isStepFunction() && event && !!getLumigoEventKey(event)) {
+  if (isStepFunction() && event && !!recursiveGetKey(event, LUMIGO_EVENT_KEY)) {
     return 'stepFunction';
   }
 
@@ -65,7 +66,11 @@ export const getRelevantEventData = (triggeredBy, event) => {
     case 'apigw':
       return getApiGatewayData(event);
     case 'stepFunction':
-      return { messageId: getLumigoEventKey(event)[STEP_FUNCTION_UID_KEY] };
+      return {
+        messageId: recursiveGetKey(event, LUMIGO_EVENT_KEY)[
+          STEP_FUNCTION_UID_KEY
+        ],
+      };
     case 'invocation':
     default:
       return {};

@@ -10,8 +10,7 @@ import {
   LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP,
   LUMIGO_SECRET_MASKING_REGEX,
   safeExecute,
-  getLumigoEventKey,
-  LUMIGO_EVENT_KEY,
+  recursiveGetKey,
 } from './utils';
 import { TracerGlobals } from './globals';
 import EventEmitter from 'events';
@@ -777,18 +776,18 @@ describe('utils', () => {
   });
 
   test('getLumigoEventKey', () => {
-    expect(getLumigoEventKey({ a: 1 })).toEqual(undefined);
-    expect(getLumigoEventKey({ a: 1, [LUMIGO_EVENT_KEY]: { b: 2 } })).toEqual({
+    expect(recursiveGetKey({ a: 1 }, 'key')).toEqual(undefined);
+    expect(recursiveGetKey({ a: 1, key: { b: 2 } }, 'key')).toEqual({
       b: 2,
     });
-    expect(
-      getLumigoEventKey({ a: 1, b: { [LUMIGO_EVENT_KEY]: { c: 3 } } })
-    ).toEqual({ c: 3 });
+    expect(recursiveGetKey({ a: 1, b: { key: { c: 3 } } }, 'key')).toEqual({
+      c: 3,
+    });
 
     const circular = { a: 1 };
     circular.b = circular;
-    expect(getLumigoEventKey(circular)).toEqual(undefined);
-    circular[LUMIGO_EVENT_KEY] = { c: 3 };
-    expect(getLumigoEventKey(circular)).toEqual({ c: 3 });
+    expect(recursiveGetKey(circular, 'key')).toEqual(undefined);
+    circular.key = { c: 3 };
+    expect(recursiveGetKey(circular, 'key')).toEqual({ c: 3 });
   });
 });

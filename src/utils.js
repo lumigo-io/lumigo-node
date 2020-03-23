@@ -395,22 +395,23 @@ export const safeExecute = (
   }
 };
 
-export const getLumigoEventKey = event => {
+export const recursiveGetKey = (event, keyToSearch) => {
   const noCircularEvent = noCirculars(event);
-  return recursiveGetLumigoEventKey(noCircularEvent);
+  return noCircularGetKey(noCircularEvent, keyToSearch);
 };
 
-const recursiveGetLumigoEventKey = noCircularEvent => {
+const noCircularGetKey = (noCircularEvent, keyToSearch) => {
   let foundValue = undefined;
-  Object.keys(noCircularEvent).some(function(k) {
-    if (k === LUMIGO_EVENT_KEY) {
+  const examineKey = k => {
+    if (k === keyToSearch) {
       foundValue = noCircularEvent[k];
       return true;
     }
     if (noCircularEvent[k] && typeof noCircularEvent[k] === 'object') {
-      foundValue = recursiveGetLumigoEventKey(noCircularEvent[k]);
+      foundValue = noCircularGetKey(noCircularEvent[k], keyToSearch);
       return foundValue !== undefined;
     }
-  });
+  };
+  Object.keys(noCircularEvent).some(examineKey);
   return foundValue;
 };

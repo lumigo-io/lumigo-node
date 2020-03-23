@@ -1,4 +1,5 @@
 import * as utils from './utils';
+import { TracerGlobals } from './globals';
 
 const events = require('./events');
 const exampleS3Event = require('./testdata/events/s3-event.json');
@@ -110,8 +111,7 @@ describe('events', () => {
       triggeredBy: 's3',
     });
 
-    jest.spyOn(utils, 'isStepFunction');
-    utils.isStepFunction.mockReturnValueOnce(true);
+    TracerGlobals.setTracerInputs({ stepFunction: true });
     expect(
       events.getEventInfo({
         data: 1,
