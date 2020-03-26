@@ -1,14 +1,14 @@
 import { debug } from './logger';
 
 export const SpansContainer = (() => {
-  const spansToSend = [];
+  let spansToSend = {};
 
   const addSpan = span => {
-    spansToSend.push(span);
+    spansToSend[span.id] = span;
     debug('Span created', span);
   };
-  const getSpans = () => spansToSend;
-  const clearSpans = () => (spansToSend.length = 0);
+  const getSpans = () => Object.values(spansToSend);
+  const clearSpans = () => (spansToSend = {});
 
   return { addSpan, getSpans, clearSpans };
 })();

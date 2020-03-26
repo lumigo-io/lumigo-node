@@ -2,8 +2,8 @@ import * as globals from './globals';
 
 describe('globals', () => {
   test('SpansContainer', () => {
-    const span1 = { a: 'b', c: 'd' };
-    const span2 = { e: 'f', g: 'h' };
+    const span1 = { a: 'b', c: 'd', id: '1' };
+    const span2 = { e: 'f', g: 'h', id: '2' };
     globals.SpansContainer.addSpan(span1);
     globals.SpansContainer.addSpan(span2);
     expect(globals.SpansContainer.getSpans()).toEqual([span1, span2]);
@@ -101,7 +101,7 @@ describe('globals', () => {
     process.env.LUMIGO_STEP_FUNCTION = undefined;
 
     globals.TracerGlobals.setTracerInputs({});
-    expect(globals.TracerGlobals.getTracerInputs().isStepFunction).toBeFalsy;
+    expect(globals.TracerGlobals.getTracerInputs().isStepFunction).toBeFalsy();
   });
 
   test('TracerGlobals', () => {
