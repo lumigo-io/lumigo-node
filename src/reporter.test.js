@@ -2,60 +2,38 @@
 import { TracerGlobals } from './globals';
 import * as reporter from './reporter';
 import * as utils from './utils';
-import * as logger from './logger';
+import { HttpsRequestsForTesting } from '../testUtils/httpsMocker';
 import { getJSONBase64Size } from './utils';
 
-jest.mock('../package.json', () => ({
-  name: '@lumigo/tracerMock',
-  version: '1.2.3',
-}));
-
 describe('reporter', () => {
-  jest.spyOn(global.console, 'log');
-  global.console.log.mockImplementation(() => {});
-  const spies = {};
-  spies['sendSpans'] = jest.spyOn(reporter, 'sendSpans');
-  spies['now'] = jest.spyOn(global.Date, 'now');
-  spies['httpReq'] = jest.spyOn(utils, 'httpReq');
-  spies['isDebug'] = jest.spyOn(logger, 'isDebug');
-  spies['isSendOnlyIfErrors'] = jest.spyOn(utils, 'isSendOnlyIfErrors');
-
-  const oldEnv = Object.assign({}, process.env);
-  beforeEach(() => {
-    const awsEnv = {
-      LAMBDA_TASK_ROOT: '/var/task',
-      LAMBDA_RUNTIME_DIR: '/var/runtime',
-      AWS_REGION: 'us-east-1',
-      AWS_DEFAULT_REGION: 'us-east-1',
-      AWS_LAMBDA_LOG_GROUP_NAME: '/aws/lambda/aws-nodejs-dev-hello',
-      AWS_LAMBDA_LOG_STREAM_NAME:
-        '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',
-      AWS_LAMBDA_FUNCTION_NAME: 'aws-nodejs-dev-hello',
-      AWS_LAMBDA_FUNCTION_MEMORY_SIZE: '1024',
-      AWS_LAMBDA_FUNCTION_VERSION: '$LATEST',
-      _AWS_XRAY_DAEMON_ADDRESS: '169.254.79.2',
-      _AWS_XRAY_DAEMON_PORT: '2000',
-      AWS_XRAY_DAEMON_ADDRESS: '169.254.79.2:2000',
-      AWS_XRAY_CONTEXT_MISSING: 'LOG_ERROR',
-      _X_AMZN_TRACE_ID:
-        'Root=1-5cdcf03a-64a1b06067c2100c52e51ef4;Parent=28effe37598bb622;Sampled=0',
-      AWS_EXECUTION_ENV: 'AWS_Lambda_nodejs8.10',
-    };
-
-    process.env = { ...oldEnv, ...awsEnv };
-  });
-  afterEach(() => {
-    process.env = { ...oldEnv };
+  const buildExpectedRequest = (token, spans) => ({
+    options: {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': `@lumigo/tracerMock$1.2.3`,
+        Authorization: token,
+      },
+      host: 'us-east-1.lumigo-tracer-edge.golumigo.com',
+      path: '/api/spans',
+    },
+    body: JSON.stringify(spans),
   });
 
   test('sendSingleSpan', async () => {
-    const retVal = { rtt: 1234 };
-    spies.sendSpans.mockReturnValueOnce(retVal);
-
+    const token = 'DEADBEEF';
+    TracerGlobals.setTracerInputs({ token });
     const span = { a: 'b', c: 'd' };
-    const result = await reporter.sendSingleSpan(span);
 
-    expect(result).toEqual(retVal);
+    let result = await reporter.sendSingleSpan(span);
+
+    const requests = HttpsRequestsForTesting.getRequests();
+    const expectedRequest = buildExpectedRequest(token, [span]);
+
+    expect(requests).toEqual([expectedRequest]);
+
+    expect(result.rtt).toBeGreaterThanOrEqual(0);
+    expect(result.rtt).toBeLessThanOrEqual(50);
   });
 
   test('isSpansContainsErrors', async () => {
@@ -80,80 +58,55 @@ describe('reporter', () => {
     assertSpans(spansWithoutError, false);
   });
 
-  test('sendSpans', async () => {
-    utils.setDebug();
+  test('sendSpans - simple flow', async () => {
     const token = 'DEADBEEF';
     TracerGlobals.setTracerInputs({ token });
+    const spans = [{ a: 'b', c: 'd' }, { e: 'f', g: 'h' }];
 
-    const span1 = { a: 'b', c: 'd' };
-    const span2 = { e: 'f', g: 'h' };
-    const errorSpan = { a: 'a', b: 'b', error: 'error' };
+    let result = await reporter.sendSpans(spans);
 
-    const pkgNameMock = '@lumigo/tracerMock';
-    const pkgVersionMock = '1.2.3';
+    const requests = HttpsRequestsForTesting.getRequests();
+    const expectedRequest = buildExpectedRequest(token, spans);
 
-    const expectedHeaders = {
-      'Content-Type': 'application/json',
-      'User-Agent': `${pkgNameMock}$${pkgVersionMock}`,
-      Authorization: token,
-    };
-    const expectedHost = 'us-east-1.lumigo-tracer-edge.golumigo.com';
+    expect(requests).toEqual([expectedRequest]);
 
-    const expectedPath = '/api/spans';
-    const expectedMethod = 'POST';
-    const expectedReqBody = JSON.stringify([span1, span2]);
-
-    spies.now.mockReturnValueOnce(0);
-    spies.now.mockReturnValueOnce(1024);
-    spies.httpReq.mockImplementationOnce(() => {});
-    let result = await reporter.sendSpans([span1, span2]);
-
-    expect(spies.httpReq).toHaveBeenCalledWith(
-      {
-        host: expectedHost,
-        path: expectedPath,
-        method: expectedMethod,
-        headers: expectedHeaders,
-      },
-      expectedReqBody
-    );
-    expect(result.rtt).toEqual(1024);
-
-    //Test - isSendOnlyIfErrors is on, and no error spans -> no spans sent
-    spies.isSendOnlyIfErrors.mockReturnValueOnce(true);
-    spies.httpReq.mockClear();
-
-    result = await reporter.sendSpans([span1, span2]);
-    expect(spies.httpReq).toHaveBeenCalledTimes(0);
-    expect(result.rtt).toEqual(0);
-
-    //Test - isSendOnlyIfErrors is on, sent spans with errors
-    spies.isSendOnlyIfErrors.mockReturnValueOnce(true);
-    spies.httpReq.mockClear();
-    spies.now.mockReturnValueOnce(0);
-    spies.now.mockReturnValueOnce(1024);
-    spies.httpReq.mockImplementationOnce(() => {});
-
-    result = await reporter.sendSpans([span1, span2, errorSpan]);
-    expect(spies.httpReq).toHaveBeenCalledTimes(1);
-    expect(spies.httpReq).toHaveBeenCalledWith(
-      {
-        host: expectedHost,
-        path: expectedPath,
-        method: expectedMethod,
-        headers: expectedHeaders,
-      },
-      JSON.stringify([span1, span2, errorSpan])
-    );
-    expect(result.rtt).toEqual(1024);
+    expect(result.rtt).toBeGreaterThanOrEqual(0);
+    expect(result.rtt).toBeLessThanOrEqual(50);
   });
 
-  test('forgeRequestBody', async () => {
-    const oldEnv = Object.assign({}, process.env);
+  test('sendSpans - send only on errors without errors', async () => {
+    const token = 'DEADBEEF';
+    TracerGlobals.setTracerInputs({ token });
+    utils.setSendOnlyIfErrors();
+    const spans = [{ a: 'b', c: 'd' }, { e: 'f', g: 'h' }];
 
+    let result = await reporter.sendSpans(spans);
+
+    const requests = HttpsRequestsForTesting.getRequests();
+
+    expect(requests).toEqual([]);
+    expect(result.rtt).toEqual(0);
+  });
+
+  test('sendSpans - send only on errors with errors', async () => {
+    const token = 'DEADBEEF';
+    TracerGlobals.setTracerInputs({ token });
+    utils.setSendOnlyIfErrors();
+    const spans = [{ a: 'b', c: 'd' }, { e: 'f', g: 'h', error: 'error' }];
+
+    let result = await reporter.sendSpans(spans);
+
+    const expectedRequest = buildExpectedRequest(token, spans);
+    const requests = HttpsRequestsForTesting.getRequests();
+
+    expect(requests).toEqual([expectedRequest]);
+    expect(result.rtt).toBeGreaterThanOrEqual(0);
+    expect(result.rtt).toBeLessThanOrEqual(50);
+  });
+
+  test('forgeRequestBody - simple flow', async () => {
     const dummy = 'dummy';
     const dummyEnd = 'dummyEnd';
-    const error = 'error';
     let spans = [{ dummy }, { dummy }, { dummyEnd }];
 
     let expectedResult = [{ dummy }, { dummyEnd }];
@@ -162,21 +115,36 @@ describe('reporter', () => {
     expect(reporter.forgeRequestBody(spans, expectedResultSize)).toEqual(
       JSON.stringify(expectedResult)
     );
+  });
 
-    spans = [{ dummy }, { dummy, error }, { dummyEnd }];
-    expectedResult = [{ dummy, error }, { dummyEnd }];
-    expectedResultSize = getJSONBase64Size(expectedResult);
+  test('forgeRequestBody - cut spans', async () => {
+    const dummy = 'dummy';
+    const dummyEnd = 'dummyEnd';
+    const error = 'error';
+
+    const spans = [{ dummy }, { dummy, error }, { dummyEnd }];
+    const expectedResult = [{ dummy, error }, { dummyEnd }];
+    const expectedResultSize = getJSONBase64Size(expectedResult);
 
     expect(reporter.forgeRequestBody(spans, expectedResultSize)).toEqual(
       JSON.stringify(expectedResult)
     );
+  });
 
+  test('forgeRequestBody - prune trace off not cutting spans', async () => {
     utils.setPruneTraceOff();
+    const dummy = 'dummy';
+    const dummyEnd = 'dummyEnd';
+    const error = 'error';
+
+    const spans = [{ dummy }, { dummy, error }, { dummyEnd }];
 
     expect(reporter.forgeRequestBody(spans)).toEqual(JSON.stringify(spans));
 
     expect(reporter.forgeRequestBody([])).toEqual(undefined);
+  });
 
-    process.env = { ...oldEnv };
+  test('forgeRequestBody - empty list', async () => {
+    expect(reporter.forgeRequestBody([])).toEqual(undefined);
   });
 });
