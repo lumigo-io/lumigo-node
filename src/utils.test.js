@@ -13,8 +13,6 @@ import {
   recursiveGetKey,
 } from './utils';
 import { TracerGlobals } from './globals';
-import EventEmitter from 'events';
-import https from 'https';
 import crypto from 'crypto';
 import { isDebug } from './logger';
 import { GET_KEY_DEPTH_ENV_KEY } from './utils';

@@ -6,7 +6,12 @@ export const ConsoleWritesForTesting = (() => {
   };
 
   const getLogs = () => logs;
-  return { addLog, getLogs };
+
+  const clean = () => {
+    logs = [];
+  };
+
+  return { addLog, getLogs, clean };
 })();
 
 export const ConsoleMocker = (() => {

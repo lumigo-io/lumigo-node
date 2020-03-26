@@ -22,6 +22,7 @@ describe('reporter', () => {
 
   test('sendSingleSpan', async () => {
     const token = 'DEADBEEF';
+    utils.setDebug();
     TracerGlobals.setTracerInputs({ token });
     const span = { a: 'b', c: 'd' };
 
@@ -136,11 +137,9 @@ describe('reporter', () => {
     const dummy = 'dummy';
     const dummyEnd = 'dummyEnd';
     const error = 'error';
-
     const spans = [{ dummy }, { dummy, error }, { dummyEnd }];
 
     expect(reporter.forgeRequestBody(spans)).toEqual(JSON.stringify(spans));
-
     expect(reporter.forgeRequestBody([])).toEqual(undefined);
   });
 

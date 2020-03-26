@@ -89,7 +89,4 @@ export const HttpsMocker = (() => {
   return { request };
 })();
 
-export const cleanHttpMocker = () => {
-  HttpsRequestsForTesting.clean();
-  HttpsScenarioBuilder.clean();
-};
+export const cleanHttpMocker = () => {};
