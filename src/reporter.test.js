@@ -26,7 +26,7 @@ describe('reporter', () => {
     TracerGlobals.setTracerInputs({ token });
     const span = { a: 'b', c: 'd' };
 
-    let result = await reporter.sendSingleSpan(span);
+    const result = await reporter.sendSingleSpan(span);
 
     const requests = HttpsRequestsForTesting.getRequests();
     const expectedRequest = buildExpectedRequest(token, [span]);
@@ -34,7 +34,6 @@ describe('reporter', () => {
     expect(requests).toEqual([expectedRequest]);
 
     expect(result.rtt).toBeGreaterThanOrEqual(0);
-    expect(result.rtt).toBeLessThanOrEqual(50);
   });
 
   test('isSpansContainsErrors', async () => {
@@ -64,7 +63,7 @@ describe('reporter', () => {
     TracerGlobals.setTracerInputs({ token });
     const spans = [{ a: 'b', c: 'd' }, { e: 'f', g: 'h' }];
 
-    let result = await reporter.sendSpans(spans);
+    const result = await reporter.sendSpans(spans);
 
     const requests = HttpsRequestsForTesting.getRequests();
     const expectedRequest = buildExpectedRequest(token, spans);
@@ -72,7 +71,6 @@ describe('reporter', () => {
     expect(requests).toEqual([expectedRequest]);
 
     expect(result.rtt).toBeGreaterThanOrEqual(0);
-    expect(result.rtt).toBeLessThanOrEqual(50);
   });
 
   test('sendSpans - send only on errors without errors', async () => {
@@ -81,7 +79,7 @@ describe('reporter', () => {
     utils.setSendOnlyIfErrors();
     const spans = [{ a: 'b', c: 'd' }, { e: 'f', g: 'h' }];
 
-    let result = await reporter.sendSpans(spans);
+    const result = await reporter.sendSpans(spans);
 
     const requests = HttpsRequestsForTesting.getRequests();
 
@@ -95,23 +93,22 @@ describe('reporter', () => {
     utils.setSendOnlyIfErrors();
     const spans = [{ a: 'b', c: 'd' }, { e: 'f', g: 'h', error: 'error' }];
 
-    let result = await reporter.sendSpans(spans);
+    const result = await reporter.sendSpans(spans);
 
     const expectedRequest = buildExpectedRequest(token, spans);
     const requests = HttpsRequestsForTesting.getRequests();
 
     expect(requests).toEqual([expectedRequest]);
     expect(result.rtt).toBeGreaterThanOrEqual(0);
-    expect(result.rtt).toBeLessThanOrEqual(50);
   });
 
   test('forgeRequestBody - simple flow', async () => {
     const dummy = 'dummy';
     const dummyEnd = 'dummyEnd';
-    let spans = [{ dummy }, { dummy }, { dummyEnd }];
+    const spans = [{ dummy }, { dummy }, { dummyEnd }];
 
-    let expectedResult = [{ dummy }, { dummyEnd }];
-    let expectedResultSize = getJSONBase64Size(expectedResult);
+    const expectedResult = [{ dummy }, { dummyEnd }];
+    const expectedResultSize = getJSONBase64Size(expectedResult);
 
     expect(reporter.forgeRequestBody(spans, expectedResultSize)).toEqual(
       JSON.stringify(expectedResult)
