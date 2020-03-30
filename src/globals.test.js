@@ -1,7 +1,7 @@
 import * as globals from './globals';
 
 describe('globals', () => {
-  test('SpansContainer', () => {
+  test('SpansContainer - simple flow', () => {
     const span1 = { a: 'b', c: 'd', id: '1' };
     const span2 = { e: 'f', g: 'h', id: '2' };
     globals.SpansContainer.addSpan(span1);
@@ -9,6 +9,14 @@ describe('globals', () => {
     expect(globals.SpansContainer.getSpans()).toEqual([span1, span2]);
     globals.SpansContainer.clearSpans();
     expect(globals.SpansContainer.getSpans()).toEqual([]);
+  });
+
+  test('SpansContainer - override spans', () => {
+    const span1 = { a: 'b', c: 'd', id: '1' };
+    const span2 = { e: 'f', g: 'h', id: '1' };
+    globals.SpansContainer.addSpan(span1);
+    globals.SpansContainer.addSpan(span2);
+    expect(globals.SpansContainer.getSpans()).toEqual([span2]);
   });
 
   test('setGlobals token', () => {

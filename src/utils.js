@@ -126,6 +126,12 @@ export const getAWSEnvironment = () => {
 
 export const isAwsEnvironment = () => !!process.env['LAMBDA_RUNTIME_DIR'];
 
+export const isTimeoutTimerEnabled = () =>
+  !!(
+    process.env['LUMIGO_TIMEOUT_TIMER_ENABLED'] &&
+    process.env['LUMIGO_TIMEOUT_TIMER_ENABLED'].toUpperCase() === 'TRUE'
+  );
+
 export const isVerboseMode = () =>
   !!(process.env['LUMIGO_VERBOSE'] && process.env.LUMIGO_VERBOSE === 'TRUE');
 
@@ -195,6 +201,9 @@ export const setVerboseMode = () => (process.env['LUMIGO_VERBOSE'] = 'TRUE');
 export const setSwitchOff = () => (process.env['LUMIGO_SWITCH_OFF'] = 'TRUE');
 
 export const setDebug = () => (process.env['LUMIGO_DEBUG'] = 'TRUE');
+
+export const setTimeoutTimerEnabled = () =>
+  (process.env['LUMIGO_TIMEOUT_TIMER_ENABLED'] = 'TRUE');
 
 export const isString = x =>
   Object.prototype.toString.call(x) === '[object String]';

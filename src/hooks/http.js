@@ -10,6 +10,7 @@ import {
   getEdgeHost,
   addHeaders,
   safeExecute,
+  getRandomId,
 } from '../utils';
 import { getHttpSpan } from '../spans/awsSpan';
 import cloneResponse from 'clone-response';
@@ -75,7 +76,8 @@ export const parseHttpRequestOptions = (options = {}, url) => {
 
 export const wrappedHttpResponseCallback = (
   requestData,
-  callback
+  callback,
+  requestRandomId
 ) => response => {
   const clonedResponse = cloneResponse(response);
   const clonedResponsePassThrough = cloneResponse(response);
@@ -98,7 +100,11 @@ export const wrappedHttpResponseCallback = (
         };
         const fixedRequestData = noCirculars(requestData);
         const fixedResponseData = noCirculars(responseData);
-        const httpSpan = getHttpSpan(fixedRequestData, fixedResponseData);
+        const httpSpan = getHttpSpan(
+          requestRandomId,
+          fixedRequestData,
+          fixedResponseData
+        );
         SpansContainer.addSpan(httpSpan);
       })
     );
@@ -115,14 +121,18 @@ export const httpRequestEndWrapper = requestData => originalEndFn =>
     return originalEndFn.apply(this, [data, encoding, callback]);
   };
 
-export const httpRequestOnWrapper = requestData => originalOnFn =>
+export const httpRequestOnWrapper = (
+  requestData,
+  requestRandomId
+) => originalOnFn =>
   function(event, callback) {
     let wrappedCallback = callback;
     if (event === 'response' && callback && !callback.__lumigoSentinel) {
       try {
         wrappedCallback = exports.wrappedHttpResponseCallback(
           requestData,
-          callback
+          callback,
+          requestRandomId
         );
         wrappedCallback.__lumigoSentinel = true;
       } catch (err) {
@@ -168,7 +178,8 @@ export const getHookedClientRequestArgs = (
   url,
   options,
   callback,
-  requestData
+  requestData,
+  requestRandomId
 ) => {
   const hookedClientRequestArgs = [];
 
@@ -181,7 +192,8 @@ export const getHookedClientRequestArgs = (
   if (callback) {
     const wrappedCallback = exports.wrappedHttpResponseCallback(
       requestData,
-      callback
+      callback,
+      requestRandomId
     );
     wrappedCallback.__lumigoSentinel = true;
     hookedClientRequestArgs.push(wrappedCallback);
@@ -220,13 +232,25 @@ export const httpRequestWrapper = originalRequestFn =>
         options.headers['X-Amzn-Trace-Id'] = traceId;
       }
 
+      const requestRandomId = getRandomId();
+
+      // try {
+      //   const fixedRequestData = noCirculars(requestData);
+      //   const fixedResponseData = noCirculars(responseData);
+      //   const httpSpan = getHttpSpan(fixedRequestData, fixedResponseData);
+      //   SpansContainer.addSpan(httpSpan);
+      // } catch (e) {
+      //
+      // }
+
       const requestData = parseHttpRequestOptions(options, url);
 
       const hookedClientRequestArgs = getHookedClientRequestArgs(
         url,
         options,
         callback,
-        requestData
+        requestData,
+        requestRandomId
       );
 
       const clientRequest = originalRequestFn.apply(
@@ -234,10 +258,12 @@ export const httpRequestWrapper = originalRequestFn =>
         hookedClientRequestArgs
       );
 
-      shimmer.wrap(clientRequest, 'end', httpRequestEndWrapper(requestData));
+      const endWrapper = httpRequestEndWrapper(requestData, requestRandomId);
+      shimmer.wrap(clientRequest, 'end', endWrapper);
 
       if (!callback) {
-        shimmer.wrap(clientRequest, 'on', httpRequestOnWrapper(requestData));
+        const onWrapper = httpRequestOnWrapper(requestData, requestRandomId);
+        shimmer.wrap(clientRequest, 'on', onWrapper);
       }
       return clientRequest;
     } catch (err) {
@@ -255,7 +281,7 @@ export const httpGetWrapper = httpModule => (/* originalGetFn */) =>
   };
 
 export const addStepFunctionEvent = messageId => {
-  const httpSpan = getHttpSpan({}, {});
+  const httpSpan = getHttpSpan(messageId, {});
   const stepInfo = Object.assign(httpSpan.info, {
     resourceName: 'StepFunction',
     httpInfo: { host: 'StepFunction' },
