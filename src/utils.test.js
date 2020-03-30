@@ -474,20 +474,25 @@ describe('utils', () => {
     // No exception.
   });
 
-  test('httpReq', async () => {
+  test('httpReq - simple flow', async () => {
     const options = { bla: 'bla' };
     const reqBody = 'abcdefg';
 
     HttpsScenarioBuilder.appendNextResponse('DummyResponse');
-    const p2 = utils.httpReq(options, reqBody);
-    await expect(p2).resolves.toEqual({
+    const p = utils.httpReq(options, reqBody);
+    await expect(p).resolves.toEqual({
       statusCode: 200,
       data: 'DummyResponse',
     });
+  });
+
+  test('httpReq - reject errors', async () => {
+    const options = { bla: 'bla' };
+    const reqBody = 'abcdefg';
 
     HttpsScenarioBuilder.failForTheNextTimes(1);
-    const p1 = utils.httpReq(options, reqBody);
-    await expect(p1).rejects;
+    const p = utils.httpReq(options, reqBody);
+    await expect(p).rejects;
   });
 
   test('getEdgeHost', () => {
