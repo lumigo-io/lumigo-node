@@ -592,13 +592,13 @@ describe('http hook', () => {
     expect(spans).toEqual([expectedSpan]);
   });
 
-  test('httpRequestWrapper - circular object', () => {
+  test('httpRequestWrapper - circular object wrapper cutting object', () => {
     const handlerInputs = new HandlerInputesBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
     const cleanRequestData = HttpSpanBuilder.DEFAULT_REQUEST_DATA;
     let a = {};
     let requestData = { ...cleanRequestData };
-    a.requestData = cleanRequestData;
+    a.requestData = requestData;
     requestData.a = a;
 
     const responseData = {
