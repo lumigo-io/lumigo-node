@@ -1,23 +1,43 @@
 import { lowerCaseObjectKeys, stringifyAndPrune } from '../src/utils';
 
 export class HttpSpanBuilder {
+  static DEFAULT_ACCOUNT = '985323015126';
+  static DEFAULT_REGION = 'us-east-1';
+  static DEFAULT_FUNC_NAME = 'aws-nodejs-dev-hello';
+
+  static DEFAULT_ARN = `arn:aws:lambda:${HttpSpanBuilder.DEFAULT_REGION}:${HttpSpanBuilder.DEFAULT_ACCOUNT}:function:${HttpSpanBuilder.DEFAULT_FUNC_NAME}`;
+  static DEFAULT_VERSION = '1';
+
+  static DEFAULT_HOST = 'lumigo.io';
+  static DEFAULT_PARENT_ID = '6d26e3c8-60a6-4cee-8a70-f525f47a4caf';
+
+  static DEFAULT_REQUEST_DATA = {
+    host: HttpSpanBuilder.DEFAULT_HOST,
+    headers: { X: 'Y', host: 'lumigo.io' },
+    method: 'GET',
+    path: '/',
+    port: 80,
+    protocol: 'http:',
+    uri: `${HttpSpanBuilder.DEFAULT_HOST}/`,
+  };
+
   constructor() {
     this._span = {
-      account: '985323015126',
+      account: HttpSpanBuilder.DEFAULT_ACCOUNT,
       ended: 1256,
       id: 'not-a-random-id',
       info: {
         httpInfo: {
-          host: 'your.mind.com',
+          host: HttpSpanBuilder.DEFAULT_HOST,
           request: {
             body: '"the first rule of fight club"',
             headers: '{"Tyler":"Durden"}',
-            host: 'your.mind.com',
+            host: HttpSpanBuilder.DEFAULT_HOST,
             sendTime: 1234,
           },
           response: {},
         },
-        logGroupName: '/aws/lambda/aws-nodejs-dev-hello',
+        logGroupName: `/aws/lambda/${HttpSpanBuilder.DEFAULT_FUNC_NAME}`,
         logStreamName: '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',
         traceId: {
           Parent: '28effe37598bb622',
@@ -32,12 +52,11 @@ export class HttpSpanBuilder {
       },
       memoryAllocated: '1024',
       messageVersion: 2,
-      parentId: '6d26e3c8-60a6-4cee-8a70-f525f47a4caf',
+      parentId: HttpSpanBuilder.DEFAULT_PARENT_ID,
       readiness: 'cold',
-      region: 'us-east-1',
-      invokedArn:
-        'arn:aws:lambda:us-east-1:985323015126:function:aws-nodejs-dev-hello',
-      invokedVersion: '1',
+      region: HttpSpanBuilder.DEFAULT_REGION,
+      invokedArn: HttpSpanBuilder.DEFAULT_ARN,
+      invokedVersion: HttpSpanBuilder.DEFAULT_VERSION,
       runtime: 'AWS_Lambda_nodejs8.10',
       service: 'external',
       started: 1234,
@@ -48,36 +67,58 @@ export class HttpSpanBuilder {
       version: '$LATEST',
     };
   }
+
+  static parseHeaders = headers =>
+    stringifyAndPrune(lowerCaseObjectKeys(headers));
+
+  static parseBody = body => {
+    if (!body) body = '';
+    return stringifyAndPrune(body);
+  };
+
+  static addHeader = (headers, obj) => {
+    let newHeaders = JSON.parse(headers);
+    newHeaders = { ...newHeaders, ...obj };
+    return JSON.stringify(newHeaders);
+  };
+
   withSpanId = spanId => {
     this._span.id = spanId;
     return this;
   };
 
   withResponse = response => {
-    this._span.info.httpInfo.response = response;
-    this._span.info.httpInfo.response.headers = stringifyAndPrune(
-      lowerCaseObjectKeys(this._span.info.httpInfo.response.headers)
+    this._span.info.httpInfo.response = { ...response };
+    this._span.info.httpInfo.response.headers = HttpSpanBuilder.parseHeaders(
+      this._span.info.httpInfo.response.headers
     );
-    this._span.info.httpInfo.response.body = stringifyAndPrune(
+    this._span.info.httpInfo.response.body = HttpSpanBuilder.parseBody(
       this._span.info.httpInfo.response.body
     );
     return this;
   };
 
-  withRequest = request => {
-    this._span.info.httpInfo.request = request;
-    this._span.info.httpInfo.request.headers = stringifyAndPrune(
-      this._span.info.httpInfo.request.headers
+  withHost = host => {
+    this._span.info.httpInfo.request.host = host;
+    this._span.info.httpInfo.host = host;
+
+    const headers = HttpSpanBuilder.addHeader(
+      this._span.info.httpInfo.request.headers,
+      { host }
     );
-    this._span.info.httpInfo.request.body = stringifyAndPrune(
-      this._span.info.httpInfo.request.body
-    );
+    this._span.info.httpInfo.request.headers = headers;
     return this;
   };
 
-  withToken = token => {
-    this._span.token = token;
-    return this;
+  withRequest = request => {
+    this._span.info.httpInfo.request = { ...request };
+    this._span.info.httpInfo.request.headers = HttpSpanBuilder.parseHeaders(
+      this._span.info.httpInfo.request.headers
+    );
+    this._span.info.httpInfo.request.body = HttpSpanBuilder.parseBody(
+      this._span.info.httpInfo.request.body
+    );
+    return this.withHost(request.host);
   };
 
   withInvokedArn = invokedArn => {
@@ -105,18 +146,28 @@ export class HttpSpanBuilder {
     return this;
   };
 
-  withInfo = info => {
-    this._span.info = info;
+  withHttpInfo = httpInfo => {
+    this._span.info.httpInfo = httpInfo;
+    this._span.info.httpInfo.request &&
+      this.withRequest(this._span.info.httpInfo.request);
+    this._span.info.httpInfo.response &&
+      this.withResponse(this._span.info.httpInfo.response);
     return this;
   };
 
-  withRandomResponse = () => {
-    return this.withResponse({
-      body: '"Well, Tony is dead."',
-      headers: '{"Peter":"Parker"}',
-      receivedTime: 1256,
-      statusCode: 200,
-    });
+  withNoResponse = () => {
+    this._span.info.httpInfo.response = {};
+    return this;
+  };
+
+  withRequestTimesFromSpan = span => {
+    const httpInfo = this._span.info.httpInfo;
+    httpInfo.request.sendTime = span.info.httpInfo.request.sendTime;
+    if (span.info.httpInfo?.response?.receivedTime) {
+      if (!httpInfo.response) httpInfo.response = {};
+      httpInfo.response.receivedTime = span.info.httpInfo.response.receivedTime;
+    }
+    return this;
   };
 
   build = () => this._span;

@@ -4,6 +4,7 @@ export const HttpsScenarioBuilder = (() => {
   const defaultResponse = 'DummyDataChunk';
   let failForNext = 0;
   let nextResponse = [];
+  let isNextRequestShouldFinish = true;
 
   const failForTheNextTimes = times => {
     failForNext += times;
@@ -13,9 +14,19 @@ export const HttpsScenarioBuilder = (() => {
     nextResponse.push(response);
   };
 
-  const getNextResponse = () => {
+  const getNextData = () => {
     const response = nextResponse.pop();
     return response ? response : defaultResponse;
+  };
+
+  const isRequestShouldFinish = () => {
+    if (isNextRequestShouldFinish) return true;
+    isNextRequestShouldFinish = true;
+    return false;
+  };
+
+  const dontFinishNextRequest = () => {
+    isNextRequestShouldFinish = false;
   };
 
   const isNextRequestFailed = () => {
@@ -28,14 +39,19 @@ export const HttpsScenarioBuilder = (() => {
 
   const clean = () => {
     failForNext = 0;
+    nextResponse = [];
+    isNextRequestShouldFinish = true;
   };
 
   return {
+    defaultResponse,
     failForTheNextTimes,
     isNextRequestFailed,
     clean,
     appendNextResponse,
-    getNextResponse,
+    getNextData,
+    isRequestShouldFinish,
+    dontFinishNextRequest,
   };
 })();
 
@@ -65,13 +81,16 @@ export const HttpsMocker = (() => {
 
     callback(callbackEmitter);
 
-    callbackEmitter.emit('data', HttpsScenarioBuilder.getNextResponse());
+    const nextResponse = HttpsScenarioBuilder.getNextData();
+    if (nextResponse) callbackEmitter.emit('data', nextResponse);
 
-    if (HttpsScenarioBuilder.isNextRequestFailed()) {
-      responseEmitter.statusCode = 500;
-      responseEmitter.emit('error', 'Whoops!');
-    } else {
-      callbackEmitter.emit('end');
+    if (HttpsScenarioBuilder.isRequestShouldFinish()) {
+      if (HttpsScenarioBuilder.isNextRequestFailed()) {
+        responseEmitter.statusCode = 500;
+        responseEmitter.emit('error', 'Whoops!');
+      } else {
+        callbackEmitter.emit('end');
+      }
     }
 
     responseEmitter.write = body => {

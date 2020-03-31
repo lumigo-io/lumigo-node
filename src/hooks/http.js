@@ -11,6 +11,7 @@ import {
   addHeaders,
   safeExecute,
   getRandomId,
+  isTimeoutTimerEnabled,
 } from '../utils';
 import { getHttpSpan } from '../spans/awsSpan';
 import cloneResponse from 'clone-response';
@@ -231,19 +232,14 @@ export const httpRequestWrapper = originalRequestFn =>
         const traceId = getPatchedTraceId(awsXAmznTraceId);
         options.headers['X-Amzn-Trace-Id'] = traceId;
       }
-
+      const requestData = parseHttpRequestOptions(options, url);
       const requestRandomId = getRandomId();
 
-      // try {
-      //   const fixedRequestData = noCirculars(requestData);
-      //   const fixedResponseData = noCirculars(responseData);
-      //   const httpSpan = getHttpSpan(fixedRequestData, fixedResponseData);
-      //   SpansContainer.addSpan(httpSpan);
-      // } catch (e) {
-      //
-      // }
-
-      const requestData = parseHttpRequestOptions(options, url);
+      if (isTimeoutTimerEnabled()) {
+        const fixedRequestData = noCirculars(requestData);
+        const httpSpan = getHttpSpan(requestRandomId, fixedRequestData);
+        SpansContainer.addSpan(httpSpan);
+      }
 
       const hookedClientRequestArgs = getHookedClientRequestArgs(
         url,
