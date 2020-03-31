@@ -13,6 +13,7 @@ import { HttpsMocker, HttpsScenarioBuilder } from '../../testUtils/httpsMocker';
 import * as httpHook from './http';
 import * as utils from '../utils';
 import { SpansContainer, TracerGlobals } from '../globals';
+import { HandlerInputesBuilder } from '../../testUtils/handlerInputesBuilder';
 
 jest.mock('shimmer');
 jest.mock('../reporter');
@@ -128,15 +129,13 @@ describe('http hook', () => {
         body: 'SomeResponse',
       },
     };
-
-    TracerGlobals.setHandlerInputs({
-      event: {},
-      context: {
-        awsRequestId: 'DummyParentId',
-        invokedFunctionArn: 'arn:aws:l:region:335722316285:function:dummy-func',
-        functionVersion: '1',
-      },
-    });
+    const handlerInputs = new HandlerInputesBuilder()
+      .withAwsRequestId('DummyParentId')
+      .withInvokedFunctionArn(
+        'arn:aws:l:region:335722316285:function:dummy-func'
+      )
+      .build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
 
     let responseEmitter = new EventEmitter();
     responseEmitter = Object.assign(responseEmitter, testData.responseData);
@@ -503,14 +502,8 @@ describe('http hook', () => {
   });
 
   test('httpRequestWrapper - simple flow', () => {
-    TracerGlobals.setHandlerInputs({
-      event: {},
-      context: {
-        awsRequestId: HttpSpanBuilder.DEFAULT_PARENT_ID,
-        invokedFunctionArn: HttpSpanBuilder.DEFAULT_ARN,
-        functionVersion: HttpSpanBuilder.DEFAULT_VERSION,
-      },
-    });
+    const handlerInputs = new HandlerInputesBuilder().build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
     const requestData = HttpSpanBuilder.DEFAULT_REQUEST_DATA;
     const responseData = {
       statusCode: 200,
@@ -541,14 +534,8 @@ describe('http hook', () => {
 
   test('httpRequestWrapper - added span before request finish', () => {
     utils.setTimeoutTimerEnabled();
-    TracerGlobals.setHandlerInputs({
-      event: {},
-      context: {
-        awsRequestId: HttpSpanBuilder.DEFAULT_PARENT_ID,
-        invokedFunctionArn: HttpSpanBuilder.DEFAULT_ARN,
-        functionVersion: HttpSpanBuilder.DEFAULT_VERSION,
-      },
-    });
+    const handlerInputs = new HandlerInputesBuilder().build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
     const requestData = HttpSpanBuilder.DEFAULT_REQUEST_DATA;
 
     HttpsScenarioBuilder.dontFinishNextRequest();
@@ -574,14 +561,8 @@ describe('http hook', () => {
   });
 
   test('httpRequestWrapper - wrapping twice not effecting', () => {
-    TracerGlobals.setHandlerInputs({
-      event: {},
-      context: {
-        awsRequestId: HttpSpanBuilder.DEFAULT_PARENT_ID,
-        invokedFunctionArn: HttpSpanBuilder.DEFAULT_ARN,
-        functionVersion: HttpSpanBuilder.DEFAULT_VERSION,
-      },
-    });
+    const handlerInputs = new HandlerInputesBuilder().build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
     const requestData = HttpSpanBuilder.DEFAULT_REQUEST_DATA;
     const responseData = {
       statusCode: 200,
@@ -612,14 +593,8 @@ describe('http hook', () => {
   });
 
   test('httpRequestWrapper - circular object', () => {
-    TracerGlobals.setHandlerInputs({
-      event: {},
-      context: {
-        awsRequestId: HttpSpanBuilder.DEFAULT_PARENT_ID,
-        invokedFunctionArn: HttpSpanBuilder.DEFAULT_ARN,
-        functionVersion: HttpSpanBuilder.DEFAULT_VERSION,
-      },
-    });
+    const handlerInputs = new HandlerInputesBuilder().build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
     const cleanRequestData = HttpSpanBuilder.DEFAULT_REQUEST_DATA;
     let a = {};
     let requestData = { ...cleanRequestData };

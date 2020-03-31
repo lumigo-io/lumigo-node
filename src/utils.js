@@ -124,31 +124,28 @@ export const getAWSEnvironment = () => {
   };
 };
 
+const TIMEOUT_ENABLE_FLAG = 'LUMIGO_TIMEOUT_TIMER_ENABLED';
+const WARM_FLAG = 'LUMIGO_IS_WARM';
+const VERBOSE_FLAG = 'LUMIGO_VERBOSE';
+const SEND_ONLY_IF_ERROR_FLAG = 'SEND_ONLY_IF_ERROR';
+const PRUNE_TRACE_OFF_FLAG = 'LUMIGO_PRUNE_TRACE_OFF';
+
+const validateEnvVarIsTrue = envVar =>
+  !!(process.env[envVar] && process.env[envVar].toUpperCase() === 'TRUE');
+
 export const isAwsEnvironment = () => !!process.env['LAMBDA_RUNTIME_DIR'];
 
 export const isTimeoutTimerEnabled = () =>
-  !!(
-    process.env['LUMIGO_TIMEOUT_TIMER_ENABLED'] &&
-    process.env['LUMIGO_TIMEOUT_TIMER_ENABLED'].toUpperCase() === 'TRUE'
-  );
+  validateEnvVarIsTrue(TIMEOUT_ENABLE_FLAG);
 
-export const isVerboseMode = () =>
-  !!(process.env['LUMIGO_VERBOSE'] && process.env.LUMIGO_VERBOSE === 'TRUE');
+export const isVerboseMode = () => validateEnvVarIsTrue(VERBOSE_FLAG);
 
-export const isWarm = () =>
-  !!(process.env['LUMIGO_IS_WARM'] && process.env.LUMIGO_IS_WARM === 'TRUE');
+export const isWarm = () => validateEnvVarIsTrue(WARM_FLAG);
 
 export const isSendOnlyIfErrors = () =>
-  !!(
-    process.env['SEND_ONLY_IF_ERROR'] &&
-    process.env.SEND_ONLY_IF_ERROR === 'TRUE'
-  );
+  validateEnvVarIsTrue(SEND_ONLY_IF_ERROR_FLAG);
 
-export const isPruneTraceOff = () =>
-  !!(
-    process.env['LUMIGO_PRUNE_TRACE_OFF'] &&
-    process.env.LUMIGO_PRUNE_TRACE_OFF === 'TRUE'
-  );
+export const isPruneTraceOff = () => validateEnvVarIsTrue(PRUNE_TRACE_OFF_FLAG);
 
 export const isSwitchedOff = () =>
   safeExecute(() => {
@@ -188,22 +185,22 @@ export const isValidAlias = () => {
   return validAlias;
 };
 
-export const setWarm = () => (process.env['LUMIGO_IS_WARM'] = 'TRUE');
+export const setWarm = () => (process.env[WARM_FLAG] = 'TRUE');
 
 export const setSendOnlyIfErrors = () =>
-  (process.env['SEND_ONLY_IF_ERROR'] = 'TRUE');
+  (process.env[SEND_ONLY_IF_ERROR_FLAG] = 'TRUE');
 
 export const setPruneTraceOff = () =>
-  (process.env['LUMIGO_PRUNE_TRACE_OFF'] = 'TRUE');
+  (process.env[PRUNE_TRACE_OFF_FLAG] = 'TRUE');
 
-export const setVerboseMode = () => (process.env['LUMIGO_VERBOSE'] = 'TRUE');
+export const setVerboseMode = () => (process.env[VERBOSE_FLAG] = 'TRUE');
 
 export const setSwitchOff = () => (process.env['LUMIGO_SWITCH_OFF'] = 'TRUE');
 
 export const setDebug = () => (process.env['LUMIGO_DEBUG'] = 'TRUE');
 
 export const setTimeoutTimerEnabled = () =>
-  (process.env['LUMIGO_TIMEOUT_TIMER_ENABLED'] = 'TRUE');
+  (process.env[TIMEOUT_ENABLE_FLAG] = 'TRUE');
 
 export const isString = x =>
   Object.prototype.toString.call(x) === '[object String]';
