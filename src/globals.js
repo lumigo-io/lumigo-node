@@ -13,6 +13,22 @@ export const SpansContainer = (() => {
   return { addSpan, getSpans, clearSpans };
 })();
 
+export const GlobalTimer = (() => {
+  let currentTimer = undefined;
+
+  const setGlobalTimeout = (func, duration) => {
+    clearTimer();
+    currentTimer = setTimeout(func, duration);
+    currentTimer.unref();
+  };
+
+  const clearTimer = () => {
+    clearTimeout(currentTimer);
+  };
+
+  return { setGlobalTimeout, clearTimer };
+})();
+
 export const TracerGlobals = (() => {
   const handlerInputs = { event: {}, context: {} };
   const tracerInputs = {
@@ -86,4 +102,5 @@ export const clearGlobals = () => {
   SpansContainer.clearSpans();
   TracerGlobals.clearTracerInputs();
   TracerGlobals.clearHandlerInputs();
+  GlobalTimer.clearTimer();
 };

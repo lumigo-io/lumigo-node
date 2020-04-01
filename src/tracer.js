@@ -4,12 +4,13 @@ import {
   isAwsEnvironment,
   getEdgeUrl,
   removeLumigoFromStacktrace,
-  isSendOnlyIfErrors,
   isStepFunction,
   safeExecute,
   getRandomId,
   LUMIGO_EVENT_KEY,
   STEP_FUNCTION_UID_KEY,
+  getContextInfo,
+  isTimeoutTimerEnabled,
 } from './utils';
 import {
   getFunctionSpan,
@@ -18,7 +19,12 @@ import {
   getCurrentTransactionId,
 } from './spans/awsSpan';
 import { sendSingleSpan, sendSpans } from './reporter';
-import { TracerGlobals, SpansContainer, clearGlobals } from './globals';
+import {
+  TracerGlobals,
+  SpansContainer,
+  GlobalTimer,
+  clearGlobals,
+} from './globals';
 import startHooks from './hooks';
 import * as logger from './logger';
 import { addStepFunctionEvent } from './hooks/http';
@@ -29,6 +35,21 @@ export const ASYNC_HANDLER_REJECTED = 'async_handler_rejected';
 export const NON_ASYNC_HANDLER_ERRORED = 'non_async_errored';
 export const LEAK_MESSAGE =
   'Execution leak detected. More information is available in: https://docs.lumigo.io/docs/execution-leak-detected';
+const TIMEOUT_BUFFER_MS = 500;
+
+const setupTimeoutTimer = () => {
+  logger.debug('Timeout timer set-up started');
+  const { context } = TracerGlobals.getHandlerInputs();
+  const { remainingTimeInMillis } = getContextInfo(context);
+  if (TIMEOUT_BUFFER_MS < remainingTimeInMillis) {
+    GlobalTimer.setGlobalTimeout(async () => {
+      logger.debug('The tracer reached the end of the timeout timer');
+      const spans = SpansContainer.getSpans();
+      await sendSpans(spans);
+      SpansContainer.clearSpans();
+    }, remainingTimeInMillis - TIMEOUT_BUFFER_MS);
+  }
+};
 
 export const startTrace = async () => {
   try {
@@ -43,21 +64,15 @@ export const startTrace = async () => {
         path,
       });
 
+      if (isTimeoutTimerEnabled()) setupTimeoutTimer();
+
       const functionSpan = getFunctionSpan();
       logger.debug('startTrace span created', functionSpan);
 
-      if (!isSendOnlyIfErrors()) {
-        const { rtt } = await sendSingleSpan(functionSpan);
-        return addRttToFunctionSpan(functionSpan, rtt);
-      } else {
-        logger.debug(
-          "Skip sending start span because tracer in 'send only if error' mode ."
-        );
-        return null;
-      }
-    } else {
-      return null;
+      const { rtt } = await sendSingleSpan(functionSpan);
+      return addRttToFunctionSpan(functionSpan, rtt);
     }
+    return null;
   } catch (err) {
     logger.warn('startTrace failure', err);
     return null;
