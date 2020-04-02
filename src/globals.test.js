@@ -82,8 +82,11 @@ describe('globals', () => {
   test('GlobalTimer - clears with clearGlobals', done => {
     const arr = [];
     globals.GlobalTimer.setGlobalTimeout(() => {
+      //This should run after the globals.clearGlobals()
       arr.push(1);
     }, 1);
+
+    //clearGlobal is aborting the pending timeout timer
     globals.clearGlobals();
 
     setTimeout(() => {
