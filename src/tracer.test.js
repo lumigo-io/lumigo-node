@@ -144,7 +144,7 @@ describe('tracer', () => {
     }, timeout + testBuffer);
   });
 
-  test('startTrace - timeout timer - to short timeout (timer not effects)', async done => {
+  test('startTrace - timeout timer - too short timeout (timer not effects)', async done => {
     const timeout = 10;
     const testBuffer = 50;
 
@@ -178,7 +178,6 @@ describe('tracer', () => {
       .build();
     TracerGlobals.setHandlerInputs(handlerInputs);
 
-    await tracer.startTrace();
     await tracer.startTrace();
     SpansContainer.addSpan({ id: 'SomeRandomHttpSpan' });
 

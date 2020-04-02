@@ -81,6 +81,11 @@ describe('globals', () => {
     }, 50);
   });
 
+  test('GlobalTimer - clear timer when timer not exists', () => {
+    globals.GlobalTimer.clearTimer();
+    //Expect no error will up
+  });
+
   test('GlobalTimer - clears with clearGlobals - async', done => {
     const arr = [];
     globals.GlobalTimer.setGlobalTimeout(async () => {
