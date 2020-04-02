@@ -19,6 +19,17 @@ describe('globals', () => {
     expect(globals.SpansContainer.getSpans()).toEqual([span2]);
   });
 
+  test('SpansContainer - clean is pure', () => {
+    const span1 = { a: 'b', c: 'd', id: '1' };
+    globals.SpansContainer.addSpan(span1);
+
+    const spans = globals.SpansContainer.getSpans();
+    globals.SpansContainer.clearSpans();
+
+    expect(globals.SpansContainer.getSpans()).toEqual([]);
+    expect(spans).toEqual([span1]);
+  });
+
   test('GlobalTimer - simple flow', done => {
     globals.GlobalTimer.setGlobalTimeout(() => {
       done();
