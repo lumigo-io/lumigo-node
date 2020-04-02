@@ -116,6 +116,7 @@ describe('tracer', () => {
 
     setTimeout(() => {
       const requests = HttpsRequestsForTesting.getRequests();
+      //1 for start span, 1 for SomeRandomHttpSpan
       expect(requests.length).toEqual(2);
       done();
     }, timeout + testBuffer);
