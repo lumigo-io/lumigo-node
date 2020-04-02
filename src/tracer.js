@@ -45,8 +45,8 @@ const setupTimeoutTimer = () => {
     GlobalTimer.setGlobalTimeout(async () => {
       logger.debug('The tracer reached the end of the timeout timer');
       const spans = SpansContainer.getSpans();
-      await sendSpans(spans);
       SpansContainer.clearSpans();
+      await sendSpans(spans);
     }, remainingTimeInMillis - TIMEOUT_BUFFER_MS);
   }
 };
