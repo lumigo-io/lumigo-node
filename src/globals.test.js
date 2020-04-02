@@ -81,6 +81,19 @@ describe('globals', () => {
     }, 50);
   });
 
+  test('GlobalTimer - clears with clearGlobals - async', done => {
+    const arr = [];
+    globals.GlobalTimer.setGlobalTimeout(async () => {
+      arr.push(1);
+    }, 1);
+    globals.clearGlobals();
+
+    setTimeout(async () => {
+      expect(arr).toEqual([]);
+      done();
+    }, 50);
+  });
+
   test('setGlobals token', () => {
     const token = 'fromParameters';
     process.env.LUMIGO_TRACER_TOKEN = 'fromEnvs';

@@ -166,6 +166,29 @@ describe('tracer', () => {
     }, timeout + testBuffer);
   });
 
+  test('startTrace - timeout timer - SEND_ONLY_ON_ERROR - not sending spans', async done => {
+    const timeout = 1000;
+    const testBuffer = 50;
+
+    utils.setTimeoutTimerEnabled();
+    utils.setSendOnlyIfErrors();
+    new EnvironmentBuilder().awsEnvironment().applyEnv();
+    const handlerInputs = new HandlerInputesBuilder()
+      .withTimeout(timeout)
+      .build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
+
+    await tracer.startTrace();
+    await tracer.startTrace();
+    SpansContainer.addSpan({ id: 'SomeRandomHttpSpan' });
+
+    setTimeout(() => {
+      const requests = HttpsRequestsForTesting.getRequests();
+      expect(requests.length).toEqual(0);
+      done();
+    }, timeout + testBuffer);
+  });
+
   test('isCallbacked', async () => {
     expect(tracer.isCallbacked({ type: tracer.HANDLER_CALLBACKED })).toBe(true);
     expect(tracer.isCallbacked({ type: tracer.HANDLER_CALLBACKED })).toBe(true);
