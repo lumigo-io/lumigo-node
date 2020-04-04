@@ -6,10 +6,6 @@ import * as awsParsers from '../parsers/aws';
 import * as utils from '../utils';
 
 const exampleApiGatewayEvent = require('../testdata/events/apigw-request.json');
-jest.mock('../../package.json', () => ({
-  name: '@lumigo/tracer',
-  version: '0.0.123',
-}));
 
 jest.mock('../parsers/aws');
 describe('awsSpan', () => {
@@ -77,7 +73,7 @@ describe('awsSpan', () => {
         Sampled: '0',
         transactionId: '64a1b06067c2100c52e51ef4',
       },
-      tracer: { name: '@lumigo/tracer', version: '0.0.123' },
+      tracer: { name: '@lumigo/tracerMock', version: '1.2.3' },
       logGroupName: '/aws/lambda/aws-nodejs-dev-hello',
       logStreamName: '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',
     };
@@ -95,7 +91,7 @@ describe('awsSpan', () => {
           Sampled: '0',
           transactionId: '64a1b06067c2100c52e51ef4',
         },
-        tracer: { name: '@lumigo/tracer', version: '0.0.123' },
+        tracer: { name: '@lumigo/tracerMock', version: '1.2.3' },
         logGroupName: '/aws/lambda/aws-nodejs-dev-hello',
         logStreamName: '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',
       },
@@ -133,7 +129,7 @@ describe('awsSpan', () => {
           Sampled: '0',
           transactionId: '64a1b06067c2100c52e51ef4',
         },
-        tracer: { name: '@lumigo/tracer', version: '0.0.123' },
+        tracer: { name: '@lumigo/tracerMock', version: '1.2.3' },
         logGroupName: '/aws/lambda/aws-nodejs-dev-hello',
         logStreamName: '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',
         messageId: 'deef4878-7910-11e6-8f14-25afc3e9ae33',
@@ -183,7 +179,7 @@ describe('awsSpan', () => {
           Sampled: '0',
           transactionId: '64a1b06067c2100c52e51ef4',
         },
-        tracer: { name: '@lumigo/tracer', version: '0.0.123' },
+        tracer: { name: '@lumigo/tracerMock', version: '1.2.3' },
         logGroupName: '/aws/lambda/aws-nodejs-dev-hello',
         logStreamName: '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',
         messageId: 'deef4878-7910-11e6-8f14-25afc3e9ae33',
@@ -501,7 +497,7 @@ describe('awsSpan', () => {
           Sampled: '0',
           transactionId: '64a1b06067c2100c52e51ef4',
         },
-        tracer: { name: '@lumigo/tracer', version: '0.0.123' },
+        tracer: { name: '@lumigo/tracerMock', version: '1.2.3' },
         logGroupName: '/aws/lambda/aws-nodejs-dev-hello',
         logStreamName: '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',
       },
@@ -533,7 +529,7 @@ describe('awsSpan', () => {
           Sampled: '0',
           transactionId: '64a1b06067c2100c52e51ef4',
         },
-        tracer: { name: '@lumigo/tracer', version: '0.0.123' },
+        tracer: { name: '@lumigo/tracerMock', version: '1.2.3' },
         logGroupName: '/aws/lambda/aws-nodejs-dev-hello',
         logStreamName: '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',
       },
@@ -604,8 +600,8 @@ describe('awsSpan', () => {
           transactionId: '64a1b06067c2100c52e51ef4',
         },
         tracer: {
-          name: '@lumigo/tracer',
-          version: '0.0.123',
+          name: '@lumigo/tracerMock',
+          version: '1.2.3',
         },
       },
       memoryAllocated: '1024',

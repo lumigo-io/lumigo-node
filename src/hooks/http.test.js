@@ -423,7 +423,7 @@ describe('http hook', () => {
     const expectedHeaders2 = {
       X: 'Y',
       ['X-Amzn-Trace-Id']:
-        'Root=1-00006161-6ac46730d346cad0e53f89d0;Parent=59fa1aeb03c2ec1f;Sampled=1',
+        'Root=1-00006161-64a1b06067c2100c52e51ef4;Parent=28effe37598bb622;Sampled=0',
     };
     const expectedOptions2 = Object.assign({}, options2, {
       headers: expectedHeaders2,
@@ -542,5 +542,29 @@ describe('http hook', () => {
     });
     httpHook.httpRequestOnWrapper({})(() => true)('response', () => true);
     // No exception.
+  });
+
+  test('addStepFunctionEvent', () => {
+    globals.SpansContainer.addSpan = jest.fn(() => {});
+    awsSpan.getHttpSpan.mockReturnValueOnce({
+      id: '123',
+      type: 'http',
+      started: 123,
+      info: { additional: 'bla' },
+    });
+
+    httpHook.addStepFunctionEvent('123');
+
+    expect(globals.SpansContainer.addSpan).toHaveBeenCalledWith({
+      id: '123',
+      type: 'http',
+      info: {
+        resourceName: 'StepFunction',
+        httpInfo: { host: 'StepFunction' },
+        messageId: '123',
+        additional: 'bla',
+      },
+      started: 123,
+    });
   });
 });

@@ -29,6 +29,7 @@ describe('index', () => {
       edgeHost,
       switchOff: false,
       eventFilter: {},
+      stepFunction: false,
     });
     expect(spies.setVerboseMode).toHaveBeenCalled();
     spies.trace.mockClear();
@@ -44,6 +45,7 @@ describe('index', () => {
       edgeHost: undefined,
       switchOff: true,
       eventFilter: {},
+      stepFunction: false,
     });
     expect(spies.setSwitchOff).toHaveBeenCalled();
   });
@@ -65,6 +67,7 @@ describe('index', () => {
       edgeHost,
       switchOff: false,
       eventFilter: {},
+      stepFunction: false,
     });
   });
 });
