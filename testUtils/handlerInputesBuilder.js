@@ -4,6 +4,7 @@ export class HandlerInputesBuilder {
   static DEFAULT_AWS_REQUEST_ID = HttpSpanBuilder.DEFAULT_PARENT_ID;
   static DEFAULT_INVOKED_FUNCTION_ARN = HttpSpanBuilder.DEFAULT_ARN;
   static DEFAULT_FUNCTION_VERSION = HttpSpanBuilder.DEFAULT_VERSION;
+  static DEFAULT_TIMEOUT = 10 * 1000;
 
   constructor() {
     this._event = {};
@@ -11,6 +12,7 @@ export class HandlerInputesBuilder {
       awsRequestId: HandlerInputesBuilder.DEFAULT_AWS_REQUEST_ID,
       invokedFunctionArn: HandlerInputesBuilder.DEFAULT_INVOKED_FUNCTION_ARN,
       functionVersion: HandlerInputesBuilder.DEFAULT_FUNCTION_VERSION,
+      getRemainingTimeInMillis: () => HandlerInputesBuilder.DEFAULT_TIMEOUT,
     };
   }
 
@@ -21,6 +23,11 @@ export class HandlerInputesBuilder {
 
   withInvokedFunctionArn = invokedFunctionArn => {
     this._context.invokedFunctionArn = invokedFunctionArn;
+    return this;
+  };
+
+  withTimeout = timeout => {
+    this._context.getRemainingTimeInMillis = () => timeout;
     return this;
   };
 
