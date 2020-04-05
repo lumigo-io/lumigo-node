@@ -10,6 +10,10 @@ import * as logger from './logger';
 import { TracerGlobals } from './globals';
 import { STEP_FUNCTION_UID_KEY } from './utils';
 import { LUMIGO_EVENT_KEY } from './utils';
+import { HandlerInputesBuilder } from '../testUtils/handlerInputesBuilder';
+import { HttpsRequestsForTesting } from '../testUtils/httpsMocker';
+import { EnvironmentBuilder } from '../testUtils/environmentBuilder';
+import { SpansContainer } from './globals';
 
 jest.mock('./hooks');
 describe('tracer', () => {
@@ -52,53 +56,137 @@ describe('tracer', () => {
       x => typeof x === 'function' && spies[x].mockClear()
     );
   });
-  test('startTrace', async () => {
-    spies.isSwitchedOff.mockReturnValueOnce(false);
-    spies.isAwsEnvironment.mockReturnValueOnce(true);
-
-    const rtt = 1234;
-    spies.sendSingleSpan.mockReturnValueOnce({ rtt });
-
-    const functionSpan = { a: 'b', c: 'd' };
-    spies.getFunctionSpan.mockReturnValueOnce(functionSpan);
-
-    const retVal = 'Satoshi was here';
-    spies.addRttToFunctionSpan.mockReturnValueOnce(retVal);
-
-    const result1 = await tracer.startTrace();
-    expect(result1).toEqual(retVal);
-
-    expect(spies.isSwitchedOff).toHaveBeenCalled();
-    expect(spies.isAwsEnvironment).toHaveBeenCalled();
-    expect(spies.getFunctionSpan).toHaveBeenCalled();
-    expect(spies.sendSingleSpan).toHaveBeenCalledWith(functionSpan);
-    expect(spies.addRttToFunctionSpan).toHaveBeenCalledWith(functionSpan, rtt);
-
-    spies.isAwsEnvironment.mockReturnValueOnce(false);
-    spies.isSwitchedOff.mockReturnValueOnce(false);
-
-    const result2 = await tracer.startTrace();
-    expect(result2).toEqual(null);
-
-    spies.logWarn.mockImplementationOnce(() => {});
+  test('startTrace - not failed on error', async () => {
+    //TODO: Rewrite this test without mocks
     const err1 = new Error('stam1');
     spies.isSwitchedOff.mockImplementationOnce(() => {
       throw err1;
     });
 
     await expect(tracer.startTrace()).resolves.toEqual(null);
-    expect(spies.logWarn).toHaveBeenCalledWith('startTrace failure', err1);
+  });
 
-    //Test - isSendOnlyIfErrors is on, start span in not sent or saved to the spans list
-    spies.sendSingleSpan.mockClear();
-    spies.isSwitchedOff.mockClear();
-    spies.getFunctionSpan.mockReturnValueOnce(functionSpan);
-    spies.isAwsEnvironment.mockReturnValueOnce(true);
-    spies.isSendOnlyIfErrors.mockReturnValueOnce(true);
-    await expect(tracer.startTrace()).resolves.toEqual(null);
+  test('startTrace - simple flow', async () => {
+    new EnvironmentBuilder().awsEnvironment().applyEnv();
+    const handlerInputs = new HandlerInputesBuilder().build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
 
-    expect(spies.sendSingleSpan).toHaveBeenCalledTimes(0);
-    expect(spies.SpansContainer.addSpan).toHaveBeenCalledTimes(0);
+    await tracer.startTrace();
+
+    const requests = HttpsRequestsForTesting.getRequests();
+    expect(requests.length).toEqual(1);
+  });
+
+  test('startTrace - not sending start-span on non-aws env', async () => {
+    new EnvironmentBuilder().notAwsEnvironment().applyEnv();
+    const handlerInputs = new HandlerInputesBuilder().build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
+
+    await tracer.startTrace();
+
+    const requests = HttpsRequestsForTesting.getRequests();
+    expect(requests.length).toEqual(0);
+  });
+
+  test('startTrace - not sending start-span on SEND_ONLY_ON_ERROR', async () => {
+    new EnvironmentBuilder().awsEnvironment().applyEnv();
+    const handlerInputs = new HandlerInputesBuilder().build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
+    utils.setSendOnlyIfErrors();
+
+    await tracer.startTrace();
+
+    const requests = HttpsRequestsForTesting.getRequests();
+    expect(requests.length).toEqual(0);
+  });
+
+  test('startTrace - timeout timer - simple flow', async done => {
+    const timeout = 1000;
+    const testBuffer = 50;
+
+    utils.setTimeoutTimerEnabled();
+    new EnvironmentBuilder().awsEnvironment().applyEnv();
+    const handlerInputs = new HandlerInputesBuilder()
+      .withTimeout(timeout)
+      .build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
+
+    await tracer.startTrace();
+    SpansContainer.addSpan({ id: 'SomeRandomHttpSpan' });
+
+    setTimeout(() => {
+      const requests = HttpsRequestsForTesting.getRequests();
+      //1 for start span, 1 for SomeRandomHttpSpan
+      expect(requests.length).toEqual(2);
+      done();
+    }, timeout + testBuffer);
+  });
+
+  test('startTrace - timeout timer - called twice', async done => {
+    const timeout = 1000;
+    const testBuffer = 50;
+
+    utils.setTimeoutTimerEnabled();
+    new EnvironmentBuilder().awsEnvironment().applyEnv();
+    const handlerInputs = new HandlerInputesBuilder()
+      .withTimeout(timeout)
+      .build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
+
+    await tracer.startTrace();
+    await tracer.startTrace();
+    SpansContainer.addSpan({ id: 'SomeRandomHttpSpan' });
+
+    setTimeout(() => {
+      const requests = HttpsRequestsForTesting.getRequests();
+      //Expect 3 - 2 start spans and 1 from the timer
+      expect(requests.length).toEqual(3);
+      done();
+    }, timeout + testBuffer);
+  });
+
+  test('startTrace - timeout timer - too short timeout (timer not effects)', async done => {
+    const timeout = 10;
+    const testBuffer = 50;
+
+    utils.setTimeoutTimerEnabled();
+    new EnvironmentBuilder().awsEnvironment().applyEnv();
+    const handlerInputs = new HandlerInputesBuilder()
+      .withTimeout(timeout)
+      .build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
+
+    await tracer.startTrace();
+    SpansContainer.addSpan({ id: 'SomeRandomHttpSpan' });
+
+    setTimeout(() => {
+      const requests = HttpsRequestsForTesting.getRequests();
+      //Expect 1 for start span
+      expect(requests.length).toEqual(1);
+      done();
+    }, timeout + testBuffer);
+  });
+
+  test('startTrace - timeout timer - SEND_ONLY_ON_ERROR - not sending spans', async done => {
+    const timeout = 1000;
+    const testBuffer = 50;
+
+    utils.setTimeoutTimerEnabled();
+    utils.setSendOnlyIfErrors();
+    new EnvironmentBuilder().awsEnvironment().applyEnv();
+    const handlerInputs = new HandlerInputesBuilder()
+      .withTimeout(timeout)
+      .build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
+
+    await tracer.startTrace();
+    SpansContainer.addSpan({ id: 'SomeRandomHttpSpan' });
+
+    setTimeout(() => {
+      const requests = HttpsRequestsForTesting.getRequests();
+      expect(requests.length).toEqual(0);
+      done();
+    }, timeout + testBuffer);
   });
 
   test('isCallbacked', async () => {

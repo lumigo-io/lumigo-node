@@ -19,6 +19,100 @@ describe('globals', () => {
     expect(globals.SpansContainer.getSpans()).toEqual([span2]);
   });
 
+  test('SpansContainer - clean is pure', () => {
+    const span1 = { a: 'b', c: 'd', id: '1' };
+    globals.SpansContainer.addSpan(span1);
+
+    const spans = globals.SpansContainer.getSpans();
+    globals.SpansContainer.clearSpans();
+
+    expect(globals.SpansContainer.getSpans()).toEqual([]);
+    expect(spans).toEqual([span1]);
+  });
+
+  test('GlobalTimer - simple flow', done => {
+    globals.GlobalTimer.setGlobalTimeout(() => {
+      done();
+    }, 1);
+  });
+
+  test('GlobalTimer - override timers', done => {
+    const arr = [];
+    globals.GlobalTimer.setGlobalTimeout(() => {
+      arr.push(1);
+    }, 50);
+    globals.GlobalTimer.setGlobalTimeout(() => {
+      arr.push(2);
+      expect(arr).toEqual([2]);
+      done();
+    }, 100);
+  });
+
+  test('GlobalTimer - clear', done => {
+    const arr = [];
+    globals.GlobalTimer.setGlobalTimeout(() => {
+      arr.push(1);
+    }, 1);
+    globals.GlobalTimer.clearTimer();
+
+    setTimeout(() => {
+      expect(arr).toEqual([]);
+      done();
+    }, 50);
+  });
+
+  test('GlobalTimer - async func flow', done => {
+    const array = [];
+
+    const addToArrayAsync = ms =>
+      new Promise(resolve =>
+        setTimeout(() => {
+          array.push(1);
+          resolve();
+        }, ms)
+      );
+
+    globals.GlobalTimer.setGlobalTimeout(async () => {
+      await addToArrayAsync(1);
+      expect(array).toEqual([1]);
+      done();
+    }, 1);
+  });
+
+  test('GlobalTimer - clears with clearGlobals', done => {
+    const arr = [];
+    globals.GlobalTimer.setGlobalTimeout(() => {
+      //This should run after the globals.clearGlobals()
+      arr.push(1);
+    }, 1);
+
+    //clearGlobal is aborting the pending timeout timer
+    globals.clearGlobals();
+
+    setTimeout(() => {
+      expect(arr).toEqual([]);
+      done();
+    }, 50);
+  });
+
+  test('GlobalTimer - clear timer when timer not exists', () => {
+    globals.GlobalTimer.clearTimer();
+    //Expect no error will up
+  });
+
+  test('GlobalTimer - clears with clearGlobals - async', done => {
+    const arr = [];
+    globals.GlobalTimer.setGlobalTimeout(async () => {
+      arr.push(1);
+    }, 1);
+    globals.clearGlobals();
+
+    setTimeout(async () => {
+      expect(arr).toEqual([]);
+      done();
+    }, 50);
+  });
+
   test('setGlobals token', () => {
     const token = 'fromParameters';
     process.env.LUMIGO_TRACER_TOKEN = 'fromEnvs';
