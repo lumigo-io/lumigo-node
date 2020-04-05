@@ -90,6 +90,8 @@ jobs:
     - run:
         name: run tests
         command: cd ../integration-tests && export testNode=true && npm run test-parallel
+    - store_test_results:
+          path: ../integration-tests/src/test/test-results
   deploy-beta:
     working_directory: ~/lumigo-node
     docker:
