@@ -560,6 +560,39 @@ describe('http hook', () => {
     expect(spans).toEqual([expectedSpan]);
   });
 
+  test('httpRequestWrapper - added span before request finish for aws service', () => {
+    const host = 'random.amazonaws.com';
+
+    utils.setTimeoutTimerEnabled();
+    const handlerInputs = new HandlerInputesBuilder().build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
+    let requestData = HttpSpanBuilder.DEFAULT_REQUEST_DATA;
+    requestData.host = host;
+    requestData.headers.host = host;
+    requestData.uri = `${host}/`;
+
+    HttpsScenarioBuilder.dontFinishNextRequest();
+    const wrappedRequest = httpHook.httpRequestWrapper(HttpsMocker.request);
+
+    wrappedRequest(requestData, () => {});
+
+    const spans = SpansContainer.getSpans();
+
+    const expectedSpan = new HttpSpanBuilder()
+      .withStarted(spans[0].started)
+      .withEnded(spans[0].ended)
+      .withSpanId(spans[0].id)
+      .withHttpInfo({
+        request: requestData,
+      })
+      .withHost('random.amazonaws.com')
+      .withNoResponse()
+      .withRequestTimesFromSpan(spans[0])
+      .build();
+
+    expect(spans).toEqual([expectedSpan]);
+  });
+
   test('httpRequestWrapper - wrapping twice not effecting', () => {
     const handlerInputs = new HandlerInputesBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
