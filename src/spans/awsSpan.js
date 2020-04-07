@@ -3,7 +3,6 @@ import {
   setWarm,
   pruneData,
   getTraceId,
-  getRandomId,
   getAccountId,
   getTracerInfo,
   getContextInfo,
@@ -206,17 +205,19 @@ export const getHttpInfo = (requestData, responseData) => {
     request.headers = stringifyAndPrune(omitKeys(request.headers));
     request.body = stringifyAndPrune(omitKeys(request.body));
 
-    response.headers = stringifyAndPrune(omitKeys(response.headers));
-    response.body = stringifyAndPrune(omitKeys(response.body));
+    if (response.headers)
+      response.headers = stringifyAndPrune(omitKeys(response.headers));
+    if (response.body)
+      response.body = stringifyAndPrune(omitKeys(response.body));
   }
 
   return { host, request, response };
 };
 
-export const getBasicHttpSpan = (spanId = null) => {
+export const getBasicHttpSpan = spanId => {
   const { context } = TracerGlobals.getHandlerInputs();
   const { awsRequestId: parentId } = context;
-  const id = spanId || getRandomId();
+  const id = spanId;
   const type = HTTP_SPAN;
   const basicSpan = getBasicSpan();
   return { ...basicSpan, id, type, parentId };
@@ -224,20 +225,29 @@ export const getBasicHttpSpan = (spanId = null) => {
 
 export const getHttpSpanTimings = (requestData, responseData) => {
   const { sendTime: started } = requestData;
-  const { receivedTime: ended } = responseData;
+  const { receivedTime: ended } = responseData || {};
   return { started, ended };
 };
 
-export const getHttpSpan = (requestData, responseData) => {
+export const getHttpSpanId = (randomRequestId, awsRequestId = null) => {
+  return awsRequestId ? awsRequestId : randomRequestId;
+};
+
+export const getHttpSpan = (
+  randomRequestId,
+  requestData,
+  responseData = null
+) => {
   const { host } = requestData;
 
   const { awsServiceData, spanId } = isAwsService(host, responseData)
     ? getAwsServiceData(requestData, responseData)
     : {};
 
+  const prioritizedSpanId = getHttpSpanId(randomRequestId, spanId);
   const httpInfo = getHttpInfo(requestData, responseData);
 
-  const basicHttpSpan = getBasicHttpSpan(spanId);
+  const basicHttpSpan = getBasicHttpSpan(prioritizedSpanId);
 
   const info = Object.assign({}, basicHttpSpan.info, {
     httpInfo,

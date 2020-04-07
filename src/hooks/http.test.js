@@ -1,5 +1,4 @@
 import { lowerCaseObjectKeys } from '../utils';
-import cloneResponse from 'clone-response';
 import EventEmitter from 'events';
 import defaultHttp from './http';
 import MockDate from 'mockdate';
@@ -7,22 +6,18 @@ import shimmer from 'shimmer';
 import crypto from 'crypto';
 import https from 'https';
 import http from 'http';
+import * as logger from '../logger';
+import { HttpSpanBuilder } from '../../testUtils/httpSpanBuilder';
+import { HttpsMocker, HttpsScenarioBuilder } from '../../testUtils/httpsMocker';
 
 import * as httpHook from './http';
 import * as utils from '../utils';
+import { SpansContainer, TracerGlobals } from '../globals';
+import { HandlerInputesBuilder } from '../../testUtils/handlerInputesBuilder';
 
 jest.mock('shimmer');
-jest.mock('clone-response');
-
-import * as awsSpan from '../spans/awsSpan';
-jest.mock('../spans/awsSpan');
-
-import * as globals from '../globals';
-jest.mock('../globals');
-
 jest.mock('../reporter');
 
-import * as logger from '../logger';
 jest.spyOn(logger, 'isDebug');
 logger.isDebug.mockImplementation(() => true);
 
@@ -38,6 +33,7 @@ describe('http hook', () => {
   );
   spies.getEdgeHost = jest.spyOn(utils, 'getEdgeHost');
   spies.randomBytes = jest.spyOn(crypto, 'randomBytes');
+  spies.getRandomId = jest.spyOn(utils, 'getRandomId');
   spies.log = jest.spyOn(console, 'log');
   spies.log.mockImplementation(() => {});
 
@@ -117,65 +113,75 @@ describe('http hook', () => {
   });
 
   test('wrappedHttpResponseCallback', () => {
-    const statusCode = 200;
-    const headers = { X: 'Y', z: 'A' };
+    const testData = {
+      randomId: 'DummyRandomId',
+      requestData: {
+        a: 'request',
+        sendTime: 1,
+        host: 'your.mind.com',
+        headers: { host: 'your.mind.com' },
+        body: '',
+      },
+      responseData: {
+        statusCode: 200,
+        receivedTime: 895179612345,
+        headers: { X: 'Y', z: 'A' },
+        body: 'SomeResponse',
+      },
+    };
+    const handlerInputs = new HandlerInputesBuilder()
+      .withAwsRequestId('DummyParentId')
+      .withInvokedFunctionArn(
+        'arn:aws:l:region:335722316285:function:dummy-func'
+      )
+      .build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
+
+    let responseEmitter = new EventEmitter();
+    responseEmitter = Object.assign(responseEmitter, testData.responseData);
 
     const callback = jest.fn();
-    const clonedResponse1 = new EventEmitter();
-    clonedResponse1.headers = headers;
-    clonedResponse1.statusCode = statusCode;
 
-    const clonedResponse2 = new EventEmitter();
-    cloneResponse.mockReturnValueOnce(clonedResponse1);
-    cloneResponse.mockReturnValueOnce(clonedResponse2);
+    MockDate.set(testData.responseData.receivedTime);
 
-    const receivedTime = 895179612345;
-    MockDate.set(receivedTime);
+    httpHook.wrappedHttpResponseCallback(
+      testData.requestData,
+      callback,
+      testData.randomId
+    )(responseEmitter);
 
-    const requestData = { a: 'request' };
-    const response = {};
+    responseEmitter.emit('data', testData.responseData.body);
+    responseEmitter.emit('end');
 
-    const httpSpan = { a: 'b', c: 'd' };
-    globals.SpansContainer.addSpan = jest.fn(() => {});
-
-    awsSpan.getHttpSpan.mockReturnValueOnce(httpSpan);
-
-    httpHook.wrappedHttpResponseCallback(requestData, callback)(response);
-    expect(callback).toHaveBeenCalledWith(clonedResponse2);
-
-    clonedResponse1.emit('data', 'chunky');
-    clonedResponse1.emit('end');
-
-    expect(awsSpan.getHttpSpan).toHaveBeenCalledWith(requestData, {
-      statusCode,
-      body: 'chunky',
-      headers: lowerCaseObjectKeys(headers),
-      receivedTime,
-    });
-    expect(globals.SpansContainer.addSpan).toHaveBeenCalledWith(httpSpan);
+    const expectedHttpSpan = new HttpSpanBuilder()
+      .withSpanId(testData.randomId)
+      .withParentId('DummyParentId')
+      .withInvokedArn('arn:aws:l:region:335722316285:function:dummy-func')
+      .withEnded(testData.responseData.receivedTime)
+      .withStarted(1)
+      .withAccountId('335722316285')
+      .withResponse(testData.responseData)
+      .withRequest(testData.requestData)
+      .withHost(testData.requestData.host)
+      .build();
+    expect(SpansContainer.getSpans()).toEqual([expectedHttpSpan]);
   });
 
   test('wrappedHttpResponseCallback no exception in response.on(end)', () => {
     const clonedResponse1 = new EventEmitter();
     clonedResponse1.on = (name, callback) => callback();
-    cloneResponse.mockReturnValueOnce(clonedResponse1);
-    awsSpan.getHttpSpan.mockImplementationOnce(() => {
-      throw new Error('Mocked error');
-    });
 
-    httpHook.wrappedHttpResponseCallback({}, () => null)({});
+    //This should raise exception
+    const requestData = { host: 'dynamodb.amazonaws.com' };
+
+    httpHook.wrappedHttpResponseCallback(requestData, () => null)({});
     // No exception.
   });
 
   test('wrappedHttpResponseCallback no exception', () => {
-    const clonedResponse1 = new EventEmitter();
-    clonedResponse1.on = () => {
-      throw new Error('Mocked error');
-    };
-    cloneResponse.mockReturnValueOnce(clonedResponse1);
-
-    httpHook.wrappedHttpResponseCallback({}, () => null)({});
-    // No exception.
+    // Calling without params raising Exception
+    httpHook.wrappedHttpResponseCallback()({});
+    // Assert No exception.
   });
 
   test('httpRequestEndWrapper', () => {
@@ -318,6 +324,7 @@ describe('http hook', () => {
   });
 
   test('httpRequestOnWrapper', () => {
+    const requestId = 'Random';
     const requestData1 = { a: 'b' };
     const originalOnFn1 = jest.fn();
     const event1 = 'response';
@@ -329,7 +336,7 @@ describe('http hook', () => {
     originalOnFn1.mockReturnValueOnce(retVal1);
 
     expect(
-      httpHook.httpRequestOnWrapper(requestData1)(originalOnFn1)(
+      httpHook.httpRequestOnWrapper(requestData1, requestId)(originalOnFn1)(
         event1,
         callback1
       )
@@ -339,7 +346,8 @@ describe('http hook', () => {
 
     expect(spies.wrappedHttpResponseCallback).toHaveBeenCalledWith(
       requestData1,
-      callback1
+      callback1,
+      requestId
     );
     expect(retWrappedCallback1.__lumigoSentinel).toBe(true);
 
@@ -493,6 +501,166 @@ describe('http hook', () => {
     );
   });
 
+  test('httpRequestWrapper - simple flow', () => {
+    const handlerInputs = new HandlerInputesBuilder().build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
+    const requestData = HttpSpanBuilder.DEFAULT_REQUEST_DATA;
+    const responseData = {
+      statusCode: 200,
+      body: 'OK',
+    };
+
+    HttpsScenarioBuilder.appendNextResponse(responseData.body);
+    const wrappedRequest = httpHook.httpRequestWrapper(HttpsMocker.request);
+
+    wrappedRequest(requestData, () => {});
+
+    const spans = SpansContainer.getSpans();
+
+    const expectedSpan = new HttpSpanBuilder()
+      .withStarted(spans[0].started)
+      .withEnded(spans[0].ended)
+      .withSpanId(spans[0].id)
+      .withHttpInfo({
+        host: HttpSpanBuilder.DEFAULT_HOST,
+        request: requestData,
+        response: responseData,
+      })
+      .withRequestTimesFromSpan(spans[0])
+      .build();
+
+    expect(spans).toEqual([expectedSpan]);
+  });
+
+  test('httpRequestWrapper - added span before request finish', () => {
+    utils.setTimeoutTimerEnabled();
+    const handlerInputs = new HandlerInputesBuilder().build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
+    const requestData = HttpSpanBuilder.DEFAULT_REQUEST_DATA;
+
+    HttpsScenarioBuilder.dontFinishNextRequest();
+    const wrappedRequest = httpHook.httpRequestWrapper(HttpsMocker.request);
+
+    wrappedRequest(requestData, () => {});
+
+    const spans = SpansContainer.getSpans();
+
+    const expectedSpan = new HttpSpanBuilder()
+      .withStarted(spans[0].started)
+      .withEnded(spans[0].ended)
+      .withSpanId(spans[0].id)
+      .withHttpInfo({
+        host: HttpSpanBuilder.DEFAULT_HOST,
+        request: requestData,
+      })
+      .withNoResponse()
+      .withRequestTimesFromSpan(spans[0])
+      .build();
+
+    expect(spans).toEqual([expectedSpan]);
+  });
+
+  test('httpRequestWrapper - added span before request finish for aws service', () => {
+    const host = 'random.amazonaws.com';
+
+    utils.setTimeoutTimerEnabled();
+    const handlerInputs = new HandlerInputesBuilder().build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
+    let requestData = HttpSpanBuilder.DEFAULT_REQUEST_DATA;
+    requestData.host = host;
+    requestData.headers.host = host;
+    requestData.uri = `${host}/`;
+
+    HttpsScenarioBuilder.dontFinishNextRequest();
+    const wrappedRequest = httpHook.httpRequestWrapper(HttpsMocker.request);
+
+    wrappedRequest(requestData, () => {});
+
+    const spans = SpansContainer.getSpans();
+
+    const expectedSpan = new HttpSpanBuilder()
+      .withStarted(spans[0].started)
+      .withEnded(spans[0].ended)
+      .withSpanId(spans[0].id)
+      .withHttpInfo({
+        request: requestData,
+      })
+      .withHost('random.amazonaws.com')
+      .withNoResponse()
+      .withRequestTimesFromSpan(spans[0])
+      .build();
+
+    expect(spans).toEqual([expectedSpan]);
+  });
+
+  test('httpRequestWrapper - wrapping twice not effecting', () => {
+    const handlerInputs = new HandlerInputesBuilder().build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
+    const requestData = HttpSpanBuilder.DEFAULT_REQUEST_DATA;
+    const responseData = {
+      statusCode: 200,
+      body: 'OK',
+    };
+
+    HttpsScenarioBuilder.appendNextResponse(responseData.body);
+    const wrappedRequest = httpHook.httpRequestWrapper(HttpsMocker.request);
+    const wrappedRequestTwice = httpHook.httpRequestWrapper(wrappedRequest);
+
+    wrappedRequestTwice(requestData, () => {});
+
+    const spans = SpansContainer.getSpans();
+
+    const expectedSpan = new HttpSpanBuilder()
+      .withStarted(spans[0].started)
+      .withEnded(spans[0].ended)
+      .withSpanId(spans[0].id)
+      .withHttpInfo({
+        host: HttpSpanBuilder.DEFAULT_HOST,
+        request: requestData,
+        response: responseData,
+      })
+      .withRequestTimesFromSpan(spans[0])
+      .build();
+
+    expect(spans).toEqual([expectedSpan]);
+  });
+
+  test('httpRequestWrapper - circular object wrapper cutting object', () => {
+    const handlerInputs = new HandlerInputesBuilder().build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
+    const cleanRequestData = HttpSpanBuilder.DEFAULT_REQUEST_DATA;
+    let a = {};
+    let requestData = { ...cleanRequestData };
+    a.requestData = requestData;
+    requestData.a = a;
+
+    const responseData = {
+      statusCode: 200,
+      body: 'OK',
+    };
+
+    HttpsScenarioBuilder.appendNextResponse(responseData.body);
+    const wrappedRequest = httpHook.httpRequestWrapper(HttpsMocker.request);
+
+    wrappedRequest(requestData, () => {});
+
+    const spans = SpansContainer.getSpans();
+
+    const expectedSpan = new HttpSpanBuilder()
+      .withStarted(spans[0].started)
+      .withEnded(spans[0].ended)
+      .withSpanId(spans[0].id)
+      .withHttpInfo({
+        host: HttpSpanBuilder.DEFAULT_HOST,
+        request: cleanRequestData,
+        response: responseData,
+      })
+      .withRequestTimesFromSpan(spans[0])
+      .build();
+
+    expect(spans).toEqual([expectedSpan]);
+  });
+
   test('httpGetWrapper', () => {
     const retVal = 'endCalled';
     const end = jest.fn(() => retVal);
@@ -545,26 +713,13 @@ describe('http hook', () => {
   });
 
   test('addStepFunctionEvent', () => {
-    globals.SpansContainer.addSpan = jest.fn(() => {});
-    awsSpan.getHttpSpan.mockReturnValueOnce({
-      id: '123',
-      type: 'http',
-      started: 123,
-      info: { additional: 'bla' },
-    });
-
     httpHook.addStepFunctionEvent('123');
 
-    expect(globals.SpansContainer.addSpan).toHaveBeenCalledWith({
-      id: '123',
-      type: 'http',
-      info: {
-        resourceName: 'StepFunction',
-        httpInfo: { host: 'StepFunction' },
-        messageId: '123',
-        additional: 'bla',
-      },
-      started: 123,
-    });
+    const spans = SpansContainer.getSpans();
+
+    expect(spans.length).toEqual(1);
+    expect(spans[0].info.resourceName).toEqual('StepFunction');
+    expect(spans[0].info.httpInfo.host).toEqual('StepFunction');
+    expect(spans[0].info.messageId).toEqual('123');
   });
 });

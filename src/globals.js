@@ -1,16 +1,32 @@
 import { debug } from './logger';
 
 export const SpansContainer = (() => {
-  const spansToSend = [];
+  let spansToSend = {};
 
   const addSpan = span => {
-    spansToSend.push(span);
+    spansToSend[span.id] = span;
     debug('Span created', span);
   };
-  const getSpans = () => spansToSend;
-  const clearSpans = () => (spansToSend.length = 0);
+  const getSpans = () => Object.values(spansToSend);
+  const clearSpans = () => (spansToSend = {});
 
   return { addSpan, getSpans, clearSpans };
+})();
+
+export const GlobalTimer = (() => {
+  let currentTimer = undefined;
+
+  const setGlobalTimeout = (func, duration) => {
+    clearTimer();
+    currentTimer = setTimeout(func, duration);
+    currentTimer.unref();
+  };
+
+  const clearTimer = () => {
+    clearTimeout(currentTimer);
+  };
+
+  return { setGlobalTimeout, clearTimer };
 })();
 
 export const TracerGlobals = (() => {
@@ -86,4 +102,5 @@ export const clearGlobals = () => {
   SpansContainer.clearSpans();
   TracerGlobals.clearTracerInputs();
   TracerGlobals.clearHandlerInputs();
+  GlobalTimer.clearTimer();
 };

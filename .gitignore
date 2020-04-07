@@ -9,3 +9,4 @@ env.yml
 .idea
 package-lock.json
 nodejs
+.DS_Store
