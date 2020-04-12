@@ -1,5 +1,6 @@
 import { HttpsRequestsForTesting, HttpsScenarioBuilder } from './httpsMocker';
 import { createAwsEnvVars } from './awsTestUtils';
+import { LogStore } from '../src/logger';
 import { ConsoleMocker, ConsoleWritesForTesting } from './consoleMocker';
 import { SpansContainer, TracerGlobals } from '../src/globals';
 
@@ -16,6 +17,7 @@ beforeEach(() => {
   SpansContainer.clearSpans();
   TracerGlobals.clearHandlerInputs();
   TracerGlobals.clearTracerInputs();
+  LogStore.clean();
 
   const awsEnv = createAwsEnvVars();
   process.env = { ...oldEnv, ...awsEnv };
