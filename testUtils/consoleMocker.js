@@ -16,5 +16,9 @@ export const ConsoleWritesForTesting = (() => {
 
 export const ConsoleMocker = (() => {
   const log = ConsoleWritesForTesting.addLog;
-  return { log };
+  const info = ConsoleWritesForTesting.addLog;
+  const debug = ConsoleWritesForTesting.addLog;
+  const warn = ConsoleWritesForTesting.addLog;
+  const error = ConsoleWritesForTesting.addLog;
+  return { log, info, warn, error, debug };
 })();

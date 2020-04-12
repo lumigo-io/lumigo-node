@@ -87,7 +87,7 @@ export const HttpsMocker = (() => {
     if (HttpsScenarioBuilder.isRequestShouldFinish()) {
       if (HttpsScenarioBuilder.isNextRequestFailed()) {
         responseEmitter.statusCode = 500;
-        responseEmitter.emit('error', 'Whoops!');
+        responseEmitter.emit('error', 'Error!');
       } else {
         callbackEmitter.emit('end');
       }
@@ -107,5 +107,3 @@ export const HttpsMocker = (() => {
 
   return { request };
 })();
-
-export const cleanHttpMocker = () => {};

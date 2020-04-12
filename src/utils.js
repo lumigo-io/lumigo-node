@@ -129,6 +129,7 @@ const WARM_FLAG = 'LUMIGO_IS_WARM';
 const VERBOSE_FLAG = 'LUMIGO_VERBOSE';
 const SEND_ONLY_IF_ERROR_FLAG = 'SEND_ONLY_IF_ERROR';
 const PRUNE_TRACE_OFF_FLAG = 'LUMIGO_PRUNE_TRACE_OFF';
+const STORE_LOGS_FLAG = 'LUMIGO_STORE_LOGS';
 
 const validateEnvVarIsTrue = envVar =>
   !!(process.env[envVar] && process.env[envVar].toUpperCase() === 'TRUE');
@@ -141,6 +142,8 @@ export const isTimeoutTimerEnabled = () =>
 export const isVerboseMode = () => validateEnvVarIsTrue(VERBOSE_FLAG);
 
 export const isWarm = () => validateEnvVarIsTrue(WARM_FLAG);
+
+export const isStoreLogs = () => validateEnvVarIsTrue(STORE_LOGS_FLAG);
 
 export const isSendOnlyIfErrors = () =>
   validateEnvVarIsTrue(SEND_ONLY_IF_ERROR_FLAG);
@@ -192,6 +195,8 @@ export const setSendOnlyIfErrors = () =>
 
 export const setPruneTraceOff = () =>
   (process.env[PRUNE_TRACE_OFF_FLAG] = 'TRUE');
+
+export const setStoreLogsOn = () => (process.env[STORE_LOGS_FLAG] = 'TRUE');
 
 export const setVerboseMode = () => (process.env[VERBOSE_FLAG] = 'TRUE');
 
