@@ -120,7 +120,6 @@ describe('logger', () => {
   });
 
   test('debug -> store logs on -> printing after 50 dups', () => {
-    utils.setDebug();
     utils.setStoreLogsOn();
     TracerGlobals.setTracerInputs({});
 
@@ -159,7 +158,6 @@ describe('logger', () => {
   });
 
   test('warn -> store logs on -> not printing', () => {
-    utils.setDebug();
     utils.setStoreLogsOn();
     TracerGlobals.setTracerInputs({});
 
@@ -169,7 +167,6 @@ describe('logger', () => {
   });
 
   test('warn -> store logs on -> printing after 50 dups', () => {
-    utils.setDebug();
     utils.setStoreLogsOn();
     TracerGlobals.setTracerInputs({});
 
@@ -246,7 +243,6 @@ describe('logger', () => {
   });
 
   test('fatal -> store logs on -> printing after 50 dups', () => {
-    utils.setDebug();
     utils.setStoreLogsOn();
     TracerGlobals.setTracerInputs({});
 
