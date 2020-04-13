@@ -18,20 +18,9 @@ import { isDebug } from './logger';
 import { GET_KEY_DEPTH_ENV_KEY } from './utils';
 import { HttpsScenarioBuilder } from '../testUtils/httpsMocker';
 
-jest.mock('https');
-
 describe('utils', () => {
   const spies = {};
   spies.randomBytes = jest.spyOn(crypto, 'randomBytes');
-
-  beforeEach(() => {
-    const oldEnv = Object.assign({}, process.env);
-    const awsEnv = {
-      AWS_REGION: 'us-east-1',
-      AWS_DEFAULT_REGION: 'us-east-1',
-    };
-    process.env = { ...oldEnv, ...awsEnv };
-  });
 
   test('getContextInfo', () => {
     const awsRequestId = '6d26e3c8-60a6-4cee-8a70-f525f47a4caf';
@@ -153,48 +142,54 @@ describe('utils', () => {
   test('isAwsEnvironment', () => {
     process.env = {};
     expect(utils.isAwsEnvironment()).toBe(false);
-    process.env = { ...process.env, LAMBDA_RUNTIME_DIR: 'BLA BLA' };
+    process.env.LAMBDA_RUNTIME_DIR = 'BLA BLA';
     expect(utils.isAwsEnvironment()).toBe(true);
   });
 
   test('isVerboseMode', () => {
     expect(utils.isVerboseMode()).toBe(false);
-    process.env = { ...process.env, LUMIGO_VERBOSE: 'TRUE' };
+    process.env.LUMIGO_VERBOSE = 'TRUE';
     expect(utils.isVerboseMode()).toBe(true);
+  });
+
+  test('isStoreLogs', () => {
+    expect(utils.isStoreLogs()).toBe(false);
+    process.env.LUMIGO_STORE_LOGS = 'TRUE';
+    expect(utils.isStoreLogs()).toBe(true);
   });
 
   test('isWarm', () => {
     expect(utils.isWarm()).toBe(false);
-    process.env = { ...process.env, LUMIGO_IS_WARM: 'TRUE' };
+    process.env.LUMIGO_IS_WARM = 'TRUE';
     expect(utils.isWarm()).toBe(true);
   });
 
   test('isSendOnlyIfErrors', () => {
     expect(utils.isSendOnlyIfErrors()).toBe(false);
-    process.env = { ...process.env, SEND_ONLY_IF_ERROR: 'TRUE' };
+    process.env.SEND_ONLY_IF_ERROR = 'TRUE';
     expect(utils.isSendOnlyIfErrors()).toBe(true);
   });
 
   test('isPruneTraceOff', () => {
     expect(utils.isPruneTraceOff()).toBe(false);
-    process.env = { ...process.env, LUMIGO_PRUNE_TRACE_OFF: 'TRUE' };
+    process.env.LUMIGO_PRUNE_TRACE_OFF = 'TRUE';
     expect(utils.isPruneTraceOff()).toBe(true);
   });
 
   test('isTimeoutTimerEnabled', () => {
     expect(utils.isTimeoutTimerEnabled()).toBe(false);
-    process.env = { ...process.env, LUMIGO_TIMEOUT_TIMER_ENABLED: 'TRUE' };
+    process.env.LUMIGO_TIMEOUT_TIMER_ENABLED = 'TRUE';
     expect(utils.isTimeoutTimerEnabled()).toBe(true);
   });
 
   test('getEventEntitySize', () => {
     expect(utils.getEventEntitySize()).toBe(MAX_ENTITY_SIZE);
-    process.env = { ...process.env, MAX_EVENT_ENTITY_SIZE: '2048' };
+    process.env.MAX_EVENT_ENTITY_SIZE = '2048';
     expect(utils.getEventEntitySize()).toBe(2048);
   });
 
   test('getEventEntitySize NaN', () => {
-    process.env = { ...process.env, MAX_EVENT_ENTITY_SIZE: 'A 2048' };
+    process.env.MAX_EVENT_ENTITY_SIZE = 'A 2048';
     expect(utils.getEventEntitySize()).toBe(MAX_ENTITY_SIZE);
   });
 
@@ -202,6 +197,12 @@ describe('utils', () => {
     expect(utils.isWarm()).toBe(false);
     utils.setWarm();
     expect(utils.isWarm()).toBe(true);
+  });
+
+  test('setStoreLogsOn', () => {
+    expect(utils.isStoreLogs()).toBe(false);
+    utils.setStoreLogsOn();
+    expect(utils.isStoreLogs()).toBe(true);
   });
 
   test('setSendOnlyIfErrors', () => {

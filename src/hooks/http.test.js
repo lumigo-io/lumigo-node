@@ -34,8 +34,6 @@ describe('http hook', () => {
   spies.getEdgeHost = jest.spyOn(utils, 'getEdgeHost');
   spies.randomBytes = jest.spyOn(crypto, 'randomBytes');
   spies.getRandomId = jest.spyOn(utils, 'getRandomId');
-  spies.log = jest.spyOn(console, 'log');
-  spies.log.mockImplementation(() => {});
 
   test('isBlacklisted', () => {
     const host = 'asdf';
@@ -395,8 +393,6 @@ describe('http hook', () => {
     // Error within Lumigo's code.
     const options5 = { host: 'bla.com' };
     const callback5 = jest.fn();
-    spies.log.mockClear();
-    spies.log.mockReturnValueOnce(null);
     utils.getEdgeHost.mockReturnValueOnce(edgeHost);
     originalRequestFn.mockImplementationOnce(() => {
       throw new Error();
@@ -408,7 +404,6 @@ describe('http hook', () => {
       options5,
       expect.any(Function)
     );
-    expect(spies.log).toHaveBeenCalled();
     originalRequestFn.mockClear();
 
     spies.randomBytes.mockReturnValueOnce(Buffer.from('aa'));
