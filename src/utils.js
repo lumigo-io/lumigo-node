@@ -322,8 +322,7 @@ export const getEdgeHost = () => {
   if (edgeHost) {
     return edgeHost;
   }
-  const awsEdgeHost = getAwsEdgeHost();
-  return awsEdgeHost;
+  return getAwsEdgeHost();
 };
 
 export const spanHasErrors = span =>
