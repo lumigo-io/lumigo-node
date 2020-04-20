@@ -96,8 +96,7 @@ export const forgeRequestBody = (spans, maxSendBytes = MAX_SENT_BYTES) => {
   resultSpans.push(functionEndSpan);
 
   if (spans.length - resultSpans.length > 0) {
-    // eslint-disable-next-line no-console
-    console.log(`#LUMIGO# - Trimmed spans due to size`);
+    logger.debug(`Trimmed spans due to size`);
   }
 
   return resultSpans.length > 0 ? JSON.stringify(resultSpans) : undefined;
