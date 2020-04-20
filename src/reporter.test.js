@@ -102,6 +102,23 @@ describe('reporter', () => {
     expect(result.rtt).toBeGreaterThanOrEqual(0);
   });
 
+  test('sendSpans - with bad LUMIGO_SECRET_MASKING_REGEX still send spans', async () => {
+    const token = 'DEADBEEF';
+    process.env.LUMIGO_SECRET_MASKING_REGEX =
+      "['.*pass.*', '.*key.*', '.*secret.*', '.*credential.*', '.*passphrase.*']";
+    TracerGlobals.setTracerInputs({ token });
+
+    const spans = [{ a: 'b', c: 'd' }, { e: 'f', g: 'h', error: 'error' }];
+
+    const result = await reporter.sendSpans(spans);
+
+    const expectedRequest = buildExpectedRequest(token, spans);
+    const requests = HttpsRequestsForTesting.getRequests();
+
+    expect(requests).toEqual([expectedRequest]);
+    expect(result.rtt).toBeGreaterThanOrEqual(0);
+  });
+
   test('forgeRequestBody - simple flow', async () => {
     const dummy = 'dummy';
     const dummyEnd = 'dummyEnd';
