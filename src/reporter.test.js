@@ -104,8 +104,7 @@ describe('reporter', () => {
 
   test('sendSpans - with bad LUMIGO_SECRET_MASKING_REGEX still send spans', async () => {
     const token = 'DEADBEEF';
-    process.env.LUMIGO_SECRET_MASKING_REGEX =
-      "['.*pass.*', '.*key.*', '.*secret.*', '.*credential.*', '.*passphrase.*']";
+    process.env.LUMIGO_SECRET_MASKING_REGEX = 'NON-VALID-JSON';
     TracerGlobals.setTracerInputs({ token });
 
     const spans = [{ a: 'b', c: 'd' }, { e: 'f', g: 'h', error: 'error' }];
