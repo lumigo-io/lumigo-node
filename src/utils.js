@@ -393,17 +393,16 @@ export const keyToOmitRegexes = () => {
     if (parseResponse) {
       regexesList = parseResponse;
     }
-  } else {
-    if (process.env[LUMIGO_SECRET_MASKING_REGEX]) {
-      const parseResponse = parseJsonFromEnvVar(
-        LUMIGO_SECRET_MASKING_REGEX,
-        true
-      );
-      if (parseResponse) {
-        regexesList = parseResponse;
-      }
+  } else if (process.env[LUMIGO_SECRET_MASKING_REGEX]) {
+    const parseResponse = parseJsonFromEnvVar(
+      LUMIGO_SECRET_MASKING_REGEX,
+      true
+    );
+    if (parseResponse) {
+      regexesList = parseResponse;
     }
   }
+
   return regexesList.map(x => new RegExp(x, 'i'));
 };
 
