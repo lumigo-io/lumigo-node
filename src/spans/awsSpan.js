@@ -23,6 +23,7 @@ import {
   sqsParser,
   kinesisParser,
   awsParser,
+  apigwParser,
 } from '../parsers/aws';
 import { TracerGlobals } from '../globals';
 import { getEventInfo } from '../events';
@@ -160,6 +161,9 @@ export const getAwsServiceFromHost = host => {
   if (AWS_PARSED_SERVICES.includes(service)) {
     return service;
   }
+
+  if (host.includes('execute-api')) return 'apigw';
+
   return EXTERNAL_SERVICE;
 };
 export const getServiceType = host =>
@@ -180,6 +184,8 @@ export const getAwsServiceData = (requestData, responseData) => {
       return sqsParser(requestData, responseData);
     case 'kinesis':
       return kinesisParser(requestData, responseData);
+    case 'apigw':
+      return apigwParser(requestData, responseData);
     default:
       return awsParser(requestData, responseData);
   }

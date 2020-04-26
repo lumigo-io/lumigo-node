@@ -379,6 +379,12 @@ describe('awsSpan', () => {
       awsSpan.EXTERNAL_SERVICE
     );
   });
+
+  test('getAwsServiceFromHost -> api-gw', () => {
+    const host1 = `random.random.execute-api.amazonaws.com`;
+    expect(awsSpan.getAwsServiceFromHost(host1)).toEqual('apigw');
+  });
+
   // XXX This function is intended to be build upon (i.e. for GCP etc.)
   // that's why it functions the same as getAwsServiceFromHost for now.
   test('getServiceType', () => {
@@ -431,6 +437,13 @@ describe('awsSpan', () => {
 
     awsSpan.getAwsServiceData(requestData, responseData);
     expect(awsParsers.kinesisParser).toHaveBeenCalledWith(
+      requestData,
+      responseData
+    );
+
+    requestData.host = `random.random.execute-api.amazonaws.com`;
+    awsSpan.getAwsServiceData(requestData, responseData);
+    expect(awsParsers.apigwParser).toHaveBeenCalledWith(
       requestData,
       responseData
     );

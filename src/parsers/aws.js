@@ -47,6 +47,19 @@ export const snsParser = (requestData, responseData) => {
   return { awsServiceData };
 };
 
+export const apigwParser = (requestData, responseData) => {
+  const baseData = awsParser(requestData, responseData);
+  if (!baseData.awsServiceData) {
+    baseData.awsServiceData = {};
+  }
+
+  const { headers: resHeader } = responseData;
+  if (resHeader['Apigw-Requestid']) {
+    baseData.awsServiceData.messageId = resHeader['Apigw-Requestid'];
+  }
+  return baseData;
+};
+
 export const sqsParser = requestData => {
   const { body: reqBody } = requestData;
   const parsedBody = reqBody ? parseQueryParams(reqBody) : undefined;
