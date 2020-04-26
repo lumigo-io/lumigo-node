@@ -8,6 +8,8 @@
 
 [`@lumigo/tracer`](https://) is Lumigo's distributed-tracing and performance monitoring agent for Node.js.
 
+Supported Runtimes: 8.10, 10.x, 12.x
+
  
 ## Usage 
 

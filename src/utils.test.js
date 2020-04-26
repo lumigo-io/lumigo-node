@@ -18,6 +18,7 @@ import crypto from 'crypto';
 import { isDebug } from './logger';
 import { GET_KEY_DEPTH_ENV_KEY } from './utils';
 import { HttpsScenarioBuilder } from '../testUtils/httpsMocker';
+import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
 
 describe('utils', () => {
   const spies = {};
@@ -335,6 +336,36 @@ describe('utils', () => {
     expect(utils.prune('abcdefg', 3)).toEqual('abc');
     expect(utils.prune('abcdefg')).toEqual('abcdefg');
     expect(utils.prune(undefined)).toEqual('');
+  });
+
+  test('parseJsonFromEnvVar -> simple flow', () => {
+    process.env.TEST_STR = '"TEST"';
+    process.env.TEST_NUM = '1';
+    process.env.TEST_ARRAY = '[1, "1"]';
+    process.env.TEST_OBJECT = '{"1": "1"}';
+
+    expect(utils.parseJsonFromEnvVar('TEST_STR')).toEqual('TEST');
+    expect(utils.parseJsonFromEnvVar('TEST_NUM')).toEqual(1);
+    expect(utils.parseJsonFromEnvVar('TEST_ARRAY')).toEqual([1, '1']);
+    expect(utils.parseJsonFromEnvVar('TEST_OBJECT')).toEqual({ '1': '1' });
+  });
+
+  test('parseJsonFromEnvVar -> not fail on error', () => {
+    process.env.TEST_ERR = 'ERR';
+    expect(utils.parseJsonFromEnvVar('TEST_ERR')).toEqual(undefined);
+  });
+
+  test('parseJsonFromEnvVar -> warn user', () => {
+    process.env.TEST_ERR = 'ERR';
+
+    utils.parseJsonFromEnvVar('TEST_ERR', true);
+
+    expect(ConsoleWritesForTesting.getLogs()).toEqual([
+      {
+        msg: 'Lumigo Warning: TEST_ERR need to be a valid JSON',
+        obj: undefined,
+      },
+    ]);
   });
 
   test('stringifyAndPrune', () => {

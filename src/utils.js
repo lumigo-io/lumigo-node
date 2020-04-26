@@ -11,8 +11,18 @@ export const LUMIGO_DEFAULT_DOMAIN_SCRUBBERS =
 export const LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP =
   'LUMIGO_BLACKLIST_REGEX';
 export const LUMIGO_SECRET_MASKING_REGEX = 'LUMIGO_SECRET_MASKING_REGEX';
-export const OMITTING_KEYS_REGEXES =
-  '[".*pass.*", ".*key.*", ".*secret.*", ".*credential.*", ".*passphrase.*", "SessionToken", "x-amz-security-token", "Signature", "Credential", "Authorization"]';
+export const OMITTING_KEYS_REGEXES = [
+  '.*pass.*',
+  '.*key.*',
+  '.*secret.*',
+  '.*credential.*',
+  '.*passphrase.*',
+  'SessionToken',
+  'x-amz-security-token',
+  'Signature',
+  'Credential',
+  'Authorization',
+];
 export const LUMIGO_EVENT_KEY = '_lumigo';
 export const STEP_FUNCTION_UID_KEY = 'step_function_uid';
 export const GET_KEY_DEPTH_ENV_KEY = 'LUMIGO_KEY_DEPTH';
@@ -366,12 +376,37 @@ export const shouldScrubDomain = url => {
   return !!url && domainScrubbers().some(regex => url.match(regex));
 };
 
-export const keyToOmitRegexes = () =>
-  JSON.parse(
-    process.env[LUMIGO_SECRET_MASKING_REGEX] ||
-      process.env[LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP] ||
-      OMITTING_KEYS_REGEXES
-  ).map(x => new RegExp(x, 'i'));
+export const parseJsonFromEnvVar = (envVar, warnClient = false) => {
+  try {
+    return JSON.parse(process.env[envVar]);
+  } catch (e) {
+    warnClient && logger.warnClient(`${envVar} need to be a valid JSON`);
+  }
+  return undefined;
+};
+
+export const keyToOmitRegexes = () => {
+  let regexesList = OMITTING_KEYS_REGEXES;
+  if (process.env[LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP]) {
+    const parseResponse = parseJsonFromEnvVar(
+      LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP,
+      true
+    );
+    if (parseResponse) {
+      regexesList = parseResponse;
+    }
+  } else if (process.env[LUMIGO_SECRET_MASKING_REGEX]) {
+    const parseResponse = parseJsonFromEnvVar(
+      LUMIGO_SECRET_MASKING_REGEX,
+      true
+    );
+    if (parseResponse) {
+      regexesList = parseResponse;
+    }
+  }
+
+  return regexesList.map(x => new RegExp(x, 'i'));
+};
 
 export const omitKeys = obj => {
   if (obj instanceof Array) {
