@@ -44,6 +44,12 @@ describe('index', () => {
     ]);
   });
 
+  test('addExecutionTag without tracer not throw exception', async () => {
+    const lumigo_import = require('./index');
+    lumigo_import.addExecutionTag('k0', 'v0');
+    // No exception.
+  });
+
   test('init tracer', () => {
     const retVal = 1234;
     spies.trace.mockReturnValueOnce(retVal);
