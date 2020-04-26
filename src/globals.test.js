@@ -341,7 +341,6 @@ describe('globals', () => {
     });
     globals.ExecutionTags.addTag('throw', 'exception');
     // No exception.
-    let tags = globals.ExecutionTags.getTags();
-    expect(tags).toEqual([]);
+    expect(globals.ExecutionTags.getTags()).toEqual([]);
   });
 });
