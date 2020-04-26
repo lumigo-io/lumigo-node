@@ -15,6 +15,7 @@ import {
   shouldScrubDomain,
   getInvokedArn,
   getInvokedVersion,
+  EXECUTION_TAGS_KEY,
 } from '../utils';
 import {
   dynamodbParser,
@@ -24,7 +25,7 @@ import {
   kinesisParser,
   awsParser,
 } from '../parsers/aws';
-import { TracerGlobals } from '../globals';
+import { TracerGlobals, ExecutionTags } from '../globals';
 import { getEventInfo } from '../events';
 
 export const HTTP_SPAN = 'http';
@@ -144,7 +145,13 @@ export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
   const error = err ? parseErrorObject(err) : undefined;
   const ended = new Date().getTime();
   const return_value = data ? pruneData(omitKeys(data)) : null;
-  return Object.assign({}, functionSpan, { id, ended, error, return_value });
+  return Object.assign({}, functionSpan, {
+    id,
+    ended,
+    error,
+    return_value,
+    [EXECUTION_TAGS_KEY]: ExecutionTags.getTags(),
+  });
 };
 
 export const AWS_PARSED_SERVICES = [

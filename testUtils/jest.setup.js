@@ -2,7 +2,7 @@ import { HttpsRequestsForTesting, HttpsScenarioBuilder } from './httpsMocker';
 import { createAwsEnvVars } from './awsTestUtils';
 import { LogStore } from '../src/logger';
 import { ConsoleMocker, ConsoleWritesForTesting } from './consoleMocker';
-import { SpansContainer, TracerGlobals } from '../src/globals';
+import * as globals from '../src/globals';
 
 jest.mock('../package.json');
 jest.mock('https');
@@ -14,9 +14,7 @@ beforeEach(() => {
   HttpsRequestsForTesting.clean();
   HttpsScenarioBuilder.clean();
   ConsoleWritesForTesting.clean();
-  SpansContainer.clearSpans();
-  TracerGlobals.clearHandlerInputs();
-  TracerGlobals.clearTracerInputs();
+  globals.clearGlobals();
   LogStore.clean();
 
   const awsEnv = createAwsEnvVars();

@@ -17,6 +17,8 @@ export const LUMIGO_EVENT_KEY = '_lumigo';
 export const STEP_FUNCTION_UID_KEY = 'step_function_uid';
 export const GET_KEY_DEPTH_ENV_KEY = 'LUMIGO_KEY_DEPTH';
 export const DEFAULT_GET_KEY_DEPTH = 3;
+export const EXECUTION_TAGS_KEY = 'lumigo_execution_tags_no_scrub';
+export const SKIP_SCRUBBING_KEYS = [EXECUTION_TAGS_KEY];
 
 export const getContextInfo = context => {
   const remainingTimeInMillis = context.getRemainingTimeInMillis();
@@ -389,9 +391,13 @@ export const omitKeys = obj => {
   obj = noCirculars(obj);
   const regexes = keyToOmitRegexes();
   return Object.keys(obj).reduce((newObj, key) => {
-    let value = omitKeys(obj[key]);
-    let shouldOmitKey = regexes.some(regex => regex.test(key));
-    newObj[key] = shouldOmitKey ? '****' : value;
+    if (SKIP_SCRUBBING_KEYS.includes(key)) {
+      newObj[key] = obj[key];
+    } else if (regexes.some(regex => regex.test(key))) {
+      newObj[key] = '****';
+    } else {
+      newObj[key] = omitKeys(obj[key]);
+    }
     return newObj;
   }, {});
 };

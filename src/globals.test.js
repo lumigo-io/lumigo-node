@@ -284,4 +284,64 @@ describe('globals', () => {
       isStepFunction: false,
     });
   });
+
+  test('ExecutionTags one tag', () => {
+    const value = 'v0';
+    const key = 'k0';
+    globals.ExecutionTags.addTag(key, value);
+    expect(globals.ExecutionTags.getTags()).toEqual([{ key, value }]);
+
+    globals.ExecutionTags.clear();
+    expect(globals.ExecutionTags.getTags()).toEqual([]);
+  });
+
+  test('ExecutionTags multiple tags', () => {
+    globals.ExecutionTags.addTag('k0', 'v0');
+    globals.ExecutionTags.addTag('k1', 'v1');
+    expect(globals.ExecutionTags.getTags()).toEqual([
+      { key: 'k0', value: 'v0' },
+      { key: 'k1', value: 'v1' },
+    ]);
+
+    globals.ExecutionTags.clear();
+    expect(globals.ExecutionTags.getTags()).toEqual([]);
+  });
+
+  test('ExecutionTags.addTag empty key', () => {
+    globals.ExecutionTags.addTag('', 'v0');
+    expect(globals.ExecutionTags.getTags()).toEqual([]);
+  });
+
+  test('ExecutionTags.addTag too long key', () => {
+    globals.ExecutionTags.addTag('k'.repeat(51), 'v0');
+    expect(globals.ExecutionTags.getTags()).toEqual([]);
+  });
+
+  test('ExecutionTags.addTag empty value', () => {
+    globals.ExecutionTags.addTag('k0', '');
+    expect(globals.ExecutionTags.getTags()).toEqual([]);
+  });
+
+  test('ExecutionTags.addTag too long value', () => {
+    globals.ExecutionTags.addTag('k0', 'v'.repeat(51));
+    expect(globals.ExecutionTags.getTags()).toEqual([]);
+  });
+
+  test('ExecutionTags.addTag too many tags', () => {
+    for (let i = 0; i < 51; i++) globals.ExecutionTags.addTag(`k${i}`, `v${i}`);
+    expect(globals.ExecutionTags.getTags().length).toEqual(50);
+    expect(
+      globals.ExecutionTags.getTags().filter(tag => tag.key === 'k50')
+    ).toEqual([]);
+  });
+
+  test('ExecutionTags.addTag catch exception', () => {
+    jest.spyOn(global, 'String').mockImplementation(() => {
+      throw new Error();
+    });
+    globals.ExecutionTags.addTag('throw', 'exception');
+    // No exception.
+    let tags = globals.ExecutionTags.getTags();
+    expect(tags).toEqual([]);
+  });
 });
