@@ -66,6 +66,7 @@ export const ExecutionTags = (() => {
 
   const addTag = (key, value, shouldLogErrors = true) => {
     try {
+      logger.debug(`Adding tag: ${key} - ${value}`);
       if (!validateTag(key, value, shouldLogErrors)) return false;
       tags.push({ key, value });
     } catch (err) {

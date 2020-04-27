@@ -1,4 +1,5 @@
 import * as globals from './globals';
+import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
 
 describe('globals', () => {
   test('SpansContainer - simple flow', () => {
@@ -310,21 +311,49 @@ describe('globals', () => {
   test('ExecutionTags.addTag empty key', () => {
     globals.ExecutionTags.addTag('', 'v0');
     expect(globals.ExecutionTags.getTags()).toEqual([]);
+    expect(ConsoleWritesForTesting.getLogs()).toEqual([
+      {
+        msg:
+          'Lumigo Warning: Skipping addExecutionTag: Unable to add tag: key length should be between 1 and 50:  - v0',
+        obj: undefined,
+      },
+    ]);
   });
 
   test('ExecutionTags.addTag too long key', () => {
-    globals.ExecutionTags.addTag('k'.repeat(51), 'v0');
+    const key = 'k'.repeat(51);
+    globals.ExecutionTags.addTag(key, 'v0');
     expect(globals.ExecutionTags.getTags()).toEqual([]);
+    expect(ConsoleWritesForTesting.getLogs()).toEqual([
+      {
+        msg: `Lumigo Warning: Skipping addExecutionTag: Unable to add tag: key length should be between 1 and 50: ${key} - v0`,
+        obj: undefined,
+      },
+    ]);
   });
 
   test('ExecutionTags.addTag empty value', () => {
     globals.ExecutionTags.addTag('k0', '');
     expect(globals.ExecutionTags.getTags()).toEqual([]);
+    expect(ConsoleWritesForTesting.getLogs()).toEqual([
+      {
+        msg:
+          'Lumigo Warning: Skipping addExecutionTag: Unable to add tag: value length should be between 1 and 50: k0 - ',
+        obj: undefined,
+      },
+    ]);
   });
 
   test('ExecutionTags.addTag too long value', () => {
-    globals.ExecutionTags.addTag('k0', 'v'.repeat(51));
+    const value = 'v'.repeat(51);
+    globals.ExecutionTags.addTag('k0', value);
     expect(globals.ExecutionTags.getTags()).toEqual([]);
+    expect(ConsoleWritesForTesting.getLogs()).toEqual([
+      {
+        msg: `Lumigo Warning: Skipping addExecutionTag: Unable to add tag: value length should be between 1 and 50: k0 - ${value}`,
+        obj: undefined,
+      },
+    ]);
   });
 
   test('ExecutionTags.addTag too many tags', () => {

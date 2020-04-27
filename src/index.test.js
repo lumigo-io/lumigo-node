@@ -2,6 +2,7 @@
 import * as tracer from './tracer';
 import * as utils from './utils';
 import { EXECUTION_TAGS_KEY } from './utils';
+import { HttpsRequestsForTesting } from '../testUtils/httpsMocker';
 
 describe('index', () => {
   const spies = {};
@@ -13,18 +14,13 @@ describe('index', () => {
     Object.keys(spies).map(x => spies[x].mockClear());
   });
 
-  test('execution tags', async () => {
+  test('execution tags - async handler', async () => {
     const context = { getRemainingTimeInMillis: () => 30000 };
     const callback = jest.fn();
     const retVal = 'The Tracer Wars';
-    const token = 'DEADBEEF';
-    let sentSpans = [];
-    jest.spyOn(utils, 'httpReq').mockImplementation((options, reqBody) => {
-      sentSpans = [...sentSpans, ...JSON.parse(reqBody)];
-    });
 
     const lumigo_import = require('./index');
-    const lumigo = lumigo_import({ token });
+    const lumigo = lumigo_import({ token: 'T' });
     const userHandler = async (event, context, callback) => {
       // First way to run `addExecutionTag`, for manual tracing.
       lumigo_import.addExecutionTag('k0', 'v0');
@@ -35,7 +31,32 @@ describe('index', () => {
     const result = await lumigo.trace(userHandler)({}, context, callback);
 
     expect(result).toEqual(retVal);
-    const actualTags = sentSpans.filter(
+    const actualTags = HttpsRequestsForTesting.getSentSpans().filter(
+      span => !span.id.endsWith('_started')
+    )[0][EXECUTION_TAGS_KEY];
+    expect(actualTags).toEqual([
+      { key: 'k0', value: 'v0' },
+      { key: 'k1', value: 'v1' },
+    ]);
+  });
+
+  test('execution tags - non async handler', async done => {
+    const context = { getRemainingTimeInMillis: () => 30000 };
+    const retVal = 'The Tracer Wars';
+
+    const lumigo_import = require('./index');
+    const lumigo = lumigo_import({ token: 'T' });
+    const userHandler = (event, context, callback) => {
+      // First way to run `addExecutionTag`, for manual tracing.
+      lumigo_import.addExecutionTag('k0', 'v0');
+      // Second way to run `addExecutionTag`, for auto tracing.
+      lumigo.addExecutionTag('k1', 'v1');
+      callback();
+    };
+    const result = lumigo.trace(userHandler)({}, context, done);
+
+    expect(result).resolves.toEqual(retVal);
+    const actualTags = HttpsRequestsForTesting.getSentSpans().filter(
       span => !span.id.endsWith('_started')
     )[0][EXECUTION_TAGS_KEY];
     expect(actualTags).toEqual([
@@ -47,6 +68,9 @@ describe('index', () => {
   test('addExecutionTag without tracer not throw exception', async () => {
     const lumigo_import = require('./index');
     lumigo_import.addExecutionTag('k0', 'v0');
+    // No exception.
+    const lumigo = lumigo_import({ token: 't' });
+    lumigo.addExecutionTag('k0', 'v0');
     // No exception.
   });
 
