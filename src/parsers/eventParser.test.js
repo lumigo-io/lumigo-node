@@ -1,8 +1,18 @@
-import { parse_event } from './eventParser';
+import { parseEvent } from './eventParser';
 
 describe('event parser', () => {
   test('check null value', () => {
-    expect(parse_event(null)).toEqual(null);
+    expect(parseEvent(null)).toEqual(null);
+  });
+
+  test('exception check', () => {
+    const event = {
+      get requestContext() {
+        throw new Error();
+      },
+      a: 1,
+    };
+    expect(parseEvent(event)).toEqual(event);
   });
 
   test('api gw v1', () => {
@@ -128,7 +138,7 @@ describe('event parser', () => {
       isBase64Encoded: false,
     };
 
-    const order_api_gw_event = parse_event(not_order_api_gw_event);
+    const order_api_gw_event = parseEvent(not_order_api_gw_event);
 
     expect(JSON.stringify(order_api_gw_event)).toEqual(
       JSON.stringify({
@@ -224,7 +234,7 @@ describe('event parser', () => {
       isBase64Encoded: true,
     };
 
-    const order_api_gw_event = parse_event(not_order_api_gw_event);
+    const order_api_gw_event = parseEvent(not_order_api_gw_event);
 
     expect(JSON.stringify(order_api_gw_event)).toEqual(
       JSON.stringify({

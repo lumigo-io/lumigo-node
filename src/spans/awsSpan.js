@@ -26,7 +26,7 @@ import {
 } from '../parsers/aws';
 import { TracerGlobals } from '../globals';
 import { getEventInfo } from '../events';
-import { parse_event } from '../parsers/eventParser';
+import { parseEvent } from '../parsers/eventParser';
 
 export const HTTP_SPAN = 'http';
 export const FUNCTION_SPAN = 'function';
@@ -112,7 +112,7 @@ export const getFunctionSpan = () => {
   const ended = started; // Indicates a StartSpan.
 
   const event = stringifyAndPrune(
-    omitKeys(parse_event(lambdaEvent)),
+    omitKeys(parseEvent(lambdaEvent)),
     getEventEntitySize()
   );
   const envs = stringifyAndPrune(omitKeys(process.env));

@@ -1,5 +1,9 @@
+import * as logger from '../logger';
+import { getEnvVarAsList } from '../utils';
+
 const API_GW_REGEX = /.*execute-api.*amazonaws\.com.*/;
-const API_GW_KEYS_ORDER = [
+
+const API_GW_KEYS_ORDER = getEnvVarAsList('LUMIGO_API_GW_KEYS_ORDER', [
   'version',
   'routeKey',
   'rawPath',
@@ -12,23 +16,21 @@ const API_GW_KEYS_ORDER = [
   'body',
   'requestContext',
   'headers',
-];
-const API_GW_PREFIX_KEYS_HEADERS_DELETE_KEYS = [
-  'cookie',
-  'x-amz',
-  'accept',
-  'cloudfront',
-  'via',
-  'x-forwarded',
-  'sec-',
-];
-const API_GW_REQUEST_CONTEXT_FILTER_KEYS = ['authorizer', 'http'];
-const API_GW_KEYS_DELETE_KEYS = [
-  'multiValueHeaders',
-  'multiValueQueryStringParameters',
-];
+]);
+const API_GW_PREFIX_KEYS_HEADERS_DELETE_KEYS = getEnvVarAsList(
+  'LUMIGO_API_GW_PREFIX_KEYS_HEADERS_DELETE_KEYS',
+  ['cookie', 'x-amz', 'accept', 'cloudfront', 'via', 'x-forwarded', 'sec-']
+);
+const API_GW_REQUEST_CONTEXT_FILTER_KEYS = getEnvVarAsList(
+  'LUMIGO_API_GW_REQUEST_CONTEXT_FILTER_KEYS',
+  ['authorizer', 'http']
+);
+const API_GW_KEYS_DELETE_KEYS = getEnvVarAsList(
+  'LUMIGO_API_GW_KEYS_DELETE_KEYS',
+  ['multiValueHeaders', 'multiValueQueryStringParameters']
+);
 
-export const is_api_gw_event = event => {
+export const isApiGwEvent = event => {
   if (
     event != null &&
     event.requestContext != null &&
@@ -39,7 +41,7 @@ export const is_api_gw_event = event => {
   return false;
 };
 
-export const parse_api_gw_event = event => {
+export const parseApiGwEvent = event => {
   const parsed_event = {};
   // Add order keys
   for (const order_key of API_GW_KEYS_ORDER) {
@@ -82,9 +84,14 @@ export const parse_api_gw_event = event => {
   return parsed_event;
 };
 
-export const parse_event = event => {
-  if (is_api_gw_event(event)) {
-    return parse_api_gw_event(event);
+export const parseEvent = event => {
+  try {
+    if (isApiGwEvent(event)) {
+      return parseApiGwEvent(event);
+    }
+    return event;
+  } catch (e) {
+    logger.warn('Failed to parse event', e);
+    return event;
   }
-  return event;
 };
