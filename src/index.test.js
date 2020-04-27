@@ -40,9 +40,8 @@ describe('index', () => {
     ]);
   });
 
-  test('execution tags - non async handler', async done => {
+  test('execution tags - non async handler', async () => {
     const context = { getRemainingTimeInMillis: () => 30000 };
-    const retVal = 'The Tracer Wars';
 
     const lumigo_import = require('./index');
     const lumigo = lumigo_import({ token: 'T' });
@@ -51,11 +50,10 @@ describe('index', () => {
       lumigo_import.addExecutionTag('k0', 'v0');
       // Second way to run `addExecutionTag`, for auto tracing.
       lumigo.addExecutionTag('k1', 'v1');
-      callback();
+      callback(null, 'OK');
     };
-    const result = lumigo.trace(userHandler)({}, context, done);
+    await lumigo.trace(userHandler)({}, context, jest.fn());
 
-    expect(result).resolves.toEqual(retVal);
     const actualTags = HttpsRequestsForTesting.getSentSpans().filter(
       span => !span.id.endsWith('_started')
     )[0][EXECUTION_TAGS_KEY];
