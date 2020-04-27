@@ -148,6 +148,13 @@ const validateEnvVarIsTrue = envVar =>
 
 export const isAwsEnvironment = () => !!process.env['LAMBDA_RUNTIME_DIR'];
 
+export const getEnvVarAsList = (key, def) => {
+  if (process.env[key] != null) {
+    return process.env[key].split(',');
+  }
+  return def;
+};
+
 export const isTimeoutTimerEnabled = () =>
   validateEnvVarIsTrue(TIMEOUT_ENABLE_FLAG);
 

@@ -19,6 +19,7 @@ import { isDebug } from './logger';
 import { GET_KEY_DEPTH_ENV_KEY } from './utils';
 import { HttpsScenarioBuilder } from '../testUtils/httpsMocker';
 import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
+import { getEnvVarAsList } from './utils';
 
 describe('utils', () => {
   const spies = {};
@@ -806,5 +807,15 @@ describe('utils', () => {
     process.env[GET_KEY_DEPTH_ENV_KEY] = '8';
     expect(recursiveGetKey(tooDeep, 'key')).toEqual("I'm here");
     process.env[GET_KEY_DEPTH_ENV_KEY] = undefined;
+  });
+  test('getEnvVarAsList not existing key', () => {
+    const res = getEnvVarAsList('not_exists', 'def');
+    expect(res).toEqual('def');
+  });
+
+  test('getEnvVarAsList existing key', () => {
+    process.env['array_key'] = 'a,b,c';
+    const res = getEnvVarAsList('array_key');
+    expect(res).toEqual(['a', 'b', 'c']);
   });
 });
