@@ -5,6 +5,10 @@ describe('event parser', () => {
     expect(parseEvent(null)).toEqual(null);
   });
 
+  test('null check', () => {
+    expect(parseEvent(null)).toEqual(null);
+  });
+
   test('exception check', () => {
     const event = {
       get requestContext() {
@@ -264,6 +268,150 @@ describe('event parser', () => {
           'regStatus=pre-register',
         ],
         isBase64Encoded: true,
+      })
+    );
+  });
+
+  test('sns parse', () => {
+    const not_order_sns_event = {
+      Records: [
+        {
+          EventVersion: '1.0',
+          EventSubscriptionArn:
+            'arn:aws:sns:us-east-2:123456789012:sns-lambda:21be56ed-a058-49f5-8c98-aedd2564c486',
+          EventSource: 'aws:sns',
+          Sns: {
+            SignatureVersion: '1',
+            Timestamp: '2019-01-02T12:45:07.000Z',
+            Signature:
+              'tcc6faL2yUC6dgZdmrwh1Y4cGa/ebXEkAi6RibDsvpi+tE/1+82j...65r==',
+            SigningCertUrl:
+              'https://sns.us-east-2.amazonaws.com/SimpleNotificationService-ac565b8b1a6c5d002d285f9598aa1d9b.pem',
+            MessageId: '95df01b4-ee98-5cb9-9903-4c221d41eb5e',
+            Message: 'Hello from SNS1!',
+            MessageAttributes: {
+              Test: { Type: 'String', Value: 'TestString' },
+              TestBinary: { Type: 'Binary', Value: 'TestBinary' },
+            },
+            Type: 'Notification',
+            UnsubscribeUrl:
+              'https://sns.us-east-2.amazonaws.com/?Action=Unsubscribe&amp;SubscriptionArn=arn:aws:sns:us-east-2:123456789012:test-lambda:21be56ed-a058-49f5-8c98-aedd2564c486',
+            TopicArn: 'arn:aws:sns:us-east-2:123456789012:sns-lambda',
+            Subject: 'TestInvoke',
+          },
+        },
+        {
+          EventVersion: '1.0',
+          EventSubscriptionArn:
+            'arn:aws:sns:us-east-2:123456789012:sns-lambda:21be56ed-a058-49f5-8c98-aedd2564c486',
+          EventSource: 'aws:sns',
+          Sns: {
+            SignatureVersion: '1',
+            Timestamp: '2019-01-02T12:45:07.000Z',
+            Signature:
+              'tcc6faL2yUC6dgZdmrwh1Y4cGa/ebXEkAi6RibDsvpi+tE/1+82j...65r==',
+            SigningCertUrl:
+              'https://sns.us-east-2.amazonaws.com/SimpleNotificationService-ac565b8b1a6c5d002d285f9598aa1d9b.pem',
+            MessageId: '95df01b4-ee98-5cb9-9903-4c221d41eb5e',
+            Message: 'Hello from SNS2!',
+            MessageAttributes: {
+              Test: { Type: 'String', Value: 'TestString' },
+              TestBinary: { Type: 'Binary', Value: 'TestBinary' },
+            },
+            Type: 'Notification',
+            UnsubscribeUrl:
+              'https://sns.us-east-2.amazonaws.com/?Action=Unsubscribe&amp;SubscriptionArn=arn:aws:sns:us-east-2:123456789012:test-lambda:21be56ed-a058-49f5-8c98-aedd2564c486',
+            TopicArn: 'arn:aws:sns:us-east-2:123456789012:sns-lambda',
+            Subject: 'TestInvoke',
+          },
+        },
+      ],
+    };
+
+    const order_sns_event = parseEvent(not_order_sns_event);
+
+    expect(JSON.stringify(order_sns_event)).toEqual(
+      JSON.stringify({
+        Records: [
+          {
+            Sns: {
+              Message: 'Hello from SNS1!',
+              MessageAttributes: {
+                Test: { Type: 'String', Value: 'TestString' },
+                TestBinary: { Type: 'Binary', Value: 'TestBinary' },
+              },
+              MessageId: '95df01b4-ee98-5cb9-9903-4c221d41eb5e',
+            },
+          },
+          {
+            Sns: {
+              Message: 'Hello from SNS2!',
+              MessageAttributes: {
+                Test: { Type: 'String', Value: 'TestString' },
+                TestBinary: { Type: 'Binary', Value: 'TestBinary' },
+              },
+              MessageId: '95df01b4-ee98-5cb9-9903-4c221d41eb5e',
+            },
+          },
+        ],
+      })
+    );
+  });
+
+  test('sqs parse', () => {
+    const not_order_sqs_event = {
+      Records: [
+        {
+          messageId: '059f36b4-87a3-44ab-83d2-661975830a7d',
+          receiptHandle: 'AQEBwJnKyrHigUMZj6rYigCgxlaS3SLy0a...',
+          body: 'Test message1',
+          attributes: {
+            ApproximateReceiveCount: '1',
+            SentTimestamp: '1545082649183',
+            SenderId: 'AIDAIENQZJOLO23YVJ4VO',
+            ApproximateFirstReceiveTimestamp: '1545082649185',
+          },
+          messageAttributes: { a: 1 },
+          md5OfBody: 'e4e68fb7bd0e697a0ae8f1bb342846b3',
+          eventSource: 'aws:sqs',
+          eventSourceARN: 'arn:aws:sqs:us-east-2:123456789012:my-queue',
+          awsRegion: 'us-east-2',
+        },
+        {
+          messageId: '2e1424d4-f796-459a-8184-9c92662be6da',
+          receiptHandle: 'AQEBzWwaftRI0KuVm4tP+/7q1rGgNqicHq...',
+          body: 'Test message2',
+          attributes: {
+            ApproximateReceiveCount: '1',
+            SentTimestamp: '1545082650636',
+            SenderId: 'AIDAIENQZJOLO23YVJ4VO',
+            ApproximateFirstReceiveTimestamp: '1545082650649',
+          },
+          messageAttributes: { b: 2 },
+          md5OfBody: 'e4e68fb7bd0e697a0ae8f1bb342846b3',
+          eventSource: 'aws:sqs',
+          eventSourceARN: 'arn:aws:sqs:us-east-2:123456789012:my-queue',
+          awsRegion: 'us-east-2',
+        },
+      ],
+    };
+
+    const order_sqs_event = parseEvent(not_order_sqs_event);
+
+    expect(JSON.stringify(order_sqs_event)).toEqual(
+      JSON.stringify({
+        Records: [
+          {
+            body: 'Test message1',
+            messageAttributes: { a: 1 },
+            messageId: '059f36b4-87a3-44ab-83d2-661975830a7d',
+          },
+          {
+            body: 'Test message2',
+            messageAttributes: { b: 2 },
+            messageId: '2e1424d4-f796-459a-8184-9c92662be6da',
+          },
+        ],
       })
     );
   });
