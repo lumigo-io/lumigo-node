@@ -29,6 +29,17 @@ const API_GW_KEYS_DELETE_KEYS = getEnvVarAsList(
   'LUMIGO_API_GW_KEYS_DELETE_KEYS',
   ['multiValueHeaders', 'multiValueQueryStringParameters']
 );
+const SQS_KEYS_ORDER = getEnvVarAsList('LUMIGO_SQS_KEYS_ORDER', [
+  'body',
+  'messageAttributes',
+  'messageId',
+]);
+
+const SNS_KEYS_ORDER = getEnvVarAsList('LUMIGO_SNS_KEYS_ORDER', [
+  'Message',
+  'MessageAttributes',
+  'MessageId',
+]);
 
 export const isApiGwEvent = event => {
   if (
@@ -39,6 +50,24 @@ export const isApiGwEvent = event => {
     return event.requestContext.domainName.match(API_GW_REGEX);
   }
   return false;
+};
+
+export const isSnsEvent = event => {
+  return (
+    event != null &&
+    event.Records != null &&
+    event.Records[0] != null &&
+    event.Records[0].EventSource === 'aws:sns'
+  );
+};
+
+export const isSqsEvent = event => {
+  return (
+    event != null &&
+    event.Records != null &&
+    event.Records[0] != null &&
+    event.Records[0].eventSource === 'aws:sqs'
+  );
 };
 
 export const parseApiGwEvent = event => {
@@ -84,14 +113,51 @@ export const parseApiGwEvent = event => {
   return parsed_event;
 };
 
+export const parseSnsEvent = event => {
+  const new_sns_event = {};
+  new_sns_event['Records'] = [];
+  // Add order keys
+  for (const rec of event['Records']) {
+    const new_sns_record_event = {};
+    for (const key of SNS_KEYS_ORDER) {
+      if (rec.Sns != null && rec.Sns[key] != null) {
+        new_sns_record_event[key] = rec.Sns[key];
+      }
+    }
+    new_sns_event['Records'].push({ Sns: new_sns_record_event });
+  }
+  return new_sns_event;
+};
+
+export const parseSqsEvent = event => {
+  const new_sqs_event = {};
+  new_sqs_event['Records'] = [];
+  // Add order keys
+  for (const rec of event['Records']) {
+    const new_sqs_record_event = {};
+    for (const key of SQS_KEYS_ORDER) {
+      if (rec[key] != null) {
+        new_sqs_record_event[key] = rec[key];
+      }
+    }
+    new_sqs_event['Records'].push(new_sqs_record_event);
+  }
+  return new_sqs_event;
+};
+
 export const parseEvent = event => {
   try {
     if (isApiGwEvent(event)) {
       return parseApiGwEvent(event);
     }
-    return event;
+    if (isSnsEvent(event)) {
+      return parseSnsEvent(event);
+    }
+    if (isSqsEvent(event)) {
+      return parseSqsEvent(event);
+    }
   } catch (e) {
     logger.warn('Failed to parse event', e);
-    return event;
   }
+  return event;
 };
