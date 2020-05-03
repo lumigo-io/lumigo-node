@@ -76,12 +76,12 @@ In order to log custom errors which will be visible in the platform, you can use
 ## Adding Execution Tags
 You can use `addExecutionTag` function to add an execution tag with a dynamic value.<br/>
 This value can be searched within the Lumigo platform.<br/>
-###Manual tracing
+### Manual tracing
 Add `const lumigo = require('@lumigo/tracer')({ token: 'DEADBEEF' })`.<br/>
 Then use `lumigo.addExecutionTag('<key>', '<value>');` from anywhere in your lambda code.<br/>
-###Auto tracing
+### Auto tracing
 Add `const lumigo = require('@lumigo/tracer');`.<br/>
 Then use `lumigo.addExecutionTag('<key>', '<value>');` from anywhere in your lambda code.<br/>
-###Limitation:
+### Limitation:
 * The maximum number of tags is 50.
 * Key and value length should be between 1 and 50.
