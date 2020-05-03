@@ -1,5 +1,5 @@
 import * as awsSpan from './awsSpan.js';
-import { parseErrorObject } from '../utils';
+import { EXECUTION_TAGS_KEY, parseErrorObject } from '../utils';
 import MockDate from 'mockdate';
 import { TracerGlobals } from '../globals';
 import * as awsParsers from '../parsers/aws';
@@ -303,6 +303,7 @@ describe('awsSpan', () => {
       event: null,
       maxFinishTime: 895093323456,
       return_value: 'data man',
+      [EXECUTION_TAGS_KEY]: [],
     };
     const handlerReturnValue1 = {
       err: null,
@@ -361,6 +362,7 @@ describe('awsSpan', () => {
       event: null,
       maxFinishTime: 895093323456,
       return_value: null,
+      [EXECUTION_TAGS_KEY]: [],
     };
     MockDate.set(895179612345);
     expect(

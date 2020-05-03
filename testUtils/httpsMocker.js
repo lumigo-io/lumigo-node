@@ -70,7 +70,11 @@ export const HttpsRequestsForTesting = (() => {
     httpRequests.push(request);
   };
 
-  return { getRequests, clean, pushRequest };
+  const getSentSpans = () => {
+    return getRequests().map(req => JSON.parse(req.body)[0]);
+  };
+
+  return { getRequests, clean, pushRequest, getSentSpans };
 })();
 
 export const HttpsMocker = (() => {
