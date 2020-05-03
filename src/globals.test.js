@@ -1,4 +1,5 @@
 import * as globals from './globals';
+import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
 
 describe('globals', () => {
   test('SpansContainer - simple flow', () => {
@@ -283,5 +284,92 @@ describe('globals', () => {
       switchOff: false,
       isStepFunction: false,
     });
+  });
+
+  test('ExecutionTags one tag', () => {
+    const value = 'v0';
+    const key = 'k0';
+    globals.ExecutionTags.addTag(key, value);
+    expect(globals.ExecutionTags.getTags()).toEqual([{ key, value }]);
+
+    globals.ExecutionTags.clear();
+    expect(globals.ExecutionTags.getTags()).toEqual([]);
+  });
+
+  test('ExecutionTags multiple tags', () => {
+    globals.ExecutionTags.addTag('k0', 'v0');
+    globals.ExecutionTags.addTag('k1', 'v1');
+    expect(globals.ExecutionTags.getTags()).toEqual([
+      { key: 'k0', value: 'v0' },
+      { key: 'k1', value: 'v1' },
+    ]);
+
+    globals.ExecutionTags.clear();
+    expect(globals.ExecutionTags.getTags()).toEqual([]);
+  });
+
+  test('ExecutionTags.addTag empty key', () => {
+    globals.ExecutionTags.addTag('', 'v0');
+    expect(globals.ExecutionTags.getTags()).toEqual([]);
+    expect(ConsoleWritesForTesting.getLogs()).toEqual([
+      {
+        msg:
+          'Lumigo Warning: Skipping addExecutionTag: Unable to add tag: key length should be between 1 and 50:  - v0',
+        obj: undefined,
+      },
+    ]);
+  });
+
+  test('ExecutionTags.addTag too long key', () => {
+    const key = 'k'.repeat(51);
+    globals.ExecutionTags.addTag(key, 'v0');
+    expect(globals.ExecutionTags.getTags()).toEqual([]);
+    expect(ConsoleWritesForTesting.getLogs()).toEqual([
+      {
+        msg: `Lumigo Warning: Skipping addExecutionTag: Unable to add tag: key length should be between 1 and 50: ${key} - v0`,
+        obj: undefined,
+      },
+    ]);
+  });
+
+  test('ExecutionTags.addTag empty value', () => {
+    globals.ExecutionTags.addTag('k0', '');
+    expect(globals.ExecutionTags.getTags()).toEqual([]);
+    expect(ConsoleWritesForTesting.getLogs()).toEqual([
+      {
+        msg:
+          'Lumigo Warning: Skipping addExecutionTag: Unable to add tag: value length should be between 1 and 50: k0 - ',
+        obj: undefined,
+      },
+    ]);
+  });
+
+  test('ExecutionTags.addTag too long value', () => {
+    const value = 'v'.repeat(51);
+    globals.ExecutionTags.addTag('k0', value);
+    expect(globals.ExecutionTags.getTags()).toEqual([]);
+    expect(ConsoleWritesForTesting.getLogs()).toEqual([
+      {
+        msg: `Lumigo Warning: Skipping addExecutionTag: Unable to add tag: value length should be between 1 and 50: k0 - ${value}`,
+        obj: undefined,
+      },
+    ]);
+  });
+
+  test('ExecutionTags.addTag too many tags', () => {
+    for (let i = 0; i < 51; i++) globals.ExecutionTags.addTag(`k${i}`, `v${i}`);
+    expect(globals.ExecutionTags.getTags().length).toEqual(50);
+    expect(
+      globals.ExecutionTags.getTags().filter(tag => tag.key === 'k50')
+    ).toEqual([]);
+  });
+
+  test('ExecutionTags.addTag catch exception', () => {
+    jest.spyOn(global, 'String').mockImplementation(() => {
+      throw new Error();
+    });
+    globals.ExecutionTags.addTag('throw', 'exception');
+    // No exception.
+    expect(globals.ExecutionTags.getTags()).toEqual([]);
   });
 });

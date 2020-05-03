@@ -11,6 +11,7 @@ import {
   LUMIGO_SECRET_MASKING_REGEX,
   safeExecute,
   recursiveGetKey,
+  SKIP_SCRUBBING_KEYS,
 } from './utils';
 import { TracerGlobals } from './globals';
 import crypto from 'crypto';
@@ -765,6 +766,11 @@ describe('utils', () => {
 
     const nullObject = null;
     expect(omitKeys(nullObject)).toEqual(null);
+  });
+
+  test('omitKeys - SKIP_SCRUBBING_KEYS', () => {
+    const obj = { [SKIP_SCRUBBING_KEYS[0]]: { password: 1 } };
+    expect(omitKeys(obj)).toEqual(obj);
   });
 
   test('safeExecute run function', () => {
