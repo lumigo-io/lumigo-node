@@ -25,7 +25,7 @@ describe('index', () => {
     const retVal = 'The Tracer Wars';
 
     try {
-      fsExtra.copySync(originDirPath, dupDirPath);
+      await fsExtra.copy(originDirPath, dupDirPath);
 
       const lumigoLayer = require(layerPath)({ token: 'T' });
       const userHandler = async (event, context, callback) => {
@@ -45,7 +45,7 @@ describe('index', () => {
       )[0][EXECUTION_TAGS_KEY];
       expect(actualTags).toEqual([{ key: 'k0', value: 'v0' }]);
     } finally {
-      fsExtra.removeSync(dupDirPath);
+      await fsExtra.remove(dupDirPath);
     }
   });
 
