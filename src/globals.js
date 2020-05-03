@@ -35,7 +35,7 @@ export const GlobalTimer = (() => {
 })();
 
 export const ExecutionTags = (() => {
-  let tags = [];
+  global.tags = [];
 
   const validateTag = (key, value, shouldLogErrors = true) => {
     key = String(key);
@@ -54,7 +54,7 @@ export const ExecutionTags = (() => {
         );
       return false;
     }
-    if (tags.length >= MAX_TAGS) {
+    if (global.tags.length >= MAX_TAGS) {
       shouldLogErrors &&
         logger.warnClient(
           `${ADD_TAG_ERROR_MSG_PREFIX}: maximum number of tags is ${MAX_TAGS}: ${key} - ${value}`
@@ -68,7 +68,7 @@ export const ExecutionTags = (() => {
     try {
       logger.debug(`Adding tag: ${key} - ${value}`);
       if (!validateTag(key, value, shouldLogErrors)) return false;
-      tags.push({ key, value });
+      global.tags.push({ key, value });
     } catch (err) {
       shouldLogErrors && logger.warnClient(ADD_TAG_ERROR_MSG_PREFIX);
       logger.warn(ADD_TAG_ERROR_MSG_PREFIX, err);
@@ -77,9 +77,9 @@ export const ExecutionTags = (() => {
     return true;
   };
 
-  const getTags = () => [...tags];
+  const getTags = () => [...global.tags];
 
-  const clear = () => (tags = []);
+  const clear = () => (global.tags = []);
 
   return { addTag, getTags, clear };
 })();
