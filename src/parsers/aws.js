@@ -53,10 +53,13 @@ export const apigwParser = (requestData, responseData) => {
     baseData.awsServiceData = {};
   }
 
-  const { headers: resHeader } = responseData;
-  if (resHeader['Apigw-Requestid']) {
-    baseData.awsServiceData.messageId = resHeader['Apigw-Requestid'];
+  if (!baseData.awsServiceData.messageId) {
+    const { headers: resHeader } = responseData;
+    if (resHeader['Apigw-Requestid']) {
+      baseData.awsServiceData.messageId = resHeader['Apigw-Requestid'];
+    }
   }
+
   return baseData;
 };
 
