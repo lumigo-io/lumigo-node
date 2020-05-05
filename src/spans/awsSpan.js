@@ -28,6 +28,7 @@ import {
 import { TracerGlobals } from '../globals';
 import { getEventInfo } from '../events';
 import { parseEvent } from '../parsers/eventParser';
+import * as logger from '../logger';
 
 export const HTTP_SPAN = 'http';
 export const FUNCTION_SPAN = 'function';
@@ -248,14 +249,27 @@ export const getHttpSpan = (
   requestData,
   responseData = null
 ) => {
-  const { host } = requestData;
-
-  const { awsServiceData, spanId } = isAwsService(host, responseData)
-    ? getAwsServiceData(requestData, responseData)
-    : {};
+  let serviceData = {};
+  try {
+    if (isAwsService(requestData.host, responseData)) {
+      serviceData = getAwsServiceData(requestData, responseData);
+    }
+  } catch (e) {
+    logger.warn('Failed to parse aws service data', e.message);
+  }
+  const { awsServiceData, spanId } = serviceData;
 
   const prioritizedSpanId = getHttpSpanId(randomRequestId, spanId);
-  const httpInfo = getHttpInfo(requestData, responseData);
+  let httpInfo = {
+    host: requestData.host,
+    request: requestData,
+    response: responseData,
+  };
+  try {
+    httpInfo = getHttpInfo(requestData, responseData);
+  } catch (e) {
+    logger.warn('Failed to scrub & stringify http data', e.message);
+  }
 
   const basicHttpSpan = getBasicHttpSpan(prioritizedSpanId);
 
@@ -264,7 +278,13 @@ export const getHttpSpan = (
     ...awsServiceData,
   });
 
-  const service = getServiceType(host);
+  let service = EXTERNAL_SERVICE;
+  try {
+    service = getServiceType(requestData.host);
+  } catch (e) {
+    logger.warn('Failed to get service type', e.message);
+  }
+
   const { started, ended } = getHttpSpanTimings(requestData, responseData);
 
   return { ...basicHttpSpan, info, service, started, ended };

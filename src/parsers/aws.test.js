@@ -300,7 +300,7 @@ describe('aws parser', () => {
   test('apigwParser -> api-gw v2 (with Apigw-Requestid header)', () => {
     const responseData = {
       host: '9bis5jsyh2.execute-api.us-west-2.amazonaws.com',
-      headers: { 'Apigw-Requestid': '123' },
+      headers: { 'apigw-requestid': '123' },
     };
 
     const result = aws.apigwParser({}, responseData);

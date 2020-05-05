@@ -696,6 +696,27 @@ describe('awsSpan', () => {
     expect(result).toEqual(expected);
   });
 
+  test('getHttpSpan - handle failing when parsing AWS service data', () => {
+    const id = 'not-a-random-id';
+    const sendTime = 1234;
+
+    const requestData = {
+      get host() {
+        return {
+          includes: () => {
+            throw Error();
+          },
+        };
+      },
+      headers: { Tyler: 'Durden' },
+      body: 'the first rule of fight club',
+      sendTime,
+    };
+
+    const result = awsSpan.getHttpSpan(id, requestData);
+    expect(result.service).toEqual('external');
+  });
+
   test('getHttpSpanId - simple flow', () => {
     const result = awsSpan.getHttpSpanId('DummyRandom', 'DummyAws');
     expect(result).toEqual('DummyAws');

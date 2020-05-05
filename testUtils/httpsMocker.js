@@ -57,31 +57,47 @@ export const HttpsScenarioBuilder = (() => {
 
 export const HttpsRequestsForTesting = (() => {
   let httpRequests = [];
+  let startedRequests = 0;
 
   const getRequests = () => {
     return httpRequests;
   };
 
+  const getStartedRequests = () => {
+    return startedRequests;
+  };
+
   const clean = () => {
     httpRequests = [];
+    startedRequests = 0;
   };
 
   const pushRequest = request => {
     httpRequests.push(request);
   };
 
-  return { getRequests, clean, pushRequest };
+  const startRequest = () => {
+    startedRequests++;
+  };
+
+  return { getRequests, clean, pushRequest, getStartedRequests, startRequest };
 })();
+
+const isObject = a => !!a && a.constructor === Object;
 
 export const HttpsMocker = (() => {
   const request = (options, callback) => {
+    HttpsRequestsForTesting.startRequest();
     const callbackEmitter = new EventEmitter();
     const responseEmitter = new EventEmitter();
-    callbackEmitter.statusCode = 200;
+    const nextResponse = HttpsScenarioBuilder.getNextData();
 
+    callbackEmitter.statusCode = 200;
+    if (isObject(nextResponse) && 'headers' in nextResponse) {
+      callbackEmitter.headers = nextResponse.headers;
+    }
     callback(callbackEmitter);
 
-    const nextResponse = HttpsScenarioBuilder.getNextData();
     if (nextResponse) callbackEmitter.emit('data', nextResponse);
 
     if (HttpsScenarioBuilder.isRequestShouldFinish()) {

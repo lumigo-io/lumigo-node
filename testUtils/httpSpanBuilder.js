@@ -136,6 +136,11 @@ export class HttpSpanBuilder {
     return this;
   };
 
+  withWarm = () => {
+    this._span.readiness = 'warm';
+    return this;
+  };
+
   withEnded = ended => {
     this._span.ended = ended;
     return this;
