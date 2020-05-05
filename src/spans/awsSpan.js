@@ -26,7 +26,6 @@ import {
   awsParser,
   apigwParser,
 } from '../parsers/aws';
-import * as logger from '../logger';
 import { TracerGlobals, ExecutionTags } from '../globals';
 import { getEventInfo } from '../events';
 import { parseEvent } from '../parsers/eventParser';

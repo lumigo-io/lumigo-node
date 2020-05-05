@@ -84,7 +84,14 @@ export const HttpsRequestsForTesting = (() => {
     return getRequests().map(req => JSON.parse(req.body)[0]);
   };
 
-  return { getRequests, clean, pushRequest, getStartedRequests, startRequest };
+  return {
+    getRequests,
+    clean,
+    pushRequest,
+    getStartedRequests,
+    startRequest,
+    getSentSpans,
+  };
 })();
 
 const isObject = a => !!a && a.constructor === Object;
