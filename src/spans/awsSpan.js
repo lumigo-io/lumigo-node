@@ -15,6 +15,7 @@ import {
   shouldScrubDomain,
   getInvokedArn,
   getInvokedVersion,
+  EXECUTION_TAGS_KEY,
 } from '../utils';
 import {
   dynamodbParser,
@@ -25,7 +26,8 @@ import {
   awsParser,
   apigwParser,
 } from '../parsers/aws';
-import { TracerGlobals } from '../globals';
+import * as logger from '../logger';
+import { TracerGlobals, ExecutionTags } from '../globals';
 import { getEventInfo } from '../events';
 import { parseEvent } from '../parsers/eventParser';
 import * as logger from '../logger';
@@ -150,7 +152,15 @@ export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
   const error = err ? parseErrorObject(err) : undefined;
   const ended = new Date().getTime();
   const return_value = data ? pruneData(omitKeys(data)) : null;
-  return Object.assign({}, functionSpan, { id, ended, error, return_value });
+  const newSpan = Object.assign({}, functionSpan, {
+    id,
+    ended,
+    error,
+    return_value,
+    [EXECUTION_TAGS_KEY]: ExecutionTags.getTags(),
+  });
+  logger.debug('End span created', newSpan);
+  return newSpan;
 };
 
 export const AWS_PARSED_SERVICES = [

@@ -80,6 +80,10 @@ export const HttpsRequestsForTesting = (() => {
     startedRequests++;
   };
 
+  const getSentSpans = () => {
+    return getRequests().map(req => JSON.parse(req.body)[0]);
+  };
+
   return { getRequests, clean, pushRequest, getStartedRequests, startRequest };
 })();
 

@@ -1,6 +1,7 @@
 import { trace } from './tracer';
 import { setSwitchOff, setVerboseMode } from './utils';
 import { debug } from './logger';
+import { ExecutionTags } from './globals';
 
 debug('Tracer imported');
 
@@ -25,5 +26,8 @@ module.exports = function({
       eventFilter,
       stepFunction,
     }),
+    addExecutionTag: ExecutionTags.addTag,
   };
 };
+
+Object.assign(module.exports, { addExecutionTag: ExecutionTags.addTag });
