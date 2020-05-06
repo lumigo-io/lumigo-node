@@ -50,8 +50,6 @@ export const snsParser = (requestData, responseData) => {
 };
 
 export const apigwParser = (requestData, responseData) => {
-  logger.info('APIGW Parser req', requestData);
-  logger.info('APIGW Parser res', responseData);
   if (!responseData) return {};
   const baseData = awsParser(requestData, responseData);
   if (!baseData.awsServiceData) {
@@ -60,7 +58,7 @@ export const apigwParser = (requestData, responseData) => {
 
   if (!baseData.awsServiceData.messageId) {
     const { headers: resHeader } = responseData;
-    if (resHeader['apigw-requestid']) {
+    if (resHeader && resHeader['apigw-requestid']) {
       baseData.awsServiceData.messageId = resHeader['apigw-requestid'];
     }
   }
