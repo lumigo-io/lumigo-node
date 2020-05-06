@@ -17,6 +17,7 @@ export const dynamodbParser = requestData => {
 };
 
 export const lambdaParser = (requestData, responseData) => {
+  if (!responseData) return {};
   const { path, headers } = requestData;
   const resourceName = path.split('/')[3]; // FunctionName
   const invocationType = headers['x-amz-invocation-type'];
@@ -30,6 +31,7 @@ export const lambdaParser = (requestData, responseData) => {
 };
 
 export const snsParser = (requestData, responseData) => {
+  if (!responseData) return {};
   const { body: reqBody } = requestData;
   const { body: resBody } = responseData;
   const parsedRequestBody = reqBody ? parseQueryParams(reqBody) : undefined;
@@ -45,6 +47,23 @@ export const snsParser = (requestData, responseData) => {
 
   const awsServiceData = { resourceName, targetArn: resourceName, messageId };
   return { awsServiceData };
+};
+
+export const apigwParser = (requestData, responseData) => {
+  if (!responseData) return {};
+  const baseData = awsParser(requestData, responseData);
+  if (!baseData.awsServiceData) {
+    baseData.awsServiceData = {};
+  }
+
+  if (!baseData.awsServiceData.messageId) {
+    const { headers: resHeader } = responseData;
+    if (resHeader && resHeader['apigw-requestid']) {
+      baseData.awsServiceData.messageId = resHeader['apigw-requestid'];
+    }
+  }
+
+  return baseData;
 };
 
 export const sqsParser = requestData => {

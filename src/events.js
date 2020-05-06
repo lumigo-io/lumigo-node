@@ -19,7 +19,10 @@ export const getTriggeredBy = event => {
     }
   }
 
-  if (event && event['httpMethod']) {
+  if (
+    (event && event['httpMethod']) ||
+    (event && event['headers'] && event['version'] === '2.0')
+  ) {
     return 'apigw';
   }
 
@@ -30,13 +33,31 @@ export const getTriggeredBy = event => {
   return 'invocation';
 };
 
-export const getApiGatewayData = event => {
+const getApiGatewayV1Data = event => {
   const { headers = {}, resource, httpMethod, requestContext = {} } = event;
   const { stage = null } = requestContext;
 
   const api = headers['Host'] || null;
   const messageId = requestContext['requestId'];
   return { messageId, httpMethod, resource, stage, api };
+};
+
+const getApiGatewayV2Data = event => {
+  const httpMethod = ((event['requestContext'] || {})['http'] || {})['method'];
+  const resource = ((event['requestContext'] || {})['http'] || {})['path'];
+  const messageId = (event['requestContext'] || {})['requestId'];
+  const api = (event['requestContext'] || {})['domainName'];
+  const stage = (event['requestContext'] || {})['stage'] || 'unknown';
+
+  return { httpMethod, resource, messageId, api, stage };
+};
+
+export const getApiGatewayData = event => {
+  const version = event['version'];
+  if (version && version === '2.0') {
+    return getApiGatewayV2Data(event);
+  }
+  return getApiGatewayV1Data(event);
 };
 
 export const getSnsData = event => {

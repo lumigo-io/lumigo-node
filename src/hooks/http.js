@@ -101,16 +101,20 @@ export const wrappedHttpResponseCallback = (
         };
         const fixedRequestData = noCirculars(requestData);
         const fixedResponseData = noCirculars(responseData);
-        const httpSpan = getHttpSpan(
-          requestRandomId,
-          fixedRequestData,
-          fixedResponseData
-        );
-        SpansContainer.addSpan(httpSpan);
+        try {
+          const httpSpan = getHttpSpan(
+            requestRandomId,
+            fixedRequestData,
+            fixedResponseData
+          );
+          SpansContainer.addSpan(httpSpan);
+        } catch (e) {
+          logger.warn('Failed to create & add http span', e.message);
+        }
       })
     );
   } catch (err) {
-    logger.warn('Failed at wrappedHttpResponseCallback');
+    logger.warn('Failed at wrappedHttpResponseCallback', err.message);
   }
 
   callback && callback(clonedResponsePassThrough);
@@ -254,17 +258,26 @@ export const httpRequestWrapper = originalRequestFn =>
         hookedClientRequestArgs
       );
 
-      const endWrapper = httpRequestEndWrapper(requestData, requestRandomId);
-      shimmer.wrap(clientRequest, 'end', endWrapper);
+      try {
+        const endWrapper = httpRequestEndWrapper(requestData, requestRandomId);
+        shimmer.wrap(clientRequest, 'end', endWrapper);
+      } catch (e) {
+        logger.warn('end wrap error', e.message);
+      }
 
       if (!callback) {
-        const onWrapper = httpRequestOnWrapper(requestData, requestRandomId);
-        shimmer.wrap(clientRequest, 'on', onWrapper);
+        try {
+          const onWrapper = httpRequestOnWrapper(requestData, requestRandomId);
+          shimmer.wrap(clientRequest, 'on', onWrapper);
+        } catch (e) {
+          /* istanbul ignore next */
+          logger.warn('on wrap error', e.message);
+        }
       }
       return clientRequest;
     } catch (err) {
       // eslint-disable-next-line
-      logger.warn('hook error', err);
+      logger.warn('hook error', err.message);
       return originalRequestFn.apply(this, args);
     }
   };

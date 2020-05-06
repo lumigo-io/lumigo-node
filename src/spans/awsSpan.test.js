@@ -381,6 +381,12 @@ describe('awsSpan', () => {
       awsSpan.EXTERNAL_SERVICE
     );
   });
+
+  test('getAwsServiceFromHost -> api-gw', () => {
+    const host1 = `random.random.execute-api.amazonaws.com`;
+    expect(awsSpan.getAwsServiceFromHost(host1)).toEqual('apigw');
+  });
+
   // XXX This function is intended to be build upon (i.e. for GCP etc.)
   // that's why it functions the same as getAwsServiceFromHost for now.
   test('getServiceType', () => {
@@ -433,6 +439,13 @@ describe('awsSpan', () => {
 
     awsSpan.getAwsServiceData(requestData, responseData);
     expect(awsParsers.kinesisParser).toHaveBeenCalledWith(
+      requestData,
+      responseData
+    );
+
+    requestData.host = `random.random.execute-api.amazonaws.com`;
+    awsSpan.getAwsServiceData(requestData, responseData);
+    expect(awsParsers.apigwParser).toHaveBeenCalledWith(
       requestData,
       responseData
     );
@@ -683,6 +696,27 @@ describe('awsSpan', () => {
 
     const result = awsSpan.getHttpSpan(id, requestData);
     expect(result).toEqual(expected);
+  });
+
+  test('getHttpSpan - handle failing when parsing AWS service data', () => {
+    const id = 'not-a-random-id';
+    const sendTime = 1234;
+
+    const requestData = {
+      get host() {
+        return {
+          includes: () => {
+            throw Error();
+          },
+        };
+      },
+      headers: { Tyler: 'Durden' },
+      body: 'the first rule of fight club',
+      sendTime,
+    };
+
+    const result = awsSpan.getHttpSpan(id, requestData);
+    expect(result.service).toEqual('external');
   });
 
   test('getHttpSpanId - simple flow', () => {
