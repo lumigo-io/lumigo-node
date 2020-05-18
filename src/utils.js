@@ -143,8 +143,11 @@ const SEND_ONLY_IF_ERROR_FLAG = 'SEND_ONLY_IF_ERROR';
 const PRUNE_TRACE_OFF_FLAG = 'LUMIGO_PRUNE_TRACE_OFF';
 const STORE_LOGS_FLAG = 'LUMIGO_STORE_LOGS';
 
-const validateEnvVarIsTrue = envVar =>
-  !!(process.env[envVar] && process.env[envVar].toUpperCase() === 'TRUE');
+const validateEnvVar = (envVar, value = 'TRUE') =>
+  !!(
+    process.env[envVar] &&
+    process.env[envVar].toUpperCase() === value.toUpperCase()
+  );
 
 export const isAwsEnvironment = () => !!process.env['LAMBDA_RUNTIME_DIR'];
 
@@ -156,18 +159,17 @@ export const getEnvVarAsList = (key, def) => {
 };
 
 export const isTimeoutTimerEnabled = () =>
-  validateEnvVarIsTrue(TIMEOUT_ENABLE_FLAG);
+  !validateEnvVar(TIMEOUT_ENABLE_FLAG, 'FALSE');
 
-export const isVerboseMode = () => validateEnvVarIsTrue(VERBOSE_FLAG);
+export const isVerboseMode = () => validateEnvVar(VERBOSE_FLAG);
 
-export const isWarm = () => validateEnvVarIsTrue(WARM_FLAG);
+export const isWarm = () => validateEnvVar(WARM_FLAG);
 
-export const isStoreLogs = () => validateEnvVarIsTrue(STORE_LOGS_FLAG);
+export const isStoreLogs = () => validateEnvVar(STORE_LOGS_FLAG);
 
-export const isSendOnlyIfErrors = () =>
-  validateEnvVarIsTrue(SEND_ONLY_IF_ERROR_FLAG);
+export const isSendOnlyIfErrors = () => validateEnvVar(SEND_ONLY_IF_ERROR_FLAG);
 
-export const isPruneTraceOff = () => validateEnvVarIsTrue(PRUNE_TRACE_OFF_FLAG);
+export const isPruneTraceOff = () => validateEnvVar(PRUNE_TRACE_OFF_FLAG);
 
 export const isSwitchedOff = () =>
   safeExecute(() => {
@@ -223,8 +225,8 @@ export const setSwitchOff = () => (process.env['LUMIGO_SWITCH_OFF'] = 'TRUE');
 
 export const setDebug = () => (process.env['LUMIGO_DEBUG'] = 'TRUE');
 
-export const setTimeoutTimerEnabled = () =>
-  (process.env[TIMEOUT_ENABLE_FLAG] = 'TRUE');
+export const setTimeoutTimerDisabled = () =>
+  (process.env[TIMEOUT_ENABLE_FLAG] = 'FALSE');
 
 export const isString = x =>
   Object.prototype.toString.call(x) === '[object String]';

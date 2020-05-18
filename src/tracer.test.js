@@ -104,7 +104,6 @@ describe('tracer', () => {
     const timeout = 1000;
     const testBuffer = 50;
 
-    utils.setTimeoutTimerEnabled();
     new EnvironmentBuilder().awsEnvironment().applyEnv();
     const handlerInputs = new HandlerInputesBuilder()
       .withTimeout(timeout)
@@ -126,7 +125,6 @@ describe('tracer', () => {
     const timeout = 1000;
     const testBuffer = 50;
 
-    utils.setTimeoutTimerEnabled();
     new EnvironmentBuilder().awsEnvironment().applyEnv();
     const handlerInputs = new HandlerInputesBuilder()
       .withTimeout(timeout)
@@ -149,7 +147,6 @@ describe('tracer', () => {
     const timeout = 10;
     const testBuffer = 50;
 
-    utils.setTimeoutTimerEnabled();
     new EnvironmentBuilder().awsEnvironment().applyEnv();
     const handlerInputs = new HandlerInputesBuilder()
       .withTimeout(timeout)
@@ -171,7 +168,6 @@ describe('tracer', () => {
     const timeout = 1000;
     const testBuffer = 50;
 
-    utils.setTimeoutTimerEnabled();
     utils.setSendOnlyIfErrors();
     new EnvironmentBuilder().awsEnvironment().applyEnv();
     const handlerInputs = new HandlerInputesBuilder()
