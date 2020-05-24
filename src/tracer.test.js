@@ -552,7 +552,7 @@ describe('tracer', () => {
   test('performStepFunctionLogic - Happy flow', async () => {
     const handler = jest.fn(async () => ({ hello: 'world' }));
     spies.getRandomId.mockReturnValueOnce('123');
-    spies.isStepFunction.mockReturnValueOnce(true);
+    spies.isStepFunction.mockReturnValue(true);
     spies.addStepFunctionEvent.mockImplementationOnce(() => {});
 
     const result = await tracer.trace({})(handler)({}, {});
@@ -568,7 +568,7 @@ describe('tracer', () => {
   test('performStepFunctionLogic - Error should be contained', async () => {
     const handler = jest.fn(async () => ({ hello: 'world' }));
     spies.getRandomId.mockReturnValueOnce('123');
-    spies.isStepFunction.mockReturnValueOnce(true);
+    spies.isStepFunction.mockReturnValue(true);
     spies.addStepFunctionEvent.mockImplementationOnce(() => {
       throw new Error('stam1');
     });
@@ -577,6 +577,25 @@ describe('tracer', () => {
 
     expect(result3).toEqual({ hello: 'world' });
     expect(spies.addStepFunctionEvent).toBeCalled();
+    spies.addStepFunctionEvent.mockClear();
+  });
+
+  test('performStepFunctionLogic - override the step function key if exists', async () => {
+    const handler = jest.fn(async () => ({
+      hello: 'world',
+      [LUMIGO_EVENT_KEY]: { [STEP_FUNCTION_UID_KEY]: 'old' },
+    }));
+    spies.getRandomId.mockReturnValueOnce('new');
+    spies.isStepFunction.mockReturnValue(true);
+    spies.addStepFunctionEvent.mockImplementationOnce(() => {});
+
+    const result = await tracer.trace({})(handler)({}, {});
+
+    expect(result).toEqual({
+      hello: 'world',
+      [LUMIGO_EVENT_KEY]: { [STEP_FUNCTION_UID_KEY]: 'new' },
+    });
+    expect(spies.addStepFunctionEvent).toBeCalledWith('new');
     spies.addStepFunctionEvent.mockClear();
   });
 });

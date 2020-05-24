@@ -81,12 +81,22 @@ jobs:
     - run:
         name: recursive-install
         command: sudo npm install -g recursive-install
-    - run:
-        name: prepare_env
-        command: cd ../integration-tests && ./scripts/parallel_prepare_env.sh
-    - run:
-        name: deploy integ-test
-        command: cd ../integration-tests && ./scripts/parallel_deploy.sh --spec node
+    - restore_cache:
+        keys:
+          - IT-{{ .Branch }}-{{ checksum ".git/ORIG_HEAD" }}-{{ checksum "../python_tracer/.git/ORIG_HEAD" }}-{{ checksum "../lumigo-node/.git/ORIG_HEAD" }}-{{ checksum "../java-tracer/.git/ORIG_HEAD" }}
+    - run: cd ../integration-tests && ./scripts/parallel_prepare_env.sh
+    - run: cd ../integration-tests && ./scripts/parallel_deploy.sh
+    - save_cache:
+        key: IT-{{ .Branch }}-{{ checksum ".git/ORIG_HEAD" }}-{{ checksum "../python_tracer/.git/ORIG_HEAD" }}-{{ checksum "../lumigo-node/.git/ORIG_HEAD" }}-{{ checksum "../java-tracer/.git/ORIG_HEAD" }}
+        paths:
+          - ../integration-tests/src/e2e-test/cypress.env.json
+          - ../integration-tests/src/e2e-test/cypress/cf-stack.json
+          - ../integration-tests/.env
+          - ../integration-tests/.env2
+          - ../integration-tests/.env3
+          - ../integration-tests/.deployment_finished.env
+          - ../integration-tests/.deployment_finished.env2
+          - ../integration-tests/.deployment_finished.env3
     - run:
         name: run tests
         command: cd ../integration-tests && export testNode=true && npm run test-parallel
