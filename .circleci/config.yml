@@ -92,6 +92,27 @@ jobs:
         command: cd ../integration-tests && export testNode=true && npm run test-parallel
     - store_test_results:
           path: ../integration-tests/src/test/test-results
+  e2e-test:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: ../
+      - checkout_utils
+      - checkout_code
+      - run: mv ~/.aws/credentials tmp && { echo '[default]' ; echo 'region=us-west-2' ; cat tmp; } > ~/.aws/credentials
+      - run: cat ../envs/cypress.env.json
+      - run: cp ../envs/cypress.env.json ./src/e2e-test/
+      - run: cp ../stack/cf-stack.json ./src/e2e-test/cypress/
+      - run: cd ../dashboard && npm i
+      - run: cd ../dashboard && ./scripts/prepare_env.sh --profile $(cat ~/envs/cypress.env.json | jq -r '.PROFILE_NAME') --env $(cat ~/envs/cypress.env.json | jq -r '.ENV')
+      - run: cd ./src/e2e-test && npm i
+      - run: (cd ../dashboard && npm start) & (cd ~/integration-testing && ./src/e2e-test/node_modules/.bin/wait-on http://127.0.0.1:3000 && npm run cypress:run)
+      - store_artifacts:
+          path: ./src/e2e-test/cypress/videos
+      - store_artifacts:
+          path: ./src/e2e-test/cypress/cf-stack.json
+      - store_artifacts:
+          path: ./src/e2e-test/mochawesome-report
   deploy-beta:
     working_directory: ~/lumigo-node
     docker:
@@ -181,6 +202,12 @@ workflows:
             ignore: master
         requires:
         - test
+    - e2e-test:
+        requires:
+          - integration-test
+        filters:
+          branches:
+            ignore: master
     - deploy-beta:
         filters:
           branches:
