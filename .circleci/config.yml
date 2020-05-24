@@ -5,18 +5,15 @@
 
 # How can I convert V2.1 to V2? Write the file in V2.1, run it in CircleCI and click "Configuration".
 
-version: 2.1
-defaults: &defaults
-  working_directory: ~/lumigo-node
-  docker:
-  - image: lumigo/ci:latest
-    auth:
-      username: lumigo
-      password: $DOCKERHUB_PASSWORD
-
+version: 2
 jobs:
   test:
-    <<: *defaults
+    working_directory: ~/lumigo-node
+    docker:
+    - image: lumigo/ci:latest
+      auth:
+        username: lumigo
+        password: $DOCKERHUB_PASSWORD
     environment:
     - TZ: Asia/Jerusalem
     resource_class: small
@@ -50,7 +47,12 @@ jobs:
         path: coverage
         prefix: coverage
   integration-test:
-    <<: *defaults
+    working_directory: ~/lumigo-node
+    docker:
+    - image: lumigo/ci:latest
+      auth:
+        username: lumigo
+        password: $DOCKERHUB_PASSWORD
     environment:
       - TZ: Asia/Jerusalem
       - NODE_OPTIONS: --max_old_space_size=4096
@@ -101,7 +103,12 @@ jobs:
     - store_test_results:
           path: ../integration-tests/src/test/test-results
   e2e-test:
-    <<: *defaults
+    working_directory: ~/lumigo-node
+    docker:
+      - image: lumigo/ci:latest
+        auth:
+          username: lumigo
+          password: $DOCKERHUB_PASSWORD
     steps:
       - attach_workspace:
           at: ../
@@ -124,7 +131,12 @@ jobs:
       - store_artifacts:
           path: ~/integration-tests/src/e2e-test/mochawesome-report
   deploy-beta:
-    <<: *defaults
+    working_directory: ~/lumigo-node
+    docker:
+    - image: lumigo/ci:latest
+      auth:
+        username: lumigo
+        password: $DOCKERHUB_PASSWORD
     environment:
     - TZ: Asia/Jerusalem
     resource_class: small
@@ -157,7 +169,12 @@ jobs:
         name: deploy beta to npm + release with delay
         command: ./scripts/bd_to_beta.sh
   deploy:
-    <<: *defaults
+    working_directory: ~/lumigo-node
+    docker:
+    - image: lumigo/ci:latest
+      auth:
+        username: lumigo
+        password: $DOCKERHUB_PASSWORD
     environment:
     - TZ: Asia/Jerusalem
     resource_class: small
