@@ -16,6 +16,7 @@ defaults: &defaults
 
 jobs:
   test:
+    <<: *defaults
     environment:
     - TZ: Asia/Jerusalem
     resource_class: small
@@ -49,12 +50,7 @@ jobs:
         path: coverage
         prefix: coverage
   integration-test:
-    working_directory: ~/lumigo-node
-    docker:
-    - image: lumigo/ci:latest
-      auth:
-        username: lumigo
-        password: $DOCKERHUB_PASSWORD
+    <<: *defaults
     environment:
       - TZ: Asia/Jerusalem
       - NODE_OPTIONS: --max_old_space_size=4096
@@ -128,12 +124,7 @@ jobs:
       - store_artifacts:
           path: ~/integration-tests/src/e2e-test/mochawesome-report
   deploy-beta:
-    working_directory: ~/lumigo-node
-    docker:
-    - image: lumigo/ci:latest
-      auth:
-        username: lumigo
-        password: $DOCKERHUB_PASSWORD
+    <<: *defaults
     environment:
     - TZ: Asia/Jerusalem
     resource_class: small
@@ -166,12 +157,7 @@ jobs:
         name: deploy beta to npm + release with delay
         command: ./scripts/bd_to_beta.sh
   deploy:
-    working_directory: ~/lumigo-node
-    docker:
-    - image: lumigo/ci:latest
-      auth:
-        username: lumigo
-        password: $DOCKERHUB_PASSWORD
+    <<: *defaults
     environment:
     - TZ: Asia/Jerusalem
     resource_class: small
