@@ -21,7 +21,6 @@ describe('tracer', () => {
   spies.isSwitchedOff = jest.spyOn(utils, 'isSwitchedOff');
   spies.isAwsEnvironment = jest.spyOn(utils, 'isAwsEnvironment');
   spies.isSendOnlyIfErrors = jest.spyOn(utils, 'isSendOnlyIfErrors');
-  spies.isStepFunction = jest.spyOn(utils, 'isStepFunction');
   spies.getContextInfo = jest.spyOn(utils, 'getContextInfo');
   spies.getRandomId = jest.spyOn(utils, 'getRandomId');
   spies.addStepFunctionEvent = jest.spyOn(http, 'addStepFunctionEvent');
@@ -529,7 +528,7 @@ describe('tracer', () => {
 
   test('No exception at initialization', async done => {
     const mockedTracerGlobals = jest.spyOn(TracerGlobals, 'setHandlerInputs');
-    mockedTracerGlobals.mockImplementation(() => {
+    mockedTracerGlobals.mockImplementationOnce(() => {
       throw new Error('Mocked error');
     });
     const handler = jest.fn(() => done());
@@ -585,8 +584,10 @@ describe('tracer', () => {
 
     const result = await tracer.trace({ stepFunction: true })(handler)({}, {});
 
-    expect(result[LUMIGO_EVENT_KEY][STEP_FUNCTION_UID_KEY]).not.toEqual('new');
-    expect(spies.addStepFunctionEvent).toBeCalledWith(result[LUMIGO_EVENT_KEY][STEP_FUNCTION_UID_KEY]);
+    expect(result[LUMIGO_EVENT_KEY][STEP_FUNCTION_UID_KEY]).not.toEqual('old');
+    expect(spies.addStepFunctionEvent).toBeCalledWith(
+      result[LUMIGO_EVENT_KEY][STEP_FUNCTION_UID_KEY]
+    );
     spies.addStepFunctionEvent.mockClear();
   });
 });
