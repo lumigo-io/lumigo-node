@@ -552,10 +552,8 @@ describe('tracer', () => {
   test('performStepFunctionLogic - Happy flow', async () => {
     const handler = jest.fn(async () => ({ hello: 'world' }));
     spies.getRandomId.mockReturnValueOnce('123');
-    spies.isStepFunction.mockReturnValue(true);
-    spies.addStepFunctionEvent.mockImplementationOnce(() => {});
 
-    const result = await tracer.trace({})(handler)({}, {});
+    const result = await tracer.trace({ stepFunction: true })(handler)({}, {});
 
     expect(result).toEqual({
       hello: 'world',
@@ -568,12 +566,11 @@ describe('tracer', () => {
   test('performStepFunctionLogic - Error should be contained', async () => {
     const handler = jest.fn(async () => ({ hello: 'world' }));
     spies.getRandomId.mockReturnValueOnce('123');
-    spies.isStepFunction.mockReturnValue(true);
     spies.addStepFunctionEvent.mockImplementationOnce(() => {
       throw new Error('stam1');
     });
 
-    const result3 = await tracer.trace({})(handler)({}, {});
+    const result3 = await tracer.trace({ stepFunction: true })(handler)({}, {});
 
     expect(result3).toEqual({ hello: 'world' });
     expect(spies.addStepFunctionEvent).toBeCalled();
@@ -585,17 +582,11 @@ describe('tracer', () => {
       hello: 'world',
       [LUMIGO_EVENT_KEY]: { [STEP_FUNCTION_UID_KEY]: 'old' },
     }));
-    spies.getRandomId.mockReturnValueOnce('new');
-    spies.isStepFunction.mockReturnValue(true);
-    spies.addStepFunctionEvent.mockImplementationOnce(() => {});
 
-    const result = await tracer.trace({})(handler)({}, {});
+    const result = await tracer.trace({ stepFunction: true })(handler)({}, {});
 
-    expect(result).toEqual({
-      hello: 'world',
-      [LUMIGO_EVENT_KEY]: { [STEP_FUNCTION_UID_KEY]: 'new' },
-    });
-    expect(spies.addStepFunctionEvent).toBeCalledWith('new');
+    expect(result[LUMIGO_EVENT_KEY][STEP_FUNCTION_UID_KEY]).not.toEqual('new');
+    expect(spies.addStepFunctionEvent).toBeCalledWith(result[LUMIGO_EVENT_KEY][STEP_FUNCTION_UID_KEY]);
     spies.addStepFunctionEvent.mockClear();
   });
 });

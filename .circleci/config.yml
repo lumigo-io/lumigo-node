@@ -83,11 +83,11 @@ jobs:
         command: sudo npm install -g recursive-install
     - restore_cache:
         keys:
-          - IT-{{ .Branch }}-{{ checksum ".git/ORIG_HEAD" }}-{{ checksum "../python_tracer/.git/ORIG_HEAD" }}-{{ checksum "../lumigo-node/.git/ORIG_HEAD" }}-{{ checksum "../java-tracer/.git/ORIG_HEAD" }}
+          - IT-{{ .Branch }}-{{ checksum "../integration-tests/.git/ORIG_HEAD" }}-{{ checksum "../python_tracer/.git/ORIG_HEAD" }}-{{ checksum "../lumigo-node/.git/ORIG_HEAD" }}-{{ checksum "../java-tracer/.git/ORIG_HEAD" }}
     - run: cd ../integration-tests && ./scripts/parallel_prepare_env.sh
     - run: cd ../integration-tests && ./scripts/parallel_deploy.sh
     - save_cache:
-        key: IT-{{ .Branch }}-{{ checksum ".git/ORIG_HEAD" }}-{{ checksum "../python_tracer/.git/ORIG_HEAD" }}-{{ checksum "../lumigo-node/.git/ORIG_HEAD" }}-{{ checksum "../java-tracer/.git/ORIG_HEAD" }}
+        key: IT-{{ .Branch }}-{{ checksum "../integration-tests/.git/ORIG_HEAD" }}-{{ checksum "../python_tracer/.git/ORIG_HEAD" }}-{{ checksum "../lumigo-node/.git/ORIG_HEAD" }}-{{ checksum "../java-tracer/.git/ORIG_HEAD" }}
         paths:
           - ../integration-tests/src/e2e-test/cypress.env.json
           - ../integration-tests/src/e2e-test/cypress/cf-stack.json
