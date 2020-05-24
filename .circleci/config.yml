@@ -6,6 +6,21 @@
 # How can I convert V2.1 to V2? Write the file in V2.1, run it in CircleCI and click "Configuration".
 
 version: 2
+commands:
+  checkout_integration_tests:
+    description: "Checkout integration tests"
+    steps:
+      - run:
+          command: |
+            cd ..
+            git clone git@github.com:lumigo-io/integration-tests.git
+  checkout_dashboard:
+    description: "Checkout Lumigo Platform (dashboard)"
+    steps:
+      - run:
+          command: |
+            cd ..
+            git clone git@github.com:lumigo-io/dashboard.git
 jobs:
   test:
     working_directory: ~/lumigo-node
