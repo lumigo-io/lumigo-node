@@ -588,6 +588,5 @@ describe('tracer', () => {
     expect(spies.addStepFunctionEvent).toBeCalledWith(
       result[LUMIGO_EVENT_KEY][STEP_FUNCTION_UID_KEY]
     );
-    spies.addStepFunctionEvent.mockClear();
   });
 });
