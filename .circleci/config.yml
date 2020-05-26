@@ -116,6 +116,11 @@ jobs:
           - stack/
           - .aws/
   e2e-test:
+    docker:
+    - image: lumigo/ci:latest
+      auth:
+        username: lumigo
+        password: $DOCKERHUB_PASSWORD
     steps:
       - attach_workspace:
           at: ../
