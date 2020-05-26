@@ -159,10 +159,9 @@ export const performStepFunctionLogic = handlerReturnValue => {
 
       addStepFunctionEvent(messageId);
 
-      const modifiedData = Object.assign(
-        { [LUMIGO_EVENT_KEY]: { [STEP_FUNCTION_UID_KEY]: messageId } },
-        data
-      );
+      const modifiedData = Object.assign(data, {
+        [LUMIGO_EVENT_KEY]: { [STEP_FUNCTION_UID_KEY]: messageId },
+      });
       logger.debug(`Added key ${LUMIGO_EVENT_KEY} to the user's return value`);
       return { err, type, data: modifiedData };
     })() || handlerReturnValue
