@@ -101,7 +101,7 @@ jobs:
         keys:
           - IT-{{ .Branch }}-{{ checksum "../commits" }}
     - run: cd ../integration-tests && ./scripts/parallel_prepare_env.sh
-    - run: cd ../integration-tests && ./scripts/parallel_deploy.sh
+    - run: cd ../integration-tests && ./scripts/parallel_deploy.sh --spec node
     - save_cache:
         key: IT-{{ .Branch }}-{{ checksum "../commits" }}
         paths:
