@@ -6,6 +6,21 @@
 # How can I convert V2.1 to V2? Write the file in V2.1, run it in CircleCI and click "Configuration".
 
 version: 2
+commands:
+  checkout_integration_tests:
+    description: "Checkout integration tests"
+    steps:
+      - run:
+          command: |
+            cd ..
+            git clone git@github.com:lumigo-io/integration-tests.git
+  checkout_dashboard:
+    description: "Checkout Lumigo Platform (dashboard)"
+    steps:
+      - run:
+          command: |
+            cd ..
+            git clone git@github.com:lumigo-io/dashboard.git
 jobs:
   test:
     working_directory: ~/lumigo-node
@@ -92,6 +107,37 @@ jobs:
         command: cd ../integration-tests && export testNode=true && npm run test-parallel
     - store_test_results:
           path: ../integration-tests/src/test/test-results
+    - run: mkdir -p ../envs && cd ../integration-tests && cp src/e2e-test/cypress.env.json ../envs
+    - run: mkdir -p ../stack && cd ../integration-tests && cp src/e2e-test/cypress/cf-stack.json ../stack
+    - persist_to_workspace:
+        root: ../
+        paths:
+          - envs/
+          - stack/
+          - .aws/
+  e2e-test:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: ../
+      - checkout_utils
+      - checkout_code
+      - checkout_integration_tests
+      - checkout_dashboard
+      - run: mv ~/.aws/credentials tmp && { echo '[default]' ; echo 'region=us-west-2' ; cat tmp; } > ~/.aws/credentials
+      - run: cat ../envs/cypress.env.json
+      - run: cd ../integration-tests && cp ../envs/cypress.env.json ./src/e2e-test/
+      - run: cd ../integration-tests && cp ../stack/cf-stack.json ./src/e2e-test/cypress/
+      - run: cd ../dashboard && npm i
+      - run: cd ../dashboard && ./scripts/prepare_env.sh --profile $(cat ~/envs/cypress.env.json | jq -r '.PROFILE_NAME') --env $(cat ~/envs/cypress.env.json | jq -r '.ENV')
+      - run: cd ../integration-tests/src/e2e-test && npm i
+      - run: (cd ../dashboard && npm start) & (cd ~/integration-tests && ./src/e2e-test/node_modules/.bin/wait-on http://127.0.0.1:3000 && npm run cypress:run)
+      - store_artifacts:
+          path: ~/integration-tests/src/e2e-test/cypress/videos
+      - store_artifacts:
+          path: ~/integration-tests/src/e2e-test/cypress/cf-stack.json
+      - store_artifacts:
+          path: ~/integration-tests/src/e2e-test/mochawesome-report
   deploy-beta:
     working_directory: ~/lumigo-node
     docker:
@@ -181,6 +227,12 @@ workflows:
             ignore: master
         requires:
         - test
+    - e2e-test:
+        requires:
+          - integration-test
+        filters:
+          branches:
+            ignore: master
     - deploy-beta:
         filters:
           branches:
