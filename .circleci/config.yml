@@ -116,7 +116,6 @@ jobs:
           - stack/
           - .aws/
   e2e-test:
-    <<: *defaults
     steps:
       - attach_workspace:
           at: ../
