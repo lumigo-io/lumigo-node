@@ -550,6 +550,7 @@ describe('http hook', () => {
   });
 
   test('httpRequestWrapper - simple flow', () => {
+    utils.setTimeoutTimerDisabled();
     const handlerInputs = new HandlerInputesBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
     const requestData = HttpSpanBuilder.DEFAULT_REQUEST_DATA;
@@ -580,7 +581,6 @@ describe('http hook', () => {
     expect(spans).toEqual([expectedSpan]);
   });
   test('httpRequestWrapper - added span before request finish', () => {
-    utils.setTimeoutTimerEnabled();
     const handlerInputs = new HandlerInputesBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
     const requestData = HttpSpanBuilder.DEFAULT_REQUEST_DATA;
@@ -608,7 +608,6 @@ describe('http hook', () => {
   });
 
   test('httpRequestWrapper - shimmer end wrap failed', () => {
-    utils.setTimeoutTimerEnabled();
     utils.setWarm();
     const handlerInputs = new HandlerInputesBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
@@ -648,7 +647,6 @@ describe('http hook', () => {
   test('httpRequestWrapper - added span before request finish for aws service', () => {
     const host = 'random.amazonaws.com';
 
-    utils.setTimeoutTimerEnabled();
     const handlerInputs = new HandlerInputesBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
     let requestData = HttpSpanBuilder.DEFAULT_REQUEST_DATA;
@@ -679,6 +677,7 @@ describe('http hook', () => {
   });
 
   test('httpRequestWrapper - wrapping twice not effecting', () => {
+    utils.setTimeoutTimerDisabled();
     const handlerInputs = new HandlerInputesBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
     const requestData = HttpSpanBuilder.DEFAULT_REQUEST_DATA;
@@ -711,6 +710,7 @@ describe('http hook', () => {
   });
 
   test('httpRequestWrapper - circular object wrapper cutting object', () => {
+    utils.setTimeoutTimerDisabled();
     const handlerInputs = new HandlerInputesBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
     const cleanRequestData = HttpSpanBuilder.DEFAULT_REQUEST_DATA;
