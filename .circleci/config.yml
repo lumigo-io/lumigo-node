@@ -31,6 +31,7 @@ jobs:
         password: $DOCKERHUB_PASSWORD
     environment:
     - TZ: Asia/Jerusalem
+    - NODE_OPTIONS: --max_old_space_size=1500
     resource_class: small
     steps:
     - checkout
@@ -96,12 +97,23 @@ jobs:
     - run:
         name: recursive-install
         command: sudo npm install -g recursive-install
-    - run:
-        name: prepare_env
-        command: cd ../integration-tests && ./scripts/parallel_prepare_env.sh
-    - run:
-        name: deploy integ-test
-        command: cd ../integration-tests && ./scripts/parallel_deploy.sh --spec node
+    - run: cd ../integration-tests && git rev-parse HEAD > ../commits && cd ../python_tracer && git rev-parse HEAD >> ../commits &&  cd ../lumigo-node && git rev-parse HEAD >> ../commits &&  cd ../java-tracer && git rev-parse HEAD >> ../commits
+    - restore_cache:
+        keys:
+          - IT-{{ .Branch }}-{{ checksum "../commits" }}
+    - run: cd ../integration-tests && ./scripts/parallel_prepare_env.sh
+    - run: cd ../integration-tests && ./scripts/parallel_deploy.sh --spec node
+    - save_cache:
+        key: IT-{{ .Branch }}-{{ checksum "../commits" }}
+        paths:
+          - ../integration-tests/src/e2e-test/cypress.env.json
+          - ../integration-tests/src/e2e-test/cypress/cf-stack.json
+          - ../integration-tests/.env
+          - ../integration-tests/.env2
+          - ../integration-tests/.env3
+          - ../integration-tests/.deployment_finished.env
+          - ../integration-tests/.deployment_finished.env2
+          - ../integration-tests/.deployment_finished.env3 
     - run:
         name: run tests
         command: cd ../integration-tests && export testNode=true && npm run test-parallel
@@ -116,11 +128,12 @@ jobs:
           - stack/
           - .aws/
   e2e-test:
+    working_directory: ~/lumigo-node
     docker:
-    - image: lumigo/ci:latest
-      auth:
-        username: lumigo
-        password: $DOCKERHUB_PASSWORD
+      - image: lumigo/ci:latest
+        auth:
+          username: lumigo
+          password: $DOCKERHUB_PASSWORD
     steps:
       - attach_workspace:
           at: ../

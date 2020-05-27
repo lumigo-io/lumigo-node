@@ -21,7 +21,6 @@ describe('tracer', () => {
   spies.isSwitchedOff = jest.spyOn(utils, 'isSwitchedOff');
   spies.isAwsEnvironment = jest.spyOn(utils, 'isAwsEnvironment');
   spies.isSendOnlyIfErrors = jest.spyOn(utils, 'isSendOnlyIfErrors');
-  spies.isStepFunction = jest.spyOn(utils, 'isStepFunction');
   spies.getContextInfo = jest.spyOn(utils, 'getContextInfo');
   spies.getRandomId = jest.spyOn(utils, 'getRandomId');
   spies.addStepFunctionEvent = jest.spyOn(http, 'addStepFunctionEvent');
@@ -199,7 +198,7 @@ describe('tracer', () => {
 
     const rtt = 1234;
     spies.sendSpans.mockImplementationOnce(() => {});
-    spies.getCurrentTransactionId.mockReturnValue('x');
+    spies.getCurrentTransactionId.mockReturnValueOnce('x');
 
     const dummySpan = { x: 'y', transactionId: 'x' };
     const functionSpan = { a: 'b', c: 'd', transactionId: 'x' };
@@ -372,7 +371,7 @@ describe('tracer', () => {
 
     const token = 'DEADBEEF';
 
-    spies.isSwitchedOff.mockReturnValue(true);
+    spies.isSwitchedOff.mockReturnValueOnce(true);
     await tracer.trace({ token })(userHandler1)(event, context, callback1);
 
     expect(startHooks).toHaveBeenCalled();
@@ -383,7 +382,7 @@ describe('tracer', () => {
     const context = { e: 'f', g: 'h' };
     const token = 'DEADBEEF';
 
-    spies.isSwitchedOff.mockReturnValue(true);
+    spies.isSwitchedOff.mockReturnValueOnce(true);
     const userHandler2 = (event, context, callback) => {
       throw new Error('bla');
     };
@@ -406,7 +405,7 @@ describe('tracer', () => {
       done();
     };
 
-    spies.isSwitchedOff.mockReturnValue(true);
+    spies.isSwitchedOff.mockReturnValueOnce(true);
 
     const userHandler3 = async (event, context, callback) => {
       callback(null, retVal);
@@ -422,7 +421,7 @@ describe('tracer', () => {
     const retVal = 'The Tracer Wars';
     const callback4 = jest.fn();
 
-    spies.isSwitchedOff.mockReturnValue(true);
+    spies.isSwitchedOff.mockReturnValueOnce(true);
 
     const userHandler4 = async (event, context, callback) => {
       return retVal;
@@ -442,7 +441,7 @@ describe('tracer', () => {
     const retVal = 'The Tracer Wars';
     const callback5 = jest.fn();
 
-    spies.isSwitchedOff.mockReturnValue(true);
+    spies.isSwitchedOff.mockReturnValueOnce(true);
 
     const userHandler5 = async (event, context, callback) => {
       throw new Error(retVal);
@@ -455,9 +454,12 @@ describe('tracer', () => {
   });
 
   test('sendEndTraceSpans; dont clear globals in case of a leak', async () => {
-    spies.sendSpans.mockImplementation(() => {});
-    spies.getEndFunctionSpan.mockReturnValue({ x: 'y', transactionId: '123' });
-    spies.getCurrentTransactionId.mockReturnValue('123');
+    spies.sendSpans.mockImplementationOnce(() => {});
+    spies.getEndFunctionSpan.mockReturnValueOnce({
+      x: 'y',
+      transactionId: '123',
+    });
+    spies.getCurrentTransactionId.mockReturnValueOnce('123');
 
     TracerGlobals.setTracerInputs({ token: '123' });
     spies.SpansContainer.getSpans.mockReturnValueOnce([
@@ -525,7 +527,7 @@ describe('tracer', () => {
 
   test('No exception at initialization', async done => {
     const mockedTracerGlobals = jest.spyOn(TracerGlobals, 'setHandlerInputs');
-    mockedTracerGlobals.mockImplementation(() => {
+    mockedTracerGlobals.mockImplementationOnce(() => {
       throw new Error('Mocked error');
     });
     const handler = jest.fn(() => done());
@@ -548,10 +550,8 @@ describe('tracer', () => {
   test('performStepFunctionLogic - Happy flow', async () => {
     const handler = jest.fn(async () => ({ hello: 'world' }));
     spies.getRandomId.mockReturnValueOnce('123');
-    spies.isStepFunction.mockReturnValueOnce(true);
-    spies.addStepFunctionEvent.mockImplementationOnce(() => {});
 
-    const result = await tracer.trace({})(handler)({}, {});
+    const result = await tracer.trace({ stepFunction: true })(handler)({}, {});
 
     expect(result).toEqual({
       hello: 'world',
@@ -564,15 +564,31 @@ describe('tracer', () => {
   test('performStepFunctionLogic - Error should be contained', async () => {
     const handler = jest.fn(async () => ({ hello: 'world' }));
     spies.getRandomId.mockReturnValueOnce('123');
-    spies.isStepFunction.mockReturnValueOnce(true);
     spies.addStepFunctionEvent.mockImplementationOnce(() => {
       throw new Error('stam1');
     });
 
-    const result3 = await tracer.trace({})(handler)({}, {});
+    const result3 = await tracer.trace({ stepFunction: true })(handler)({}, {});
 
     expect(result3).toEqual({ hello: 'world' });
     expect(spies.addStepFunctionEvent).toBeCalled();
     spies.addStepFunctionEvent.mockClear();
+  });
+
+  test('performStepFunctionLogic - override the step function key if exists', async () => {
+    const handler = jest.fn(async () => ({
+      hello: 'world',
+      [LUMIGO_EVENT_KEY]: { [STEP_FUNCTION_UID_KEY]: 'old' },
+    }));
+    const handlerInputs = new HandlerInputesBuilder().build();
+
+    const result = await tracer.trace({ stepFunction: true })(handler)(
+      handlerInputs.event,
+      handlerInputs.context
+    );
+
+    expect(result[LUMIGO_EVENT_KEY][STEP_FUNCTION_UID_KEY]).not.toEqual('old');
+    const requests = HttpsRequestsForTesting.getRequests();
+    expect(requests.length).toEqual(2);
   });
 });
