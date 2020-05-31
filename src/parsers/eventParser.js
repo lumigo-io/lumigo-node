@@ -1,8 +1,6 @@
 import * as logger from '../logger';
 import { getEnvVarAsList } from '../utils';
 
-const API_GW_REGEX = /.*execute-api.*amazonaws\.com.*/;
-
 const API_GW_KEYS_ORDER = getEnvVarAsList('LUMIGO_API_GW_KEYS_ORDER', [
   'version',
   'routeKey',
@@ -42,14 +40,12 @@ const SNS_KEYS_ORDER = getEnvVarAsList('LUMIGO_SNS_KEYS_ORDER', [
 ]);
 
 export const isApiGwEvent = event => {
-  if (
+  return (
     event != null &&
     event.requestContext != null &&
-    event.requestContext.domainName != null
-  ) {
-    return event.requestContext.domainName.match(API_GW_REGEX);
-  }
-  return false;
+    event.requestContext.domainName != null &&
+    event.requestContext.requestId != null
+  );
 };
 
 export const isSnsEvent = event => {
