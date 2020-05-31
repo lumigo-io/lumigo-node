@@ -31,6 +31,7 @@ jobs:
         password: $DOCKERHUB_PASSWORD
     environment:
     - TZ: Asia/Jerusalem
+    - NODE_OPTIONS: --max_old_space_size=1500
     resource_class: small
     steps:
     - checkout
@@ -96,13 +97,14 @@ jobs:
     - run:
         name: recursive-install
         command: sudo npm install -g recursive-install
+    - run: cd ../integration-tests && git rev-parse HEAD > ../commits && cd ../python_tracer && git rev-parse HEAD >> ../commits &&  cd ../lumigo-node && git rev-parse HEAD >> ../commits &&  cd ../java-tracer && git rev-parse HEAD >> ../commits
     - restore_cache:
         keys:
-          - IT-{{ .Branch }}-{{ checksum "../integration-tests/.git/ORIG_HEAD" }}-{{ checksum "../python_tracer/.git/ORIG_HEAD" }}-{{ checksum "../lumigo-node/.git/ORIG_HEAD" }}-{{ checksum "../java-tracer/.git/ORIG_HEAD" }}
+          - IT-{{ .Branch }}-{{ checksum "../commits" }}
     - run: cd ../integration-tests && ./scripts/parallel_prepare_env.sh
-    - run: cd ../integration-tests && ./scripts/parallel_deploy.sh
+    - run: cd ../integration-tests && ./scripts/parallel_deploy.sh --spec node
     - save_cache:
-        key: IT-{{ .Branch }}-{{ checksum "../integration-tests/.git/ORIG_HEAD" }}-{{ checksum "../python_tracer/.git/ORIG_HEAD" }}-{{ checksum "../lumigo-node/.git/ORIG_HEAD" }}-{{ checksum "../java-tracer/.git/ORIG_HEAD" }}
+        key: IT-{{ .Branch }}-{{ checksum "../commits" }}
         paths:
           - ../integration-tests/src/e2e-test/cypress.env.json
           - ../integration-tests/src/e2e-test/cypress/cf-stack.json

@@ -180,9 +180,9 @@ describe('utils', () => {
   });
 
   test('isTimeoutTimerEnabled', () => {
-    expect(utils.isTimeoutTimerEnabled()).toBe(false);
-    process.env.LUMIGO_TIMEOUT_TIMER_ENABLED = 'TRUE';
     expect(utils.isTimeoutTimerEnabled()).toBe(true);
+    process.env.LUMIGO_TIMEOUT_TIMER_ENABLED = 'FALSE';
+    expect(utils.isTimeoutTimerEnabled()).toBe(false);
   });
 
   test('getEventEntitySize', () => {
@@ -214,10 +214,10 @@ describe('utils', () => {
     expect(utils.isSendOnlyIfErrors()).toBe(true);
   });
 
-  test('setTimeoutTimerEnabled', () => {
-    expect(utils.isTimeoutTimerEnabled()).toBe(false);
-    utils.setTimeoutTimerEnabled();
+  test('setTimeoutTimerDisabled', () => {
     expect(utils.isTimeoutTimerEnabled()).toBe(true);
+    utils.setTimeoutTimerDisabled();
+    expect(utils.isTimeoutTimerEnabled()).toBe(false);
   });
 
   test('setPruneTraceOff', () => {
