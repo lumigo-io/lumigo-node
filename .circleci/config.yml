@@ -7,6 +7,18 @@
 
 version: 2
 commands:
+  checkout_utils:
+    description: "Checkout credentials and utils"
+    steps:
+      - run:
+          command: |
+            mkdir ~/.ssh/ && echo -e "Host github.com\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
+            cd ..
+            git clone git@github.com:lumigo-io/common-resources.git
+      - run:
+          command: |
+            cd ..
+            git clone git@github.com:lumigo-io/utils.git
   checkout_integration_tests:
     description: "Checkout integration tests"
     steps:
@@ -138,7 +150,6 @@ jobs:
       - attach_workspace:
           at: ../
       - checkout_utils
-      - checkout_code
       - checkout_integration_tests
       - checkout_dashboard
       - run: mv ~/.aws/credentials tmp && { echo '[default]' ; echo 'region=us-west-2' ; cat tmp; } > ~/.aws/credentials
