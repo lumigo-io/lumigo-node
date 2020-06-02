@@ -30,7 +30,9 @@ const handler = (event, context, callback) => {
     );
   }
   if (!module[functionName]) {
-    throw Error(`Could not find the handler's function (${functionName}) inside the handler's file (${moduleName})`);
+    throw Error(
+      `Could not find the handler's function (${functionName}) inside the handler's file (${moduleName})`
+    );
   }
   return lumigo.trace(module[functionName])(event, context, callback);
 };
