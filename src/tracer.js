@@ -19,6 +19,8 @@ import {
   getCurrentTransactionId,
 } from './spans/awsSpan';
 import { sendSingleSpan, sendSpans } from './reporter';
+import { TracerTimer } from './timer';
+
 import {
   TracerGlobals,
   SpansContainer,
@@ -80,7 +82,10 @@ export const startTrace = async () => {
 };
 
 export const sendEndTraceSpans = async (functionSpan, handlerReturnValue) => {
+  TracerTimer.startJob('createFunctionSpan');
   const endFunctionSpan = getEndFunctionSpan(functionSpan, handlerReturnValue);
+  TracerTimer.endJob('createFunctionSpan');
+  TracerTimer.startJob('filterSpans');
   const spans = [...SpansContainer.getSpans(), endFunctionSpan];
   const currentTransactionId = getCurrentTransactionId();
   const spansToSend = [];
@@ -90,14 +95,22 @@ export const sendEndTraceSpans = async (functionSpan, handlerReturnValue) => {
       ? spansToSend.push(span)
       : filteredSpans.push(span);
   });
+  TracerTimer.endJob('filterSpans');
+  const randomId = getRandomId();
+  TracerTimer.startJob('sendSpans', randomId);
   await sendSpans(spansToSend);
+  TracerTimer.endJob('sendSpans', randomId);
+  TracerTimer.startJob('warnClientOfLeaks');
   const hasSpansFromPreviousInvocation = spansToSend.length !== spans.length;
   if (hasSpansFromPreviousInvocation) {
     logger.warnClient(LEAK_MESSAGE);
     filteredSpans.forEach(span => logger.debug('Leaked span: ', span));
   }
+  TracerTimer.endJob('warnClientOfLeaks');
   logger.debug('Tracer ended');
+  TracerTimer.startJob('clearGlobals');
   clearGlobals();
+  TracerTimer.endJob('clearGlobals');
 };
 
 export const isCallbacked = handlerReturnValue => {
@@ -200,7 +213,9 @@ export const trace = ({
   }
   context.__wrappedByLumigo = true;
 
+  TracerTimer.startJob('startHooks');
   safeExecute(startHooks)();
+  TracerTimer.endJob('startHooks');
 
   const pStartTrace = startTrace();
   const pUserHandler = promisifyUserHandler(
@@ -219,12 +234,17 @@ export const trace = ({
     handlerReturnValue = performStepFunctionLogic(handlerReturnValue);
   }
 
+  TracerTimer.startJob('removeLumigoFromStacktrace');
   const cleanedHandlerReturnValue = removeLumigoFromStacktrace(
     handlerReturnValue
   );
+  TracerTimer.endJob('removeLumigoFromStacktrace');
 
+  TracerTimer.startJob('endTrace');
   await endTrace(functionSpan, cleanedHandlerReturnValue);
+  TracerTimer.endJob('endTrace');
   const { err, data, type } = cleanedHandlerReturnValue;
 
+  TracerTimer.printResult();
   return performPromisifyType(err, data, type, callback);
 };

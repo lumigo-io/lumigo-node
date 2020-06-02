@@ -417,14 +417,33 @@ export const keyToOmitRegexes = () => {
   return regexesList.map(x => new RegExp(x, 'i'));
 };
 
-export const omitKeys = obj => {
+let testKeyCache = {};
+const testKey = (key, regexes) => {
+  if (testKeyCache[key] !== undefined) return testKeyCache[key];
+  const regexResult = regexes.some(regex => regex.test(key));
+  testKeyCache[key] = regexResult;
+  return regexResult;
+};
+
+const getKeysToRemove = (obj, regexes) => {
+  const keys = [];
+  testKeyCache = {};
+  appendKeysToRemove(obj, regexes, keys, []);
+  return keys;
+};
+
+const appendKeysToRemove = (obj, regexes, keys, currentKeyChain) => {
   if (obj instanceof Array) {
-    return obj.map(omitKeys);
+    return obj.forEach((object, index) =>
+      appendKeysToRemove(object, regexes, keys, [...currentKeyChain, index])
+    );
   }
   if (typeof obj === 'string') {
     try {
       const parsedObject = JSON.parse(obj);
-      return typeof parsedObject === 'object' ? omitKeys(parsedObject) : obj;
+      if (typeof parsedObject === 'object') {
+        return appendKeysToRemove(parsedObject, regexes, keys, currentKeyChain);
+      }
     } catch (e) {
       return obj;
     }
@@ -433,17 +452,47 @@ export const omitKeys = obj => {
     return obj;
   }
   obj = noCirculars(obj);
-  const regexes = keyToOmitRegexes();
-  return Object.keys(obj).reduce((newObj, key) => {
-    if (SKIP_SCRUBBING_KEYS.includes(key)) {
-      newObj[key] = obj[key];
-    } else if (regexes.some(regex => regex.test(key))) {
-      newObj[key] = '****';
-    } else {
-      newObj[key] = omitKeys(obj[key]);
+  Object.keys(obj).forEach(key => {
+    const includeResult = SKIP_SCRUBBING_KEYS.includes(key);
+    if (!includeResult) {
+      const regexResult = testKey(key, regexes);
+      if (regexResult) {
+        keys.push([...currentKeyChain, key]);
+      } else {
+        appendKeysToRemove(obj[key], regexes, keys, [...currentKeyChain, key]);
+      }
     }
-    return newObj;
-  }, {});
+  });
+  return obj;
+};
+
+const validateJson = obj => {
+  if (typeof obj === 'string') {
+    try {
+      const parsedObject = JSON.parse(obj);
+      if (typeof parsedObject === 'object') {
+        return parsedObject;
+      }
+      // eslint-disable-next-line no-empty
+    } catch (e) {}
+  }
+  return obj;
+};
+
+export const omitKeys = obj => {
+  const regexes = keyToOmitRegexes();
+  obj = noCirculars(validateJson(obj));
+  const keysToRemove = getKeysToRemove(obj, regexes);
+  keysToRemove.forEach(key => {
+    let pointer = obj;
+    const lastKey = key.pop();
+    key.forEach(keyChain => {
+      pointer = validateJson(pointer[keyChain]);
+    });
+    pointer = validateJson(pointer);
+    pointer[lastKey] = '****';
+  });
+  return obj;
 };
 
 export const safeExecute = (

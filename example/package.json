@@ -5,7 +5,6 @@
   "license": "MIT",
   "private": true,
   "dependencies": {
-    "aws-sdk": "^2.501.0",
-    "axios": "^0.19.0"
+    "@lumigo/tracer": "file:../lumigo-tracer-2.0.28.tgz"
   }
 }

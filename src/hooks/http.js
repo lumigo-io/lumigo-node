@@ -18,6 +18,7 @@ import cloneResponse from 'clone-response';
 import { URL } from 'url';
 import { noCirculars } from '../tools/noCirculars';
 import * as logger from '../logger';
+import { TracerTimer } from '../timer';
 
 export const hostBlaclist = new Set(['127.0.0.1']);
 export const isBlacklisted = host =>
@@ -80,8 +81,10 @@ export const wrappedHttpResponseCallback = (
   callback,
   requestRandomId
 ) => response => {
+  TracerTimer.startJob('cloneResponse', requestRandomId);
   const clonedResponse = cloneResponse(response);
   const clonedResponsePassThrough = cloneResponse(response);
+  TracerTimer.endJob('cloneResponse', requestRandomId);
   try {
     const { headers, statusCode } = clonedResponse;
     const receivedTime = new Date().getTime();
@@ -99,18 +102,26 @@ export const wrappedHttpResponseCallback = (
           body,
           headers: lowerCaseObjectKeys(headers),
         };
+        TracerTimer.startJob('createHttpSpan - total', requestRandomId);
+        TracerTimer.startJob('createHttpSpan - noCirculars', requestRandomId);
         const fixedRequestData = noCirculars(requestData);
         const fixedResponseData = noCirculars(responseData);
+        TracerTimer.endJob('createHttpSpan - noCirculars', requestRandomId);
         try {
+          TracerTimer.startJob('createHttpSpan - getHttpSpan', requestRandomId);
           const httpSpan = getHttpSpan(
             requestRandomId,
             fixedRequestData,
             fixedResponseData
           );
+          TracerTimer.endJob('createHttpSpan - getHttpSpan', requestRandomId);
+          TracerTimer.startJob('createHttpSpan - addSpan', requestRandomId);
           SpansContainer.addSpan(httpSpan);
+          TracerTimer.endJob('createHttpSpan - addSpan', requestRandomId);
         } catch (e) {
           logger.warn('Failed to create & add http span', e.message);
         }
+        TracerTimer.endJob('createHttpSpan - total', requestRandomId);
       })
     );
   } catch (err) {
@@ -212,12 +223,16 @@ export const isAlreadyTraced = callback =>
 
 export const httpRequestWrapper = originalRequestFn =>
   function(...args) {
+    const timerRandomId = getRandomId();
     let url, options, callback, host;
     let isTraceDisabled = true;
     try {
+      TracerTimer.startJob('httpRequestWrapper', timerRandomId);
+      TracerTimer.startJob('requestParsing', timerRandomId);
       ({ url, options, callback } = httpRequestArguments(args));
       host = getHostFromOptionsOrUrl(options, url);
       isTraceDisabled = isBlacklisted(host) || isAlreadyTraced(callback);
+      TracerTimer.endJob('requestParsing', timerRandomId);
     } catch (err) {
       logger.warn('request parsing error', err);
     }
@@ -231,6 +246,7 @@ export const httpRequestWrapper = originalRequestFn =>
       logger.debug('Starting hook', { host, url, headers });
       // XXX Create a pure function - something like: 'patchOptionsForAWSService'
       // return the patched options
+      TracerTimer.startJob('isAwsService(host)', timerRandomId);
       if (isAwsService(host)) {
         const { awsXAmznTraceId } = getAWSEnvironment();
         const traceId = getPatchedTraceId(awsXAmznTraceId);
@@ -238,12 +254,15 @@ export const httpRequestWrapper = originalRequestFn =>
       }
       const requestData = parseHttpRequestOptions(options, url);
       const requestRandomId = getRandomId();
+      TracerTimer.endJob('isAwsService(host)', timerRandomId);
 
+      TracerTimer.startJob('noCirculars(requestData)', timerRandomId);
       if (isTimeoutTimerEnabled()) {
         const fixedRequestData = noCirculars(requestData);
         const httpSpan = getHttpSpan(requestRandomId, fixedRequestData);
         SpansContainer.addSpan(httpSpan);
       }
+      TracerTimer.endJob('noCirculars(requestData)', timerRandomId);
 
       const hookedClientRequestArgs = getHookedClientRequestArgs(
         url,
@@ -274,6 +293,7 @@ export const httpRequestWrapper = originalRequestFn =>
           logger.warn('on wrap error', e.message);
         }
       }
+      TracerTimer.endJob('httpRequestWrapper', timerRandomId);
       return clientRequest;
     } catch (err) {
       // eslint-disable-next-line

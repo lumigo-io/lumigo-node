@@ -1,14 +1,28 @@
-const token = 't_2bbf570ddcb4ed8a3630';
-const edgeHost = '336baui8uh.execute-api.us-west-2.amazonaws.com';
-const debug = true;
+const token = 't_de9ec97c5fec3a1a924c';
+const edgeHost = 'tracer-edge.internal-monitoring.golumigo.com';
+const debug = false;
 const lumigo = require('@lumigo/tracer')({ token, edgeHost, debug });
 
 const AWS = require('aws-sdk');
 
+const dynamodb = new AWS.DynamoDB({
+  region: 'us-east-1',
+});
+
+const scanTable = async filter => {
+  const params = {
+    TableName: 'dori-table-test',
+    Limit: 1,
+    FilterExpression: '#user_status = :user_status_val',
+    ExpressionAttributeNames: {
+      '#user_status': 'user_status',
+    },
+    ExpressionAttributeValues: { ':user_status_val': `somestatus - ${filter}` },
+  };
+  await dynamodb.scan(params).promise();
+};
+
 const putToDynamoDb = async message => {
-  const dynamodb = new AWS.DynamoDB({
-    region: 'us-west-2',
-  });
   const params = {
     TableName: 'dori-table-test',
     Item: {
@@ -19,46 +33,13 @@ const putToDynamoDb = async message => {
   await dynamodb.putItem(params).promise();
 };
 
-const postToSns = async message => {
-  const sns = new AWS.SNS({
-    region: 'us-east-1',
-  });
-  const topicArn = `arn:aws:sns:us-east-1:335722316285:slave-test-topic`;
-  await sns.publish({ TopicArn: topicArn, Message: message }).promise();
-};
-
-const postToSqs = async message => {
-  const sqs = new AWS.SQS({
-    region: 'us-west-2',
-  });
-  const queueUrl = `https://sqs.us-west-2.amazonaws.com/335722316285/dori-test-sqs`;
-
-  const params = {
-    DelaySeconds: 1,
-    MessageBody: message,
-    QueueUrl: queueUrl,
-  };
-
-  await sqs.sendMessage(params).promise();
-};
-
-const postToS3 = async () => {
-  const S3 = new AWS.S3({
-    region: 'us-west-2',
-  });
-  let keyName = 'tmp.txt';
-  let objectParams = {
-    Bucket: 'dori-test-bucket',
-    Key: keyName,
-    Body: 'Hello Lumigo!',
-  };
-  await S3.putObject(objectParams).promise();
-};
-
 const childFn = async () => {
-  await postToSns('Some Message to SNS');
-  // eslint-disable-next-line no-console
-  console.log('ALL GOOD');
+  const promises = [];
+  for (let i = 0; i < 4700; i++) {
+    promises.push(putToDynamoDb(`Some Message ${i}`));
+  }
+  await Promise.all(promises);
+  console.log('Done');
   return 'ALL GOOD';
 };
 

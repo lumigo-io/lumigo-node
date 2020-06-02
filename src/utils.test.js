@@ -701,6 +701,19 @@ describe('utils', () => {
     process.env[LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP] = undefined;
   });
 
+  test('omitKeys - cache', () => {
+    const safeObj = { hello: 'world', inner: { check: 'abc', hello: 'Workd' } };
+    expect(omitKeys(safeObj)).toEqual(safeObj);
+  });
+
+  test('omitKeys - inner', () => {
+    const unsafeString = '{"hello": "world", "password": "abc"}';
+    expect(omitKeys(unsafeString)).toEqual({
+      hello: 'world',
+      password: '****',
+    });
+  });
+
   test('omitKeys', () => {
     const safeObj = { hello: 'world', inner: { check: 'abc' } };
     expect(omitKeys(safeObj)).toEqual(safeObj);
