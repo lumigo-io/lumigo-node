@@ -4,8 +4,13 @@ import {
   isAwsEnvironment,
   getEdgeUrl,
   removeLumigoFromStacktrace,
-  isSendOnlyIfErrors,
+  isStepFunction,
   safeExecute,
+  getRandomId,
+  LUMIGO_EVENT_KEY,
+  STEP_FUNCTION_UID_KEY,
+  getContextInfo,
+  isTimeoutTimerEnabled,
 } from './utils';
 import {
   getFunctionSpan,
@@ -14,9 +19,15 @@ import {
   getCurrentTransactionId,
 } from './spans/awsSpan';
 import { sendSingleSpan, sendSpans } from './reporter';
-import { TracerGlobals, SpansContainer, clearGlobals } from './globals';
+import {
+  TracerGlobals,
+  SpansContainer,
+  GlobalTimer,
+  clearGlobals,
+} from './globals';
 import startHooks from './hooks';
 import * as logger from './logger';
+import { addStepFunctionEvent } from './hooks/http';
 
 export const HANDLER_CALLBACKED = 'handler_callbacked';
 export const ASYNC_HANDLER_RESOLVED = 'async_handler_resolved';
@@ -24,6 +35,21 @@ export const ASYNC_HANDLER_REJECTED = 'async_handler_rejected';
 export const NON_ASYNC_HANDLER_ERRORED = 'non_async_errored';
 export const LEAK_MESSAGE =
   'Execution leak detected. More information is available in: https://docs.lumigo.io/docs/execution-leak-detected';
+const TIMEOUT_BUFFER_MS = 250;
+
+const setupTimeoutTimer = () => {
+  logger.debug('Timeout timer set-up started');
+  const { context } = TracerGlobals.getHandlerInputs();
+  const { remainingTimeInMillis } = getContextInfo(context);
+  if (TIMEOUT_BUFFER_MS < remainingTimeInMillis) {
+    GlobalTimer.setGlobalTimeout(async () => {
+      logger.debug('Invocation is about to timeout, sending trace data.');
+      const spans = SpansContainer.getSpans();
+      SpansContainer.clearSpans();
+      await sendSpans(spans);
+    }, remainingTimeInMillis - TIMEOUT_BUFFER_MS);
+  }
+};
 
 export const startTrace = async () => {
   try {
@@ -38,23 +64,17 @@ export const startTrace = async () => {
         path,
       });
 
+      if (isTimeoutTimerEnabled()) setupTimeoutTimer();
+
       const functionSpan = getFunctionSpan();
       logger.debug('startTrace span created', functionSpan);
 
-      if (!isSendOnlyIfErrors()) {
-        const { rtt } = await sendSingleSpan(functionSpan);
-        return addRttToFunctionSpan(functionSpan, rtt);
-      } else {
-        logger.debug(
-          "Skip sending start span because tracer in 'send only if error' mode ."
-        );
-        return null;
-      }
-    } else {
-      return null;
+      const { rtt } = await sendSingleSpan(functionSpan);
+      return addRttToFunctionSpan(functionSpan, rtt);
     }
+    return null;
   } catch (err) {
-    logger.fatal('startTrace failure', err);
+    logger.warn('startTrace failure', err);
     return null;
   }
 };
@@ -91,7 +111,7 @@ export const endTrace = async (functionSpan, handlerReturnValue) => {
       await sendEndTraceSpans(functionSpan, handlerReturnValue);
     }
   } catch (err) {
-    logger.fatal('endTrace failure', err);
+    logger.warn('endTrace failure', err);
     clearGlobals();
   }
 };
@@ -131,12 +151,30 @@ const performPromisifyType = (err, data, type, callback) => {
   }
 };
 
+export const performStepFunctionLogic = handlerReturnValue => {
+  return (
+    safeExecute(() => {
+      const { err, data, type } = handlerReturnValue;
+      const messageId = getRandomId();
+
+      addStepFunctionEvent(messageId);
+
+      const modifiedData = Object.assign(data, {
+        [LUMIGO_EVENT_KEY]: { [STEP_FUNCTION_UID_KEY]: messageId },
+      });
+      logger.debug(`Added key ${LUMIGO_EVENT_KEY} to the user's return value`);
+      return { err, type, data: modifiedData };
+    })() || handlerReturnValue
+  );
+};
+
 export const trace = ({
   token,
   debug,
   edgeHost,
   switchOff,
   eventFilter,
+  stepFunction,
 }) => userHandler => async (event, context, callback) => {
   try {
     TracerGlobals.setHandlerInputs({ event, context });
@@ -146,9 +184,10 @@ export const trace = ({
       edgeHost,
       switchOff,
       eventFilter,
+      stepFunction,
     });
   } catch (err) {
-    logger.fatal('Failed to start tracer', err);
+    logger.warn('Failed to start tracer', err);
   }
   if (context.__wrappedByLumigo) {
     const { err, data, type } = await promisifyUserHandler(
@@ -171,10 +210,14 @@ export const trace = ({
     callback
   );
 
-  const [functionSpan, handlerReturnValue] = await Promise.all([
+  let [functionSpan, handlerReturnValue] = await Promise.all([
     pStartTrace,
     pUserHandler,
   ]);
+
+  if (isStepFunction()) {
+    handlerReturnValue = performStepFunctionLogic(handlerReturnValue);
+  }
 
   const cleanedHandlerReturnValue = removeLumigoFromStacktrace(
     handlerReturnValue

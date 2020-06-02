@@ -1,101 +1,261 @@
-/* eslint-disable */
 import * as logger from './logger';
 import * as utils from './utils';
 import { TracerGlobals } from './globals';
-
-jest.spyOn(global.console, 'log');
-global.console.log.mockImplementation(() => {});
+import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
 
 describe('logger', () => {
-  const spies = {};
-  const oldEnv = Object.assign({}, process.env);
-  spies.log = jest.spyOn(logger, 'log');
+  const times = (x, callback) => {
+    for (let i = 0; i < x; i++) {
+      callback();
+    }
+  };
 
-  beforeEach(() => {
-    global.console.log.mockClear();
-    spies.log.mockClear();
-    process.env = { ...oldEnv };
-  });
-
-  test('info', () => {
-    utils.setDebug();
-    TracerGlobals.setTracerInputs({});
-    logger.info();
-    expect(spies.log).toHaveBeenCalledTimes(1);
-    expect(spies.log).toHaveBeenCalledWith('INFO', undefined, undefined);
-  });
-
-  test('debug', () => {
-    utils.setDebug();
-    TracerGlobals.setTracerInputs({});
-    logger.debug();
-    expect(spies.log).toHaveBeenCalledTimes(1);
-    expect(spies.log).toHaveBeenCalledWith('DEBUG', undefined, undefined);
-  });
-
-  test('warn', () => {
-    utils.setDebug();
-    TracerGlobals.setTracerInputs({});
-    logger.warn();
-    expect(spies.log).toHaveBeenCalledTimes(1);
-    expect(spies.log).toHaveBeenCalledWith('WARNING', undefined, undefined);
-  });
-
-  test('fatal', () => {
-    utils.setDebug();
-    TracerGlobals.setTracerInputs({});
-    logger.fatal();
-    expect(spies.log).toHaveBeenCalledTimes(1);
-    expect(spies.log).toHaveBeenCalledWith('FATAL', undefined, undefined);
-  });
-
-  test('invokeLog', () => {
-    const oldEnv = Object.assign({}, process.env);
-    TracerGlobals.setTracerInputs({});
-    const logLevel = 'LOG_LEVEL';
-    const logMessage = 'info test';
-    const logObject = 1;
-
-    const typedInvokeLogFn = logger.invokeLog(logLevel);
-    expect(typedInvokeLogFn).toBeInstanceOf(Function);
-    typedInvokeLogFn();
-    expect(spies.log).toHaveBeenCalledTimes(0);
-
+  test('info -> simple flow', () => {
     utils.setDebug();
     TracerGlobals.setTracerInputs({});
 
-    expect(typedInvokeLogFn).toBeInstanceOf(Function);
+    logger.info('Test');
 
-    typedInvokeLogFn(logMessage);
-    expect(spies.log).toHaveBeenCalledTimes(1);
-    expect(spies.log).toHaveBeenCalledWith(logLevel, logMessage, undefined);
-
-    spies.log.mockClear();
-    typedInvokeLogFn(logMessage, logObject);
-    expect(spies.log).toHaveBeenCalledTimes(1);
-    expect(spies.log).toHaveBeenCalledWith(logLevel, logMessage, logObject);
-
-    process.env = { ...oldEnv };
+    expect(ConsoleWritesForTesting.getLogs()).toEqual([
+      {
+        msg: '#LUMIGO# - INFO - "Test"',
+        obj: undefined,
+      },
+    ]);
   });
 
-  test('log', () => {
-    const logMessage = 'info test';
-    const logLevel = 'LOG_LEVEL';
-    const logObject = 1;
+  test('info -> with object', () => {
+    utils.setDebug();
+    TracerGlobals.setTracerInputs({});
 
-    logger.log(logLevel, logMessage, undefined);
-    expect(global.console.log).toHaveBeenCalledTimes(1);
-    expect(global.console.log).toHaveBeenCalledWith(
-      `#LUMIGO# - ${logLevel} - "${logMessage}"`
-    );
+    logger.info('Test', { a: 2 });
 
-    global.console.log.mockClear();
-    logger.log(logLevel, logMessage, logObject);
-    expect(global.console.log).toHaveBeenCalledTimes(1);
-    expect(global.console.log).toHaveBeenCalledWith(
-      `#LUMIGO# - ${logLevel} - "${logMessage}"`,
-      `${logObject}`
-    );
+    expect(ConsoleWritesForTesting.getLogs()).toEqual([
+      {
+        msg: '#LUMIGO# - INFO - "Test"',
+        obj: '{"a":2}',
+      },
+    ]);
+  });
+
+  test('info -> debug is off', () => {
+    TracerGlobals.setTracerInputs({});
+
+    logger.info('Test');
+
+    expect(ConsoleWritesForTesting.getLogs()).toEqual([]);
+  });
+
+  test('info -> store logs on -> not printing', () => {
+    utils.setDebug();
+    utils.setStoreLogsOn();
+    TracerGlobals.setTracerInputs({});
+
+    logger.info('Test');
+
+    expect(ConsoleWritesForTesting.getLogs()).toEqual([]);
+  });
+
+  test('info -> store logs on -> printing after 50 dups', () => {
+    utils.setDebug();
+    utils.setStoreLogsOn();
+    TracerGlobals.setTracerInputs({});
+
+    times(51, () => {
+      logger.info('Test');
+    });
+
+    expect(ConsoleWritesForTesting.getLogs()).toEqual([
+      {
+        msg: '#LUMIGO# - FATAL - "Test"',
+        obj: undefined,
+      },
+    ]);
+  });
+
+  test('debug -> simple flow', () => {
+    utils.setDebug();
+    TracerGlobals.setTracerInputs({});
+
+    logger.debug('Test');
+
+    expect(ConsoleWritesForTesting.getLogs()).toEqual([
+      {
+        msg: '#LUMIGO# - DEBUG - "Test"',
+        obj: undefined,
+      },
+    ]);
+  });
+
+  test('debug -> debug is off', () => {
+    TracerGlobals.setTracerInputs({});
+
+    logger.debug('Test');
+
+    expect(ConsoleWritesForTesting.getLogs()).toEqual([]);
+  });
+
+  test('debug -> with object', () => {
+    utils.setDebug();
+    TracerGlobals.setTracerInputs({});
+
+    logger.debug('Test', { a: 2 });
+
+    expect(ConsoleWritesForTesting.getLogs()).toEqual([
+      {
+        msg: '#LUMIGO# - DEBUG - "Test"',
+        obj: '{"a":2}',
+      },
+    ]);
+  });
+
+  test('debug -> store logs on -> not printing', () => {
+    utils.setDebug();
+    utils.setStoreLogsOn();
+    TracerGlobals.setTracerInputs({});
+
+    logger.debug('Test');
+
+    expect(ConsoleWritesForTesting.getLogs()).toEqual([]);
+  });
+
+  test('debug -> store logs on -> printing after 50 dups', () => {
+    utils.setStoreLogsOn();
+    TracerGlobals.setTracerInputs({});
+
+    times(51, () => {
+      logger.debug('Test');
+    });
+
+    expect(ConsoleWritesForTesting.getLogs()).toEqual([
+      {
+        msg: '#LUMIGO# - FATAL - "Test"',
+        obj: undefined,
+      },
+    ]);
+  });
+
+  test('warn -> simple flow', () => {
+    utils.setDebug();
+    TracerGlobals.setTracerInputs({});
+
+    logger.warn('Test');
+
+    expect(ConsoleWritesForTesting.getLogs()).toEqual([
+      {
+        msg: '#LUMIGO# - WARNING - "Test"',
+        obj: undefined,
+      },
+    ]);
+  });
+
+  test('warn -> debug is off', () => {
+    TracerGlobals.setTracerInputs({});
+
+    logger.warn('Test');
+
+    expect(ConsoleWritesForTesting.getLogs()).toEqual([]);
+  });
+
+  test('warn -> store logs on -> not printing', () => {
+    utils.setStoreLogsOn();
+    TracerGlobals.setTracerInputs({});
+
+    logger.warn('Test');
+
+    expect(ConsoleWritesForTesting.getLogs()).toEqual([]);
+  });
+
+  test('warn -> store logs on -> printing after 50 dups', () => {
+    utils.setStoreLogsOn();
+    TracerGlobals.setTracerInputs({});
+
+    times(51, () => {
+      logger.warn('Test');
+    });
+
+    expect(ConsoleWritesForTesting.getLogs()).toEqual([
+      {
+        msg: '#LUMIGO# - FATAL - "Test"',
+        obj: undefined,
+      },
+    ]);
+  });
+
+  test('warn -> with object', () => {
+    utils.setDebug();
+    TracerGlobals.setTracerInputs({});
+
+    logger.warn('Test', { a: 2 });
+
+    expect(ConsoleWritesForTesting.getLogs()).toEqual([
+      {
+        msg: '#LUMIGO# - WARNING - "Test"',
+        obj: '{"a":2}',
+      },
+    ]);
+  });
+
+  test('fatal -> simple flow', () => {
+    utils.setDebug();
+    TracerGlobals.setTracerInputs({});
+
+    logger.fatal('Test');
+
+    expect(ConsoleWritesForTesting.getLogs()).toEqual([
+      {
+        msg: '#LUMIGO# - FATAL - "Test"',
+        obj: undefined,
+      },
+    ]);
+  });
+
+  test('fatal -> debug is off', () => {
+    TracerGlobals.setTracerInputs({});
+
+    logger.fatal('Test');
+
+    expect(ConsoleWritesForTesting.getLogs()).toEqual([]);
+  });
+
+  test('fatal -> with object', () => {
+    utils.setDebug();
+    TracerGlobals.setTracerInputs({});
+
+    logger.fatal('Test', { a: 2 });
+
+    expect(ConsoleWritesForTesting.getLogs()).toEqual([
+      {
+        msg: '#LUMIGO# - FATAL - "Test"',
+        obj: '{"a":2}',
+      },
+    ]);
+  });
+
+  test('fatal -> store logs on -> not printing', () => {
+    utils.setDebug();
+    utils.setStoreLogsOn();
+    TracerGlobals.setTracerInputs({});
+
+    logger.fatal('Test');
+
+    expect(ConsoleWritesForTesting.getLogs()).toEqual([]);
+  });
+
+  test('fatal -> store logs on -> printing after 50 dups', () => {
+    utils.setStoreLogsOn();
+    TracerGlobals.setTracerInputs({});
+
+    times(51, () => {
+      logger.warn('Test');
+    });
+
+    expect(ConsoleWritesForTesting.getLogs()).toEqual([
+      {
+        msg: '#LUMIGO# - FATAL - "Test"',
+        obj: undefined,
+      },
+    ]);
   });
 
   test('lumigoWarnings; not print to the console if the environment variable exists', () => {

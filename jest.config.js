@@ -12,4 +12,5 @@ module.exports = {
       lines: 100,
     },
   },
+  setupFilesAfterEnv: ['./testUtils/jest.setup.js'],
 };

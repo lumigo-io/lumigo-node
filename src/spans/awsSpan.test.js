@@ -1,22 +1,17 @@
 import * as awsSpan from './awsSpan.js';
-import { parseErrorObject } from '../utils';
+import { EXECUTION_TAGS_KEY, parseErrorObject } from '../utils';
 import MockDate from 'mockdate';
 import { TracerGlobals } from '../globals';
 import * as awsParsers from '../parsers/aws';
 import * as utils from '../utils';
 
 const exampleApiGatewayEvent = require('../testdata/events/apigw-request.json');
-jest.mock('../../package.json', () => ({
-  name: '@lumigo/tracer',
-  version: '0.0.123',
-}));
 
 jest.mock('../parsers/aws');
 describe('awsSpan', () => {
   const spies = {};
   const oldEnv = Object.assign({}, process.env);
   spies['isWarm'] = jest.spyOn(utils, 'isWarm');
-  spies['getRandomId'] = jest.spyOn(utils, 'getRandomId');
 
   beforeEach(() => {
     const awsEnv = {
@@ -77,7 +72,7 @@ describe('awsSpan', () => {
         Sampled: '0',
         transactionId: '64a1b06067c2100c52e51ef4',
       },
-      tracer: { name: '@lumigo/tracer', version: '0.0.123' },
+      tracer: { name: '@lumigo/tracerMock', version: '1.2.3' },
       logGroupName: '/aws/lambda/aws-nodejs-dev-hello',
       logStreamName: '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',
     };
@@ -95,7 +90,7 @@ describe('awsSpan', () => {
           Sampled: '0',
           transactionId: '64a1b06067c2100c52e51ef4',
         },
-        tracer: { name: '@lumigo/tracer', version: '0.0.123' },
+        tracer: { name: '@lumigo/tracerMock', version: '1.2.3' },
         logGroupName: '/aws/lambda/aws-nodejs-dev-hello',
         logStreamName: '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',
       },
@@ -133,7 +128,7 @@ describe('awsSpan', () => {
           Sampled: '0',
           transactionId: '64a1b06067c2100c52e51ef4',
         },
-        tracer: { name: '@lumigo/tracer', version: '0.0.123' },
+        tracer: { name: '@lumigo/tracerMock', version: '1.2.3' },
         logGroupName: '/aws/lambda/aws-nodejs-dev-hello',
         logStreamName: '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',
         messageId: 'deef4878-7910-11e6-8f14-25afc3e9ae33',
@@ -183,7 +178,7 @@ describe('awsSpan', () => {
           Sampled: '0',
           transactionId: '64a1b06067c2100c52e51ef4',
         },
-        tracer: { name: '@lumigo/tracer', version: '0.0.123' },
+        tracer: { name: '@lumigo/tracerMock', version: '1.2.3' },
         logGroupName: '/aws/lambda/aws-nodejs-dev-hello',
         logStreamName: '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',
         messageId: 'deef4878-7910-11e6-8f14-25afc3e9ae33',
@@ -308,6 +303,7 @@ describe('awsSpan', () => {
       event: null,
       maxFinishTime: 895093323456,
       return_value: 'data man',
+      [EXECUTION_TAGS_KEY]: [],
     };
     const handlerReturnValue1 = {
       err: null,
@@ -366,6 +362,7 @@ describe('awsSpan', () => {
       event: null,
       maxFinishTime: 895093323456,
       return_value: null,
+      [EXECUTION_TAGS_KEY]: [],
     };
     MockDate.set(895179612345);
     expect(
@@ -384,6 +381,12 @@ describe('awsSpan', () => {
       awsSpan.EXTERNAL_SERVICE
     );
   });
+
+  test('getAwsServiceFromHost -> api-gw', () => {
+    const host1 = `random.random.execute-api.amazonaws.com`;
+    expect(awsSpan.getAwsServiceFromHost(host1)).toEqual('apigw');
+  });
+
   // XXX This function is intended to be build upon (i.e. for GCP etc.)
   // that's why it functions the same as getAwsServiceFromHost for now.
   test('getServiceType', () => {
@@ -440,6 +443,13 @@ describe('awsSpan', () => {
       responseData
     );
 
+    requestData.host = `random.random.execute-api.amazonaws.com`;
+    awsSpan.getAwsServiceData(requestData, responseData);
+    expect(awsParsers.apigwParser).toHaveBeenCalledWith(
+      requestData,
+      responseData
+    );
+
     requestData.host = `deadbeef.amazonaws.com`;
     awsSpan.getAwsServiceData(requestData, responseData);
     expect(awsParsers.awsParser).toHaveBeenCalledWith(
@@ -492,7 +502,6 @@ describe('awsSpan', () => {
 
   test('getBasicHttpSpan', () => {
     const id = 'not-a-random-id';
-    spies.getRandomId.mockReturnValueOnce(id);
     const expected = {
       info: {
         traceId: {
@@ -501,7 +510,7 @@ describe('awsSpan', () => {
           Sampled: '0',
           transactionId: '64a1b06067c2100c52e51ef4',
         },
-        tracer: { name: '@lumigo/tracer', version: '0.0.123' },
+        tracer: { name: '@lumigo/tracerMock', version: '1.2.3' },
         logGroupName: '/aws/lambda/aws-nodejs-dev-hello',
         logStreamName: '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',
       },
@@ -522,7 +531,7 @@ describe('awsSpan', () => {
       type: 'http',
       parentId: '6d26e3c8-60a6-4cee-8a70-f525f47a4caf',
     };
-    expect(awsSpan.getBasicHttpSpan()).toEqual(expected);
+    expect(awsSpan.getBasicHttpSpan(id)).toEqual(expected);
 
     const spanId = 'abcdefg';
     const expected2 = {
@@ -533,7 +542,7 @@ describe('awsSpan', () => {
           Sampled: '0',
           transactionId: '64a1b06067c2100c52e51ef4',
         },
-        tracer: { name: '@lumigo/tracer', version: '0.0.123' },
+        tracer: { name: '@lumigo/tracerMock', version: '1.2.3' },
         logGroupName: '/aws/lambda/aws-nodejs-dev-hello',
         logStreamName: '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',
       },
@@ -559,7 +568,6 @@ describe('awsSpan', () => {
 
   test('getHttpSpan ', () => {
     const id = 'not-a-random-id';
-    spies.getRandomId.mockReturnValueOnce(id);
     const sendTime = 1234;
     const receivedTime = 1256;
 
@@ -604,8 +612,8 @@ describe('awsSpan', () => {
           transactionId: '64a1b06067c2100c52e51ef4',
         },
         tracer: {
-          name: '@lumigo/tracer',
-          version: '0.0.123',
+          name: '@lumigo/tracerMock',
+          version: '1.2.3',
         },
       },
       memoryAllocated: '1024',
@@ -626,7 +634,99 @@ describe('awsSpan', () => {
       version: '$LATEST',
     };
 
-    expect(awsSpan.getHttpSpan(requestData, responseData)).toEqual(expected);
+    const result = awsSpan.getHttpSpan(id, requestData, responseData);
+    expect(result).toEqual(expected);
+  });
+
+  test('getHttpSpan - only for request data', () => {
+    const id = 'not-a-random-id';
+    const sendTime = 1234;
+
+    const requestData = {
+      host: 'your.mind.com',
+      headers: { Tyler: 'Durden' },
+      body: 'the first rule of fight club',
+      sendTime,
+    };
+    const expected = {
+      account: '985323015126',
+      ended: undefined,
+      id: 'not-a-random-id',
+      info: {
+        httpInfo: {
+          host: 'your.mind.com',
+          request: {
+            body: '"the first rule of fight club"',
+            headers: '{"Tyler":"Durden"}',
+            host: 'your.mind.com',
+            sendTime: 1234,
+          },
+          response: {},
+        },
+        logGroupName: '/aws/lambda/aws-nodejs-dev-hello',
+        logStreamName: '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',
+        traceId: {
+          Parent: '28effe37598bb622',
+          Root: '1-5cdcf03a-64a1b06067c2100c52e51ef4',
+          Sampled: '0',
+          transactionId: '64a1b06067c2100c52e51ef4',
+        },
+        tracer: {
+          name: '@lumigo/tracerMock',
+          version: '1.2.3',
+        },
+      },
+      memoryAllocated: '1024',
+      messageVersion: 2,
+      parentId: '6d26e3c8-60a6-4cee-8a70-f525f47a4caf',
+      readiness: 'cold',
+      region: 'us-east-1',
+      invokedArn:
+        'arn:aws:lambda:us-east-1:985323015126:function:aws-nodejs-dev-hello',
+      invokedVersion: '1',
+      runtime: 'AWS_Lambda_nodejs8.10',
+      service: 'external',
+      started: 1234,
+      token: 'DEADBEEF',
+      transactionId: '64a1b06067c2100c52e51ef4',
+      type: 'http',
+      vendor: 'AWS',
+      version: '$LATEST',
+    };
+
+    const result = awsSpan.getHttpSpan(id, requestData);
+    expect(result).toEqual(expected);
+  });
+
+  test('getHttpSpan - handle failing when parsing AWS service data', () => {
+    const id = 'not-a-random-id';
+    const sendTime = 1234;
+
+    const requestData = {
+      get host() {
+        return {
+          includes: () => {
+            throw Error();
+          },
+        };
+      },
+      headers: { Tyler: 'Durden' },
+      body: 'the first rule of fight club',
+      sendTime,
+    };
+
+    const result = awsSpan.getHttpSpan(id, requestData);
+    expect(result.service).toEqual('external');
+  });
+
+  test('getHttpSpanId - simple flow', () => {
+    const result = awsSpan.getHttpSpanId('DummyRandom', 'DummyAws');
+    expect(result).toEqual('DummyAws');
+  });
+
+  test('getHttpSpanId - no aws request id', () => {
+    const result = awsSpan.getHttpSpanId('DummyRandom');
+    expect(result).toEqual('DummyRandom');
   });
 
   test('getHttpSpanTimings', () => {

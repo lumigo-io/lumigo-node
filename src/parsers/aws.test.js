@@ -282,6 +282,51 @@ describe('aws parser', () => {
     });
   });
 
+  test('apigwParser -> api-gw v1 (with x-amzn-requestid header)', () => {
+    const responseData = {
+      host: '9bis5jsyh2.execute-api.us-west-2.amazonaws.com',
+      headers: { 'x-amzn-requestid': '123' },
+    };
+
+    const result = aws.apigwParser({}, responseData);
+
+    expect(result).toEqual({
+      awsServiceData: {
+        messageId: '123',
+      },
+    });
+  });
+
+  test('apigwParser -> api-gw v2 (with Apigw-Requestid header)', () => {
+    const responseData = {
+      host: '9bis5jsyh2.execute-api.us-west-2.amazonaws.com',
+      headers: { 'apigw-requestid': '123' },
+    };
+
+    const result = aws.apigwParser({}, responseData);
+
+    expect(result).toEqual({
+      awsServiceData: {
+        messageId: '123',
+      },
+    });
+  });
+
+  test('apigwParser -> api-gw v2 (with x-amzn-Requestid header)', () => {
+    const responseData = {
+      host: '9bis5jsyh2.execute-api.us-west-2.amazonaws.com',
+      headers: { 'Apigw-Requestid': '123', 'x-amzn-requestid': 'x-amzn-123' },
+    };
+
+    const result = aws.apigwParser({}, responseData);
+
+    expect(result).toEqual({
+      awsServiceData: {
+        messageId: 'x-amzn-123',
+      },
+    });
+  });
+
   test('awsParser -> happy flow (with x-amzn-requestid header)', () => {
     const responseData = {
       host: '9bis5jsyh2.execute-api.us-west-2.amazonaws.com',

@@ -5,8 +5,15 @@ import * as globals from './globals';
 import * as reporter from './reporter';
 import * as awsSpan from './spans/awsSpan';
 import startHooks from './hooks';
+import * as http from './hooks/http';
 import * as logger from './logger';
 import { TracerGlobals } from './globals';
+import { STEP_FUNCTION_UID_KEY } from './utils';
+import { LUMIGO_EVENT_KEY } from './utils';
+import { HandlerInputesBuilder } from '../testUtils/handlerInputesBuilder';
+import { HttpsRequestsForTesting } from '../testUtils/httpsMocker';
+import { EnvironmentBuilder } from '../testUtils/environmentBuilder';
+import { SpansContainer } from './globals';
 
 jest.mock('./hooks');
 describe('tracer', () => {
@@ -15,6 +22,8 @@ describe('tracer', () => {
   spies.isAwsEnvironment = jest.spyOn(utils, 'isAwsEnvironment');
   spies.isSendOnlyIfErrors = jest.spyOn(utils, 'isSendOnlyIfErrors');
   spies.getContextInfo = jest.spyOn(utils, 'getContextInfo');
+  spies.getRandomId = jest.spyOn(utils, 'getRandomId');
+  spies.addStepFunctionEvent = jest.spyOn(http, 'addStepFunctionEvent');
   spies.sendSingleSpan = jest.spyOn(reporter, 'sendSingleSpan');
   spies.sendSpans = jest.spyOn(reporter, 'sendSpans');
   spies.getFunctionSpan = jest.spyOn(awsSpan, 'getFunctionSpan');
@@ -36,7 +45,7 @@ describe('tracer', () => {
   spies.SpansContainer.addSpan = jest.spyOn(globals.SpansContainer, 'addSpan');
   spies.clearGlobals = jest.spyOn(globals, 'clearGlobals');
   spies.warnClient = jest.spyOn(logger, 'warnClient');
-  spies.logFatal = jest.spyOn(logger, 'fatal');
+  spies.logWarn = jest.spyOn(logger, 'warn');
   spies.log = jest.spyOn(console, 'log');
   spies.log.mockImplementation(() => {});
 
@@ -46,53 +55,133 @@ describe('tracer', () => {
       x => typeof x === 'function' && spies[x].mockClear()
     );
   });
-  test('startTrace', async () => {
-    spies.isSwitchedOff.mockReturnValueOnce(false);
-    spies.isAwsEnvironment.mockReturnValueOnce(true);
-
-    const rtt = 1234;
-    spies.sendSingleSpan.mockReturnValueOnce({ rtt });
-
-    const functionSpan = { a: 'b', c: 'd' };
-    spies.getFunctionSpan.mockReturnValueOnce(functionSpan);
-
-    const retVal = 'Satoshi was here';
-    spies.addRttToFunctionSpan.mockReturnValueOnce(retVal);
-
-    const result1 = await tracer.startTrace();
-    expect(result1).toEqual(retVal);
-
-    expect(spies.isSwitchedOff).toHaveBeenCalled();
-    expect(spies.isAwsEnvironment).toHaveBeenCalled();
-    expect(spies.getFunctionSpan).toHaveBeenCalled();
-    expect(spies.sendSingleSpan).toHaveBeenCalledWith(functionSpan);
-    expect(spies.addRttToFunctionSpan).toHaveBeenCalledWith(functionSpan, rtt);
-
-    spies.isAwsEnvironment.mockReturnValueOnce(false);
-    spies.isSwitchedOff.mockReturnValueOnce(false);
-
-    const result2 = await tracer.startTrace();
-    expect(result2).toEqual(null);
-
-    spies.logFatal.mockImplementationOnce(() => {});
+  test('startTrace - not failed on error', async () => {
+    //TODO: Rewrite this test without mocks
     const err1 = new Error('stam1');
     spies.isSwitchedOff.mockImplementationOnce(() => {
       throw err1;
     });
 
     await expect(tracer.startTrace()).resolves.toEqual(null);
-    expect(spies.logFatal).toHaveBeenCalledWith('startTrace failure', err1);
+  });
 
-    //Test - isSendOnlyIfErrors is on, start span in not sent or saved to the spans list
-    spies.sendSingleSpan.mockClear();
-    spies.isSwitchedOff.mockClear();
-    spies.getFunctionSpan.mockReturnValueOnce(functionSpan);
-    spies.isAwsEnvironment.mockReturnValueOnce(true);
-    spies.isSendOnlyIfErrors.mockReturnValueOnce(true);
-    await expect(tracer.startTrace()).resolves.toEqual(null);
+  test('startTrace - simple flow', async () => {
+    new EnvironmentBuilder().awsEnvironment().applyEnv();
+    const handlerInputs = new HandlerInputesBuilder().build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
 
-    expect(spies.sendSingleSpan).toHaveBeenCalledTimes(0);
-    expect(spies.SpansContainer.addSpan).toHaveBeenCalledTimes(0);
+    await tracer.startTrace();
+
+    const requests = HttpsRequestsForTesting.getRequests();
+    expect(requests.length).toEqual(1);
+  });
+
+  test('startTrace - not sending start-span on non-aws env', async () => {
+    new EnvironmentBuilder().notAwsEnvironment().applyEnv();
+    const handlerInputs = new HandlerInputesBuilder().build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
+
+    await tracer.startTrace();
+
+    const requests = HttpsRequestsForTesting.getRequests();
+    expect(requests.length).toEqual(0);
+  });
+
+  test('startTrace - not sending start-span on SEND_ONLY_ON_ERROR', async () => {
+    new EnvironmentBuilder().awsEnvironment().applyEnv();
+    const handlerInputs = new HandlerInputesBuilder().build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
+    utils.setSendOnlyIfErrors();
+
+    await tracer.startTrace();
+
+    const requests = HttpsRequestsForTesting.getRequests();
+    expect(requests.length).toEqual(0);
+  });
+
+  test('startTrace - timeout timer - simple flow', async done => {
+    const timeout = 1000;
+    const testBuffer = 50;
+
+    new EnvironmentBuilder().awsEnvironment().applyEnv();
+    const handlerInputs = new HandlerInputesBuilder()
+      .withTimeout(timeout)
+      .build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
+
+    await tracer.startTrace();
+    SpansContainer.addSpan({ id: 'SomeRandomHttpSpan' });
+
+    setTimeout(() => {
+      const requests = HttpsRequestsForTesting.getRequests();
+      //1 for start span, 1 for SomeRandomHttpSpan
+      expect(requests.length).toEqual(2);
+      done();
+    }, timeout + testBuffer);
+  });
+
+  test('startTrace - timeout timer - called twice', async done => {
+    const timeout = 1000;
+    const testBuffer = 50;
+
+    new EnvironmentBuilder().awsEnvironment().applyEnv();
+    const handlerInputs = new HandlerInputesBuilder()
+      .withTimeout(timeout)
+      .build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
+
+    await tracer.startTrace();
+    await tracer.startTrace();
+    SpansContainer.addSpan({ id: 'SomeRandomHttpSpan' });
+
+    setTimeout(() => {
+      const requests = HttpsRequestsForTesting.getRequests();
+      //Expect 3 - 2 start spans and 1 from the timer
+      expect(requests.length).toEqual(3);
+      done();
+    }, timeout + testBuffer);
+  });
+
+  test('startTrace - timeout timer - too short timeout (timer not effects)', async done => {
+    const timeout = 10;
+    const testBuffer = 50;
+
+    new EnvironmentBuilder().awsEnvironment().applyEnv();
+    const handlerInputs = new HandlerInputesBuilder()
+      .withTimeout(timeout)
+      .build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
+
+    await tracer.startTrace();
+    SpansContainer.addSpan({ id: 'SomeRandomHttpSpan' });
+
+    setTimeout(() => {
+      const requests = HttpsRequestsForTesting.getRequests();
+      //Expect 1 for start span
+      expect(requests.length).toEqual(1);
+      done();
+    }, timeout + testBuffer);
+  });
+
+  test('startTrace - timeout timer - SEND_ONLY_ON_ERROR - not sending spans', async done => {
+    const timeout = 1000;
+    const testBuffer = 50;
+
+    utils.setSendOnlyIfErrors();
+    new EnvironmentBuilder().awsEnvironment().applyEnv();
+    const handlerInputs = new HandlerInputesBuilder()
+      .withTimeout(timeout)
+      .build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
+
+    await tracer.startTrace();
+    SpansContainer.addSpan({ id: 'SomeRandomHttpSpan' });
+
+    setTimeout(() => {
+      const requests = HttpsRequestsForTesting.getRequests();
+      expect(requests.length).toEqual(0);
+      done();
+    }, timeout + testBuffer);
   });
 
   test('isCallbacked', async () => {
@@ -109,7 +198,7 @@ describe('tracer', () => {
 
     const rtt = 1234;
     spies.sendSpans.mockImplementationOnce(() => {});
-    spies.getCurrentTransactionId.mockReturnValue('x');
+    spies.getCurrentTransactionId.mockReturnValueOnce('x');
 
     const dummySpan = { x: 'y', transactionId: 'x' };
     const functionSpan = { a: 'b', c: 'd', transactionId: 'x' };
@@ -144,7 +233,7 @@ describe('tracer', () => {
 
     spies.clearGlobals.mockClear();
 
-    spies.logFatal.mockImplementationOnce(() => {});
+    spies.logWarn.mockImplementationOnce(() => {});
     const err2 = new Error('stam2');
     spies.isSwitchedOff.mockImplementationOnce(() => {
       throw err2;
@@ -152,7 +241,7 @@ describe('tracer', () => {
 
     await tracer.endTrace(functionSpan, handlerReturnValue);
 
-    expect(spies.logFatal).toHaveBeenCalledWith('endTrace failure', err2);
+    expect(spies.logWarn).toHaveBeenCalledWith('endTrace failure', err2);
     expect(spies.clearGlobals).toHaveBeenCalled();
   });
 
@@ -181,7 +270,7 @@ describe('tracer', () => {
 
     spies.clearGlobals.mockClear();
 
-    spies.logFatal.mockImplementationOnce(() => {});
+    spies.logWarn.mockImplementationOnce(() => {});
     const err2 = new Error('stam2');
     spies.isSwitchedOff.mockImplementationOnce(() => {
       throw err2;
@@ -189,7 +278,7 @@ describe('tracer', () => {
 
     await tracer.endTrace(functionSpan, handlerReturnValue);
 
-    expect(spies.logFatal).toHaveBeenCalledWith('endTrace failure', err2);
+    expect(spies.logWarn).toHaveBeenCalledWith('endTrace failure', err2);
     expect(spies.clearGlobals).toHaveBeenCalled();
   });
 
@@ -282,7 +371,7 @@ describe('tracer', () => {
 
     const token = 'DEADBEEF';
 
-    spies.isSwitchedOff.mockReturnValue(true);
+    spies.isSwitchedOff.mockReturnValueOnce(true);
     await tracer.trace({ token })(userHandler1)(event, context, callback1);
 
     expect(startHooks).toHaveBeenCalled();
@@ -293,7 +382,7 @@ describe('tracer', () => {
     const context = { e: 'f', g: 'h' };
     const token = 'DEADBEEF';
 
-    spies.isSwitchedOff.mockReturnValue(true);
+    spies.isSwitchedOff.mockReturnValueOnce(true);
     const userHandler2 = (event, context, callback) => {
       throw new Error('bla');
     };
@@ -316,7 +405,7 @@ describe('tracer', () => {
       done();
     };
 
-    spies.isSwitchedOff.mockReturnValue(true);
+    spies.isSwitchedOff.mockReturnValueOnce(true);
 
     const userHandler3 = async (event, context, callback) => {
       callback(null, retVal);
@@ -332,7 +421,7 @@ describe('tracer', () => {
     const retVal = 'The Tracer Wars';
     const callback4 = jest.fn();
 
-    spies.isSwitchedOff.mockReturnValue(true);
+    spies.isSwitchedOff.mockReturnValueOnce(true);
 
     const userHandler4 = async (event, context, callback) => {
       return retVal;
@@ -352,7 +441,7 @@ describe('tracer', () => {
     const retVal = 'The Tracer Wars';
     const callback5 = jest.fn();
 
-    spies.isSwitchedOff.mockReturnValue(true);
+    spies.isSwitchedOff.mockReturnValueOnce(true);
 
     const userHandler5 = async (event, context, callback) => {
       throw new Error(retVal);
@@ -365,9 +454,12 @@ describe('tracer', () => {
   });
 
   test('sendEndTraceSpans; dont clear globals in case of a leak', async () => {
-    spies.sendSpans.mockImplementation(() => {});
-    spies.getEndFunctionSpan.mockReturnValue({ x: 'y', transactionId: '123' });
-    spies.getCurrentTransactionId.mockReturnValue('123');
+    spies.sendSpans.mockImplementationOnce(() => {});
+    spies.getEndFunctionSpan.mockReturnValueOnce({
+      x: 'y',
+      transactionId: '123',
+    });
+    spies.getCurrentTransactionId.mockReturnValueOnce('123');
 
     TracerGlobals.setTracerInputs({ token: '123' });
     spies.SpansContainer.getSpans.mockReturnValueOnce([
@@ -435,7 +527,7 @@ describe('tracer', () => {
 
   test('No exception at initialization', async done => {
     const mockedTracerGlobals = jest.spyOn(TracerGlobals, 'setHandlerInputs');
-    mockedTracerGlobals.mockImplementation(() => {
+    mockedTracerGlobals.mockImplementationOnce(() => {
       throw new Error('Mocked error');
     });
     const handler = jest.fn(() => done());
@@ -444,5 +536,59 @@ describe('tracer', () => {
 
     // No exception.
     expect(handler).toHaveBeenCalledOnce();
+    mockedTracerGlobals.mockClear();
+  });
+
+  test('performStepFunctionLogic - performStepFunctionLogic doesnt call if not step function', async () => {
+    const handler = jest.fn(async () => {});
+
+    await tracer.trace({ stepFunction: false })(handler)({}, {});
+
+    expect(spies.addStepFunctionEvent).not.toBeCalled();
+  });
+
+  test('performStepFunctionLogic - Happy flow', async () => {
+    const handler = jest.fn(async () => ({ hello: 'world' }));
+    spies.getRandomId.mockReturnValueOnce('123');
+
+    const result = await tracer.trace({ stepFunction: true })(handler)({}, {});
+
+    expect(result).toEqual({
+      hello: 'world',
+      [LUMIGO_EVENT_KEY]: { [STEP_FUNCTION_UID_KEY]: '123' },
+    });
+    expect(spies.addStepFunctionEvent).toBeCalledWith('123');
+    spies.addStepFunctionEvent.mockClear();
+  });
+
+  test('performStepFunctionLogic - Error should be contained', async () => {
+    const handler = jest.fn(async () => ({ hello: 'world' }));
+    spies.getRandomId.mockReturnValueOnce('123');
+    spies.addStepFunctionEvent.mockImplementationOnce(() => {
+      throw new Error('stam1');
+    });
+
+    const result3 = await tracer.trace({ stepFunction: true })(handler)({}, {});
+
+    expect(result3).toEqual({ hello: 'world' });
+    expect(spies.addStepFunctionEvent).toBeCalled();
+    spies.addStepFunctionEvent.mockClear();
+  });
+
+  test('performStepFunctionLogic - override the step function key if exists', async () => {
+    const handler = jest.fn(async () => ({
+      hello: 'world',
+      [LUMIGO_EVENT_KEY]: { [STEP_FUNCTION_UID_KEY]: 'old' },
+    }));
+    const handlerInputs = new HandlerInputesBuilder().build();
+
+    const result = await tracer.trace({ stepFunction: true })(handler)(
+      handlerInputs.event,
+      handlerInputs.context
+    );
+
+    expect(result[LUMIGO_EVENT_KEY][STEP_FUNCTION_UID_KEY]).not.toEqual('old');
+    const requests = HttpsRequestsForTesting.getRequests();
+    expect(requests.length).toEqual(2);
   });
 });

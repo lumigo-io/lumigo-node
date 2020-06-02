@@ -3,7 +3,6 @@ import {
   setWarm,
   pruneData,
   getTraceId,
-  getRandomId,
   getAccountId,
   getTracerInfo,
   getContextInfo,
@@ -16,6 +15,7 @@ import {
   shouldScrubDomain,
   getInvokedArn,
   getInvokedVersion,
+  EXECUTION_TAGS_KEY,
 } from '../utils';
 import {
   dynamodbParser,
@@ -24,9 +24,12 @@ import {
   sqsParser,
   kinesisParser,
   awsParser,
+  apigwParser,
 } from '../parsers/aws';
-import { TracerGlobals } from '../globals';
+import { TracerGlobals, ExecutionTags } from '../globals';
 import { getEventInfo } from '../events';
+import { parseEvent } from '../parsers/eventParser';
+import * as logger from '../logger';
 
 export const HTTP_SPAN = 'http';
 export const FUNCTION_SPAN = 'function';
@@ -111,7 +114,10 @@ export const getFunctionSpan = () => {
   const started = new Date().getTime();
   const ended = started; // Indicates a StartSpan.
 
-  const event = stringifyAndPrune(omitKeys(lambdaEvent), getEventEntitySize());
+  const event = stringifyAndPrune(
+    omitKeys(parseEvent(lambdaEvent)),
+    getEventEntitySize()
+  );
   const envs = stringifyAndPrune(omitKeys(process.env));
 
   const {
@@ -145,7 +151,15 @@ export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
   const error = err ? parseErrorObject(err) : undefined;
   const ended = new Date().getTime();
   const return_value = data ? pruneData(omitKeys(data)) : null;
-  return Object.assign({}, functionSpan, { id, ended, error, return_value });
+  const newSpan = Object.assign({}, functionSpan, {
+    id,
+    ended,
+    error,
+    return_value,
+    [EXECUTION_TAGS_KEY]: ExecutionTags.getTags(),
+  });
+  logger.debug('End span created', newSpan);
+  return newSpan;
 };
 
 export const AWS_PARSED_SERVICES = [
@@ -161,6 +175,9 @@ export const getAwsServiceFromHost = host => {
   if (AWS_PARSED_SERVICES.includes(service)) {
     return service;
   }
+
+  if (host.includes('execute-api')) return 'apigw';
+
   return EXTERNAL_SERVICE;
 };
 export const getServiceType = host =>
@@ -181,6 +198,8 @@ export const getAwsServiceData = (requestData, responseData) => {
       return sqsParser(requestData, responseData);
     case 'kinesis':
       return kinesisParser(requestData, responseData);
+    case 'apigw':
+      return apigwParser(requestData, responseData);
     default:
       return awsParser(requestData, responseData);
   }
@@ -206,17 +225,19 @@ export const getHttpInfo = (requestData, responseData) => {
     request.headers = stringifyAndPrune(omitKeys(request.headers));
     request.body = stringifyAndPrune(omitKeys(request.body));
 
-    response.headers = stringifyAndPrune(omitKeys(response.headers));
-    response.body = stringifyAndPrune(omitKeys(response.body));
+    if (response.headers)
+      response.headers = stringifyAndPrune(omitKeys(response.headers));
+    if (response.body)
+      response.body = stringifyAndPrune(omitKeys(response.body));
   }
 
   return { host, request, response };
 };
 
-export const getBasicHttpSpan = (spanId = null) => {
+export const getBasicHttpSpan = spanId => {
   const { context } = TracerGlobals.getHandlerInputs();
   const { awsRequestId: parentId } = context;
-  const id = spanId || getRandomId();
+  const id = spanId;
   const type = HTTP_SPAN;
   const basicSpan = getBasicSpan();
   return { ...basicSpan, id, type, parentId };
@@ -224,27 +245,55 @@ export const getBasicHttpSpan = (spanId = null) => {
 
 export const getHttpSpanTimings = (requestData, responseData) => {
   const { sendTime: started } = requestData;
-  const { receivedTime: ended } = responseData;
+  const { receivedTime: ended } = responseData || {};
   return { started, ended };
 };
 
-export const getHttpSpan = (requestData, responseData) => {
-  const { host } = requestData;
+export const getHttpSpanId = (randomRequestId, awsRequestId = null) => {
+  return awsRequestId ? awsRequestId : randomRequestId;
+};
 
-  const { awsServiceData, spanId } = isAwsService(host, responseData)
-    ? getAwsServiceData(requestData, responseData)
-    : {};
+export const getHttpSpan = (
+  randomRequestId,
+  requestData,
+  responseData = null
+) => {
+  let serviceData = {};
+  try {
+    if (isAwsService(requestData.host, responseData)) {
+      serviceData = getAwsServiceData(requestData, responseData);
+    }
+  } catch (e) {
+    logger.warn('Failed to parse aws service data', e.message);
+  }
+  const { awsServiceData, spanId } = serviceData;
 
-  const httpInfo = getHttpInfo(requestData, responseData);
+  const prioritizedSpanId = getHttpSpanId(randomRequestId, spanId);
+  let httpInfo = {
+    host: requestData.host,
+    request: requestData,
+    response: responseData,
+  };
+  try {
+    httpInfo = getHttpInfo(requestData, responseData);
+  } catch (e) {
+    logger.warn('Failed to scrub & stringify http data', e.message);
+  }
 
-  const basicHttpSpan = getBasicHttpSpan(spanId);
+  const basicHttpSpan = getBasicHttpSpan(prioritizedSpanId);
 
   const info = Object.assign({}, basicHttpSpan.info, {
     httpInfo,
     ...awsServiceData,
   });
 
-  const service = getServiceType(host);
+  let service = EXTERNAL_SERVICE;
+  try {
+    service = getServiceType(requestData.host);
+  } catch (e) {
+    logger.warn('Failed to get service type', e.message);
+  }
+
   const { started, ended } = getHttpSpanTimings(requestData, responseData);
 
   return { ...basicHttpSpan, info, service, started, ended };

@@ -9,32 +9,21 @@ import {
   keyToOmitRegexes,
   LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP,
   LUMIGO_SECRET_MASKING_REGEX,
+  safeExecute,
+  recursiveGetKey,
+  SKIP_SCRUBBING_KEYS,
 } from './utils';
 import { TracerGlobals } from './globals';
-import EventEmitter from 'events';
-import https from 'https';
 import crypto from 'crypto';
 import { isDebug } from './logger';
-import { safeExecute } from './utils';
-
-jest.mock('https');
-jest.mock('../package.json', () => ({
-  name: '@lumigo/tracerMock',
-  version: '1.2.3',
-}));
+import { GET_KEY_DEPTH_ENV_KEY } from './utils';
+import { HttpsScenarioBuilder } from '../testUtils/httpsMocker';
+import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
+import { getEnvVarAsList } from './utils';
 
 describe('utils', () => {
   const spies = {};
   spies.randomBytes = jest.spyOn(crypto, 'randomBytes');
-
-  beforeEach(() => {
-    const oldEnv = Object.assign({}, process.env);
-    const awsEnv = {
-      AWS_REGION: 'us-east-1',
-      AWS_DEFAULT_REGION: 'us-east-1',
-    };
-    process.env = { ...oldEnv, ...awsEnv };
-  });
 
   test('getContextInfo', () => {
     const awsRequestId = '6d26e3c8-60a6-4cee-8a70-f525f47a4caf';
@@ -154,82 +143,87 @@ describe('utils', () => {
   });
 
   test('isAwsEnvironment', () => {
+    process.env = {};
     expect(utils.isAwsEnvironment()).toBe(false);
-    const oldEnv = Object.assign({}, process.env);
-    process.env = { ...oldEnv, LAMBDA_RUNTIME_DIR: 'BLA BLA' };
+    process.env.LAMBDA_RUNTIME_DIR = 'BLA BLA';
     expect(utils.isAwsEnvironment()).toBe(true);
-    process.env = { ...oldEnv };
   });
 
   test('isVerboseMode', () => {
     expect(utils.isVerboseMode()).toBe(false);
-    const oldEnv = Object.assign({}, process.env);
-    process.env = { ...oldEnv, LUMIGO_VERBOSE: 'TRUE' };
+    process.env.LUMIGO_VERBOSE = 'TRUE';
     expect(utils.isVerboseMode()).toBe(true);
-    process.env = { ...oldEnv };
+  });
+
+  test('isStoreLogs', () => {
+    expect(utils.isStoreLogs()).toBe(false);
+    process.env.LUMIGO_STORE_LOGS = 'TRUE';
+    expect(utils.isStoreLogs()).toBe(true);
   });
 
   test('isWarm', () => {
     expect(utils.isWarm()).toBe(false);
-    const oldEnv = Object.assign({}, process.env);
-    process.env = { ...oldEnv, LUMIGO_IS_WARM: 'TRUE' };
+    process.env.LUMIGO_IS_WARM = 'TRUE';
     expect(utils.isWarm()).toBe(true);
-    process.env = { ...oldEnv };
   });
 
   test('isSendOnlyIfErrors', () => {
     expect(utils.isSendOnlyIfErrors()).toBe(false);
-    const oldEnv = Object.assign({}, process.env);
-    process.env = { ...oldEnv, SEND_ONLY_IF_ERROR: 'TRUE' };
+    process.env.SEND_ONLY_IF_ERROR = 'TRUE';
     expect(utils.isSendOnlyIfErrors()).toBe(true);
-    process.env = { ...oldEnv };
   });
 
   test('isPruneTraceOff', () => {
     expect(utils.isPruneTraceOff()).toBe(false);
-    const oldEnv = Object.assign({}, process.env);
-    process.env = { ...oldEnv, LUMIGO_PRUNE_TRACE_OFF: 'TRUE' };
+    process.env.LUMIGO_PRUNE_TRACE_OFF = 'TRUE';
     expect(utils.isPruneTraceOff()).toBe(true);
-    process.env = { ...oldEnv };
+  });
+
+  test('isTimeoutTimerEnabled', () => {
+    expect(utils.isTimeoutTimerEnabled()).toBe(true);
+    process.env.LUMIGO_TIMEOUT_TIMER_ENABLED = 'FALSE';
+    expect(utils.isTimeoutTimerEnabled()).toBe(false);
   });
 
   test('getEventEntitySize', () => {
     expect(utils.getEventEntitySize()).toBe(MAX_ENTITY_SIZE);
-    const oldEnv = Object.assign({}, process.env);
-    process.env = { ...oldEnv, MAX_EVENT_ENTITY_SIZE: ' 2048' };
+    process.env.MAX_EVENT_ENTITY_SIZE = '2048';
     expect(utils.getEventEntitySize()).toBe(2048);
-    process.env = { ...oldEnv };
   });
 
   test('getEventEntitySize NaN', () => {
-    const oldEnv = Object.assign({}, process.env);
-    process.env = { ...oldEnv, MAX_EVENT_ENTITY_SIZE: 'A 2048' };
+    process.env.MAX_EVENT_ENTITY_SIZE = 'A 2048';
     expect(utils.getEventEntitySize()).toBe(MAX_ENTITY_SIZE);
-    process.env = { ...oldEnv };
   });
 
   test('setWarm', () => {
     expect(utils.isWarm()).toBe(false);
-    const oldEnv = Object.assign({}, process.env);
     utils.setWarm();
     expect(utils.isWarm()).toBe(true);
-    process.env = { ...oldEnv };
+  });
+
+  test('setStoreLogsOn', () => {
+    expect(utils.isStoreLogs()).toBe(false);
+    utils.setStoreLogsOn();
+    expect(utils.isStoreLogs()).toBe(true);
   });
 
   test('setSendOnlyIfErrors', () => {
     expect(utils.isSendOnlyIfErrors()).toBe(false);
-    const oldEnv = Object.assign({}, process.env);
     utils.setSendOnlyIfErrors();
     expect(utils.isSendOnlyIfErrors()).toBe(true);
-    process.env = { ...oldEnv };
+  });
+
+  test('setTimeoutTimerDisabled', () => {
+    expect(utils.isTimeoutTimerEnabled()).toBe(true);
+    utils.setTimeoutTimerDisabled();
+    expect(utils.isTimeoutTimerEnabled()).toBe(false);
   });
 
   test('setPruneTraceOff', () => {
     expect(utils.isPruneTraceOff()).toBe(false);
-    const oldEnv = Object.assign({}, process.env);
     utils.setPruneTraceOff();
     expect(utils.isPruneTraceOff()).toBe(true);
-    process.env = { ...oldEnv };
   });
 
   test('getInvokedAliasOrNullInvalidArn', () => {
@@ -245,7 +239,6 @@ describe('utils', () => {
 
   test('isSwitchedOffInvalidAlias', () => {
     expect(utils.isSwitchedOff()).toBe(false);
-    const oldEnv = Object.assign({}, process.env);
     TracerGlobals.setHandlerInputs({
       event: {},
       context: {
@@ -255,12 +248,10 @@ describe('utils', () => {
     process.env['LUMIGO_VALID_ALIASES'] = '["wrong"]';
     expect(utils.isSwitchedOff()).toBe(true);
     TracerGlobals.clearHandlerInputs();
-    process.env = { ...oldEnv };
   });
 
   test('isSwitchedOffValidAlias', () => {
     expect(utils.isSwitchedOff()).toBe(false);
-    const oldEnv = Object.assign({}, process.env);
     TracerGlobals.setHandlerInputs({
       event: {},
       context: {
@@ -270,12 +261,10 @@ describe('utils', () => {
     process.env['LUMIGO_VALID_ALIASES'] = '["alias"]';
     expect(utils.isSwitchedOff()).toBe(false);
     TracerGlobals.clearHandlerInputs();
-    process.env = { ...oldEnv };
   });
 
   test('getInvokedAliasOrNull', () => {
     expect(utils.getInvokedAliasOrNull()).toBe(null);
-    const oldEnv = Object.assign({}, process.env);
     TracerGlobals.setHandlerInputs({
       event: {},
       context: {
@@ -305,7 +294,6 @@ describe('utils', () => {
     });
     expect(utils.getInvokedAliasOrNull()).toEqual(null);
     TracerGlobals.clearHandlerInputs();
-    process.env = { ...oldEnv };
   });
 
   test('isValidAlias', () => {
@@ -328,20 +316,16 @@ describe('utils', () => {
 
   test('setSwitchOff', () => {
     expect(utils.isSwitchedOff()).toBe(false);
-    const oldEnv = Object.assign({}, process.env);
     utils.setSwitchOff();
     TracerGlobals.setTracerInputs({});
     expect(utils.isSwitchedOff()).toBe(true);
-    process.env = { ...oldEnv };
   });
 
   test('setDebug', () => {
     expect(isDebug()).toBe(false);
-    const oldEnv = Object.assign({}, process.env);
     utils.setDebug();
     TracerGlobals.setTracerInputs({});
     expect(isDebug()).toBe(true);
-    process.env = { ...oldEnv };
   });
 
   test('isString', () => {
@@ -352,6 +336,37 @@ describe('utils', () => {
   test('prune', () => {
     expect(utils.prune('abcdefg', 3)).toEqual('abc');
     expect(utils.prune('abcdefg')).toEqual('abcdefg');
+    expect(utils.prune(undefined)).toEqual('');
+  });
+
+  test('parseJsonFromEnvVar -> simple flow', () => {
+    process.env.TEST_STR = '"TEST"';
+    process.env.TEST_NUM = '1';
+    process.env.TEST_ARRAY = '[1, "1"]';
+    process.env.TEST_OBJECT = '{"1": "1"}';
+
+    expect(utils.parseJsonFromEnvVar('TEST_STR')).toEqual('TEST');
+    expect(utils.parseJsonFromEnvVar('TEST_NUM')).toEqual(1);
+    expect(utils.parseJsonFromEnvVar('TEST_ARRAY')).toEqual([1, '1']);
+    expect(utils.parseJsonFromEnvVar('TEST_OBJECT')).toEqual({ '1': '1' });
+  });
+
+  test('parseJsonFromEnvVar -> not fail on error', () => {
+    process.env.TEST_ERR = 'ERR';
+    expect(utils.parseJsonFromEnvVar('TEST_ERR')).toEqual(undefined);
+  });
+
+  test('parseJsonFromEnvVar -> warn user', () => {
+    process.env.TEST_ERR = 'ERR';
+
+    utils.parseJsonFromEnvVar('TEST_ERR', true);
+
+    expect(ConsoleWritesForTesting.getLogs()).toEqual([
+      {
+        msg: 'Lumigo Warning: TEST_ERR need to be a valid JSON',
+        obj: undefined,
+      },
+    ]);
   });
 
   test('stringifyAndPrune', () => {
@@ -493,34 +508,25 @@ describe('utils', () => {
     // No exception.
   });
 
-  test('httpReq', async () => {
+  test('httpReq - simple flow', async () => {
     const options = { bla: 'bla' };
-    const req = new EventEmitter();
     const reqBody = 'abcdefg';
-    req.end = jest.fn();
-    req.write = jest.fn();
-    https.request.mockReturnValueOnce(req);
 
-    const p1 = utils.httpReq(options, reqBody);
-    req.emit('error', 'errmsg');
-    await expect(p1).rejects.toEqual('errmsg');
+    HttpsScenarioBuilder.appendNextResponse('DummyResponse');
+    const p = utils.httpReq(options, reqBody);
+    await expect(p).resolves.toEqual({
+      statusCode: 200,
+      data: 'DummyResponse',
+    });
+  });
 
-    https.request.mockClear();
-    https.request.mockReturnValueOnce(req);
+  test('httpReq - reject errors', async () => {
+    const options = { bla: 'bla' };
+    const reqBody = 'abcdefg';
 
-    const p2 = utils.httpReq(options, reqBody);
-
-    const reqCallback = https.request.mock.calls[0][1];
-    const res = new EventEmitter();
-    const statusCode = 200;
-    res.statusCode = statusCode;
-    reqCallback(res);
-    const data = 'chunky';
-    res.emit('data', data);
-    res.emit('end');
-    await expect(p2).resolves.toEqual({ statusCode, data });
-
-    expect(https.request).toHaveBeenCalledWith(options, expect.any(Function));
+    HttpsScenarioBuilder.failForTheNextTimes(1);
+    const p = utils.httpReq(options, reqBody);
+    await expect(p).rejects;
   });
 
   test('getEdgeHost', () => {
@@ -762,6 +768,11 @@ describe('utils', () => {
     expect(omitKeys(nullObject)).toEqual(null);
   });
 
+  test('omitKeys - SKIP_SCRUBBING_KEYS', () => {
+    const obj = { [SKIP_SCRUBBING_KEYS[0]]: { password: 1 } };
+    expect(omitKeys(obj)).toEqual(obj);
+  });
+
   test('safeExecute run function', () => {
     expect(safeExecute(() => 5)()).toEqual(5);
   });
@@ -771,5 +782,40 @@ describe('utils', () => {
       throw new Error('Mocked error');
     })();
     // No exception.
+  });
+
+  test('recursiveGetKey', () => {
+    expect(recursiveGetKey({ a: 1 }, 'key')).toEqual(undefined);
+    expect(recursiveGetKey({ a: 1, key: { b: 2 } }, 'key')).toEqual({
+      b: 2,
+    });
+    expect(recursiveGetKey({ a: 1, b: { key: { c: 3 } } }, 'key')).toEqual({
+      c: 3,
+    });
+
+    const circular = { a: 1 };
+    circular.b = circular;
+    expect(recursiveGetKey(circular, 'key')).toEqual(undefined);
+    circular.key = { c: 3 };
+    expect(recursiveGetKey(circular, 'key')).toEqual({ c: 3 });
+
+    const tooDeep = { a: { b: { c: { d: { e: { key: "I'm here" } } } } } };
+    process.env[GET_KEY_DEPTH_ENV_KEY] = undefined;
+    expect(recursiveGetKey(tooDeep, 'key')).toEqual(undefined);
+    process.env[GET_KEY_DEPTH_ENV_KEY] = 'bla';
+    expect(recursiveGetKey(tooDeep, 'key')).toEqual(undefined);
+    process.env[GET_KEY_DEPTH_ENV_KEY] = '8';
+    expect(recursiveGetKey(tooDeep, 'key')).toEqual("I'm here");
+    process.env[GET_KEY_DEPTH_ENV_KEY] = undefined;
+  });
+  test('getEnvVarAsList not existing key', () => {
+    const res = getEnvVarAsList('not_exists', 'def');
+    expect(res).toEqual('def');
+  });
+
+  test('getEnvVarAsList existing key', () => {
+    process.env['array_key'] = 'a,b,c';
+    const res = getEnvVarAsList('array_key');
+    expect(res).toEqual(['a', 'b', 'c']);
   });
 });

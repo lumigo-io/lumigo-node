@@ -6,6 +6,21 @@
 # How can I convert V2.1 to V2? Write the file in V2.1, run it in CircleCI and click "Configuration".
 
 version: 2
+commands:
+  checkout_integration_tests:
+    description: "Checkout integration tests"
+    steps:
+      - run:
+          command: |
+            cd ..
+            git clone git@github.com:lumigo-io/integration-tests.git
+  checkout_dashboard:
+    description: "Checkout Lumigo Platform (dashboard)"
+    steps:
+      - run:
+          command: |
+            cd ..
+            git clone git@github.com:lumigo-io/dashboard.git
 jobs:
   test:
     working_directory: ~/lumigo-node
@@ -16,6 +31,8 @@ jobs:
         password: $DOCKERHUB_PASSWORD
     environment:
     - TZ: Asia/Jerusalem
+    - NODE_OPTIONS: --max_old_space_size=1500
+    resource_class: small
     steps:
     - checkout
     - restore_cache:
@@ -53,7 +70,9 @@ jobs:
         username: lumigo
         password: $DOCKERHUB_PASSWORD
     environment:
-    - TZ: Asia/Jerusalem
+      - TZ: Asia/Jerusalem
+      - NODE_OPTIONS: --max_old_space_size=4096
+    resource_class: medium+      
     steps:
     - run:
         command: |
@@ -78,15 +97,64 @@ jobs:
     - run:
         name: recursive-install
         command: sudo npm install -g recursive-install
-    - run:
-        name: prepare_env
-        command: cd ../integration-tests && ./scripts/parallel_prepare_env.sh
-    - run:
-        name: deploy integ-test
-        command: cd ../integration-tests && ./scripts/parallel_deploy.sh --spec node
+    - run: cd ../integration-tests && git rev-parse HEAD > ../commits && cd ../python_tracer && git rev-parse HEAD >> ../commits &&  cd ../lumigo-node && git rev-parse HEAD >> ../commits &&  cd ../java-tracer && git rev-parse HEAD >> ../commits
+    - restore_cache:
+        keys:
+          - IT-{{ .Branch }}-{{ checksum "../commits" }}
+    - run: cd ../integration-tests && ./scripts/parallel_prepare_env.sh
+    - run: cd ../integration-tests && ./scripts/parallel_deploy.sh --spec node
+    - save_cache:
+        key: IT-{{ .Branch }}-{{ checksum "../commits" }}
+        paths:
+          - ../integration-tests/src/e2e-test/cypress.env.json
+          - ../integration-tests/src/e2e-test/cypress/cf-stack.json
+          - ../integration-tests/.env
+          - ../integration-tests/.env2
+          - ../integration-tests/.env3
+          - ../integration-tests/.deployment_finished.env
+          - ../integration-tests/.deployment_finished.env2
+          - ../integration-tests/.deployment_finished.env3 
     - run:
         name: run tests
         command: cd ../integration-tests && export testNode=true && npm run test-parallel
+    - store_test_results:
+          path: ../integration-tests/src/test/test-results
+    - run: mkdir -p ../envs && cd ../integration-tests && cp src/e2e-test/cypress.env.json ../envs
+    - run: mkdir -p ../stack && cd ../integration-tests && cp src/e2e-test/cypress/cf-stack.json ../stack
+    - persist_to_workspace:
+        root: ../
+        paths:
+          - envs/
+          - stack/
+          - .aws/
+  e2e-test:
+    working_directory: ~/lumigo-node
+    docker:
+      - image: lumigo/ci:latest
+        auth:
+          username: lumigo
+          password: $DOCKERHUB_PASSWORD
+    steps:
+      - attach_workspace:
+          at: ../
+      - checkout_utils
+      - checkout_code
+      - checkout_integration_tests
+      - checkout_dashboard
+      - run: mv ~/.aws/credentials tmp && { echo '[default]' ; echo 'region=us-west-2' ; cat tmp; } > ~/.aws/credentials
+      - run: cat ../envs/cypress.env.json
+      - run: cd ../integration-tests && cp ../envs/cypress.env.json ./src/e2e-test/
+      - run: cd ../integration-tests && cp ../stack/cf-stack.json ./src/e2e-test/cypress/
+      - run: cd ../dashboard && npm i
+      - run: cd ../dashboard && ./scripts/prepare_env.sh --profile $(cat ~/envs/cypress.env.json | jq -r '.PROFILE_NAME') --env $(cat ~/envs/cypress.env.json | jq -r '.ENV')
+      - run: cd ../integration-tests/src/e2e-test && npm i
+      - run: (cd ../dashboard && npm start) & (cd ~/integration-tests && ./src/e2e-test/node_modules/.bin/wait-on http://127.0.0.1:3000 && npm run cypress:run)
+      - store_artifacts:
+          path: ~/integration-tests/src/e2e-test/cypress/videos
+      - store_artifacts:
+          path: ~/integration-tests/src/e2e-test/cypress/cf-stack.json
+      - store_artifacts:
+          path: ~/integration-tests/src/e2e-test/mochawesome-report
   deploy-beta:
     working_directory: ~/lumigo-node
     docker:
@@ -96,6 +164,7 @@ jobs:
         password: $DOCKERHUB_PASSWORD
     environment:
     - TZ: Asia/Jerusalem
+    resource_class: small
     steps:
     - run:
         command: |
@@ -133,6 +202,7 @@ jobs:
         password: $DOCKERHUB_PASSWORD
     environment:
     - TZ: Asia/Jerusalem
+    resource_class: small
     steps:
     - run:
         command: |
@@ -174,151 +244,14 @@ workflows:
             ignore: master
         requires:
         - test
+    - e2e-test:
+        requires:
+          - integration-test
+        filters:
+          branches:
+            ignore: master
     - deploy-beta:
         filters:
           branches:
             only: master
   version: 2
-
-# The original config.yml file:
-# version: 2.1
-# defaults: &defaults
-#   working_directory: ~/lumigo-node
-#   docker:
-#     - image: lumigo/ci:latest
-#       auth:
-#         username: lumigo
-#         password: $DOCKERHUB_PASSWORD
-#   environment:
-#     TZ: \"Asia/Jerusalem\"
-#
-# commands:
-#   checkout_utils:
-#     description: \"Checkout various utilities\"
-#     steps:
-#       - run:
-#           command: |
-#             mkdir ~/.ssh/ && echo -e \"Host github.com\\n\\tStrictHostKeyChecking no\\n\" > ~/.ssh/config
-#             cd ..
-#             git clone git@github.com:lumigo-io/common-resources.git
-#       - run:
-#           command: |
-#             cd ..
-#             git clone git@github.com:lumigo-io/utils.git
-#       - run:
-#           command: |
-#             cd ..
-#             git clone git@github.com:lumigo-io/larn.git
-#
-# workflows:
-#   test-deploy:
-#     jobs:
-#     - test:
-#         filters:
-#           branches:
-#             ignore: master
-#     - integration-test:
-#         filters:
-#           branches:
-#             ignore: master
-#         requires:
-#           - test
-#     - deploy-beta:
-#         filters:
-#           branches:
-#             only: master
-# jobs:
-#   test:
-#     <<: *defaults
-#     steps:
-#       - checkout # special step to check out source code to working directory
-#       - restore_cache:
-#           key: dependency-cache-{{ checksum \"package.json\" }}
-#       - run:
-#           name: install-npm-wee
-#           command: npm install
-#       - run:
-#           name: install-npm-inner
-#           command: pushd auto-instrument-handler; npm install; popd
-#       - save_cache:
-#           key: dependency-cache-{{ checksum \"package.json\" }}
-#           paths:
-#             - ./node_modules
-#       - run:
-#           name: prettier
-#           command: npm run prettier:ci
-#       - run:
-#           name: test
-#           command: npm test
-#       - run:
-#           name: eslint
-#           command: npm run lint
-#       - run:
-#           name: code-coverage
-#           command: npm test --coverage && codecov
-#       - store_artifacts:
-#           path: coverage
-#           prefix: coverage
-#   integration-test:
-#     <<: *defaults
-#     steps:
-#       - checkout_utils
-#       - checkout
-#       - run:
-#           name: deploy env
-#           command: ./scripts/ci_deploy.sh
-#       - run:
-#           name: npm i
-#           command: cd ../integration-tests && npm i
-#       - run:
-#           name: recursive-install
-#           command: sudo npm install -g recursive-install
-#       - run:
-#           name: prepare_env
-#           command: cd ../integration-tests && ./scripts/parallel_prepare_env.sh
-#       - run:
-#           name: deploy integ-test
-#           command: cd ../integration-tests && ./scripts/parallel_deploy.sh --spec node
-#       - run:
-#           name: run tests
-#           command: cd ../integration-tests && export testNode=true && npm run test-parallel
-#   deploy-beta:
-#     <<: *defaults
-#     steps:
-#       - checkout_utils
-#       - checkout
-#       - run:
-#             # Avoid annoying double runs after deploy.
-#             # See https://discuss.circleci.com/t/job-runs-even-when-tags-ignore-filter-is-triggered-when-combined-with-branches-only/20664
-#             name: Check if tagged
-#             command: |
-#               tags=$(git tag -l --points-at HEAD)
-#               echo \"Tags $tags\"
-#               if [[ ! -z \"$tags\" ]]
-#               then
-#                 echo \"A tagged commit, skip...\"
-#                 circleci step halt
-#               fi
-#       - run:
-#           name: deploy beta to npm + release with delay
-#           command: ./scripts/bd_to_beta.sh
-#   deploy:
-#     <<: *defaults
-#     steps:
-#       - checkout_utils
-#       - checkout
-#       - run:
-#             # Avoid annoying double runs after deploy.
-#             # See https://discuss.circleci.com/t/job-runs-even-when-tags-ignore-filter-is-triggered-when-combined-with-branches-only/20664
-#             name: Check if tagged
-#             command: |
-#               tags=$(git tag -l --points-at HEAD)
-#               echo \"Tags $tags\"
-#               if [[ ! -z \"$tags\" ]]
-#               then
-#                 echo \"A tagged commit, skip...\"
-#                 circleci step halt
-#               fi
-#       - run:
-#           name: deploy to npm + lambda layer
-#           command: ./scripts/bd_to_prod.sh

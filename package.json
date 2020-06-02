@@ -1,6 +1,6 @@
 {
   "name": "@lumigo/tracer",
-  "version": "1.30.0",
+  "version": "1.35.3",
   "description": "Lumigo Tracer for Node.js v8.x / v10.x Runtimes",
   "main": "dist/lumigo.js",
   "repository": "git@github.com:lumigo-io/lumigo-node.git",
@@ -25,6 +25,8 @@
   "devDependencies": {
     "@babel/cli": "^7.4.4",
     "@babel/core": "^7.4.4",
+    "@babel/plugin-proposal-class-properties": "^7.8.3",
+    "@babel/plugin-proposal-optional-chaining": "^7.9.0",
     "@babel/preset-env": "^7.4.4",
     "@commitlint/cli": "^8.1.0",
     "@commitlint/config-conventional": "^8.0.0",
@@ -38,6 +40,7 @@
     "eslint-config-prettier": "^4.3.0",
     "eslint-plugin-jest": "^22.5.1",
     "eslint-plugin-prettier": "^3.1.0",
+    "fs-extra": "^8.1.0",
     "husky": "^2.4.1",
     "jest": "^24.8.0",
     "jest-junit": "^6.4.0",
@@ -63,5 +66,6 @@
     "hooks": {
       "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
     }
-  }
+  },
+  "dependencies": {}
 }

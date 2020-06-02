@@ -1,3 +1,10 @@
+import {
+  isStepFunction,
+  recursiveGetKey,
+  STEP_FUNCTION_UID_KEY,
+  LUMIGO_EVENT_KEY,
+} from './utils';
+
 export const getTriggeredBy = event => {
   if (event && event['Records']) {
     // XXX Parses s3, sns, ses, kinesis, dynamodb event sources.
@@ -12,20 +19,45 @@ export const getTriggeredBy = event => {
     }
   }
 
-  if (event && event['httpMethod']) {
+  if (
+    (event && event['httpMethod']) ||
+    (event && event['headers'] && event['version'] === '2.0')
+  ) {
     return 'apigw';
+  }
+
+  if (isStepFunction() && event && !!recursiveGetKey(event, LUMIGO_EVENT_KEY)) {
+    return 'stepFunction';
   }
 
   return 'invocation';
 };
 
-export const getApiGatewayData = event => {
+const getApiGatewayV1Data = event => {
   const { headers = {}, resource, httpMethod, requestContext = {} } = event;
   const { stage = null } = requestContext;
 
   const api = headers['Host'] || null;
   const messageId = requestContext['requestId'];
   return { messageId, httpMethod, resource, stage, api };
+};
+
+const getApiGatewayV2Data = event => {
+  const httpMethod = ((event['requestContext'] || {})['http'] || {})['method'];
+  const resource = ((event['requestContext'] || {})['http'] || {})['path'];
+  const messageId = (event['requestContext'] || {})['requestId'];
+  const api = (event['requestContext'] || {})['domainName'];
+  const stage = (event['requestContext'] || {})['stage'] || 'unknown';
+
+  return { httpMethod, resource, messageId, api, stage };
+};
+
+export const getApiGatewayData = event => {
+  const version = event['version'];
+  if (version && version === '2.0') {
+    return getApiGatewayV2Data(event);
+  }
+  return getApiGatewayV1Data(event);
 };
 
 export const getSnsData = event => {
@@ -63,6 +95,12 @@ export const getRelevantEventData = (triggeredBy, event) => {
       return { arn: event.Records[0].s3.bucket.arn };
     case 'apigw':
       return getApiGatewayData(event);
+    case 'stepFunction':
+      return {
+        messageId: recursiveGetKey(event, LUMIGO_EVENT_KEY)[
+          STEP_FUNCTION_UID_KEY
+        ],
+      };
     case 'invocation':
     default:
       return {};

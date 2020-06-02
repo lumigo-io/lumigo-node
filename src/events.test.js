@@ -1,3 +1,6 @@
+import * as utils from './utils';
+import { TracerGlobals } from './globals';
+
 const events = require('./events');
 const exampleS3Event = require('./testdata/events/s3-event.json');
 const exampleSnsEvent = require('./testdata/events/sns-event.json');
@@ -6,6 +9,7 @@ const exampleSqsEvent = require('./testdata/events/sqs-event.json');
 const exampleKinesisEvent = require('./testdata/events/kinesis-event.json');
 const exampleDynamoDBEvent = require('./testdata/events/dynamodb-event.json');
 const exampleApiGatewayEvent = require('./testdata/events/apigw-request.json');
+const exampleApiGatewayV2Event = require('./testdata/events/apigw-v2-event.json');
 const exampleUnsupportedEvent = require('./testdata/events/appsync-invoke.json');
 const exampleApiGatewayEventWithoutHost = require('./testdata/events/apigw-custom-auth-request.json');
 
@@ -39,6 +43,16 @@ describe('events', () => {
         stage: null,
       }
     );
+  });
+
+  test('getApiGatewayData => API gw v2', () => {
+    expect(events.getApiGatewayData(exampleApiGatewayV2Event)).toEqual({
+      api: 'r3pmxmplak.execute-api.us-east-2.amazonaws.com',
+      httpMethod: 'GET',
+      messageId: 'JKJaXmPLvHcESHA=',
+      resource: '/default/nodejs-apig-function-1G3XMPLZXVXYI',
+      stage: 'default',
+    });
   });
 
   test('getSnsData', () => {
@@ -107,6 +121,17 @@ describe('events', () => {
     expect(events.getEventInfo(exampleS3Event)).toEqual({
       arn: 'arn:aws:s3:::mybucket',
       triggeredBy: 's3',
+    });
+
+    TracerGlobals.setTracerInputs({ stepFunction: true });
+    expect(
+      events.getEventInfo({
+        data: 1,
+        [utils.LUMIGO_EVENT_KEY]: { [utils.STEP_FUNCTION_UID_KEY]: '123' },
+      })
+    ).toEqual({
+      triggeredBy: 'stepFunction',
+      messageId: '123',
     });
   });
 });

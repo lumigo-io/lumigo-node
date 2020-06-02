@@ -8,6 +8,8 @@
 
 [`@lumigo/tracer`](https://) is Lumigo's distributed-tracing and performance monitoring agent for Node.js.
 
+Supported Runtimes: 8.10, 10.x, 12.x
+
  
 ## Usage 
 
@@ -41,6 +43,45 @@ exports.handler = lumigo.trace(myHandler)
 Note that if you do specify a domains list - the default list will be overridden.
 * In case of need, there is a kill switch, that stops all the interventions of lumigo immediately, without changing the code. Simply add an environment variable `LUMIGO_SWITCH_OFF=TRUE`.
 
+### Step Functions
+If this function is part of a step function, you can add the flag `step_function` or environment variable `LUMIGO_STEP_FUNCTION=True`, and we will track the states in the step function as a single transaction.
+```
+const lumigo = require('@lumigo/tracer')({ token: 'DEADBEEF', step_function: true })
+```
+Note: we will add the key `"_lumigo"` to the return value of the function. 
+
+If you override the `"Parameters"` configuration, simply add `"_lumigo.$": "$._lumigo"`. <br/>
+For example:
+```
+"States": {
+    "state1": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-west-2:ACCOUNT:function:FUNCTION_NAME",
+      "Parameters": {
+          "Changed": "parameters",
+          "_lumigo.$": "$._lumigo"
+        },
+      "Next": "state2"
+    },
+    "state2": {
+      "Type": "pass",
+      "End": true
+    }
+}
+```
 
 ## Logging Programmatic Errors
 In order to log custom errors which will be visible in the platform, you can use `console.log("[LUMIGO_LOG] <YOUR_MESSAGE>");` from anywhere in your lambda code.
+
+## Adding Execution Tags
+You can use `addExecutionTag` function to add an execution tag with a dynamic value.<br/>
+This value can be searched within the Lumigo platform.<br/>
+### Manual tracing
+Add `const lumigo = require('@lumigo/tracer')({ token: 'DEADBEEF' })`.<br/>
+Then use `lumigo.addExecutionTag('<key>', '<value>');` from anywhere in your lambda code.<br/>
+### Auto tracing
+Add `const lumigo = require('@lumigo/tracer');`.<br/>
+Then use `lumigo.addExecutionTag('<key>', '<value>');` from anywhere in your lambda code.<br/>
+### Limitation:
+* The maximum number of tags is 50.
+* Key and value length should be between 1 and 50.

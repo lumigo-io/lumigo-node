@@ -1,29 +1,68 @@
 import { TracerGlobals } from './globals';
-
+import { isStoreLogs } from './utils';
 const LOG_PREFIX = '#LUMIGO#';
 const WARN_CLIENT_PREFIX = 'Lumigo Warning';
+
+const MAX_DUPLICATE_LOGS = 50;
+
+export const LogStore = (() => {
+  let logSet = new Set([]);
+  let duplicateLogsCount = 0;
+
+  const addLog = (type, message, object) => {
+    const logObj = JSON.stringify({ type, message, object });
+    if (!logSet.has(logObj)) {
+      logSet.add(logObj);
+    } else {
+      duplicateLogsCount++;
+    }
+    isEmergencyMode() && printLogs();
+  };
+
+  const printLogs = () => {
+    logSet.forEach(logObj => {
+      const { message, obj } = JSON.parse(logObj);
+      forceLog('FATAL', message, obj);
+    });
+    logSet.clear();
+  };
+
+  const isEmergencyMode = () => duplicateLogsCount >= MAX_DUPLICATE_LOGS;
+  const clean = () => {
+    logSet = new Set([]);
+    duplicateLogsCount = 0;
+  };
+  return { addLog, clean };
+})();
 
 export const isDebug = () => {
   let tracerInputs = TracerGlobals.getTracerInputs();
   return tracerInputs.debug;
 };
 
-export const invokeLog = type => (msg, obj = undefined) =>
-  exports.isDebug() && exports.log(type, msg, obj);
+const invokeLog = type => (msg, obj = undefined) => log(type, msg, obj);
 
-export const info = exports.invokeLog('INFO');
+export const info = invokeLog('INFO');
 
-export const warn = exports.invokeLog('WARNING');
+export const warn = invokeLog('WARNING');
 
-export const fatal = exports.invokeLog('FATAL');
+export const fatal = invokeLog('FATAL');
 
-export const debug = exports.invokeLog('DEBUG');
+export const debug = invokeLog('DEBUG');
 
-export const log = (levelname, message, obj) => {
-  const escapedMessage = JSON.stringify(message, null, 2);
+const log = (levelname, message, obj) => {
+  const storeLogsIsOn = isStoreLogs();
+  storeLogsIsOn && LogStore.addLog(levelname, message, obj);
+  if (exports.isDebug() && !storeLogsIsOn) {
+    forceLog(levelname, message, obj);
+  }
+};
+
+const forceLog = (levelname, message, obj) => {
+  const escapedMessage = JSON.stringify(message, null, 0);
   const logMsg = `${LOG_PREFIX} - ${levelname} - ${escapedMessage}`;
   if (obj) {
-    const escapedObject = JSON.stringify(obj, null, 2);
+    const escapedObject = JSON.stringify(obj, null, 0);
     // eslint-disable-next-line
     console.log(logMsg, escapedObject);
   } else {

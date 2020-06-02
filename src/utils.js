@@ -7,12 +7,28 @@ import * as logger from './logger';
 export const SPAN_PATH = '/api/spans';
 export const LUMIGO_TRACER_EDGE = 'lumigo-tracer-edge.golumigo.com';
 export const LUMIGO_DEFAULT_DOMAIN_SCRUBBERS =
-  '["secretsmanager.*.amazonaws.com", "ssm.*.amazonaws.com", "kms.*.amazonaws.com"]';
+  '["secretsmanager.*.amazonaws.com", "ssm.*.amazonaws.com", "kms.*.amazonaws.com", "sts..*amazonaws.com"]';
 export const LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP =
   'LUMIGO_BLACKLIST_REGEX';
 export const LUMIGO_SECRET_MASKING_REGEX = 'LUMIGO_SECRET_MASKING_REGEX';
-export const OMITTING_KEYS_REGEXES =
-  '[".*pass.*", ".*key.*", ".*secret.*", ".*credential.*", ".*passphrase.*"]';
+export const OMITTING_KEYS_REGEXES = [
+  '.*pass.*',
+  '.*key.*',
+  '.*secret.*',
+  '.*credential.*',
+  '.*passphrase.*',
+  'SessionToken',
+  'x-amz-security-token',
+  'Signature',
+  'Credential',
+  'Authorization',
+];
+export const LUMIGO_EVENT_KEY = '_lumigo';
+export const STEP_FUNCTION_UID_KEY = 'step_function_uid';
+export const GET_KEY_DEPTH_ENV_KEY = 'LUMIGO_KEY_DEPTH';
+export const DEFAULT_GET_KEY_DEPTH = 3;
+export const EXECUTION_TAGS_KEY = 'lumigo_execution_tags_no_scrub';
+export const SKIP_SCRUBBING_KEYS = [EXECUTION_TAGS_KEY];
 
 export const getContextInfo = context => {
   const remainingTimeInMillis = context.getRemainingTimeInMillis();
@@ -120,30 +136,48 @@ export const getAWSEnvironment = () => {
   };
 };
 
+const TIMEOUT_ENABLE_FLAG = 'LUMIGO_TIMEOUT_TIMER_ENABLED';
+const WARM_FLAG = 'LUMIGO_IS_WARM';
+const VERBOSE_FLAG = 'LUMIGO_VERBOSE';
+const SEND_ONLY_IF_ERROR_FLAG = 'SEND_ONLY_IF_ERROR';
+const PRUNE_TRACE_OFF_FLAG = 'LUMIGO_PRUNE_TRACE_OFF';
+const STORE_LOGS_FLAG = 'LUMIGO_STORE_LOGS';
+
+const validateEnvVar = (envVar, value = 'TRUE') =>
+  !!(
+    process.env[envVar] &&
+    process.env[envVar].toUpperCase() === value.toUpperCase()
+  );
+
 export const isAwsEnvironment = () => !!process.env['LAMBDA_RUNTIME_DIR'];
 
-export const isVerboseMode = () =>
-  !!(process.env['LUMIGO_VERBOSE'] && process.env.LUMIGO_VERBOSE === 'TRUE');
+export const getEnvVarAsList = (key, def) => {
+  if (process.env[key] != null) {
+    return process.env[key].split(',');
+  }
+  return def;
+};
 
-export const isWarm = () =>
-  !!(process.env['LUMIGO_IS_WARM'] && process.env.LUMIGO_IS_WARM === 'TRUE');
+export const isTimeoutTimerEnabled = () =>
+  !validateEnvVar(TIMEOUT_ENABLE_FLAG, 'FALSE');
 
-export const isSendOnlyIfErrors = () =>
-  !!(
-    process.env['SEND_ONLY_IF_ERROR'] &&
-    process.env.SEND_ONLY_IF_ERROR === 'TRUE'
-  );
+export const isVerboseMode = () => validateEnvVar(VERBOSE_FLAG);
 
-export const isPruneTraceOff = () =>
-  !!(
-    process.env['LUMIGO_PRUNE_TRACE_OFF'] &&
-    process.env.LUMIGO_PRUNE_TRACE_OFF === 'TRUE'
-  );
+export const isWarm = () => validateEnvVar(WARM_FLAG);
+
+export const isStoreLogs = () => validateEnvVar(STORE_LOGS_FLAG);
+
+export const isSendOnlyIfErrors = () => validateEnvVar(SEND_ONLY_IF_ERROR_FLAG);
+
+export const isPruneTraceOff = () => validateEnvVar(PRUNE_TRACE_OFF_FLAG);
 
 export const isSwitchedOff = () =>
   safeExecute(() => {
     return TracerGlobals.getTracerInputs().switchOff || !isValidAlias();
   })();
+
+export const isStepFunction = () =>
+  safeExecute(() => TracerGlobals.getTracerInputs().isStepFunction)();
 
 export const getValidAliases = () =>
   safeExecute(() => {
@@ -175,19 +209,24 @@ export const isValidAlias = () => {
   return validAlias;
 };
 
-export const setWarm = () => (process.env['LUMIGO_IS_WARM'] = 'TRUE');
+export const setWarm = () => (process.env[WARM_FLAG] = 'TRUE');
 
 export const setSendOnlyIfErrors = () =>
-  (process.env['SEND_ONLY_IF_ERROR'] = 'TRUE');
+  (process.env[SEND_ONLY_IF_ERROR_FLAG] = 'TRUE');
 
 export const setPruneTraceOff = () =>
-  (process.env['LUMIGO_PRUNE_TRACE_OFF'] = 'TRUE');
+  (process.env[PRUNE_TRACE_OFF_FLAG] = 'TRUE');
 
-export const setVerboseMode = () => (process.env['LUMIGO_VERBOSE'] = 'TRUE');
+export const setStoreLogsOn = () => (process.env[STORE_LOGS_FLAG] = 'TRUE');
+
+export const setVerboseMode = () => (process.env[VERBOSE_FLAG] = 'TRUE');
 
 export const setSwitchOff = () => (process.env['LUMIGO_SWITCH_OFF'] = 'TRUE');
 
 export const setDebug = () => (process.env['LUMIGO_DEBUG'] = 'TRUE');
+
+export const setTimeoutTimerDisabled = () =>
+  (process.env[TIMEOUT_ENABLE_FLAG] = 'FALSE');
 
 export const isString = x =>
   Object.prototype.toString.call(x) === '[object String]';
@@ -199,7 +238,7 @@ export const getEventEntitySize = () => {
 };
 
 export const prune = (str, maxLength = MAX_ENTITY_SIZE) =>
-  str.substr(0, maxLength);
+  (str || '').substr(0, maxLength);
 
 export const stringifyAndPrune = (obj, maxLength = MAX_ENTITY_SIZE) =>
   prune(JSON.stringify(obj), maxLength);
@@ -304,8 +343,7 @@ export const getEdgeHost = () => {
   if (edgeHost) {
     return edgeHost;
   }
-  const awsEdgeHost = getAwsEdgeHost();
-  return awsEdgeHost;
+  return getAwsEdgeHost();
 };
 
 export const spanHasErrors = span =>
@@ -347,12 +385,37 @@ export const shouldScrubDomain = url => {
   return !!url && domainScrubbers().some(regex => url.match(regex));
 };
 
-export const keyToOmitRegexes = () =>
-  JSON.parse(
-    process.env[LUMIGO_SECRET_MASKING_REGEX] ||
-      process.env[LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP] ||
-      OMITTING_KEYS_REGEXES
-  ).map(x => new RegExp(x, 'i'));
+export const parseJsonFromEnvVar = (envVar, warnClient = false) => {
+  try {
+    return JSON.parse(process.env[envVar]);
+  } catch (e) {
+    warnClient && logger.warnClient(`${envVar} need to be a valid JSON`);
+  }
+  return undefined;
+};
+
+export const keyToOmitRegexes = () => {
+  let regexesList = OMITTING_KEYS_REGEXES;
+  if (process.env[LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP]) {
+    const parseResponse = parseJsonFromEnvVar(
+      LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP,
+      true
+    );
+    if (parseResponse) {
+      regexesList = parseResponse;
+    }
+  } else if (process.env[LUMIGO_SECRET_MASKING_REGEX]) {
+    const parseResponse = parseJsonFromEnvVar(
+      LUMIGO_SECRET_MASKING_REGEX,
+      true
+    );
+    if (parseResponse) {
+      regexesList = parseResponse;
+    }
+  }
+
+  return regexesList.map(x => new RegExp(x, 'i'));
+};
 
 export const omitKeys = obj => {
   if (obj instanceof Array) {
@@ -372,9 +435,13 @@ export const omitKeys = obj => {
   obj = noCirculars(obj);
   const regexes = keyToOmitRegexes();
   return Object.keys(obj).reduce((newObj, key) => {
-    let value = omitKeys(obj[key]);
-    let shouldOmitKey = regexes.some(regex => regex.test(key));
-    newObj[key] = shouldOmitKey ? '****' : value;
+    if (SKIP_SCRUBBING_KEYS.includes(key)) {
+      newObj[key] = obj[key];
+    } else if (regexes.some(regex => regex.test(key))) {
+      newObj[key] = '****';
+    } else {
+      newObj[key] = omitKeys(obj[key]);
+    }
     return newObj;
   }, {});
 };
@@ -388,4 +455,31 @@ export const safeExecute = (
   } catch (err) {
     logger.warn(message, err);
   }
+};
+
+export const recursiveGetKey = (event, keyToSearch) => {
+  return recursiveGetKeyByDepth(event, keyToSearch, recursiveGetKeyDepth());
+};
+
+const recursiveGetKeyDepth = () => {
+  return parseInt(process.env[GET_KEY_DEPTH_ENV_KEY]) || DEFAULT_GET_KEY_DEPTH;
+};
+
+const recursiveGetKeyByDepth = (event, keyToSearch, maxDepth) => {
+  if (maxDepth === 0) {
+    return undefined;
+  }
+  let foundValue = undefined;
+  const examineKey = k => {
+    if (k === keyToSearch) {
+      foundValue = event[k];
+      return true;
+    }
+    if (event[k] && typeof event[k] === 'object') {
+      foundValue = recursiveGetKeyByDepth(event[k], keyToSearch, maxDepth - 1);
+      return foundValue !== undefined;
+    }
+  };
+  Object.keys(event).some(examineKey);
+  return foundValue;
 };
