@@ -472,7 +472,7 @@ describe('awsSpan', () => {
       host: 'your.mind.com',
       request: {
         body: '"the first rule of fight club"',
-        headers: '{"Tyler":"Durden","secretKey":"****"}',
+        headers: '{"Tyler":"Durden","secretKey":"lumigo"}',
         host: 'your.mind.com',
       },
       response: {
