@@ -14,7 +14,7 @@ describe('aws parser', () => {
     expect(aws.dynamodbParser(requestDataBad)).toEqual(expectedBad);
 
     const bodyGet = JSON.stringify({ TableName: resourceName });
-    const headersGet = { 'X-Amz-Target': 'DynamoDB_20120810.GetItem' };
+    const headersGet = { 'x-amz-target': 'DynamoDB_20120810.GetItem' };
     const requestDataGet = { headers: headersGet, body: bodyGet };
     const expectedGet = {
       awsServiceData: { resourceName, dynamodbMethod: 'GetItem' },
@@ -25,7 +25,7 @@ describe('aws parser', () => {
       TableName: resourceName,
       Item: { key: { S: 'value' } },
     });
-    const headersPut = { 'X-Amz-Target': 'DynamoDB_20120810.PutItem' };
+    const headersPut = { 'x-amz-target': 'DynamoDB_20120810.PutItem' };
     const requestDataPut = { headers: headersPut, body: bodyPut };
     const expectedPut = {
       awsServiceData: {
@@ -40,7 +40,7 @@ describe('aws parser', () => {
       TableName: resourceName,
       Key: { key: { S: 'value' } },
     });
-    const headersDelete = { 'X-Amz-Target': 'DynamoDB_20120810.DeleteItem' };
+    const headersDelete = { 'x-amz-target': 'DynamoDB_20120810.DeleteItem' };
     const requestDataDelete = { headers: headersDelete, body: bodyDelete };
     const expectedDelete = {
       awsServiceData: {
@@ -55,7 +55,7 @@ describe('aws parser', () => {
       TableName: resourceName,
       Key: { key: { S: 'value' } },
     });
-    const headersUpdate = { 'X-Amz-Target': 'DynamoDB_20120810.UpdateItem' };
+    const headersUpdate = { 'x-amz-target': 'DynamoDB_20120810.UpdateItem' };
     const requestDataUpdate = { headers: headersUpdate, body: bodyUpdate };
     const expectedUpdate = {
       awsServiceData: {
@@ -72,7 +72,7 @@ describe('aws parser', () => {
       },
     });
     const headersWriteBatch = {
-      'X-Amz-Target': 'DynamoDB_20120810.BatchWriteItem',
+      'x-amz-target': 'DynamoDB_20120810.BatchWriteItem',
     };
     const requestDataWriteBatch = {
       headers: headersWriteBatch,
@@ -95,7 +95,7 @@ describe('aws parser', () => {
       },
     });
     const headersDeleteBatch = {
-      'X-Amz-Target': 'DynamoDB_20120810.BatchWriteItem',
+      'x-amz-target': 'DynamoDB_20120810.BatchWriteItem',
     };
     const requestDataDeleteBatch = {
       headers: headersDeleteBatch,
