@@ -34,7 +34,7 @@ const extractDynamodbTableName = (reqBody, method) => {
 export const dynamodbParser = requestData => {
   const { headers: reqHeaders, body: reqBody } = requestData;
   const dynamodbMethod =
-    (reqHeaders['X-Amz-Target'] && reqHeaders['X-Amz-Target'].split('.')[1]) ||
+    (reqHeaders['x-amz-target'] && reqHeaders['x-amz-target'].split('.')[1]) ||
     '';
 
   const reqBodyJSON = (!!reqBody && JSON.parse(reqBody)) || {};
