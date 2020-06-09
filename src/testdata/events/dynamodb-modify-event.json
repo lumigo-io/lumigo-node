@@ -1,0 +1,51 @@
+{
+  "Records": [
+    {
+      "eventID": "23c2caa0c90ef619222decf52b3b0c15",
+      "eventName": "MODIFY",
+      "eventVersion": "1.1",
+      "eventSource": "aws:dynamodb",
+      "awsRegion": "us-west-2",
+      "dynamodb": {
+        "ApproximateCreationDateTime": 1590509701.0,
+        "Keys": {
+          "key": {
+            "N": "8"
+          }
+        },
+        "NewImage": {
+          "b": {
+            "N": "0"
+          },
+          "c": {
+            "N": "0"
+          },
+          "d": {
+            "S": "2"
+          },
+          "key": {
+            "N": "8"
+          }
+        },
+        "OldImage": {
+          "b": {
+            "N": "0"
+          },
+          "c": {
+            "N": "0"
+          },
+          "d": {
+            "S": "1"
+          },
+          "key": {
+            "N": "8"
+          }
+        },
+        "SequenceNumber": "2031847600000000014580755966",
+        "SizeBytes": 27,
+        "StreamViewType": "NEW_AND_OLD_IMAGES"
+      },
+      "eventSourceARN": "arn:aws:dynamodb:us-west-2:723663554526:table/abbbbb/stream/2020-05-25T12:04:49.788"
+    }
+  ]
+}

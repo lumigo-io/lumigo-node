@@ -1,5 +1,6 @@
 import * as utils from './utils';
 import { TracerGlobals } from './globals';
+import { md5Hash } from './utils';
 
 const events = require('./events');
 const exampleS3Event = require('./testdata/events/s3-event.json');
@@ -7,7 +8,9 @@ const exampleSnsEvent = require('./testdata/events/sns-event.json');
 const exampleSesEvent = require('./testdata/events/ses-event.json');
 const exampleSqsEvent = require('./testdata/events/sqs-event.json');
 const exampleKinesisEvent = require('./testdata/events/kinesis-event.json');
-const exampleDynamoDBEvent = require('./testdata/events/dynamodb-event.json');
+const exampleDynamoDBInsertEvent = require('./testdata/events/dynamodb-insert-event.json');
+const exampleDynamoDBModifyEvent = require('./testdata/events/dynamodb-modify-event.json');
+const exampleDynamoDBRemoveEvent = require('./testdata/events/dynamodb-remove-event.json');
 const exampleApiGatewayEvent = require('./testdata/events/apigw-request.json');
 const exampleApiGatewayV2Event = require('./testdata/events/apigw-v2-event.json');
 const exampleUnsupportedEvent = require('./testdata/events/appsync-invoke.json');
@@ -20,7 +23,9 @@ describe('events', () => {
     expect(events.getTriggeredBy(exampleSesEvent)).toEqual('ses');
     expect(events.getTriggeredBy(exampleKinesisEvent)).toEqual('kinesis');
     expect(events.getTriggeredBy(exampleApiGatewayEvent)).toEqual('apigw');
-    expect(events.getTriggeredBy(exampleDynamoDBEvent)).toEqual('dynamodb');
+    expect(events.getTriggeredBy(exampleDynamoDBInsertEvent)).toEqual(
+      'dynamodb'
+    );
     expect(events.getTriggeredBy(exampleUnsupportedEvent)).toEqual(
       'invocation'
     );
@@ -76,11 +81,40 @@ describe('events', () => {
         ],
       }
     );
+
     expect(
-      events.getRelevantEventData('dynamodb', exampleDynamoDBEvent)
+      events.getRelevantEventData('dynamodb', exampleDynamoDBInsertEvent)
     ).toEqual({
       arn:
         'arn:aws:dynamodb:us-east-1:123456789012:table/Example-Table/stream/2016-12-01T00:00:00.000',
+      messageIds: [
+        md5Hash({
+          val: { S: 'data' },
+          asdf1: { B: 'AAEqQQ==' },
+          asdf2: { BS: ['AAEqQQ==', 'QSoBAA=='] },
+          key: { S: 'binary' },
+        }),
+        '6b1514ca1bed396dc51485152508cbfe',
+      ],
+      approxEventCreationTime: 1480642020,
+    });
+
+    expect(
+      events.getRelevantEventData('dynamodb', exampleDynamoDBModifyEvent)
+    ).toEqual({
+      arn:
+        'arn:aws:dynamodb:us-west-2:723663554526:table/abbbbb/stream/2020-05-25T12:04:49.788',
+      messageIds: [md5Hash({ key: { N: '8' } })],
+      approxEventCreationTime: 1590509701.0,
+    });
+
+    expect(
+      events.getRelevantEventData('dynamodb', exampleDynamoDBRemoveEvent)
+    ).toEqual({
+      arn:
+        'arn:aws:dynamodb:us-west-2:723663554526:table/abbbbb/stream/2020-05-25T12:04:49.788',
+      messageIds: [md5Hash({ key: { N: '123' } })],
+      approxEventCreationTime: 1590509672.0,
     });
 
     expect(events.getRelevantEventData('sns', exampleSnsEvent)).toEqual({
