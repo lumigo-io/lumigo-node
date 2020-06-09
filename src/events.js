@@ -81,13 +81,7 @@ export const getDynamodbData = event => {
   const messageIds = (event.Records || [])
     .map(record => {
       if (
-        record.eventName === 'MODIFY' &&
-        record.dynamodb &&
-        record.dynamodb.Keys
-      ) {
-        return md5Hash(record.dynamodb.Keys);
-      } else if (
-        record.eventName === 'REMOVE' &&
+        ['MODIFY', 'REMOVE'].includes(record.eventName) &&
         record.dynamodb &&
         record.dynamodb.Keys
       ) {
