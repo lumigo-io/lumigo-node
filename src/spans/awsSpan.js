@@ -10,7 +10,6 @@ import {
   stringifyAndPrune,
   isAwsService,
   parseErrorObject,
-  omitKeys,
   getEventEntitySize,
   shouldScrubDomain,
   getInvokedArn,
@@ -115,10 +114,10 @@ export const getFunctionSpan = () => {
   const ended = started; // Indicates a StartSpan.
 
   const event = stringifyAndPrune(
-    omitKeys(parseEvent(lambdaEvent)),
+    parseEvent(lambdaEvent),
     getEventEntitySize()
   );
-  const envs = stringifyAndPrune(omitKeys(process.env));
+  const envs = stringifyAndPrune(process.env);
 
   const {
     functionName: name,
@@ -150,7 +149,7 @@ export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
   const id = removeStartedFromId(functionSpan.id);
   const error = err ? parseErrorObject(err) : undefined;
   const ended = new Date().getTime();
-  const return_value = data ? pruneData(omitKeys(data)) : null;
+  const return_value = data ? pruneData(data) : null;
   const newSpan = Object.assign({}, functionSpan, {
     id,
     ended,
@@ -222,13 +221,12 @@ export const getHttpInfo = (requestData, responseData) => {
     delete response.headers;
     delete request.uri;
   } else {
-    request.headers = stringifyAndPrune(omitKeys(request.headers));
-    request.body = stringifyAndPrune(omitKeys(request.body));
+    request.headers = stringifyAndPrune(request.headers);
+    request.body = stringifyAndPrune(request.body);
 
     if (response.headers)
-      response.headers = stringifyAndPrune(omitKeys(response.headers));
-    if (response.body)
-      response.body = stringifyAndPrune(omitKeys(response.body));
+      response.headers = stringifyAndPrune(response.headers);
+    if (response.body) response.body = stringifyAndPrune(response.body);
   }
 
   return { host, request, response };

@@ -83,5 +83,5 @@ Then use `lumigo.addExecutionTag('<key>', '<value>');` from anywhere in your lam
 Add `const lumigo = require('@lumigo/tracer');`.<br/>
 Then use `lumigo.addExecutionTag('<key>', '<value>');` from anywhere in your lambda code.<br/>
 ### Limitation:
-* The maximum number of tags is 50.
+* The maximum number of tags is 50. 
 * Key and value length should be between 1 and 50.

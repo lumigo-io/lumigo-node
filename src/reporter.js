@@ -65,9 +65,8 @@ export const sendSpans = async spans => {
 export const forgeRequestBody = (spans, maxSendBytes = MAX_SENT_BYTES) => {
   let resultSpans = [];
 
-  spans = spans.map(omitKeys); // extra validation
-
   if (isPruneTraceOff() || getJSONBase64Size(spans) <= maxSendBytes) {
+    spans = spans.map(omitKeys); // extra validation
     return spans.length > 0 ? JSON.stringify(spans) : undefined;
   }
 
@@ -83,17 +82,20 @@ export const forgeRequestBody = (spans, maxSendBytes = MAX_SENT_BYTES) => {
 
   const orderedSpans = [...errorSpans, ...normalSpans];
 
-  for (let errorSpan of orderedSpans) {
-    let currentSize =
-      getJSONBase64Size(resultSpans) + getJSONBase64Size(functionEndSpan);
-    let spanSize = getJSONBase64Size(errorSpan);
+  let totalSize =
+    getJSONBase64Size(resultSpans) + getJSONBase64Size(functionEndSpan);
 
-    if (currentSize + spanSize < maxSendBytes) {
+  for (let errorSpan of orderedSpans) {
+    let spanSize = getJSONBase64Size(errorSpan);
+    if (totalSize + spanSize < maxSendBytes) {
       resultSpans.push(errorSpan);
+      totalSize += spanSize;
     }
   }
 
   resultSpans.push(functionEndSpan);
+
+  resultSpans = resultSpans.map(omitKeys); // extra validation
 
   if (spans.length - resultSpans.length > 0) {
     logger.debug(`Trimmed spans due to size`);
