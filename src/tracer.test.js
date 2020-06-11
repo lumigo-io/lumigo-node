@@ -377,6 +377,27 @@ describe('tracer', () => {
     expect(startHooks).toHaveBeenCalled();
   });
 
+  test('trace; imported twice', async done => {
+    const token = 'DEADBEEF';
+    const lumigoTracer1 = require('./index')({ token });
+    const lumigoTracer2 = require('./index')({ token });
+
+    const retVal = 'The Tracer Wars';
+    const userHandler1 = (event, context, callback) => callback(null, retVal);
+    const callback1 = (err, data) => {
+      expect(data).toEqual(retVal);
+      done();
+    };
+
+    const event = { a: 'b', c: 'd' };
+    const context = { e: 'f', g: 'h' };
+
+    await lumigoTracer1.trace(userHandler1)(event, context, callback1);
+    await lumigoTracer2.trace(userHandler1)(event, context, callback1);
+
+    expect(startHooks).toHaveBeenCalled();
+  });
+
   test('trace; non async throw error', async () => {
     const token = 'DEADBEEF';
     const lumigoTracer = require('./index')({ token });
