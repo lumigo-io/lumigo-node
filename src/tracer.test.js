@@ -16,7 +16,6 @@ import { HttpsRequestsForTesting } from '../testUtils/httpsMocker';
 import { EnvironmentBuilder } from '../testUtils/environmentBuilder';
 import { SpansContainer } from './globals';
 
-// jest.mock('./hooks');
 jest.mock('./hooks/http');
 describe('tracer', () => {
   const spies = {};
