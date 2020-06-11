@@ -248,6 +248,24 @@ describe('utils', () => {
     TracerGlobals.clearHandlerInputs();
   });
 
+  test('isSwitchedOffInvalidAlias', () => {
+    expect(utils.isSwitchedOff()).toBe(false);
+    TracerGlobals.setHandlerInputs({
+      event: {},
+      context: {
+        invokedFunctionArn: 'arn:aws:lambda:region:account:function:name:alias',
+      },
+    });
+    process.env['LUMIGO_VALID_ALIASES'] = '["wrong"]';
+    expect(utils.isSwitchedOff()).toBe(true);
+    TracerGlobals.clearHandlerInputs();
+  });
+
+  test('isSwitchedOffInvalidAlias -> no alias', () => {
+    process.env['LUMIGO_VALID_ALIASES'] = '["wrong"]';
+    expect(utils.isSwitchedOff()).toBe(false);
+  });
+
   test('isSwitchedOffValidAlias', () => {
     expect(utils.isSwitchedOff()).toBe(false);
     TracerGlobals.setHandlerInputs({

@@ -178,7 +178,7 @@ export const isPruneTraceOff = () => validateEnvVar(PRUNE_TRACE_OFF_FLAG);
 
 export const isSwitchedOff = () =>
   safeExecute(() => {
-    return TracerGlobals.getTracerInputs().switchOff;
+    return TracerGlobals.getTracerInputs().switchOff || !isValidAlias();
   })();
 
 export const isStepFunction = () =>
@@ -207,7 +207,9 @@ export const isValidAlias = () => {
   const validAliases = getValidAliases();
   const currentAlias = getInvokedAliasOrNull();
   const validAlias =
-    validAliases.length === 0 || validAliases.includes(currentAlias);
+    !currentAlias ||
+    validAliases.length === 0 ||
+    validAliases.includes(currentAlias);
   if (!validAlias) {
     logger.info(`Alias is invalid, alias: ${currentAlias}`);
   }
