@@ -178,7 +178,7 @@ export const isPruneTraceOff = () => validateEnvVar(PRUNE_TRACE_OFF_FLAG);
 
 export const isSwitchedOff = () =>
   safeExecute(() => {
-    return TracerGlobals.getTracerInputs().switchOff || !isValidAlias();
+    return TracerGlobals.getTracerInputs().switchOff;
   })();
 
 export const isStepFunction = () =>

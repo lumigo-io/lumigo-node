@@ -12,6 +12,7 @@ import {
   safeExecute,
   getRandomId,
   isTimeoutTimerEnabled,
+  isValidAlias,
 } from '../utils';
 import { getHttpSpan } from '../spans/awsSpan';
 import cloneResponse from 'clone-response';
@@ -217,7 +218,8 @@ export const httpRequestWrapper = originalRequestFn =>
     try {
       ({ url, options, callback } = httpRequestArguments(args));
       host = getHostFromOptionsOrUrl(options, url);
-      isTraceDisabled = isBlacklisted(host) || isAlreadyTraced(callback);
+      isTraceDisabled =
+        isBlacklisted(host) || isAlreadyTraced(callback) || !isValidAlias();
     } catch (err) {
       logger.warn('request parsing error', err);
     }
