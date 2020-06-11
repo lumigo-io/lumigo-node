@@ -138,6 +138,7 @@ export const getAWSEnvironment = () => {
 
 const TIMEOUT_ENABLE_FLAG = 'LUMIGO_TIMEOUT_TIMER_ENABLED';
 const WARM_FLAG = 'LUMIGO_IS_WARM';
+const HTTP_WRAPPED_FLAG = 'LUMIGO_IS_HTTP_WRAPPED';
 const VERBOSE_FLAG = 'LUMIGO_VERBOSE';
 const SEND_ONLY_IF_ERROR_FLAG = 'SEND_ONLY_IF_ERROR';
 const PRUNE_TRACE_OFF_FLAG = 'LUMIGO_PRUNE_TRACE_OFF';
@@ -165,6 +166,10 @@ export const isVerboseMode = () => validateEnvVar(VERBOSE_FLAG);
 
 export const isWarm = () => validateEnvVar(WARM_FLAG);
 
+export const isHttpWrapped = () => validateEnvVar(HTTP_WRAPPED_FLAG);
+
+export const setHttpWrapped = () => (process.env[HTTP_WRAPPED_FLAG] = 'TRUE');
+
 export const isStoreLogs = () => validateEnvVar(STORE_LOGS_FLAG);
 
 export const isSendOnlyIfErrors = () => validateEnvVar(SEND_ONLY_IF_ERROR_FLAG);
@@ -173,7 +178,11 @@ export const isPruneTraceOff = () => validateEnvVar(PRUNE_TRACE_OFF_FLAG);
 
 export const isSwitchedOff = () =>
   safeExecute(() => {
-    return TracerGlobals.getTracerInputs().switchOff || !isValidAlias();
+    return (
+      TracerGlobals.getTracerInputs().switchOff ||
+      isSwitchOff() ||
+      !isValidAlias()
+    );
   })();
 
 export const isStepFunction = () =>
@@ -222,6 +231,8 @@ export const setStoreLogsOn = () => (process.env[STORE_LOGS_FLAG] = 'TRUE');
 export const setVerboseMode = () => (process.env[VERBOSE_FLAG] = 'TRUE');
 
 export const setSwitchOff = () => (process.env['LUMIGO_SWITCH_OFF'] = 'TRUE');
+
+export const isSwitchOff = () => validateEnvVar('LUMIGO_SWITCH_OFF');
 
 export const setDebug = () => (process.env['LUMIGO_DEBUG'] = 'TRUE');
 

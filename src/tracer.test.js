@@ -359,6 +359,9 @@ describe('tracer', () => {
   });
 
   test('trace; non async callbacked', async done => {
+    const token = 'DEADBEEF';
+    const lumigoTracer = require('./index')({ token });
+
     const retVal = 'The Tracer Wars';
     const userHandler1 = (event, context, callback) => callback(null, retVal);
     const callback1 = (err, data) => {
@@ -369,26 +372,24 @@ describe('tracer', () => {
     const event = { a: 'b', c: 'd' };
     const context = { e: 'f', g: 'h' };
 
-    const token = 'DEADBEEF';
-
-    spies.isSwitchedOff.mockReturnValueOnce(true);
-    await tracer.trace({ token })(userHandler1)(event, context, callback1);
+    await lumigoTracer.trace(userHandler1)(event, context, callback1);
 
     expect(startHooks).toHaveBeenCalled();
   });
 
   test('trace; non async throw error', async () => {
+    const token = 'DEADBEEF';
+    const lumigoTracer = require('./index')({ token });
+
     const event = { a: 'b', c: 'd' };
     const context = { e: 'f', g: 'h' };
-    const token = 'DEADBEEF';
 
-    spies.isSwitchedOff.mockReturnValueOnce(true);
     const userHandler2 = (event, context, callback) => {
       throw new Error('bla');
     };
     const callback2 = jest.fn();
     await expect(
-      tracer.trace({ token })(userHandler2)(event, context, callback2)
+      lumigoTracer.trace(userHandler2)(event, context, callback2)
     ).rejects.toEqual(new Error('bla'));
 
     expect(startHooks).toHaveBeenCalled();
@@ -414,9 +415,11 @@ describe('tracer', () => {
   });
 
   test('trace; async resolved ', async () => {
+    const token = 'DEADBEEF';
+    const lumigoTracer = require('./index')({ token });
+
     const event = { a: 'b', c: 'd' };
     const context = { e: 'f', g: 'h' };
-    const token = 'DEADBEEF';
 
     const retVal = 'The Tracer Wars';
     const callback4 = jest.fn();
@@ -427,27 +430,27 @@ describe('tracer', () => {
       return retVal;
     };
     await expect(
-      tracer.trace({ token })(userHandler4)(event, context, callback4)
+      lumigoTracer.trace(userHandler4)(event, context, callback4)
     ).resolves.toEqual(retVal);
 
     expect(startHooks).toHaveBeenCalled();
   });
 
   test('trace; async rejected', async () => {
+    const token = 'DEADBEEF';
+    const lumigoTracer = require('./index')({ token });
+
     const event = { a: 'b', c: 'd' };
     const context = { e: 'f', g: 'h' };
-    const token = 'DEADBEEF';
 
     const retVal = 'The Tracer Wars';
     const callback5 = jest.fn();
-
-    spies.isSwitchedOff.mockReturnValueOnce(true);
 
     const userHandler5 = async (event, context, callback) => {
       throw new Error(retVal);
     };
     await expect(
-      tracer.trace({ token })(userHandler5)(event, context, callback5)
+      lumigoTracer.trace(userHandler5)(event, context, callback5)
     ).rejects.toEqual(new Error(retVal));
 
     expect(startHooks).toHaveBeenCalled();
@@ -486,13 +489,16 @@ describe('tracer', () => {
   });
 
   test('can not wrap twice', async () => {
-    const event = { a: 'b', c: 'd' };
     const token = 'DEADBEEF';
+    const lumigoTracer = require('./index')({ token });
+
+    const event = { a: 'b', c: 'd' };
 
     const userHandlerAsync = async (event, context, callback) => 1;
-    const result = tracer.trace({ token })(
-      tracer.trace({ token })(userHandlerAsync)
-    )(event, {});
+    const result = lumigoTracer.trace(lumigoTracer.trace(userHandlerAsync))(
+      event,
+      {}
+    );
     await expect(result).resolves.toEqual(1);
     expect(startHooks).toHaveBeenCalledTimes(1);
 

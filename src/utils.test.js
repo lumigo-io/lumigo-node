@@ -167,6 +167,17 @@ describe('utils', () => {
     expect(utils.isWarm()).toBe(true);
   });
 
+  test('isHttpWrapped', () => {
+    expect(utils.isHttpWrapped()).toBe(false);
+    process.env.LUMIGO_IS_HTTP_WRAPPED = 'TRUE';
+    expect(utils.isHttpWrapped()).toBe(true);
+  });
+
+  test('setHttpWrapped', () => {
+    utils.setHttpWrapped();
+    expect(utils.isHttpWrapped()).toBe(true);
+  });
+
   test('isSendOnlyIfErrors', () => {
     expect(utils.isSendOnlyIfErrors()).toBe(false);
     process.env.SEND_ONLY_IF_ERROR = 'TRUE';
