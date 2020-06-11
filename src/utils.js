@@ -178,11 +178,7 @@ export const isPruneTraceOff = () => validateEnvVar(PRUNE_TRACE_OFF_FLAG);
 
 export const isSwitchedOff = () =>
   safeExecute(() => {
-    return (
-      TracerGlobals.getTracerInputs().switchOff ||
-      isSwitchOffEnvVar() ||
-      !isValidAlias()
-    );
+    return TracerGlobals.getTracerInputs().switchOff || !isValidAlias();
   })();
 
 export const isStepFunction = () =>
@@ -231,8 +227,6 @@ export const setStoreLogsOn = () => (process.env[STORE_LOGS_FLAG] = 'TRUE');
 export const setVerboseMode = () => (process.env[VERBOSE_FLAG] = 'TRUE');
 
 export const setSwitchOff = () => (process.env['LUMIGO_SWITCH_OFF'] = 'TRUE');
-
-export const isSwitchOffEnvVar = () => validateEnvVar('LUMIGO_SWITCH_OFF');
 
 export const setDebug = () => (process.env['LUMIGO_DEBUG'] = 'TRUE');
 
