@@ -1,7 +1,8 @@
 import { trace } from './tracer';
-import { setSwitchOff, setVerboseMode } from './utils';
+import { safeExecute, setSwitchOff, setVerboseMode } from './utils';
 import { debug } from './logger';
 import { ExecutionTags } from './globals';
+import startHooks from './hooks';
 
 debug('Tracer imported');
 
@@ -16,6 +17,8 @@ module.exports = function({
 }) {
   verbose && setVerboseMode();
   switchOff && setSwitchOff();
+
+  safeExecute(startHooks)();
 
   return {
     trace: trace({

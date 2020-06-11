@@ -138,6 +138,7 @@ export const getAWSEnvironment = () => {
 
 const TIMEOUT_ENABLE_FLAG = 'LUMIGO_TIMEOUT_TIMER_ENABLED';
 const WARM_FLAG = 'LUMIGO_IS_WARM';
+const HTTP_WRAPPED_FLAG = 'LUMIGO_IS_HTTP_WRAPPED';
 const VERBOSE_FLAG = 'LUMIGO_VERBOSE';
 const SEND_ONLY_IF_ERROR_FLAG = 'SEND_ONLY_IF_ERROR';
 const PRUNE_TRACE_OFF_FLAG = 'LUMIGO_PRUNE_TRACE_OFF';
@@ -164,6 +165,10 @@ export const isTimeoutTimerEnabled = () =>
 export const isVerboseMode = () => validateEnvVar(VERBOSE_FLAG);
 
 export const isWarm = () => validateEnvVar(WARM_FLAG);
+
+export const isHttpWrapped = () => validateEnvVar(HTTP_WRAPPED_FLAG);
+
+export const setHttpWrapped = () => (process.env[HTTP_WRAPPED_FLAG] = 'TRUE');
 
 export const isStoreLogs = () => validateEnvVar(STORE_LOGS_FLAG);
 
@@ -202,7 +207,9 @@ export const isValidAlias = () => {
   const validAliases = getValidAliases();
   const currentAlias = getInvokedAliasOrNull();
   const validAlias =
-    validAliases.length === 0 || validAliases.includes(currentAlias);
+    !currentAlias ||
+    validAliases.length === 0 ||
+    validAliases.includes(currentAlias);
   if (!validAlias) {
     logger.info(`Alias is invalid, alias: ${currentAlias}`);
   }

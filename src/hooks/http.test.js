@@ -709,6 +709,39 @@ describe('http hook', () => {
     expect(spans).toEqual([expectedSpan]);
   });
 
+  test('httpRequestWrapper - invalid alias dont save spans', () => {
+    utils.setTimeoutTimerDisabled();
+    const handlerInputs = new HandlerInputesBuilder().build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
+    const cleanRequestData = HttpSpanBuilder.DEFAULT_REQUEST_DATA;
+    let a = {};
+    let requestData = { ...cleanRequestData };
+    a.requestData = requestData;
+    requestData.a = a;
+
+    const responseData = {
+      statusCode: 200,
+      body: 'OK',
+    };
+
+    TracerGlobals.setHandlerInputs({
+      event: {},
+      context: {
+        invokedFunctionArn: 'arn:aws:lambda:region:account:function:name:alias',
+      },
+    });
+    process.env['LUMIGO_VALID_ALIASES'] = '["wrong"]';
+
+    HttpsScenarioBuilder.appendNextResponse(responseData.body);
+    const wrappedRequest = httpHook.httpRequestWrapper(HttpsMocker.request);
+
+    wrappedRequest(requestData, () => {});
+
+    const spans = SpansContainer.getSpans();
+
+    expect(spans).toEqual([]);
+  });
+
   test('httpRequestWrapper - circular object wrapper cutting object', () => {
     utils.setTimeoutTimerDisabled();
     const handlerInputs = new HandlerInputesBuilder().build();
