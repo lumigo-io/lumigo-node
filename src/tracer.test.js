@@ -6,6 +6,7 @@ import * as reporter from './reporter';
 import * as awsSpan from './spans/awsSpan';
 import startHooks from './hooks';
 import * as http from './hooks/http';
+import httpHook from './hooks/http';
 import * as logger from './logger';
 import { TracerGlobals } from './globals';
 import { STEP_FUNCTION_UID_KEY } from './utils';
@@ -15,7 +16,8 @@ import { HttpsRequestsForTesting } from '../testUtils/httpsMocker';
 import { EnvironmentBuilder } from '../testUtils/environmentBuilder';
 import { SpansContainer } from './globals';
 
-jest.mock('./hooks');
+// jest.mock('./hooks');
+jest.mock('./hooks/http');
 describe('tracer', () => {
   const spies = {};
   spies.isSwitchedOff = jest.spyOn(utils, 'isSwitchedOff');
@@ -50,7 +52,7 @@ describe('tracer', () => {
   spies.log.mockImplementation(() => {});
 
   beforeEach(() => {
-    startHooks.mockClear();
+    httpHook.mockClear();
     Object.keys(spies).map(
       x => typeof x === 'function' && spies[x].mockClear()
     );
@@ -374,7 +376,7 @@ describe('tracer', () => {
 
     await lumigoTracer.trace(userHandler1)(event, context, callback1);
 
-    expect(startHooks).toHaveBeenCalled();
+    expect(httpHook).toHaveBeenCalledTimes(1);
   });
 
   test('trace; imported twice', async done => {
@@ -395,7 +397,7 @@ describe('tracer', () => {
     await lumigoTracer1.trace(userHandler1)(event, context, callback1);
     await lumigoTracer2.trace(userHandler1)(event, context, callback1);
 
-    expect(startHooks).toHaveBeenCalled();
+    expect(httpHook).toHaveBeenCalledTimes(1);
   });
 
   test('trace; non async throw error', async () => {
@@ -413,7 +415,7 @@ describe('tracer', () => {
       lumigoTracer.trace(userHandler2)(event, context, callback2)
     ).rejects.toEqual(new Error('bla'));
 
-    expect(startHooks).toHaveBeenCalled();
+    expect(httpHook).toHaveBeenCalledTimes(1);
   });
 
   test('trace; async callbacked ', async done => {
@@ -445,8 +447,6 @@ describe('tracer', () => {
     const retVal = 'The Tracer Wars';
     const callback4 = jest.fn();
 
-    spies.isSwitchedOff.mockReturnValueOnce(true);
-
     const userHandler4 = async (event, context, callback) => {
       return retVal;
     };
@@ -454,7 +454,7 @@ describe('tracer', () => {
       lumigoTracer.trace(userHandler4)(event, context, callback4)
     ).resolves.toEqual(retVal);
 
-    expect(startHooks).toHaveBeenCalled();
+    expect(httpHook).toHaveBeenCalledTimes(1);
   });
 
   test('trace; async rejected', async () => {
@@ -474,7 +474,7 @@ describe('tracer', () => {
       lumigoTracer.trace(userHandler5)(event, context, callback5)
     ).rejects.toEqual(new Error(retVal));
 
-    expect(startHooks).toHaveBeenCalled();
+    expect(httpHook).toHaveBeenCalledTimes(1);
   });
 
   test('sendEndTraceSpans; dont clear globals in case of a leak', async () => {
@@ -521,7 +521,7 @@ describe('tracer', () => {
       {}
     );
     await expect(result).resolves.toEqual(1);
-    expect(startHooks).toHaveBeenCalledTimes(1);
+    expect(httpHook).toHaveBeenCalledTimes(1);
 
     let callBackCalled = false;
     const callback = (err, val) => {
@@ -542,7 +542,7 @@ describe('tracer', () => {
   });
 
   test('No exception at startHooks', async done => {
-    startHooks.mockImplementationOnce(() => {
+    httpHook.mockImplementationOnce(() => {
       throw new Error('Mocked error');
     });
     const handler = jest.fn(() => done());

@@ -180,7 +180,7 @@ export const isSwitchedOff = () =>
   safeExecute(() => {
     return (
       TracerGlobals.getTracerInputs().switchOff ||
-      isSwitchOff() ||
+      isSwitchOffEnvVar() ||
       !isValidAlias()
     );
   })();
@@ -232,7 +232,7 @@ export const setVerboseMode = () => (process.env[VERBOSE_FLAG] = 'TRUE');
 
 export const setSwitchOff = () => (process.env['LUMIGO_SWITCH_OFF'] = 'TRUE');
 
-export const isSwitchOff = () => validateEnvVar('LUMIGO_SWITCH_OFF');
+export const isSwitchOffEnvVar = () => validateEnvVar('LUMIGO_SWITCH_OFF');
 
 export const setDebug = () => (process.env['LUMIGO_DEBUG'] = 'TRUE');
 
