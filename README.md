@@ -19,8 +19,10 @@ The `@lumigo/tracer` package allows you to pursue automated metric gathering thr
 
 * When configuring your Lambda functions, include the appropriate Lambda Layer ARN [from these tables](https://github.com/lumigo-io/lumigo-node/blob/master/layers)
 
+*Note* - Lambda Layers are an optional feature. If you decide to use this capability, the list of Lambda layers available is available [here.](https://github.com/lumigo-io/lumigo-node/blob/master/layers)
+
 ### With Serverless framework:
-* To configure Serverless framework, simply install our plugin: [**serverless-lumigo-plugin**](https://github.com/lumigo-io/serverless-lumigo-plugin/blob/master/README.md)
+* To configure the Serverless Framework to work with Lumigo, simply install our plugin: [**serverless-lumigo-plugin**](https://github.com/lumigo-io/serverless-lumigo-plugin/blob/master/README.md)
 
 ### Manually:
 
@@ -50,7 +52,7 @@ exports.handler = lumigo.trace(myHandler)
 
 * `LUMIGO_DEBUG=TRUE` - Enables debug logging
 * `LUMIGO_SECRET_MASKING_REGEX=["regex1", "regex2"]` - Prevents Lumigo from sending keys that match the supplied regular expressions. All regular expressions are case-insensitive. By default, Lumigo applies the following regular expressions: `[".*pass.*", ".*key.*", ".*secret.*", ".*credential.*", ".*passphrase.*"]`. 
-* `LUMIGO_DOMAINS_SCRUBBER=[".*secret.*"]` - Prevents Lumigo from sending the header and body from a specific domain. This accepts a comma-separated list of regular expressions that is JSON-formatted. By default, the tracer uses `["secretsmanager\..*\.amazonaws\.com", "ssm\..*\.amazonaws\.com", "kms\..*\.amazonaws\.com"]`. **Note** - These defaults are overridden when you define a different list of regular expressions.
+* `LUMIGO_DOMAINS_SCRUBBER=[".*secret.*"]` - Prevents Lumigo from collecting both request and response details from a list of domains. This accepts a comma-separated list of regular expressions that is JSON-formatted. By default, the tracer uses `["secretsmanager\..*\.amazonaws\.com", "ssm\..*\.amazonaws\.com", "kms\..*\.amazonaws\.com"]`. **Note** - These defaults are overridden when you define a different list of regular expressions.
 `LUMIGO_SWITCH_OFF=TRUE` - In the event a critical issue arises, this turns off all actions that Lumigo takes in response to your code. This happens without a deployment, and is picked up on the next function run once the environment variable is present.
 
 ### Step Functions
@@ -99,7 +101,7 @@ To add a tag to a manual trace statement:
 ### Adding tags for Auto tracing
 To add a tag to an automatically-traced function:
 
-* Add `const lumigo = require('@lumigo/tracer');` to the top of your handler's .js file
+* Add ``const lumigo = require('@lumigo/tracer')({ token: 'YOUR-TOKEN-HERE' })`` to the top of your handler's .js file
 * Use `lumigo.addExecutionTag('<key>', '<value>');` anywhere in your lambda code.
 
 ### Execution Tag Limitations:
