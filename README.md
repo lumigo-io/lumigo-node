@@ -96,12 +96,12 @@ These tags will be searchable from within the Lumigo platform.
 To add a tag to a manual trace statement:
 
 * Add `const lumigo = require('@lumigo/tracer')({ token: 'YOUR-TOKEN-HERE' })` to your code.
-* Add execution tags by using `lumigo.addExecutionTag('<key>', '<value>');` 
+* Add execution tags by using `lumigo.addExecutionTag('<key>', '<value>');`
 
 ### Adding tags for Auto tracing
 To add a tag to an automatically-traced function:
 
-* Add ``const lumigo = require('@lumigo/tracer')({ token: 'YOUR-TOKEN-HERE' })`` to the top of your handler's .js file
+* Add `const lumigo = require('@lumigo/tracer')` to the top of your handler's .js file
 * Use `lumigo.addExecutionTag('<key>', '<value>');` anywhere in your lambda code.
 
 ### Execution Tag Limitations:
