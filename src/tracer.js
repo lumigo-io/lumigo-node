@@ -25,7 +25,6 @@ import {
   GlobalTimer,
   clearGlobals,
 } from './globals';
-import startHooks from './hooks';
 import * as logger from './logger';
 import { addStepFunctionEvent } from './hooks/http';
 
@@ -199,8 +198,6 @@ export const trace = ({
     return performPromisifyType(err, data, type, callback);
   }
   context.__wrappedByLumigo = true;
-
-  safeExecute(startHooks)();
 
   const pStartTrace = startTrace();
   const pUserHandler = promisifyUserHandler(
