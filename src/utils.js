@@ -490,3 +490,9 @@ const recursiveGetKeyByDepth = (event, keyToSearch, maxDepth) => {
   Object.keys(event).some(examineKey);
   return foundValue;
 };
+
+export const md5Hash = item => {
+  const md5sum = crypto.createHash('md5');
+  md5sum.update(JSON.stringify(item));
+  return md5sum.digest('hex');
+};

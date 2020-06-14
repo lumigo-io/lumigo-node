@@ -1,0 +1,28 @@
+{
+  "Records": [
+    {
+      "eventID": "4d2a3c6784e9c4a60f8b9c4a4ddd0b7c",
+      "eventName": "REMOVE",
+      "eventVersion": "1.1",
+      "eventSource": "aws:dynamodb",
+      "awsRegion": "us-west-2",
+      "dynamodb": {
+        "ApproximateCreationDateTime": 1590509672.0,
+        "Keys": {
+          "key": {
+            "N": "123"
+          }
+        },
+        "OldImage": {
+          "key": {
+            "N": "123"
+          }
+        },
+        "SequenceNumber": "2031403100000000017959136670",
+        "SizeBytes": 12,
+        "StreamViewType": "NEW_AND_OLD_IMAGES"
+      },
+      "eventSourceARN": "arn:aws:dynamodb:us-west-2:723663554526:table/abbbbb/stream/2020-05-25T12:04:49.788"
+    }
+  ]
+}
