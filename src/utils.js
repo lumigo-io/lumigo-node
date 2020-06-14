@@ -455,12 +455,13 @@ export const omitKeys = obj => {
 
 export const safeExecute = (
   callback,
-  message = 'Error in Lumigo tracer'
+  message = 'Error in Lumigo tracer',
+  logLevel = logger.LOG_LEVELS.WARNING
 ) => () => {
   try {
     return callback();
   } catch (err) {
-    logger.warn(message, err);
+    logger.log(logLevel, message, err.message);
   }
 };
 

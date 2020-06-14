@@ -68,13 +68,34 @@ export const parseHttpRequestOptions = (options = {}, url) => {
     port,
     uri,
     host,
-    body: '', // XXX Filled by the httpRequestEndWrapper ( / Write)
+    body: '', // XXX Filled by the httpRequestEndWrapper or httpRequestEmitWrapper ( / Write)
     method,
     headers: lowerCaseObjectKeys(headers),
     protocol,
     sendTime,
   };
 };
+
+export const httpRequestEmitWrapper = requestData => emitFunc =>
+  function(eventName, arg) {
+    safeExecute(
+      () => {
+        if (arg && arg._httpMessage && arg._httpMessage._hasBody) {
+          const httpMessage = arg._httpMessage;
+          let lines = [];
+          if (httpMessage.hasOwnProperty('outputData')) {
+            lines = httpMessage.outputData[0].data.split('\n');
+          } else if (httpMessage.hasOwnProperty('output')) {
+            lines = httpMessage.output[0].split('\n');
+          }
+          requestData.body += lines[lines.length - 1];
+        }
+      },
+      'Parse data from emit event failed',
+      logger.LOG_LEVELS.INFO
+    )();
+    return emitFunc.apply(this, arguments);
+  };
 
 export const wrappedHttpResponseCallback = (
   requestData,
@@ -122,9 +143,11 @@ export const wrappedHttpResponseCallback = (
 };
 
 export const httpRequestEndWrapper = requestData => originalEndFn =>
-  function(data, encoding, callback) {
-    data && (requestData.body += data);
-    return originalEndFn.apply(this, [data, encoding, callback]);
+  function(...args) {
+    if (args[0] && (typeof args[0] === 'string' || args[0] instanceof Buffer)) {
+      args[0] && (requestData.body += args[0]);
+    }
+    return originalEndFn.apply(this, args);
   };
 
 export const httpRequestOnWrapper = (
@@ -159,16 +182,16 @@ export const httpRequestArguments = args => {
   let options = undefined;
   let callback = undefined;
 
-  if (typeof args[0] === 'string') {
+  if (typeof args[0] === 'string' || args[0] instanceof URL) {
     url = args[0];
     if (args[1]) {
       if (typeof args[1] === 'function') {
         callback = args[1];
       } else {
         options = args[1];
-      }
-      if (typeof args[2] === 'function') {
-        callback = args[2];
+        if (typeof args[2] === 'function') {
+          callback = args[2];
+        }
       }
     }
   } else {
@@ -195,7 +218,7 @@ export const getHookedClientRequestArgs = (
     hookedClientRequestArgs.push(options);
   }
 
-  if (callback) {
+  if ((url || options) && callback) {
     const wrappedCallback = exports.wrappedHttpResponseCallback(
       requestData,
       callback,
@@ -238,6 +261,7 @@ export const httpRequestWrapper = originalRequestFn =>
         const traceId = getPatchedTraceId(awsXAmznTraceId);
         options.headers['X-Amzn-Trace-Id'] = traceId;
       }
+
       const requestData = parseHttpRequestOptions(options, url);
       const requestRandomId = getRandomId();
 
@@ -267,12 +291,18 @@ export const httpRequestWrapper = originalRequestFn =>
         logger.warn('end wrap error', e.message);
       }
 
+      try {
+        const emitWrapper = httpRequestEmitWrapper(requestData);
+        shimmer.wrap(clientRequest, 'emit', emitWrapper);
+      } catch (e) {
+        logger.warn('emit wrap error', e.message);
+      }
+
       if (!callback) {
         try {
           const onWrapper = httpRequestOnWrapper(requestData, requestRandomId);
           shimmer.wrap(clientRequest, 'on', onWrapper);
         } catch (e) {
-          /* istanbul ignore next */
           logger.warn('on wrap error', e.message);
         }
       }

@@ -253,18 +253,22 @@ describe('http hook', () => {
     expect(originalEndFn).toHaveBeenCalledWith(data, encoding, callback);
   });
 
-  test('httpRequestArguments', () => {
+  test('httpRequestArguments -> no arguments', () => {
     expect(() => httpHook.httpRequestArguments([])).toThrow(
       new Error('http/s.request(...) was called without any arguments.')
     );
+  });
 
+  test('httpRequestArguments -> http(stringUrl)', () => {
     const expected1 = {
       url: 'https://x.com',
       options: undefined,
       callback: undefined,
     };
     expect(httpHook.httpRequestArguments(['https://x.com'])).toEqual(expected1);
+  });
 
+  test('httpRequestArguments -> http(stringUrl, callback)', () => {
     const callback = () => {};
 
     const expected2 = {
@@ -275,7 +279,10 @@ describe('http hook', () => {
     expect(httpHook.httpRequestArguments(['https://x.com', callback])).toEqual(
       expected2
     );
+  });
 
+  test('httpRequestArguments -> http(stringUrl, options, callback)', () => {
+    const callback = () => {};
     const options = { a: 'b' };
     const expected3 = {
       url: 'https://x.com',
@@ -285,7 +292,11 @@ describe('http hook', () => {
     expect(
       httpHook.httpRequestArguments(['https://x.com', options, callback])
     ).toEqual(expected3);
+  });
 
+  test('httpRequestArguments -> http(options, callback)', () => {
+    const callback = () => {};
+    const options = { a: 'b' };
     const expected4 = {
       url: undefined,
       options,
@@ -296,7 +307,39 @@ describe('http hook', () => {
     );
   });
 
-  test('getHookedClientRequestArgs', () => {
+  test('httpRequestArguments -> http(objectUrl)', () => {
+    const url = new URL('https://x.com');
+    const expected1 = {
+      url,
+      options: undefined,
+      callback: undefined,
+    };
+    expect(httpHook.httpRequestArguments([url])).toEqual(expected1);
+  });
+
+  test('httpRequestArguments -> http(objectUrl, options)', () => {
+    const url = new URL('https://x.com');
+    const options = { a: 'b' };
+    const expected1 = {
+      url,
+      options,
+      callback: undefined,
+    };
+    expect(httpHook.httpRequestArguments([url, options])).toEqual(expected1);
+  });
+
+  test('httpRequestArguments -> http(objectUrl, callback)', () => {
+    const url = new URL('https://x.com');
+    const callback = () => {};
+    const expected1 = {
+      url,
+      options: undefined,
+      callback,
+    };
+    expect(httpHook.httpRequestArguments([url, callback])).toEqual(expected1);
+  });
+
+  test('getHookedClientRequestArgs -> request(options, callback)', () => {
     const url1 = undefined;
     const options1 = { a: 'b' };
     const callback1 = () => {};
@@ -314,7 +357,9 @@ describe('http hook', () => {
         requestData1
       )
     ).toEqual(expected1);
+  });
 
+  test('getHookedClientRequestArgs -> request(url, callback)', () => {
     const url2 = 'https://xaws.com';
     const options2 = undefined;
     const callback2 = () => {};
@@ -332,7 +377,9 @@ describe('http hook', () => {
         requestData2
       )
     ).toEqual(expected2);
+  });
 
+  test('getHookedClientRequestArgs -> request(url)', () => {
     const url3 = 'https://x.com';
     const options3 = undefined;
     const callback3 = undefined;
@@ -347,7 +394,9 @@ describe('http hook', () => {
         requestData3
       )
     ).toEqual(expected3);
+  });
 
+  test('getHookedClientRequestArgs -> request(url, options)', () => {
     const url4 = 'https://bla.amazonaws.com/asdf';
     const options4 = { headers: { 'Content-Type': 'text/plain' } };
     const callback4 = undefined;
