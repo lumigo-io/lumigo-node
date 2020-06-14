@@ -3,6 +3,7 @@ import {
   recursiveGetKey,
   STEP_FUNCTION_UID_KEY,
   LUMIGO_EVENT_KEY,
+  md5Hash,
 } from './utils';
 
 export const getTriggeredBy = event => {
@@ -73,11 +74,36 @@ export const getKinesisData = event => {
   return { arn, messageIds };
 };
 
+export const getDynamodbData = event => {
+  const arn = event.Records[0].eventSourceARN;
+  const approxEventCreationTime =
+    event.Records[0].dynamodb.ApproximateCreationDateTime;
+  const messageIds = (event.Records || [])
+    .map(record => {
+      if (
+        ['MODIFY', 'REMOVE'].includes(record.eventName) &&
+        record.dynamodb &&
+        record.dynamodb.Keys
+      ) {
+        return md5Hash(record.dynamodb.Keys);
+      } else if (
+        record.eventName === 'INSERT' &&
+        record.dynamodb &&
+        record.dynamodb.NewImage
+      ) {
+        return md5Hash(record.dynamodb.NewImage);
+      }
+    })
+    .filter(x => !!x);
+  return { arn, messageIds, approxEventCreationTime };
+};
+
 export const getRelevantEventData = (triggeredBy, event) => {
   switch (triggeredBy) {
     case 'sqs':
-    case 'dynamodb':
       return { arn: event.Records[0].eventSourceARN };
+    case 'dynamodb':
+      return getDynamodbData(event);
     case 'kinesis':
       return getKinesisData(event);
     case 'sns':

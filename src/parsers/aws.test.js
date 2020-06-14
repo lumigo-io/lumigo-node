@@ -1,27 +1,116 @@
 import * as aws from './aws';
+import { md5Hash } from '../utils';
 
 describe('aws parser', () => {
   test('dynamodbParser', () => {
     const resourceName = 'TabulaRasa';
-    const dynamodbMethod = 'GetItem';
-    const xAmzTarget = `DynamoDB_20120810.${dynamodbMethod}`;
 
-    const body = JSON.stringify({ TableName: resourceName });
-    const headers = {
-      'X-Amz-Target': xAmzTarget,
-    };
-
-    const requestData = { headers, body };
-    const expected = { awsServiceData: { resourceName, dynamodbMethod } };
-    expect(aws.dynamodbParser(requestData)).toEqual(expected);
-
-    const headers2 = {};
-    const body2 = JSON.stringify({});
-    const requestData2 = { headers: headers2, body: body2 };
-    const expected2 = {
+    const headersBad = {};
+    const bodyBad = JSON.stringify({});
+    const requestDataBad = { headers: headersBad, body: bodyBad };
+    const expectedBad = {
       awsServiceData: { resourceName: '', dynamodbMethod: '' },
     };
-    expect(aws.dynamodbParser(requestData2)).toEqual(expected2);
+    expect(aws.dynamodbParser(requestDataBad)).toEqual(expectedBad);
+
+    const bodyGet = JSON.stringify({ TableName: resourceName });
+    const headersGet = { 'x-amz-target': 'DynamoDB_20120810.GetItem' };
+    const requestDataGet = { headers: headersGet, body: bodyGet };
+    const expectedGet = {
+      awsServiceData: { resourceName, dynamodbMethod: 'GetItem' },
+    };
+    expect(aws.dynamodbParser(requestDataGet)).toEqual(expectedGet);
+
+    const bodyPut = JSON.stringify({
+      TableName: resourceName,
+      Item: { key: { S: 'value' } },
+    });
+    const headersPut = { 'x-amz-target': 'DynamoDB_20120810.PutItem' };
+    const requestDataPut = { headers: headersPut, body: bodyPut };
+    const expectedPut = {
+      awsServiceData: {
+        resourceName: resourceName,
+        dynamodbMethod: 'PutItem',
+        messageId: md5Hash({ key: { S: 'value' } }),
+      },
+    };
+    expect(aws.dynamodbParser(requestDataPut)).toEqual(expectedPut);
+
+    const bodyDelete = JSON.stringify({
+      TableName: resourceName,
+      Key: { key: { S: 'value' } },
+    });
+    const headersDelete = { 'x-amz-target': 'DynamoDB_20120810.DeleteItem' };
+    const requestDataDelete = { headers: headersDelete, body: bodyDelete };
+    const expectedDelete = {
+      awsServiceData: {
+        resourceName: resourceName,
+        dynamodbMethod: 'DeleteItem',
+        messageId: md5Hash({ key: { S: 'value' } }),
+      },
+    };
+    expect(aws.dynamodbParser(requestDataDelete)).toEqual(expectedDelete);
+
+    const bodyUpdate = JSON.stringify({
+      TableName: resourceName,
+      Key: { key: { S: 'value' } },
+    });
+    const headersUpdate = { 'x-amz-target': 'DynamoDB_20120810.UpdateItem' };
+    const requestDataUpdate = { headers: headersUpdate, body: bodyUpdate };
+    const expectedUpdate = {
+      awsServiceData: {
+        resourceName: resourceName,
+        dynamodbMethod: 'UpdateItem',
+        messageId: md5Hash({ key: { S: 'value' } }),
+      },
+    };
+    expect(aws.dynamodbParser(requestDataUpdate)).toEqual(expectedUpdate);
+
+    const bodyWriteBatch = JSON.stringify({
+      RequestItems: {
+        [resourceName]: [{ PutRequest: { Item: { key: { S: 'value' } } } }],
+      },
+    });
+    const headersWriteBatch = {
+      'x-amz-target': 'DynamoDB_20120810.BatchWriteItem',
+    };
+    const requestDataWriteBatch = {
+      headers: headersWriteBatch,
+      body: bodyWriteBatch,
+    };
+    const expectedWriteBatch = {
+      awsServiceData: {
+        resourceName: resourceName,
+        dynamodbMethod: 'BatchWriteItem',
+        messageId: md5Hash({ key: { S: 'value' } }),
+      },
+    };
+    expect(aws.dynamodbParser(requestDataWriteBatch)).toEqual(
+      expectedWriteBatch
+    );
+
+    const bodyDeleteBatch = JSON.stringify({
+      RequestItems: {
+        [resourceName]: [{ DeleteRequest: { Key: { key: { S: 'value' } } } }],
+      },
+    });
+    const headersDeleteBatch = {
+      'x-amz-target': 'DynamoDB_20120810.BatchWriteItem',
+    };
+    const requestDataDeleteBatch = {
+      headers: headersDeleteBatch,
+      body: bodyDeleteBatch,
+    };
+    const expectedDeleteBatch = {
+      awsServiceData: {
+        resourceName: resourceName,
+        dynamodbMethod: 'BatchWriteItem',
+        messageId: md5Hash({ key: { S: 'value' } }),
+      },
+    };
+    expect(aws.dynamodbParser(requestDataDeleteBatch)).toEqual(
+      expectedDeleteBatch
+    );
   });
 
   test('lambdaParser', () => {

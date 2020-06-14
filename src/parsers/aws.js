@@ -1,18 +1,47 @@
-import { parseQueryParams } from '../utils';
+import { md5Hash, parseQueryParams } from '../utils';
 import parseXml from '../tools/xmlToJson';
 import * as logger from '../logger';
+
+const extractDynamodbMessageId = (reqBody, method) => {
+  if (method === 'PutItem' && reqBody['Item']) {
+    return md5Hash(reqBody.Item);
+  } else if (method === 'UpdateItem' && reqBody['Key']) {
+    return md5Hash(reqBody.Key);
+  } else if (method === 'DeleteItem' && reqBody['Key']) {
+    return md5Hash(reqBody.Key);
+  } else if (method === 'BatchWriteItem') {
+    const firstTableName = Object.keys(reqBody.RequestItems)[0];
+    if (firstTableName) {
+      const firstItem = reqBody.RequestItems[firstTableName][0];
+      if (firstItem['PutRequest']) {
+        return md5Hash(firstItem.PutRequest.Item);
+      } else if (firstItem['DeleteRequest']) {
+        return md5Hash(firstItem.DeleteRequest.Key);
+      }
+    }
+  }
+  return undefined;
+};
+
+const extractDynamodbTableName = (reqBody, method) => {
+  const tableName = (reqBody['TableName'] && reqBody.TableName) || '';
+  if (!tableName && method === 'BatchWriteItem') {
+    return Object.keys(reqBody.RequestItems)[0];
+  }
+  return tableName;
+};
 
 export const dynamodbParser = requestData => {
   const { headers: reqHeaders, body: reqBody } = requestData;
   const dynamodbMethod =
-    (reqHeaders['X-Amz-Target'] && reqHeaders['X-Amz-Target'].split('.')[1]) ||
+    (reqHeaders['x-amz-target'] && reqHeaders['x-amz-target'].split('.')[1]) ||
     '';
 
   const reqBodyJSON = (!!reqBody && JSON.parse(reqBody)) || {};
-  const resourceName =
-    (reqBodyJSON['TableName'] && reqBodyJSON.TableName) || '';
+  const resourceName = extractDynamodbTableName(reqBodyJSON, dynamodbMethod);
+  const messageId = extractDynamodbMessageId(reqBodyJSON, dynamodbMethod);
 
-  const awsServiceData = { resourceName, dynamodbMethod };
+  const awsServiceData = { resourceName, dynamodbMethod, messageId };
   return { awsServiceData };
 };
 
