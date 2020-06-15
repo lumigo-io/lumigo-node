@@ -233,6 +233,8 @@ workflows:
         filters:
           branches:
             ignore: master
+        requires:
+        - test
     - e2e-test:
         requires:
           - integration-test
