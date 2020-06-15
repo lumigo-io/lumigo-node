@@ -292,7 +292,7 @@ export const httpRequestWrapper = originalRequestFn =>
         logger.warn('end wrap error', e.message);
       }
 
-      if (!isRequestToAwsService) {
+      if (!isAwsService) {
         try {
           const emitWrapper = httpRequestEmitWrapper(requestData);
           shimmer.wrap(clientRequest, 'emit', emitWrapper);

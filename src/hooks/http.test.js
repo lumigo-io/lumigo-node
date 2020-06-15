@@ -85,7 +85,7 @@ describe('http hook', () => {
     const emitArg = {
       _httpMessage: {
         _hasBody: true,
-        output: [{ data: 'HTTP BODY1\nHTTP BODY2' }],
+        output: ['HTTP BODY1\nHTTP BODY2'],
       },
     };
 
@@ -970,5 +970,42 @@ describe('http hook', () => {
     expect(spans[0].info.resourceName).toEqual('StepFunction');
     expect(spans[0].info.httpInfo.host).toEqual('StepFunction');
     expect(spans[0].info.messageId).toEqual('123');
+  });
+
+  test('httpRequestWrapper - shimmer all wraps failed', () => {
+    utils.setWarm();
+    const handlerInputs = new HandlerInputesBuilder().build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
+    const requestData = HttpSpanBuilder.DEFAULT_REQUEST_DATA;
+    const responseData = {
+      statusCode: 200,
+      body: 'DummyDataChunk',
+    };
+
+    jest.spyOn(shimmer, 'wrap').mockImplementation(() => {
+      throw Error();
+    });
+
+    const wrappedRequest = httpHook.httpRequestWrapper(HttpsMocker.request);
+
+    wrappedRequest(requestData, () => {});
+
+    const spans = SpansContainer.getSpans();
+
+    const expectedSpan = new HttpSpanBuilder()
+      .withWarm()
+      .withStarted(spans[0].started)
+      .withEnded(spans[0].ended)
+      .withSpanId(spans[0].id)
+      .withHttpInfo({
+        host: HttpSpanBuilder.DEFAULT_HOST,
+        request: requestData,
+        response: responseData,
+      })
+      .withRequestTimesFromSpan(spans[0])
+      .build();
+
+    expect(spans).toEqual([expectedSpan]);
+    expect(HttpsRequestsForTesting.getStartedRequests()).toEqual(1);
   });
 });
