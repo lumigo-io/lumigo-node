@@ -977,10 +977,6 @@ describe('http hook', () => {
     const handlerInputs = new HandlerInputesBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
     const requestData = HttpSpanBuilder.DEFAULT_REQUEST_DATA;
-    const responseData = {
-      statusCode: 200,
-      body: 'DummyDataChunk',
-    };
 
     jest.spyOn(shimmer, 'wrap').mockImplementation(() => {
       throw Error();
@@ -990,22 +986,6 @@ describe('http hook', () => {
 
     wrappedRequest(requestData, () => {});
 
-    const spans = SpansContainer.getSpans();
-
-    const expectedSpan = new HttpSpanBuilder()
-      .withWarm()
-      .withStarted(spans[0].started)
-      .withEnded(spans[0].ended)
-      .withSpanId(spans[0].id)
-      .withHttpInfo({
-        host: HttpSpanBuilder.DEFAULT_HOST,
-        request: requestData,
-        response: responseData,
-      })
-      .withRequestTimesFromSpan(spans[0])
-      .build();
-
-    expect(spans).toEqual([expectedSpan]);
     expect(HttpsRequestsForTesting.getStartedRequests()).toEqual(1);
   });
 });
