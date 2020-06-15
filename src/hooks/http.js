@@ -145,7 +145,7 @@ export const wrappedHttpResponseCallback = (
 export const httpRequestEndWrapper = requestData => originalEndFn =>
   function(...args) {
     if (args[0] && (typeof args[0] === 'string' || args[0] instanceof Buffer)) {
-      args[0] && (requestData.body += args[0]);
+      requestData.body += args[0];
     }
     return originalEndFn.apply(this, args);
   };
@@ -256,7 +256,8 @@ export const httpRequestWrapper = originalRequestFn =>
       logger.debug('Starting hook', { host, url, headers });
       // XXX Create a pure function - something like: 'patchOptionsForAWSService'
       // return the patched options
-      if (isAwsService(host)) {
+      const isRequestToAwsService = isAwsService(host);
+      if (isRequestToAwsService) {
         const { awsXAmznTraceId } = getAWSEnvironment();
         const traceId = getPatchedTraceId(awsXAmznTraceId);
         options.headers['X-Amzn-Trace-Id'] = traceId;
@@ -291,11 +292,13 @@ export const httpRequestWrapper = originalRequestFn =>
         logger.warn('end wrap error', e.message);
       }
 
-      try {
-        const emitWrapper = httpRequestEmitWrapper(requestData);
-        shimmer.wrap(clientRequest, 'emit', emitWrapper);
-      } catch (e) {
-        logger.warn('emit wrap error', e.message);
+      if (!isRequestToAwsService) {
+        try {
+          const emitWrapper = httpRequestEmitWrapper(requestData);
+          shimmer.wrap(clientRequest, 'emit', emitWrapper);
+        } catch (e) {
+          logger.warn('emit wrap error', e.message);
+        }
       }
 
       if (!callback) {
