@@ -88,7 +88,9 @@ export const httpRequestEmitWrapper = requestData => emitFunc =>
           } else if (httpMessage.hasOwnProperty('output')) {
             lines = httpMessage.output[0].split('\n');
           }
-          requestData.body += lines[lines.length - 1];
+          if (lines.length > 0) {
+            requestData.body += lines[lines.length - 1];
+          }
         }
       },
       'Parse data from emit event failed',
@@ -292,13 +294,11 @@ export const httpRequestWrapper = originalRequestFn =>
         logger.warn('end wrap error', e.message);
       }
 
-      if (!isRequestToAwsService) {
-        try {
-          const emitWrapper = httpRequestEmitWrapper(requestData);
-          shimmer.wrap(clientRequest, 'emit', emitWrapper);
-        } catch (e) {
-          logger.warn('emit wrap error', e.message);
-        }
+      try {
+        const emitWrapper = httpRequestEmitWrapper(requestData);
+        shimmer.wrap(clientRequest, 'emit', emitWrapper);
+      } catch (e) {
+        logger.warn('emit wrap error', e.message);
       }
 
       if (!callback) {
