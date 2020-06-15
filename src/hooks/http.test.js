@@ -6,7 +6,6 @@ import shimmer from 'shimmer';
 import crypto from 'crypto';
 import https from 'https';
 import http from 'http';
-import * as logger from '../logger';
 import { HttpSpanBuilder } from '../../testUtils/httpSpanBuilder';
 import {
   HttpsMocker,
@@ -19,11 +18,7 @@ import * as utils from '../utils';
 import { SpansContainer, TracerGlobals } from '../globals';
 import { HandlerInputesBuilder } from '../../testUtils/handlerInputesBuilder';
 
-jest.mock('shimmer');
 jest.mock('../reporter');
-
-jest.spyOn(logger, 'isDebug');
-logger.isDebug.mockImplementation(() => true);
 
 describe('http hook', () => {
   process.env['AWS_REGION'] = 'us-east-x';
@@ -38,6 +33,11 @@ describe('http hook', () => {
   spies.getEdgeHost = jest.spyOn(utils, 'getEdgeHost');
   spies.randomBytes = jest.spyOn(crypto, 'randomBytes');
   spies.getRandomId = jest.spyOn(utils, 'getRandomId');
+  spies.shimmer = jest.spyOn(shimmer, 'wrap');
+
+  beforeEach(() => {
+    spies.shimmer.mockClear();
+  });
 
   test('isBlacklisted', () => {
     const host = 'asdf';
@@ -551,6 +551,24 @@ describe('http hook', () => {
     expect(originalOnFn2).toHaveBeenCalledWith(event2, callback2);
   });
 
+  test('httpRequestWrapper - shimmer all wraps failed', () => {
+    utils.setWarm();
+    const handlerInputs = new HandlerInputesBuilder().build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
+    const requestData = HttpSpanBuilder.DEFAULT_REQUEST_DATA;
+
+    spies.shimmer.mockImplementation((obj, funcName) => {
+      if (['end', 'emit', 'on'].includes(funcName)) {
+        throw Error(funcName);
+      }
+    });
+    const wrappedRequest = httpHook.httpRequestWrapper(HttpsMocker.request);
+
+    wrappedRequest(requestData, () => {});
+
+    expect(HttpsRequestsForTesting.getStartedRequests()).toEqual(1);
+  });
+
   test('httpRequestWrapper', () => {
     const originalRequestFn = jest.fn();
     const edgeHost = 'edge-asdf.com';
@@ -644,7 +662,7 @@ describe('http hook', () => {
 
     expect(originalRequestFn).toHaveBeenCalledWith(options4);
 
-    expect(shimmer.wrap).toHaveBeenCalledWith(
+    expect(spies.shimmer).toHaveBeenCalledWith(
       clientRequest4,
       'on',
       expect.any(Function)
@@ -673,7 +691,7 @@ describe('http hook', () => {
 
     expect(originalRequestFn).toHaveBeenCalledWith(options4);
 
-    expect(shimmer.wrap).toHaveBeenCalledWith(
+    expect(spies.shimmer).toHaveBeenCalledWith(
       clientRequest6,
       'on',
       expect.any(Function)
@@ -748,7 +766,7 @@ describe('http hook', () => {
       body: 'DummyDataChunk',
     };
 
-    jest.spyOn(shimmer, 'wrap').mockImplementationOnce(() => {
+    spies.shimmer.mockImplementationOnce(() => {
       throw Error();
     });
 
@@ -926,22 +944,22 @@ describe('http hook', () => {
 
   test('export default', () => {
     defaultHttp();
-    expect(shimmer.wrap).toHaveBeenCalledWith(
+    expect(spies.shimmer).toHaveBeenCalledWith(
       http,
       'request',
       httpHook.httpRequestWrapper
     );
-    expect(shimmer.wrap).toHaveBeenCalledWith(
+    expect(spies.shimmer).toHaveBeenCalledWith(
       https,
       'request',
       httpHook.httpRequestWrapper
     );
-    expect(shimmer.wrap).toHaveBeenCalledWith(
+    expect(spies.shimmer).toHaveBeenCalledWith(
       https,
       'get',
       expect.any(Function)
     );
-    expect(shimmer.wrap).toHaveBeenCalledWith(
+    expect(spies.shimmer).toHaveBeenCalledWith(
       https,
       'get',
       expect.any(Function)
@@ -970,22 +988,5 @@ describe('http hook', () => {
     expect(spans[0].info.resourceName).toEqual('StepFunction');
     expect(spans[0].info.httpInfo.host).toEqual('StepFunction');
     expect(spans[0].info.messageId).toEqual('123');
-  });
-
-  test('httpRequestWrapper - shimmer all wraps failed', () => {
-    utils.setWarm();
-    const handlerInputs = new HandlerInputesBuilder().build();
-    TracerGlobals.setHandlerInputs(handlerInputs);
-    const requestData = HttpSpanBuilder.DEFAULT_REQUEST_DATA;
-
-    jest.spyOn(shimmer, 'wrap').mockImplementation(() => {
-      throw Error();
-    });
-
-    const wrappedRequest = httpHook.httpRequestWrapper(HttpsMocker.request);
-
-    wrappedRequest(requestData, () => {});
-
-    expect(HttpsRequestsForTesting.getStartedRequests()).toEqual(1);
   });
 });
