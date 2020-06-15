@@ -48,6 +48,88 @@ describe('http hook', () => {
     expect(httpHook.isBlacklisted(edgeHost)).toBe(true);
   });
 
+  test('httpRequestEmitWrapper -> outputData flow', dontExitWithoutDone => {
+    const requestData = {
+      body: '',
+    };
+    const wrapper = httpHook.httpRequestEmitWrapper(requestData);
+    const emitEventName = 'emit';
+    const emitArg = {
+      _httpMessage: {
+        _hasBody: true,
+        outputData: [{ data: 'HTTP BODY1\nHTTP BODY2' }],
+      },
+    };
+
+    const emitFunc = (eventName, arg) => {
+      expect(eventName).toEqual(emitEventName);
+      expect(arg).toEqual(emitArg);
+      // Assert the emitFunc was called
+      dontExitWithoutDone();
+    };
+
+    const wrappedEmit = wrapper(emitFunc);
+    wrappedEmit(emitEventName, emitArg);
+
+    expect(requestData).toEqual({
+      body: 'HTTP BODY2',
+    });
+  });
+
+  test('httpRequestEmitWrapper -> output flow', dontExitWithoutDone => {
+    const requestData = {
+      body: '',
+    };
+    const wrapper = httpHook.httpRequestEmitWrapper(requestData);
+    const emitEventName = 'emit';
+    const emitArg = {
+      _httpMessage: {
+        _hasBody: true,
+        output: [{ data: 'HTTP BODY1\nHTTP BODY2' }],
+      },
+    };
+
+    const emitFunc = (eventName, arg) => {
+      expect(eventName).toEqual(emitEventName);
+      expect(arg).toEqual(emitArg);
+      // Assert the emitFunc was called
+      dontExitWithoutDone();
+    };
+
+    const wrappedEmit = wrapper(emitFunc);
+    wrappedEmit(emitEventName, emitArg);
+
+    expect(requestData).toEqual({
+      body: 'HTTP BODY2',
+    });
+  });
+
+  test('httpRequestEmitWrapper -> not crashed on bad data', dontExitWithoutDone => {
+    const requestData = {
+      body: '',
+    };
+    const wrapper = httpHook.httpRequestEmitWrapper(requestData);
+    const emitEventName = 'emit';
+    const emitArg = {
+      _httpMessage: {
+        _hasBody: true,
+        output: 1,
+      },
+    };
+
+    const emitFunc = (eventName, arg) => {
+      expect(eventName).toEqual(emitEventName);
+      expect(arg).toEqual(emitArg);
+      // Assert the emitFunc was called
+      dontExitWithoutDone();
+    };
+
+    const wrappedEmit = wrapper(emitFunc);
+    wrappedEmit(emitEventName, emitArg);
+
+    expect(requestData).toEqual({ body: '' });
+  });
+
   test('getHostFromOptionsOrUrl', () => {
     const options1 = { host: 'asdf1.com' };
     const options2 = { hostname: 'asdf2.com' };

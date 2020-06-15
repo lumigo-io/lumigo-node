@@ -262,10 +262,7 @@ export const getHttpSpan = (
       serviceData = getAwsServiceData(requestData, responseData);
     }
   } catch (e) {
-    logger.warn(
-      'Failed to parse aws service data',
-      e.message,
-    );
+    logger.warn('Failed to parse aws service data', e.message);
   }
   const { awsServiceData, spanId } = serviceData;
 
