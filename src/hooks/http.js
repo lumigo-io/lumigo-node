@@ -220,7 +220,7 @@ export const getHookedClientRequestArgs = (
     hookedClientRequestArgs.push(options);
   }
 
-  if ((url || options) && callback) {
+  if (callback) {
     const wrappedCallback = exports.wrappedHttpResponseCallback(
       requestData,
       callback,
@@ -294,11 +294,13 @@ export const httpRequestWrapper = originalRequestFn =>
         logger.warn('end wrap error', e.message);
       }
 
-      try {
-        const emitWrapper = httpRequestEmitWrapper(requestData);
-        shimmer.wrap(clientRequest, 'emit', emitWrapper);
-      } catch (e) {
-        logger.warn('emit wrap error', e.message);
+      if (!isRequestToAwsService) {
+        try {
+          const emitWrapper = httpRequestEmitWrapper(requestData);
+          shimmer.wrap(clientRequest, 'emit', emitWrapper);
+        } catch (e) {
+          logger.warn('emit wrap error', e.message);
+        }
       }
 
       if (!callback) {
