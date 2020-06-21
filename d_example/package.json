@@ -1,0 +1,11 @@
+{
+  "name": "lumigo-node-example",
+  "version": "0.0.1",
+  "main": "handler.js",
+  "license": "MIT",
+  "private": true,
+  "dependencies": {
+    "@lumigo/tracer": "file:../lumigo-tracer-1.32.0.tgz",
+    "needle": "^2.5.0"
+  }
+}
