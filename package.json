@@ -50,6 +50,7 @@
     "prettier": "^1.17.1",
     "semantic-release": "^15.13.19",
     "shimmer": "^1.2.1",
+    "json.sortify": "^2.2.2",
     "webpack": "^4.35.0",
     "webpack-cli": "^3.3.4"
   },
