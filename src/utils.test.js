@@ -12,6 +12,7 @@ import {
   safeExecute,
   recursiveGetKey,
   SKIP_SCRUBBING_KEYS,
+  md5Hash,
 } from './utils';
 import { TracerGlobals } from './globals';
 import crypto from 'crypto';
@@ -833,5 +834,17 @@ describe('utils', () => {
     process.env['array_key'] = 'a,b,c';
     const res = getEnvVarAsList('array_key');
     expect(res).toEqual(['a', 'b', 'c']);
+  });
+
+  test('md5Hash should yield the same result for the same items', () => {
+    expect(md5Hash({ a: 1, b: { c: 2, d: 3 } })).toEqual(
+      md5Hash({ b: { d: 3, c: 2 }, a: 1 })
+    );
+  });
+
+  test('md5Hash recursive items', () => {
+    const i = { a: 1 };
+    i.i = i;
+    expect(md5Hash(i)).toEqual(undefined);
   });
 });

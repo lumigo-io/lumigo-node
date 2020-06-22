@@ -94,7 +94,7 @@ describe('events', () => {
           asdf2: { BS: ['AAEqQQ==', 'QSoBAA=='] },
           key: { S: 'binary' },
         }),
-        '6b1514ca1bed396dc51485152508cbfe',
+        'fa2800aae04015828d3b0acef25db799',
       ],
       approxEventCreationTime: 1480642020000,
     });
