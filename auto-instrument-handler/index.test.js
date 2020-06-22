@@ -11,7 +11,13 @@ describe('tracer', () => {
     expect(() => index.handler({}, {})).toThrowError("Could not parse the original handler - invalid format");
 
     process.env[index.ORIGINAL_HANDLER_KEY] = 'not/Existing.handler';
-    expect(() => index.handler({}, {})).toThrowError("Cannot find module '/var/task/not/Existing' from 'index.js'");
+    try {
+      index.handler({}, {});
+      fail("should raise");
+    } catch (e) {
+      expect(e.message).toEqual("Cannot find module '/var/task/not/Existing' from 'index.js'");
+      expect(e.stack).toEqual("Error: Cannot find module '/var/task/not/Existing' from 'index.js'");
+    }
 
     process.env[
       index.ORIGINAL_HANDLER_KEY

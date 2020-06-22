@@ -292,6 +292,7 @@ export const isAwsService = (host, responseData) => {
 };
 
 export const removeLumigoFromStacktrace = handleReturnValue => {
+  // Note: this function was copied to the auto-instrument-handler. Keep them both up to date.
   try {
     const { err, data, type } = handleReturnValue;
     if (!err || !err.stack) {

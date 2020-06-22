@@ -18,10 +18,35 @@ const parseOriginalHandler = originalHandler => {
   return [moduleName, functionName];
 };
 
-const warnClient = msg => {
-  if (process.env.LUMIGO_WARNINGS !== 'off') {
-    // eslint-disable-next-line no-console
-    console.log(`Lumigo Warning: ${msg}`);
+const removeLumigoFromStacktrace = err => {
+  // Note: this function was copied from utils.js. Keep them both up to date.
+  try {
+    if (!err || !err.stack) {
+      return err;
+    }
+    const { stack } = err;
+    const stackArr = stack.split('\n');
+
+    const pattern = 'auto-instrument';
+    const reducer = (acc, v, i) => {
+      if (v.includes(pattern)) {
+        acc.push(i);
+      }
+      return acc;
+    };
+
+    const pattrenIndices = stackArr.reduce(reducer, []);
+
+    const minIndex = pattrenIndices.shift();
+    const maxIndex = pattrenIndices.pop();
+    const nrItemsToRemove = maxIndex - minIndex + 1;
+
+    stackArr.splice(minIndex, nrItemsToRemove);
+    err.stack = stackArr.join('\n');
+
+    return err;
+  } catch (e) {
+    return err;
   }
 };
 
@@ -32,10 +57,7 @@ const handler = (event, context, callback) => {
   try {
     module = require(moduleName);
   } catch (e) {
-    warnClient(
-      `Could not require the original handler (${moduleName}). Please follow lumigo's docs: https://docs.lumigo.io/`
-    );
-    throw e;
+    throw removeLumigoFromStacktrace(e);
   }
   if (!module[functionName]) {
     throw Error(
