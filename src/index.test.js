@@ -15,8 +15,8 @@ describe('index', () => {
     Object.keys(spies).map(x => spies[x].mockClear());
   });
 
-  jest.setTimeout(15000);
   test('execution tags - 2 versions of tracer - layer and manual', async () => {
+    jest.setTimeout(15000);
     const originDirPath = __dirname;
     const dupDirPath = `${originDirPath}Dup'`;
     const layerPath = `${dupDirPath}/index.js`;

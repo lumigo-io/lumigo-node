@@ -867,9 +867,12 @@ describe('utils', () => {
   test('isEmptyString', () => {
     expect(isEmptyString('str')).toEqual(false);
     expect(isEmptyString('')).toEqual(true);
-    expect(isEmptyString()).toEqual(true);
+
     expect(isEmptyString(null)).toEqual(true);
     expect(isEmptyString(undefined)).toEqual(true);
+    expect(isEmptyString()).toEqual(true);
+    expect(isEmptyString([])).toEqual(false);
+    expect(isEmptyString({})).toEqual(false);
   });
 
   test('isValidHttpRequestBody - simple flow', () => {

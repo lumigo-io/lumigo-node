@@ -507,7 +507,8 @@ export const isEncodingType = encodingType =>
     )
   );
 
-export const isEmptyString = str => !!(!str || str.length === 0);
+export const isEmptyString = str =>
+  !!(!str || (typeof str === 'string' && str.length === 0));
 
 export const isValidHttpRequestBody = reqBody =>
   !!(reqBody && (typeof reqBody === 'string' || reqBody instanceof Buffer));

@@ -169,9 +169,18 @@ export const wrappedHttpResponseCallback = (
 
 export const httpRequestEndWrapper = requestData => originalEndFn =>
   function(...args) {
-    if (isEmptyString(requestData.body) && isValidHttpRequestBody(args[0])) {
-      requestData.body += args[0];
-    }
+    safeExecute(
+      () => {
+        if (
+          isEmptyString(requestData.body) &&
+          isValidHttpRequestBody(args[0])
+        ) {
+          requestData.body += args[0];
+        }
+      },
+      'httpRequestEndWrapper failed',
+      logger.LOG_LEVELS.INFO
+    )();
     return originalEndFn.apply(this, args);
   };
 

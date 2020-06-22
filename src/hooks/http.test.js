@@ -80,7 +80,6 @@ describe('http hook', () => {
     const requestData = {
       body: '',
     };
-    const wrapper = httpHook.httpRequestEmitWrapper(requestData);
     const emitEventName = 'emit';
     const emitArg = {
       _httpMessage: {
@@ -88,7 +87,6 @@ describe('http hook', () => {
         output: ['HTTP BODY1\nHTTP BODY2'],
       },
     };
-
     const emitFunc = (eventName, arg) => {
       expect(eventName).toEqual(emitEventName);
       expect(arg).toEqual(emitArg);
@@ -96,6 +94,7 @@ describe('http hook', () => {
       dontExitWithoutDone();
     };
 
+    const wrapper = httpHook.httpRequestEmitWrapper(requestData);
     const wrappedEmit = wrapper(emitFunc);
     wrappedEmit(emitEventName, emitArg);
 
@@ -108,7 +107,7 @@ describe('http hook', () => {
     const requestData = {
       body: '',
     };
-    const wrapper = httpHook.httpRequestEmitWrapper(requestData);
+
     const emitEventName = 'emit';
     const emitArg = {
       _httpMessage: {
@@ -124,6 +123,7 @@ describe('http hook', () => {
       dontExitWithoutDone();
     };
 
+    const wrapper = httpHook.httpRequestEmitWrapper(requestData);
     const wrappedEmit = wrapper(emitFunc);
     wrappedEmit(emitEventName, emitArg);
 
@@ -134,7 +134,6 @@ describe('http hook', () => {
     const requestData = {
       body: '',
     };
-    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
 
     const firstArg = 'BODY';
 
@@ -144,6 +143,7 @@ describe('http hook', () => {
       dontExitWithoutDone();
     };
 
+    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
     const wrappedWrite = wrapper(writeFunc);
     wrappedWrite(firstArg);
 
@@ -174,7 +174,6 @@ describe('http hook', () => {
     const requestData = {
       body: '',
     };
-    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
 
     const firstArg = 'BODY';
     const secArg = 'base64';
@@ -185,6 +184,7 @@ describe('http hook', () => {
       dontExitWithoutDone();
     };
 
+    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
     const wrappedWrite = wrapper(writeFunc);
     wrappedWrite(firstArg, secArg);
 
@@ -195,7 +195,6 @@ describe('http hook', () => {
     const requestData = {
       body: '',
     };
-    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
 
     const firstArg = Buffer.from('BODY');
     const secArg = 'utf8';
@@ -207,6 +206,7 @@ describe('http hook', () => {
       dontExitWithoutDone();
     };
 
+    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
     const wrappedWrite = wrapper(writeFunc);
     wrappedWrite(firstArg, secArg, thirdArg);
 
@@ -217,7 +217,6 @@ describe('http hook', () => {
     const requestData = {
       body: '',
     };
-    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
 
     const firstArg = Buffer.from('BODY');
     const secArg = () => {};
@@ -228,6 +227,7 @@ describe('http hook', () => {
       dontExitWithoutDone();
     };
 
+    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
     const wrappedWrite = wrapper(writeFunc);
     wrappedWrite(firstArg, secArg);
 
@@ -238,7 +238,6 @@ describe('http hook', () => {
     const requestData = {
       body: '',
     };
-    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
 
     const firstArg = 'BODY';
     const secArg = () => {};
@@ -249,6 +248,7 @@ describe('http hook', () => {
       dontExitWithoutDone();
     };
 
+    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
     const wrappedWrite = wrapper(writeFunc);
     wrappedWrite(firstArg, secArg);
 
@@ -259,7 +259,6 @@ describe('http hook', () => {
     const requestData = {
       body: 'BODY1',
     };
-    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
 
     const firstArg = Buffer.from('BODY2');
 
@@ -269,6 +268,7 @@ describe('http hook', () => {
       dontExitWithoutDone();
     };
 
+    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
     const wrappedWrite = wrapper(writeFunc);
     wrappedWrite(firstArg);
 
@@ -279,7 +279,6 @@ describe('http hook', () => {
     const requestData = {
       body: '',
     };
-    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
 
     const firstArg = {};
     const secArg = {};
@@ -290,6 +289,7 @@ describe('http hook', () => {
       dontExitWithoutDone();
     };
 
+    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
     const wrappedWrite = wrapper(writeFunc);
     wrappedWrite(firstArg, secArg);
 
