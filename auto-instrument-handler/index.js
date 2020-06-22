@@ -18,6 +18,13 @@ const parseOriginalHandler = originalHandler => {
   return [moduleName, functionName];
 };
 
+const warnClient = msg => {
+  if (process.env.LUMIGO_WARNINGS !== 'off') {
+    // eslint-disable-next-line no-console
+    console.log(`Lumigo Warning: ${msg}`);
+  }
+};
+
 const handler = (event, context, callback) => {
   const originalHandler = process.env[ORIGINAL_HANDLER_KEY];
   const [moduleName, functionName] = parseOriginalHandler(originalHandler);
@@ -25,9 +32,10 @@ const handler = (event, context, callback) => {
   try {
     module = require(moduleName);
   } catch (e) {
-    throw Error(
-      `Could not find the original handler (${moduleName}). Please follow lumigo's docs: https://docs.lumigo.io/`
+    warnClient(
+      `Could not require the original handler (${moduleName}). Please follow lumigo's docs: https://docs.lumigo.io/`
     );
+    throw e;
   }
   if (!module[functionName]) {
     throw Error(
