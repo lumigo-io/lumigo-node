@@ -13,6 +13,9 @@ import {
   getRandomId,
   isTimeoutTimerEnabled,
   isValidAlias,
+  isEncodingType,
+  isEmptyString,
+  isValidHttpRequestBody,
 } from '../utils';
 import { getHttpSpan } from '../spans/awsSpan';
 import cloneResponse from 'clone-response';
@@ -76,12 +79,32 @@ export const parseHttpRequestOptions = (options = {}, url) => {
   };
 };
 
+export const httpRequestWriteWrapper = requestData => writeFunc =>
+  function(...args) {
+    safeExecute(() => {
+      if (isEmptyString(requestData.body) && isValidHttpRequestBody(args[0])) {
+        const encoding = isEncodingType(args[1]) ? args[1] : 'utf8';
+        const body =
+          typeof args[0] === 'string'
+            ? Buffer(args[0]).toString(encoding)
+            : args[0].toString();
+        requestData.body += body;
+      }
+    }, logger.LOG_LEVELS.INFO)();
+    return writeFunc.apply(this, args);
+  };
+
 export const httpRequestEmitWrapper = requestData => emitFunc =>
-  function(eventName, arg) {
+  function(...args) {
     safeExecute(
       () => {
-        if (arg && arg._httpMessage && arg._httpMessage._hasBody) {
-          const httpMessage = arg._httpMessage;
+        if (
+          isEmptyString(requestData.body) &&
+          args[1] &&
+          args[1]._httpMessage &&
+          args[1]._httpMessage._hasBody
+        ) {
+          const httpMessage = args[1]._httpMessage;
           let lines = [];
           if (httpMessage.hasOwnProperty('outputData')) {
             lines = httpMessage.outputData[0].data.split('\n');
@@ -146,7 +169,7 @@ export const wrappedHttpResponseCallback = (
 
 export const httpRequestEndWrapper = requestData => originalEndFn =>
   function(...args) {
-    if (args[0] && (typeof args[0] === 'string' || args[0] instanceof Buffer)) {
+    if (isEmptyString(requestData.body) && isValidHttpRequestBody(args[0])) {
       requestData.body += args[0];
     }
     return originalEndFn.apply(this, args);
@@ -301,6 +324,13 @@ export const httpRequestWrapper = originalRequestFn =>
         } catch (e) {
           logger.warn('emit wrap error', e.message);
         }
+      }
+
+      try {
+        const writeWrapper = httpRequestWriteWrapper(requestData);
+        shimmer.wrap(clientRequest, 'write', writeWrapper);
+      } catch (e) {
+        logger.warn('write wrap error', e.message);
       }
 
       if (!callback) {

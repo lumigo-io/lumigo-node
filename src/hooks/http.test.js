@@ -130,6 +130,172 @@ describe('http hook', () => {
     expect(requestData).toEqual({ body: '' });
   });
 
+  test('httpRequestWriteWrapper -> simple flow -> write(str)', dontExitWithoutDone => {
+    const requestData = {
+      body: '',
+    };
+    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
+
+    const firstArg = 'BODY';
+
+    const writeFunc = (...args) => {
+      expect(args).toEqual([firstArg]);
+      // Assert the writeFunc was called
+      dontExitWithoutDone();
+    };
+
+    const wrappedWrite = wrapper(writeFunc);
+    wrappedWrite(firstArg);
+
+    expect(requestData).toEqual({ body: 'BODY' });
+  });
+
+  test('httpRequestWriteWrapper -> simple flow -> write(Buffer)', dontExitWithoutDone => {
+    const requestData = {
+      body: '',
+    };
+    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
+
+    const firstArg = Buffer.from('BODY');
+
+    const writeFunc = (...args) => {
+      expect(args).toEqual([firstArg]);
+      // Assert the writeFunc was called
+      dontExitWithoutDone();
+    };
+
+    const wrappedWrite = wrapper(writeFunc);
+    wrappedWrite(firstArg);
+
+    expect(requestData).toEqual({ body: 'BODY' });
+  });
+
+  test('httpRequestWriteWrapper -> simple flow -> write(Buffer, encoding)', dontExitWithoutDone => {
+    const requestData = {
+      body: '',
+    };
+    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
+
+    const firstArg = 'BODY';
+    const secArg = 'base64';
+
+    const writeFunc = (...args) => {
+      expect(args).toEqual([firstArg, secArg]);
+      // Assert the writeFunc was called
+      dontExitWithoutDone();
+    };
+
+    const wrappedWrite = wrapper(writeFunc);
+    wrappedWrite(firstArg, secArg);
+
+    expect(requestData).toEqual({ body: 'Qk9EWQ==' });
+  });
+
+  test('httpRequestWriteWrapper -> simple flow -> write(Buffer, encoding, callback)', dontExitWithoutDone => {
+    const requestData = {
+      body: '',
+    };
+    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
+
+    const firstArg = Buffer.from('BODY');
+    const secArg = 'utf8';
+    const thirdArg = () => {};
+
+    const writeFunc = (...args) => {
+      expect(args).toEqual([firstArg, secArg, thirdArg]);
+      // Assert the writeFunc was called
+      dontExitWithoutDone();
+    };
+
+    const wrappedWrite = wrapper(writeFunc);
+    wrappedWrite(firstArg, secArg, thirdArg);
+
+    expect(requestData).toEqual({ body: 'BODY' });
+  });
+
+  test('httpRequestWriteWrapper -> simple flow -> write(Buffer, callback)', dontExitWithoutDone => {
+    const requestData = {
+      body: '',
+    };
+    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
+
+    const firstArg = Buffer.from('BODY');
+    const secArg = () => {};
+
+    const writeFunc = (...args) => {
+      expect(args).toEqual([firstArg, secArg]);
+      // Assert the writeFunc was called
+      dontExitWithoutDone();
+    };
+
+    const wrappedWrite = wrapper(writeFunc);
+    wrappedWrite(firstArg, secArg);
+
+    expect(requestData).toEqual({ body: 'BODY' });
+  });
+
+  test('httpRequestWriteWrapper -> simple flow -> write(str, callback)', dontExitWithoutDone => {
+    const requestData = {
+      body: '',
+    };
+    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
+
+    const firstArg = 'BODY';
+    const secArg = () => {};
+
+    const writeFunc = (...args) => {
+      expect(args).toEqual([firstArg, secArg]);
+      // Assert the writeFunc was called
+      dontExitWithoutDone();
+    };
+
+    const wrappedWrite = wrapper(writeFunc);
+    wrappedWrite(firstArg, secArg);
+
+    expect(requestData).toEqual({ body: 'BODY' });
+  });
+
+  test('httpRequestWriteWrapper -> not override body', dontExitWithoutDone => {
+    const requestData = {
+      body: 'BODY1',
+    };
+    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
+
+    const firstArg = Buffer.from('BODY2');
+
+    const writeFunc = (...args) => {
+      expect(args).toEqual([firstArg]);
+      // Assert the emitFunc was called
+      dontExitWithoutDone();
+    };
+
+    const wrappedWrite = wrapper(writeFunc);
+    wrappedWrite(firstArg);
+
+    expect(requestData).toEqual({ body: 'BODY1' });
+  });
+
+  test('httpRequestWriteWrapper -> not crashed on bad data', dontExitWithoutDone => {
+    const requestData = {
+      body: '',
+    };
+    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
+
+    const firstArg = {};
+    const secArg = {};
+
+    const writeFunc = (...args) => {
+      expect(args).toEqual([firstArg, secArg]);
+      // Assert the emitFunc was called
+      dontExitWithoutDone();
+    };
+
+    const wrappedWrite = wrapper(writeFunc);
+    wrappedWrite(firstArg, secArg);
+
+    expect(requestData).toEqual({ body: '' });
+  });
+
   test('getHostFromOptionsOrUrl', () => {
     const options1 = { host: 'asdf1.com' };
     const options2 = { hostname: 'asdf2.com' };
@@ -558,7 +724,7 @@ describe('http hook', () => {
     const requestData = HttpSpanBuilder.DEFAULT_REQUEST_DATA;
 
     spies.shimmer.mockImplementation((obj, funcName) => {
-      if (['end', 'emit', 'on'].includes(funcName)) {
+      if (['end', 'emit', 'on', 'write'].includes(funcName)) {
         throw Error(funcName);
       }
     });

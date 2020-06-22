@@ -20,6 +20,9 @@ import { GET_KEY_DEPTH_ENV_KEY } from './utils';
 import { HttpsScenarioBuilder } from '../testUtils/httpsMocker';
 import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
 import { getEnvVarAsList } from './utils';
+import { isEncodingType } from './utils';
+import { isEmptyString } from './utils';
+import { isValidHttpRequestBody } from './utils';
 
 describe('utils', () => {
   const spies = {};
@@ -833,5 +836,53 @@ describe('utils', () => {
     process.env['array_key'] = 'a,b,c';
     const res = getEnvVarAsList('array_key');
     expect(res).toEqual(['a', 'b', 'c']);
+  });
+
+  test('isEncodingType -> empty case', () => {
+    expect(isEncodingType()).toEqual(false);
+    expect(isEncodingType(null)).toEqual(false);
+    expect(isEncodingType(undefined)).toEqual(false);
+  });
+
+  test('isEncodingType -> not valid types', () => {
+    expect(isEncodingType(1)).toEqual(false);
+    expect(isEncodingType([])).toEqual(false);
+    expect(isEncodingType({})).toEqual(false);
+  });
+
+  test('isEncodingType -> not valid encoding', () => {
+    expect(isEncodingType('utf99')).toEqual(false);
+  });
+
+  test('isEncodingType -> simple flow', () => {
+    expect(isEncodingType('ascii')).toEqual(true);
+    expect(isEncodingType('utf8')).toEqual(true);
+    expect(isEncodingType('utf16le')).toEqual(true);
+    expect(isEncodingType('ucs2')).toEqual(true);
+    expect(isEncodingType('base64')).toEqual(true);
+    expect(isEncodingType('binary')).toEqual(true);
+    expect(isEncodingType('hex')).toEqual(true);
+  });
+
+  test('isEmptyString', () => {
+    expect(isEmptyString('str')).toEqual(false);
+    expect(isEmptyString('')).toEqual(true);
+    expect(isEmptyString()).toEqual(true);
+    expect(isEmptyString(null)).toEqual(true);
+    expect(isEmptyString(undefined)).toEqual(true);
+  });
+
+  test('isValidHttpRequestBody - simple flow', () => {
+    expect(isValidHttpRequestBody('BODY')).toEqual(true);
+    expect(isValidHttpRequestBody(Buffer.from('BODY'))).toEqual(true);
+  });
+
+  test('isValidHttpRequestBody -> empty flow', () => {
+    expect(isValidHttpRequestBody()).toEqual(false);
+    expect(isValidHttpRequestBody(0)).toEqual(false);
+    expect(isValidHttpRequestBody([])).toEqual(false);
+    expect(isValidHttpRequestBody({})).toEqual(false);
+    expect(isValidHttpRequestBody(undefined)).toEqual(false);
+    expect(isValidHttpRequestBody(null)).toEqual(false);
   });
 });
