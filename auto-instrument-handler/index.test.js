@@ -16,7 +16,7 @@ describe('tracer', () => {
       fail("should raise");
     } catch (e) {
       expect(e.message).toEqual("Cannot find module '/var/task/not/Existing' from 'index.js'");
-      expect(e.stack).toEqual("Error: Cannot find module '/var/task/not/Existing' from 'index.js'");
+      expect(e.stack).not.toContain("auto-instrument");
     }
 
     process.env[
