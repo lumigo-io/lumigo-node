@@ -455,12 +455,13 @@ export const omitKeys = obj => {
 
 export const safeExecute = (
   callback,
-  message = 'Error in Lumigo tracer'
+  message = 'Error in Lumigo tracer',
+  logLevel = logger.LOG_LEVELS.WARNING
 ) => () => {
   try {
     return callback();
   } catch (err) {
-    logger.warn(message, err);
+    logger.log(logLevel, message, err.message);
   }
 };
 
@@ -496,3 +497,18 @@ export const md5Hash = item => {
   md5sum.update(JSON.stringify(item));
   return md5sum.digest('hex');
 };
+
+export const isEncodingType = encodingType =>
+  !!(
+    encodingType &&
+    typeof encodingType === 'string' &&
+    ['ascii', 'utf8', 'utf16le', 'ucs2', 'base64', 'binary', 'hex'].includes(
+      encodingType
+    )
+  );
+
+export const isEmptyString = str =>
+  !!(!str || (typeof str === 'string' && str.length === 0));
+
+export const isValidHttpRequestBody = reqBody =>
+  !!(reqBody && (typeof reqBody === 'string' || reqBody instanceof Buffer));

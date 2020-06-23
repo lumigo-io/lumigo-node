@@ -13,6 +13,9 @@ import {
   getRandomId,
   isTimeoutTimerEnabled,
   isValidAlias,
+  isEncodingType,
+  isEmptyString,
+  isValidHttpRequestBody,
 } from '../utils';
 import { getHttpSpan } from '../spans/awsSpan';
 import cloneResponse from 'clone-response';
@@ -68,13 +71,56 @@ export const parseHttpRequestOptions = (options = {}, url) => {
     port,
     uri,
     host,
-    body: '', // XXX Filled by the httpRequestEndWrapper ( / Write)
+    body: '', // XXX Filled by the httpRequestEndWrapper or httpRequestEmitWrapper ( / Write)
     method,
     headers: lowerCaseObjectKeys(headers),
     protocol,
     sendTime,
   };
 };
+
+export const httpRequestWriteWrapper = requestData => writeFunc =>
+  function(...args) {
+    safeExecute(() => {
+      if (isEmptyString(requestData.body) && isValidHttpRequestBody(args[0])) {
+        const encoding = isEncodingType(args[1]) ? args[1] : 'utf8';
+        const body =
+          typeof args[0] === 'string'
+            ? Buffer(args[0]).toString(encoding)
+            : args[0].toString();
+        requestData.body += body;
+      }
+    }, logger.LOG_LEVELS.INFO)();
+    return writeFunc.apply(this, args);
+  };
+
+export const httpRequestEmitWrapper = requestData => emitFunc =>
+  function(...args) {
+    safeExecute(
+      () => {
+        if (
+          isEmptyString(requestData.body) &&
+          args[1] &&
+          args[1]._httpMessage &&
+          args[1]._httpMessage._hasBody
+        ) {
+          const httpMessage = args[1]._httpMessage;
+          let lines = [];
+          if (httpMessage.hasOwnProperty('outputData')) {
+            lines = httpMessage.outputData[0].data.split('\n');
+          } else if (httpMessage.hasOwnProperty('output')) {
+            lines = httpMessage.output[0].split('\n');
+          }
+          if (lines.length > 0) {
+            requestData.body += lines[lines.length - 1];
+          }
+        }
+      },
+      'Parse data from emit event failed',
+      logger.LOG_LEVELS.INFO
+    )();
+    return emitFunc.apply(this, arguments);
+  };
 
 export const wrappedHttpResponseCallback = (
   requestData,
@@ -122,9 +168,20 @@ export const wrappedHttpResponseCallback = (
 };
 
 export const httpRequestEndWrapper = requestData => originalEndFn =>
-  function(data, encoding, callback) {
-    data && (requestData.body += data);
-    return originalEndFn.apply(this, [data, encoding, callback]);
+  function(...args) {
+    safeExecute(
+      () => {
+        if (
+          isEmptyString(requestData.body) &&
+          isValidHttpRequestBody(args[0])
+        ) {
+          requestData.body += args[0];
+        }
+      },
+      'httpRequestEndWrapper failed',
+      logger.LOG_LEVELS.INFO
+    )();
+    return originalEndFn.apply(this, args);
   };
 
 export const httpRequestOnWrapper = (
@@ -159,16 +216,16 @@ export const httpRequestArguments = args => {
   let options = undefined;
   let callback = undefined;
 
-  if (typeof args[0] === 'string') {
+  if (typeof args[0] === 'string' || args[0] instanceof URL) {
     url = args[0];
     if (args[1]) {
       if (typeof args[1] === 'function') {
         callback = args[1];
       } else {
         options = args[1];
-      }
-      if (typeof args[2] === 'function') {
-        callback = args[2];
+        if (typeof args[2] === 'function') {
+          callback = args[2];
+        }
       }
     }
   } else {
@@ -233,11 +290,13 @@ export const httpRequestWrapper = originalRequestFn =>
       logger.debug('Starting hook', { host, url, headers });
       // XXX Create a pure function - something like: 'patchOptionsForAWSService'
       // return the patched options
-      if (isAwsService(host)) {
+      const isRequestToAwsService = isAwsService(host);
+      if (isRequestToAwsService) {
         const { awsXAmznTraceId } = getAWSEnvironment();
         const traceId = getPatchedTraceId(awsXAmznTraceId);
         options.headers['X-Amzn-Trace-Id'] = traceId;
       }
+
       const requestData = parseHttpRequestOptions(options, url);
       const requestRandomId = getRandomId();
 
@@ -267,12 +326,27 @@ export const httpRequestWrapper = originalRequestFn =>
         logger.warn('end wrap error', e.message);
       }
 
+      if (!isRequestToAwsService) {
+        try {
+          const emitWrapper = httpRequestEmitWrapper(requestData);
+          shimmer.wrap(clientRequest, 'emit', emitWrapper);
+        } catch (e) {
+          logger.warn('emit wrap error', e.message);
+        }
+      }
+
+      try {
+        const writeWrapper = httpRequestWriteWrapper(requestData);
+        shimmer.wrap(clientRequest, 'write', writeWrapper);
+      } catch (e) {
+        logger.warn('write wrap error', e.message);
+      }
+
       if (!callback) {
         try {
           const onWrapper = httpRequestOnWrapper(requestData, requestRandomId);
           shimmer.wrap(clientRequest, 'on', onWrapper);
         } catch (e) {
-          /* istanbul ignore next */
           logger.warn('on wrap error', e.message);
         }
       }
