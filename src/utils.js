@@ -3,6 +3,7 @@ import https from 'https';
 import crypto from 'crypto';
 import { noCirculars } from './tools/noCirculars';
 import * as logger from './logger';
+import jsonSortify from 'json.sortify';
 
 export const SPAN_PATH = '/api/spans';
 export const LUMIGO_TRACER_EDGE = 'lumigo-tracer-edge.golumigo.com';
@@ -493,9 +494,14 @@ const recursiveGetKeyByDepth = (event, keyToSearch, maxDepth) => {
 };
 
 export const md5Hash = item => {
-  const md5sum = crypto.createHash('md5');
-  md5sum.update(JSON.stringify(item));
-  return md5sum.digest('hex');
+  try {
+    const md5sum = crypto.createHash('md5');
+    md5sum.update(jsonSortify(item));
+    return md5sum.digest('hex');
+  } catch (err) {
+    logger.warn('Failed to hash item', err);
+    return undefined;
+  }
 };
 
 export const isEncodingType = encodingType =>

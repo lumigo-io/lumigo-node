@@ -94,9 +94,9 @@ describe('events', () => {
           asdf2: { BS: ['AAEqQQ==', 'QSoBAA=='] },
           key: { S: 'binary' },
         }),
-        '6b1514ca1bed396dc51485152508cbfe',
+        'fa2800aae04015828d3b0acef25db799',
       ],
-      approxEventCreationTime: 1480642020,
+      approxEventCreationTime: 1480642020000,
     });
 
     expect(
@@ -105,7 +105,7 @@ describe('events', () => {
       arn:
         'arn:aws:dynamodb:us-west-2:723663554526:table/abbbbb/stream/2020-05-25T12:04:49.788',
       messageIds: [md5Hash({ key: { N: '8' } })],
-      approxEventCreationTime: 1590509701.0,
+      approxEventCreationTime: 1590509701000,
     });
 
     expect(
@@ -114,7 +114,7 @@ describe('events', () => {
       arn:
         'arn:aws:dynamodb:us-west-2:723663554526:table/abbbbb/stream/2020-05-25T12:04:49.788',
       messageIds: [md5Hash({ key: { N: '123' } })],
-      approxEventCreationTime: 1590509672.0,
+      approxEventCreationTime: 1590509672000,
     });
 
     expect(events.getRelevantEventData('sns', exampleSnsEvent)).toEqual({
