@@ -6,7 +6,6 @@ import shimmer from 'shimmer';
 import crypto from 'crypto';
 import https from 'https';
 import http from 'http';
-import * as logger from '../logger';
 import { HttpSpanBuilder } from '../../testUtils/httpSpanBuilder';
 import {
   HttpsMocker,
@@ -19,11 +18,7 @@ import * as utils from '../utils';
 import { SpansContainer, TracerGlobals } from '../globals';
 import { HandlerInputesBuilder } from '../../testUtils/handlerInputesBuilder';
 
-jest.mock('shimmer');
 jest.mock('../reporter');
-
-jest.spyOn(logger, 'isDebug');
-logger.isDebug.mockImplementation(() => true);
 
 describe('http hook', () => {
   process.env['AWS_REGION'] = 'us-east-x';
@@ -38,6 +33,11 @@ describe('http hook', () => {
   spies.getEdgeHost = jest.spyOn(utils, 'getEdgeHost');
   spies.randomBytes = jest.spyOn(crypto, 'randomBytes');
   spies.getRandomId = jest.spyOn(utils, 'getRandomId');
+  spies.shimmer = jest.spyOn(shimmer, 'wrap');
+
+  beforeEach(() => {
+    spies.shimmer.mockClear();
+  });
 
   test('isBlacklisted', () => {
     const host = 'asdf';
@@ -46,6 +46,254 @@ describe('http hook', () => {
     utils.getEdgeHost.mockReturnValueOnce(edgeHost);
     expect(httpHook.isBlacklisted(host)).toBe(false);
     expect(httpHook.isBlacklisted(edgeHost)).toBe(true);
+  });
+
+  test('httpRequestEmitWrapper -> outputData flow', dontExitWithoutDone => {
+    const requestData = {
+      body: '',
+    };
+    const wrapper = httpHook.httpRequestEmitWrapper(requestData);
+    const emitEventName = 'emit';
+    const emitArg = {
+      _httpMessage: {
+        _hasBody: true,
+        outputData: [{ data: 'HTTP BODY1\nHTTP BODY2' }],
+      },
+    };
+
+    const emitFunc = (eventName, arg) => {
+      expect(eventName).toEqual(emitEventName);
+      expect(arg).toEqual(emitArg);
+      // Assert the emitFunc was called
+      dontExitWithoutDone();
+    };
+
+    const wrappedEmit = wrapper(emitFunc);
+    wrappedEmit(emitEventName, emitArg);
+
+    expect(requestData).toEqual({
+      body: 'HTTP BODY2',
+    });
+  });
+
+  test('httpRequestEmitWrapper -> output flow', dontExitWithoutDone => {
+    const requestData = {
+      body: '',
+    };
+    const emitEventName = 'emit';
+    const emitArg = {
+      _httpMessage: {
+        _hasBody: true,
+        output: ['HTTP BODY1\nHTTP BODY2'],
+      },
+    };
+    const emitFunc = (eventName, arg) => {
+      expect(eventName).toEqual(emitEventName);
+      expect(arg).toEqual(emitArg);
+      // Assert the emitFunc was called
+      dontExitWithoutDone();
+    };
+
+    const wrapper = httpHook.httpRequestEmitWrapper(requestData);
+    const wrappedEmit = wrapper(emitFunc);
+    wrappedEmit(emitEventName, emitArg);
+
+    expect(requestData).toEqual({
+      body: 'HTTP BODY2',
+    });
+  });
+
+  test('httpRequestEmitWrapper -> not crashed on bad data', dontExitWithoutDone => {
+    const requestData = {
+      body: '',
+    };
+
+    const emitEventName = 'emit';
+    const emitArg = {
+      _httpMessage: {
+        _hasBody: true,
+        output: 1,
+      },
+    };
+
+    const emitFunc = (eventName, arg) => {
+      expect(eventName).toEqual(emitEventName);
+      expect(arg).toEqual(emitArg);
+      // Assert the emitFunc was called
+      dontExitWithoutDone();
+    };
+
+    const wrapper = httpHook.httpRequestEmitWrapper(requestData);
+    const wrappedEmit = wrapper(emitFunc);
+    wrappedEmit(emitEventName, emitArg);
+
+    expect(requestData).toEqual({ body: '' });
+  });
+
+  test('httpRequestWriteWrapper -> simple flow -> write(str)', dontExitWithoutDone => {
+    const requestData = {
+      body: '',
+    };
+
+    const firstArg = 'BODY';
+
+    const writeFunc = (...args) => {
+      expect(args).toEqual([firstArg]);
+      // Assert the writeFunc was called
+      dontExitWithoutDone();
+    };
+
+    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
+    const wrappedWrite = wrapper(writeFunc);
+    wrappedWrite(firstArg);
+
+    expect(requestData).toEqual({ body: 'BODY' });
+  });
+
+  test('httpRequestWriteWrapper -> simple flow -> write(Buffer)', dontExitWithoutDone => {
+    const requestData = {
+      body: '',
+    };
+    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
+
+    const firstArg = Buffer.from('BODY');
+
+    const writeFunc = (...args) => {
+      expect(args).toEqual([firstArg]);
+      // Assert the writeFunc was called
+      dontExitWithoutDone();
+    };
+
+    const wrappedWrite = wrapper(writeFunc);
+    wrappedWrite(firstArg);
+
+    expect(requestData).toEqual({ body: 'BODY' });
+  });
+
+  test('httpRequestWriteWrapper -> simple flow -> write(Buffer, encoding)', dontExitWithoutDone => {
+    const requestData = {
+      body: '',
+    };
+
+    const firstArg = 'BODY';
+    const secArg = 'base64';
+
+    const writeFunc = (...args) => {
+      expect(args).toEqual([firstArg, secArg]);
+      // Assert the writeFunc was called
+      dontExitWithoutDone();
+    };
+
+    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
+    const wrappedWrite = wrapper(writeFunc);
+    wrappedWrite(firstArg, secArg);
+
+    expect(requestData).toEqual({ body: 'Qk9EWQ==' });
+  });
+
+  test('httpRequestWriteWrapper -> simple flow -> write(Buffer, encoding, callback)', dontExitWithoutDone => {
+    const requestData = {
+      body: '',
+    };
+
+    const firstArg = Buffer.from('BODY');
+    const secArg = 'utf8';
+    const thirdArg = () => {};
+
+    const writeFunc = (...args) => {
+      expect(args).toEqual([firstArg, secArg, thirdArg]);
+      // Assert the writeFunc was called
+      dontExitWithoutDone();
+    };
+
+    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
+    const wrappedWrite = wrapper(writeFunc);
+    wrappedWrite(firstArg, secArg, thirdArg);
+
+    expect(requestData).toEqual({ body: 'BODY' });
+  });
+
+  test('httpRequestWriteWrapper -> simple flow -> write(Buffer, callback)', dontExitWithoutDone => {
+    const requestData = {
+      body: '',
+    };
+
+    const firstArg = Buffer.from('BODY');
+    const secArg = () => {};
+
+    const writeFunc = (...args) => {
+      expect(args).toEqual([firstArg, secArg]);
+      // Assert the writeFunc was called
+      dontExitWithoutDone();
+    };
+
+    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
+    const wrappedWrite = wrapper(writeFunc);
+    wrappedWrite(firstArg, secArg);
+
+    expect(requestData).toEqual({ body: 'BODY' });
+  });
+
+  test('httpRequestWriteWrapper -> simple flow -> write(str, callback)', dontExitWithoutDone => {
+    const requestData = {
+      body: '',
+    };
+
+    const firstArg = 'BODY';
+    const secArg = () => {};
+
+    const writeFunc = (...args) => {
+      expect(args).toEqual([firstArg, secArg]);
+      // Assert the writeFunc was called
+      dontExitWithoutDone();
+    };
+
+    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
+    const wrappedWrite = wrapper(writeFunc);
+    wrappedWrite(firstArg, secArg);
+
+    expect(requestData).toEqual({ body: 'BODY' });
+  });
+
+  test('httpRequestWriteWrapper -> not override body', dontExitWithoutDone => {
+    const requestData = {
+      body: 'BODY1',
+    };
+
+    const firstArg = Buffer.from('BODY2');
+
+    const writeFunc = (...args) => {
+      expect(args).toEqual([firstArg]);
+      // Assert the emitFunc was called
+      dontExitWithoutDone();
+    };
+
+    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
+    const wrappedWrite = wrapper(writeFunc);
+    wrappedWrite(firstArg);
+
+    expect(requestData).toEqual({ body: 'BODY1' });
+  });
+
+  test('httpRequestWriteWrapper -> not crashed on bad data', dontExitWithoutDone => {
+    const requestData = {
+      body: '',
+    };
+
+    const firstArg = {};
+    const secArg = {};
+
+    const writeFunc = (...args) => {
+      expect(args).toEqual([firstArg, secArg]);
+      // Assert the emitFunc was called
+      dontExitWithoutDone();
+    };
+
+    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
+    const wrappedWrite = wrapper(writeFunc);
+    wrappedWrite(firstArg, secArg);
+
+    expect(requestData).toEqual({ body: '' });
   });
 
   test('getHostFromOptionsOrUrl', () => {
@@ -253,18 +501,22 @@ describe('http hook', () => {
     expect(originalEndFn).toHaveBeenCalledWith(data, encoding, callback);
   });
 
-  test('httpRequestArguments', () => {
+  test('httpRequestArguments -> no arguments', () => {
     expect(() => httpHook.httpRequestArguments([])).toThrow(
       new Error('http/s.request(...) was called without any arguments.')
     );
+  });
 
+  test('httpRequestArguments -> http(stringUrl)', () => {
     const expected1 = {
       url: 'https://x.com',
       options: undefined,
       callback: undefined,
     };
     expect(httpHook.httpRequestArguments(['https://x.com'])).toEqual(expected1);
+  });
 
+  test('httpRequestArguments -> http(stringUrl, callback)', () => {
     const callback = () => {};
 
     const expected2 = {
@@ -275,7 +527,10 @@ describe('http hook', () => {
     expect(httpHook.httpRequestArguments(['https://x.com', callback])).toEqual(
       expected2
     );
+  });
 
+  test('httpRequestArguments -> http(stringUrl, options, callback)', () => {
+    const callback = () => {};
     const options = { a: 'b' };
     const expected3 = {
       url: 'https://x.com',
@@ -285,7 +540,11 @@ describe('http hook', () => {
     expect(
       httpHook.httpRequestArguments(['https://x.com', options, callback])
     ).toEqual(expected3);
+  });
 
+  test('httpRequestArguments -> http(options, callback)', () => {
+    const callback = () => {};
+    const options = { a: 'b' };
     const expected4 = {
       url: undefined,
       options,
@@ -296,7 +555,39 @@ describe('http hook', () => {
     );
   });
 
-  test('getHookedClientRequestArgs', () => {
+  test('httpRequestArguments -> http(objectUrl)', () => {
+    const url = new URL('https://x.com');
+    const expected1 = {
+      url,
+      options: undefined,
+      callback: undefined,
+    };
+    expect(httpHook.httpRequestArguments([url])).toEqual(expected1);
+  });
+
+  test('httpRequestArguments -> http(objectUrl, options)', () => {
+    const url = new URL('https://x.com');
+    const options = { a: 'b' };
+    const expected1 = {
+      url,
+      options,
+      callback: undefined,
+    };
+    expect(httpHook.httpRequestArguments([url, options])).toEqual(expected1);
+  });
+
+  test('httpRequestArguments -> http(objectUrl, callback)', () => {
+    const url = new URL('https://x.com');
+    const callback = () => {};
+    const expected1 = {
+      url,
+      options: undefined,
+      callback,
+    };
+    expect(httpHook.httpRequestArguments([url, callback])).toEqual(expected1);
+  });
+
+  test('getHookedClientRequestArgs -> request(options, callback)', () => {
     const url1 = undefined;
     const options1 = { a: 'b' };
     const callback1 = () => {};
@@ -314,7 +605,9 @@ describe('http hook', () => {
         requestData1
       )
     ).toEqual(expected1);
+  });
 
+  test('getHookedClientRequestArgs -> request(url, callback)', () => {
     const url2 = 'https://xaws.com';
     const options2 = undefined;
     const callback2 = () => {};
@@ -332,7 +625,9 @@ describe('http hook', () => {
         requestData2
       )
     ).toEqual(expected2);
+  });
 
+  test('getHookedClientRequestArgs -> request(url)', () => {
     const url3 = 'https://x.com';
     const options3 = undefined;
     const callback3 = undefined;
@@ -347,7 +642,9 @@ describe('http hook', () => {
         requestData3
       )
     ).toEqual(expected3);
+  });
 
+  test('getHookedClientRequestArgs -> request(url, options)', () => {
     const url4 = 'https://bla.amazonaws.com/asdf';
     const options4 = { headers: { 'Content-Type': 'text/plain' } };
     const callback4 = undefined;
@@ -418,6 +715,24 @@ describe('http hook', () => {
     ).toEqual(retVal2);
 
     expect(originalOnFn2).toHaveBeenCalledWith(event2, callback2);
+  });
+
+  test('httpRequestWrapper - shimmer all wraps failed', () => {
+    utils.setWarm();
+    const handlerInputs = new HandlerInputesBuilder().build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
+    const requestData = HttpSpanBuilder.DEFAULT_REQUEST_DATA;
+
+    spies.shimmer.mockImplementation((obj, funcName) => {
+      if (['end', 'emit', 'on', 'write'].includes(funcName)) {
+        throw Error(funcName);
+      }
+    });
+    const wrappedRequest = httpHook.httpRequestWrapper(HttpsMocker.request);
+
+    wrappedRequest(requestData, () => {});
+
+    expect(HttpsRequestsForTesting.getStartedRequests()).toEqual(1);
   });
 
   test('httpRequestWrapper', () => {
@@ -513,7 +828,7 @@ describe('http hook', () => {
 
     expect(originalRequestFn).toHaveBeenCalledWith(options4);
 
-    expect(shimmer.wrap).toHaveBeenCalledWith(
+    expect(spies.shimmer).toHaveBeenCalledWith(
       clientRequest4,
       'on',
       expect.any(Function)
@@ -542,7 +857,7 @@ describe('http hook', () => {
 
     expect(originalRequestFn).toHaveBeenCalledWith(options4);
 
-    expect(shimmer.wrap).toHaveBeenCalledWith(
+    expect(spies.shimmer).toHaveBeenCalledWith(
       clientRequest6,
       'on',
       expect.any(Function)
@@ -617,7 +932,7 @@ describe('http hook', () => {
       body: 'DummyDataChunk',
     };
 
-    jest.spyOn(shimmer, 'wrap').mockImplementationOnce(() => {
+    spies.shimmer.mockImplementationOnce(() => {
       throw Error();
     });
 
@@ -795,22 +1110,22 @@ describe('http hook', () => {
 
   test('export default', () => {
     defaultHttp();
-    expect(shimmer.wrap).toHaveBeenCalledWith(
+    expect(spies.shimmer).toHaveBeenCalledWith(
       http,
       'request',
       httpHook.httpRequestWrapper
     );
-    expect(shimmer.wrap).toHaveBeenCalledWith(
+    expect(spies.shimmer).toHaveBeenCalledWith(
       https,
       'request',
       httpHook.httpRequestWrapper
     );
-    expect(shimmer.wrap).toHaveBeenCalledWith(
+    expect(spies.shimmer).toHaveBeenCalledWith(
       https,
       'get',
       expect.any(Function)
     );
-    expect(shimmer.wrap).toHaveBeenCalledWith(
+    expect(spies.shimmer).toHaveBeenCalledWith(
       https,
       'get',
       expect.any(Function)
