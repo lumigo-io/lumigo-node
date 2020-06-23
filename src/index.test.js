@@ -16,6 +16,7 @@ describe('index', () => {
   });
 
   test('execution tags - 2 versions of tracer - layer and manual', async () => {
+    jest.setTimeout(15000);
     const originDirPath = __dirname;
     const dupDirPath = `${originDirPath}Dup'`;
     const layerPath = `${dupDirPath}/index.js`;

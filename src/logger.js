@@ -5,6 +5,13 @@ const WARN_CLIENT_PREFIX = 'Lumigo Warning';
 
 const MAX_DUPLICATE_LOGS = 50;
 
+export const LOG_LEVELS = {
+  INFO: 'INFO',
+  WARNING: 'WARNING',
+  FATAL: 'FATAL',
+  DEBUG: 'DEBUG',
+};
+
 export const LogStore = (() => {
   let logSet = new Set([]);
   let duplicateLogsCount = 0;
@@ -50,7 +57,7 @@ export const fatal = invokeLog('FATAL');
 
 export const debug = invokeLog('DEBUG');
 
-const log = (levelname, message, obj) => {
+export const log = (levelname, message, obj) => {
   const storeLogsIsOn = isStoreLogs();
   storeLogsIsOn && LogStore.addLog(levelname, message, obj);
   if (exports.isDebug() && !storeLogsIsOn) {
