@@ -1,13 +1,9 @@
-import shimmer from 'shimmer';
 import * as extender from '../extender';
 import http from 'http';
 import https from 'https';
 import { SpansContainer } from '../globals';
 import {
-  getAWSEnvironment,
-  getPatchedTraceId,
   lowerCaseObjectKeys,
-  isAwsService,
   getEdgeHost,
   addHeaders,
   getRandomId,
@@ -19,7 +15,6 @@ import {
 import { getHttpSpan } from '../spans/awsSpan';
 import { URL } from 'url';
 import { noCirculars } from '../tools/noCirculars';
-import * as logger from '../logger';
 import {
   extractBodyFromEmitSocketEvent,
   extractBodyFromEndFunc,
@@ -171,65 +166,41 @@ export const httpRequestArguments = args => {
   return { url, options, callback };
 };
 
-const functionIsAlreadyWrapped = originalRequestFn =>
-  !!(originalRequestFn && originalRequestFn.__wrapped);
+export const httpBeforeRequestWrapper = (args, extenderContext) => {
+  extenderContext.isTraceDisabled = true;
 
-export const httpRequestWrapper = originalRequestFn => {
-  if (functionIsAlreadyWrapped(originalRequestFn)) return originalRequestFn;
-  return function(...args) {
-    let url, options, host;
-    let isTraceDisabled = true;
-    try {
-      ({ url, options } = httpRequestArguments(args));
-      host = getHostFromOptionsOrUrl(options, url);
-      isTraceDisabled = isBlacklisted(host) || !isValidAlias();
-    } catch (err) {
-      logger.warn('request parsing error', err);
+  const { url, options } = httpRequestArguments(args);
+  const host = getHostFromOptionsOrUrl(options, url);
+  extenderContext.isTraceDisabled = isBlacklisted(host) || !isValidAlias();
+
+  if (!extenderContext.isTraceDisabled) {
+    const requestData = parseHttpRequestOptions(options, url);
+    const requestRandomId = getRandomId();
+
+    extenderContext.requestRandomId = requestRandomId;
+    extenderContext.requestData = requestData;
+
+    if (isTimeoutTimerEnabled()) {
+      const fixedRequestData = noCirculars(requestData);
+      const httpSpan = getHttpSpan(requestRandomId, fixedRequestData);
+      SpansContainer.addSpan(httpSpan);
     }
+  }
+};
 
-    if (isTraceDisabled) {
-      return originalRequestFn.apply(this, args);
-    }
+export const httpAfterRequestWrapper = (args, originalFnResult, extenderContext) => {
+  const clientRequest = originalFnResult;
+  const { requestData, requestRandomId, isTraceDisabled } = extenderContext;
+  if (!isTraceDisabled) {
+    const endWrapper = httpRequestEndWrapper(requestData, requestRandomId);
+    extender.hook(clientRequest, 'end', { beforeHook: endWrapper });
 
-    try {
-      const headers = options.headers;
-      logger.debug('Starting hook', { host, url, headers });
-      // XXX Create a pure function - something like: 'patchOptionsForAWSService'
-      // return the patched options
-      const isRequestToAwsService = isAwsService(host);
-      if (isRequestToAwsService) {
-        const { awsXAmznTraceId } = getAWSEnvironment();
-        const traceId = getPatchedTraceId(awsXAmznTraceId);
-        options.headers['X-Amzn-Trace-Id'] = traceId;
-      }
+    const emitWrapper = httpRequestEmitWrapper(requestData, requestRandomId);
+    extender.hook(clientRequest, 'emit', { beforeHook: emitWrapper });
 
-      const requestData = parseHttpRequestOptions(options, url);
-      const requestRandomId = getRandomId();
-
-      if (isTimeoutTimerEnabled()) {
-        const fixedRequestData = noCirculars(requestData);
-        const httpSpan = getHttpSpan(requestRandomId, fixedRequestData);
-        SpansContainer.addSpan(httpSpan);
-      }
-
-      const clientRequest = originalRequestFn.apply(this, args);
-
-      const endWrapper = httpRequestEndWrapper(requestData, requestRandomId);
-      extender.hook(clientRequest, 'end', { beforeHook: endWrapper });
-
-      const emitWrapper = httpRequestEmitWrapper(requestData, requestRandomId);
-      extender.hook(clientRequest, 'emit', { beforeHook: emitWrapper });
-
-      const writeWrapper = httpRequestWriteWrapper(requestData);
-      extender.hook(clientRequest, 'write', { beforeHook: writeWrapper });
-
-      return clientRequest;
-    } catch (err) {
-      // eslint-disable-next-line
-      logger.warn('hook error', err.message);
-      return originalRequestFn.apply(this, args);
-    }
-  };
+    const writeWrapper = httpRequestWriteWrapper(requestData);
+    extender.hook(clientRequest, 'write', { beforeHook: writeWrapper });
+  }
 };
 
 export const httpGetWrapper = httpModule => (/* originalGetFn */) =>
@@ -250,9 +221,18 @@ export const addStepFunctionEvent = messageId => {
   SpansContainer.addSpan(stepSpan);
 };
 
+export const wrapHttp = httpLib => {
+  extender.hook(httpLib, 'get', {
+    beforeHook: httpBeforeRequestWrapper,
+    afterHook: httpAfterRequestWrapper,
+  });
+  extender.hook(httpLib, 'request', {
+    beforeHook: httpBeforeRequestWrapper,
+    afterHook: httpAfterRequestWrapper,
+  });
+};
+
 export default () => {
-  shimmer.wrap(http, 'get', httpGetWrapper(http));
-  shimmer.wrap(https, 'get', httpGetWrapper(https));
-  shimmer.wrap(http, 'request', httpRequestWrapper);
-  shimmer.wrap(https, 'request', httpRequestWrapper);
+  wrapHttp(http);
+  wrapHttp(https);
 };

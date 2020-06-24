@@ -91,6 +91,46 @@ describe('extender', () => {
     expect(beforeCounter).toEqual(1);
   });
 
+  test('hook -> extenderContext', () => {
+    let afterCounter = 0;
+    let beforeCounter = 0;
+    extender.hook(DummyCounterService, 'incrementToDummyCounter', {
+      beforeHook: (args, extenderContext) => {
+        expect(extenderContext).toEqual({});
+        extenderContext.a = '1';
+        beforeCounter++;
+      },
+      afterHook: (args, functionResult, extenderContext) => {
+        expect(extenderContext).toEqual({ a: '1' });
+        afterCounter++;
+      },
+    });
+    DummyCounterService.incrementToDummyCounter();
+    expect(DummyCounterService.getDummyCounter()).toEqual(1);
+    expect(afterCounter).toEqual(1);
+    expect(beforeCounter).toEqual(1);
+  });
+
+  test('hook -> afterHook got return value', () => {
+    let afterCounter = 0;
+    let beforeCounter = 0;
+    extender.hook(DummyCounterService, 'getDummyCounter', {
+      beforeHook: (args, extenderContext) => {
+        expect(extenderContext).toEqual({});
+        extenderContext.a = '1';
+        beforeCounter++;
+      },
+      afterHook: (args, functionResult) => {
+        expect(functionResult).toEqual(1);
+        afterCounter++;
+      },
+    });
+    DummyCounterService.incrementToDummyCounter();
+    expect(DummyCounterService.getDummyCounter()).toEqual(1);
+    expect(afterCounter).toEqual(1);
+    expect(beforeCounter).toEqual(1);
+  });
+
   test('hook -> return value', () => {
     let beforeCounter = 0;
     extender.hook(DummyCounterService, 'getDummyCounter', {
@@ -133,8 +173,7 @@ describe('extender', () => {
   });
 
   test('hook -> safe mode - shimmer', () => {
-    //This is have to be the last test
-    jest.spyOn(shimmer, 'wrap').mockImplementation(() => {
+    jest.spyOn(shimmer, 'wrap').mockImplementationOnce(() => {
       throw new Error();
     });
 

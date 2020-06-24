@@ -1,9 +1,8 @@
 import { lowerCaseObjectKeys } from '../utils';
 import EventEmitter from 'events';
-import defaultHttp from './http';
+import defaultHttp, { wrapHttp } from './http';
 import MockDate from 'mockdate';
 import shimmer from 'shimmer';
-import crypto from 'crypto';
 import https from 'https';
 import http from 'http';
 import { HttpSpanBuilder } from '../../testUtils/httpSpanBuilder';
@@ -18,17 +17,12 @@ import * as utils from '../utils';
 import { SpansContainer, TracerGlobals } from '../globals';
 import { HandlerInputesBuilder } from '../../testUtils/handlerInputesBuilder';
 
-jest.mock('../reporter');
-
 describe('http hook', () => {
   process.env['AWS_REGION'] = 'us-east-x';
   process.env['_X_AMZN_TRACE_ID'] =
     'Root=1-5b1d2450-6ac46730d346cad0e53f89d0;Parent=59fa1aeb03c2ec1f;Sampled=1';
 
   const spies = {};
-  spies.getEdgeHost = jest.spyOn(utils, 'getEdgeHost');
-  spies.randomBytes = jest.spyOn(crypto, 'randomBytes');
-  spies.getRandomId = jest.spyOn(utils, 'getRandomId');
   spies.shimmer = jest.spyOn(shimmer, 'wrap');
 
   beforeEach(() => {
@@ -39,8 +33,7 @@ describe('http hook', () => {
   test('isBlacklisted', () => {
     const host = 'asdf';
     const edgeHost = 'us-east-x.lumigo-tracer-edge.golumigo.com';
-    utils.getEdgeHost.mockReturnValueOnce(edgeHost);
-    utils.getEdgeHost.mockReturnValueOnce(edgeHost);
+    TracerGlobals.setTracerInputs({ ...TracerGlobals.getTracerInputs(), edgeHost });
     expect(httpHook.isBlacklisted(host)).toBe(false);
     expect(httpHook.isBlacklisted(edgeHost)).toBe(true);
   });
@@ -476,114 +469,7 @@ describe('http hook', () => {
     expect(httpHook.httpRequestArguments([url, callback])).toEqual(expected1);
   });
 
-  test('httpRequestWrapper', () => {
-    const originalRequestFn = jest.fn();
-    const edgeHost = 'edge-asdf.com';
-    utils.getEdgeHost.mockReturnValueOnce(edgeHost);
-    const callback1 = jest.fn();
-
-    // Blacklisted.
-    const options1 = { host: edgeHost };
-    httpHook.httpRequestWrapper(originalRequestFn)(options1, callback1);
-    expect(originalRequestFn).toHaveBeenCalledWith(options1, callback1);
-
-    originalRequestFn.mockClear();
-
-    // Already traced.
-    const options3 = { host: 'bla.com' };
-    const callback3 = jest.fn();
-    callback3.__lumigoSentinel = true;
-    utils.getEdgeHost.mockReturnValueOnce(edgeHost);
-    httpHook.httpRequestWrapper(originalRequestFn)(options3, callback3);
-    expect(originalRequestFn).toHaveBeenCalledWith(options3, callback3);
-
-    originalRequestFn.mockClear();
-
-    // Error within Lumigo's code.
-    const options5 = { host: 'bla.com' };
-    const callback5 = jest.fn();
-    utils.getEdgeHost.mockReturnValueOnce(edgeHost);
-    originalRequestFn.mockImplementationOnce(() => {
-      throw new Error();
-    });
-
-    httpHook.httpRequestWrapper(originalRequestFn)(options5, callback5);
-    expect(originalRequestFn).toHaveBeenCalledTimes(2);
-    expect(originalRequestFn).toHaveBeenCalledWith(options5, expect.any(Function));
-    originalRequestFn.mockClear();
-
-    spies.randomBytes.mockReturnValueOnce(Buffer.from('aa'));
-    // Regular case
-    const options2 = {
-      host: 'baba.amazonaws.com',
-      port: 443,
-      protocol: 'https:',
-      path: '/api/where/is/satoshi',
-      method: 'POST',
-      headers: { X: 'Y' },
-    };
-
-    const callback2 = jest.fn();
-
-    const clientRequest = { a: 'b' };
-    originalRequestFn.mockReturnValueOnce(clientRequest);
-    utils.getEdgeHost.mockReturnValueOnce(edgeHost);
-
-    const expectedHeaders2 = {
-      X: 'Y',
-      ['X-Amzn-Trace-Id']:
-        'Root=1-00006161-64a1b06067c2100c52e51ef4;Parent=28effe37598bb622;Sampled=0',
-    };
-    const expectedOptions2 = Object.assign({}, options2, {
-      headers: expectedHeaders2,
-    });
-    expect(httpHook.httpRequestWrapper(originalRequestFn)(options2, callback2)).toEqual(
-      clientRequest
-    );
-
-    expect(originalRequestFn).toHaveBeenCalledWith(expectedOptions2, expect.any(Function));
-
-    originalRequestFn.mockClear();
-    // No callback provided case
-    const options4 = {
-      host: 'asdf1.com',
-      port: 443,
-      protocol: 'https:',
-      path: '/api/where/is/satoshi',
-      method: 'POST',
-      headers: { X: 'Y' },
-    };
-
-    const clientRequest4 = { a: 'b' };
-    originalRequestFn.mockReturnValueOnce(clientRequest4);
-    utils.getEdgeHost.mockReturnValueOnce(edgeHost);
-    expect(httpHook.httpRequestWrapper(originalRequestFn)(options4)).toEqual(clientRequest4);
-
-    expect(originalRequestFn).toHaveBeenCalledWith(options4);
-
-    //Circular object
-    const a6 = {};
-    const b6 = { a6 };
-    a6.b6 = b6;
-    const options6 = {
-      host: 'asdf1.com',
-      port: 443,
-      protocol: 'https:',
-      path: '/api/where/is/satoshi',
-      method: 'POST',
-      headers: { X: 'Y' },
-      a6,
-    };
-
-    const clientRequest6 = { a: 'b' };
-    originalRequestFn.mockReturnValueOnce(clientRequest6);
-    utils.getEdgeHost.mockReturnValueOnce(edgeHost);
-    expect(httpHook.httpRequestWrapper(originalRequestFn)(options6)).toEqual(clientRequest6);
-
-    expect(originalRequestFn).toHaveBeenCalledWith(options4);
-  });
-
-  test('httpRequestWrapper - simple flow', () => {
+  test('wrapHttp - simple flow', () => {
     utils.setTimeoutTimerDisabled();
     const handlerInputs = new HandlerInputesBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
@@ -593,7 +479,8 @@ describe('http hook', () => {
       body: 'OK',
     };
 
-    shimmer.wrap(HttpsMocker, 'request', httpHook.httpRequestWrapper);
+    wrapHttp(HttpsMocker);
+
     const req = HttpsMocker.request(requestData, () => {});
     HttpsScenarioBuilder.appendNextResponse(req, responseData.body);
 
@@ -614,14 +501,68 @@ describe('http hook', () => {
     expect(spans).toEqual([expectedSpan]);
   });
 
-  test('httpRequestWrapper - added span before request finish', () => {
+  test('wrapHttp - no callback provided', () => {
+    utils.setTimeoutTimerDisabled();
+    const handlerInputs = new HandlerInputesBuilder().build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
+    const requestData = HttpSpanBuilder.getDefaultData(HttpSpanBuilder.DEFAULT_REQUEST_DATA);
+    const responseData = {
+      statusCode: 200,
+      body: 'OK',
+    };
+
+    wrapHttp(HttpsMocker);
+
+    const req = HttpsMocker.request(requestData);
+    HttpsScenarioBuilder.appendNextResponse(req, responseData.body);
+
+    const spans = SpansContainer.getSpans();
+
+    const expectedSpan = new HttpSpanBuilder()
+      .withStarted(spans[0].started)
+      .withEnded(spans[0].ended)
+      .withSpanId(spans[0].id)
+      .withHttpInfo({
+        host: HttpSpanBuilder.DEFAULT_HOST,
+        request: requestData,
+        response: responseData,
+      })
+      .withRequestTimesFromSpan(spans[0])
+      .build();
+
+    expect(spans).toEqual([expectedSpan]);
+  });
+
+  test('wrapHttp - black listed url', () => {
+    const edgeHost = 'http://a.com';
+    const handlerInputs = new HandlerInputesBuilder().build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
+    TracerGlobals.setTracerInputs({ ...TracerGlobals.getTracerInputs(), edgeHost });
+
+    const requestData = { host: edgeHost };
+    const responseData = {
+      statusCode: 200,
+      body: 'OK',
+    };
+
+    wrapHttp(HttpsMocker);
+
+    const req = HttpsMocker.request(requestData);
+    HttpsScenarioBuilder.appendNextResponse(req, responseData.body);
+
+    const spans = SpansContainer.getSpans();
+
+    expect(spans).toEqual([]);
+  });
+
+  test('wrapHttp - added span before request finish', () => {
     const handlerInputs = new HandlerInputesBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
     const requestData = HttpSpanBuilder.getDefaultData(HttpSpanBuilder.DEFAULT_REQUEST_DATA);
 
     HttpsScenarioBuilder.dontFinishNextRequest();
 
-    shimmer.wrap(HttpsMocker, 'request', httpHook.httpRequestWrapper);
+    wrapHttp(HttpsMocker);
     HttpsMocker.request(requestData, () => {});
 
     const spans = SpansContainer.getSpans();
@@ -641,7 +582,7 @@ describe('http hook', () => {
     expect(spans).toEqual([expectedSpan]);
   });
 
-  test('httpRequestWrapper - added span before request finish for aws service', () => {
+  test('wrapHttp - added span before request finish for aws service', () => {
     const host = 'random.amazonaws.com';
 
     const handlerInputs = new HandlerInputesBuilder().build();
@@ -653,7 +594,7 @@ describe('http hook', () => {
 
     HttpsScenarioBuilder.dontFinishNextRequest();
 
-    shimmer.wrap(HttpsMocker, 'request', httpHook.httpRequestWrapper);
+    wrapHttp(HttpsMocker);
     HttpsMocker.request(requestData, () => {});
 
     const spans = SpansContainer.getSpans();
@@ -673,7 +614,7 @@ describe('http hook', () => {
     expect(spans).toEqual([expectedSpan]);
   });
 
-  test('httpRequestWrapper - wrapping twice not effecting', () => {
+  test('wrapHttp - wrapping twice not effecting', () => {
     utils.setTimeoutTimerDisabled();
     const handlerInputs = new HandlerInputesBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
@@ -683,8 +624,8 @@ describe('http hook', () => {
       body: 'OK',
     };
 
-    shimmer.wrap(HttpsMocker, 'request', httpHook.httpRequestWrapper);
-    shimmer.wrap(HttpsMocker, 'request', httpHook.httpRequestWrapper);
+    wrapHttp(HttpsMocker);
+    wrapHttp(HttpsMocker);
 
     const reqContext = HttpsMocker.request(requestData, () => {});
     HttpsScenarioBuilder.appendNextResponse(reqContext, responseData.body);
@@ -707,7 +648,7 @@ describe('http hook', () => {
     expect(spans).toEqual([expectedSpan]);
   });
 
-  test('httpRequestWrapper - invalid alias dont save spans', () => {
+  test('wrapHttp - invalid alias dont save spans', () => {
     utils.setTimeoutTimerDisabled();
     const handlerInputs = new HandlerInputesBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
@@ -730,9 +671,9 @@ describe('http hook', () => {
     });
     process.env['LUMIGO_VALID_ALIASES'] = '["wrong"]';
 
-    const wrappedRequest = httpHook.httpRequestWrapper(HttpsMocker.request);
+    wrapHttp(HttpsMocker);
 
-    const requestContext = wrappedRequest(requestData, () => {});
+    const requestContext = HttpsMocker.request(requestData, () => {});
     HttpsScenarioBuilder.appendNextResponse(requestContext, responseData.body);
 
     const spans = SpansContainer.getSpans();
@@ -740,7 +681,7 @@ describe('http hook', () => {
     expect(spans).toEqual([]);
   });
 
-  test('httpRequestWrapper - circular object wrapper cutting object', () => {
+  test('wrapHttp - circular object wrapper cutting object', () => {
     utils.setTimeoutTimerDisabled();
     const handlerInputs = new HandlerInputesBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
@@ -755,9 +696,9 @@ describe('http hook', () => {
       body: 'OK',
     };
 
-    const wrappedRequest = httpHook.httpRequestWrapper(HttpsMocker.request);
+    wrapHttp(HttpsMocker);
 
-    const requstContext = wrappedRequest(requestData, () => {});
+    const requstContext = HttpsMocker.request(requestData, () => {});
     HttpsScenarioBuilder.appendNextResponse(requstContext, responseData.body);
 
     const spans = SpansContainer.getSpans();
@@ -793,15 +734,10 @@ describe('http hook', () => {
 
   test('export default', () => {
     defaultHttp();
-    expect(spies.shimmer).toHaveBeenCalledWith(http, 'request', httpHook.httpRequestWrapper);
-    expect(spies.shimmer).toHaveBeenCalledWith(https, 'request', httpHook.httpRequestWrapper);
+    expect(spies.shimmer).toHaveBeenCalledWith(http, 'request', expect.any(Function));
+    expect(spies.shimmer).toHaveBeenCalledWith(https, 'request', expect.any(Function));
     expect(spies.shimmer).toHaveBeenCalledWith(https, 'get', expect.any(Function));
     expect(spies.shimmer).toHaveBeenCalledWith(https, 'get', expect.any(Function));
-  });
-
-  test('httpRequestWrapper no exception', () => {
-    httpHook.httpRequestWrapper(() => {})(/* No argument */);
-    // No exception.
   });
 
   test('addStepFunctionEvent', () => {
@@ -815,7 +751,7 @@ describe('http hook', () => {
     expect(spans[0].info.messageId).toEqual('123');
   });
 
-  test('httpRequestWrapper - shimmer all wraps failed', () => {
+  test('wrapHttp - shimmer all wraps failed', () => {
     utils.setWarm();
     const handlerInputs = new HandlerInputesBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
@@ -826,9 +762,9 @@ describe('http hook', () => {
         throw Error(funcName);
       }
     });
-    const wrappedRequest = httpHook.httpRequestWrapper(HttpsMocker.request);
+    wrapHttp(HttpsMocker.request);
 
-    wrappedRequest(requestData, () => {});
+    HttpsMocker.request(requestData, () => {});
 
     expect(HttpsRequestsForTesting.getStartedRequests()).toEqual(1);
   });

@@ -139,7 +139,8 @@ export const HttpsMocker = (() => {
     if (isObject(nextResponse) && 'headers' in nextResponse) {
       callbackEmitter.headers = nextResponse.headers;
     }
-    callback(callbackEmitter);
+
+    callback && callback(callbackEmitter);
 
     if (nextResponse) callbackEmitter.emit('data', nextResponse);
 

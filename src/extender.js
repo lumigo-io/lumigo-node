@@ -8,13 +8,14 @@ export const hook = (module, funcName, options = {}) => {
   const { beforeHook = noop, afterHook = noop } = options;
   const safeBeforeHook = safeExecute(beforeHook, `before hook of ${funcName} fail`);
   const safeAfterHook = safeExecute(afterHook, `after hook of ${funcName} fail`);
+  const extenderContext = {};
   try {
     const wrapper = originalFn => {
       if (originalFn && originalFn.__wrapped) return originalFn;
       return function(...args) {
-        safeBeforeHook.call(this, args);
+        safeBeforeHook.call(this, args, extenderContext);
         const originalFnResult = originalFn.apply(this, args);
-        safeAfterHook.call(this, args);
+        safeAfterHook.call(this, args, originalFnResult, extenderContext);
         return originalFnResult;
       };
     };
