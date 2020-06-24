@@ -119,9 +119,7 @@ describe('globals', () => {
     process.env.LUMIGO_TRACER_TOKEN = 'fromEnvs';
 
     globals.TracerGlobals.setTracerInputs({ token });
-    expect(globals.TracerGlobals.getTracerInputs().token).toEqual(
-      'fromParameters'
-    );
+    expect(globals.TracerGlobals.getTracerInputs().token).toEqual('fromParameters');
 
     globals.TracerGlobals.setTracerInputs({});
     expect(globals.TracerGlobals.getTracerInputs().token).toEqual('fromEnvs');
@@ -184,14 +182,10 @@ describe('globals', () => {
     process.env.LUMIGO_TRACER_HOST = 'fromEnvs';
 
     globals.TracerGlobals.setTracerInputs({ edgeHost });
-    expect(globals.TracerGlobals.getTracerInputs().edgeHost).toEqual(
-      'fromParameters'
-    );
+    expect(globals.TracerGlobals.getTracerInputs().edgeHost).toEqual('fromParameters');
 
     globals.TracerGlobals.setTracerInputs({});
-    expect(globals.TracerGlobals.getTracerInputs().edgeHost).toEqual(
-      'fromEnvs'
-    );
+    expect(globals.TracerGlobals.getTracerInputs().edgeHost).toEqual('fromEnvs');
   });
 
   test('setGlobals stepFunction', () => {
@@ -359,9 +353,7 @@ describe('globals', () => {
   test('ExecutionTags.addTag too many tags', () => {
     for (let i = 0; i < 51; i++) globals.ExecutionTags.addTag(`k${i}`, `v${i}`);
     expect(globals.ExecutionTags.getTags().length).toEqual(50);
-    expect(
-      globals.ExecutionTags.getTags().filter(tag => tag.key === 'k50')
-    ).toEqual([]);
+    expect(globals.ExecutionTags.getTags().filter(tag => tag.key === 'k50')).toEqual([]);
   });
 
   test('ExecutionTags.addTag catch exception', () => {

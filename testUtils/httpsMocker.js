@@ -5,13 +5,43 @@ export const HttpsScenarioBuilder = (() => {
   let failForNext = 0;
   let nextResponse = [];
   let isNextRequestShouldFinish = true;
+  let useEmit = false;
 
   const failForTheNextTimes = times => {
     failForNext += times;
   };
 
-  const appendNextResponse = response => {
-    nextResponse.push(response);
+  const useEmitForNextResponse = () => {
+    useEmit = true;
+  };
+
+  const isUseEmitForResponse = () => useEmit;
+
+  const appendNextResponse = (requestContext, response) => {
+    if (!requestContext && !HttpsScenarioBuilder.isUseEmitForResponse()) {
+      nextResponse.push(response);
+      return true;
+    }
+    const responseEmitter = new EventEmitter();
+    responseEmitter.statusCode = 200;
+    if (isObject(response) && 'headers' in response) {
+      responseEmitter.headers = response.headers;
+    }
+
+    if (requestContext && requestContext.emit) {
+      requestContext.emit('response', responseEmitter);
+    }
+
+    responseEmitter.emit('data', response);
+
+    if (HttpsScenarioBuilder.isRequestShouldFinish()) {
+      if (HttpsScenarioBuilder.isNextRequestFailed()) {
+        responseEmitter.statusCode = 500;
+        responseEmitter.emit('error', 'Error!');
+      } else {
+        responseEmitter.emit('end');
+      }
+    }
   };
 
   const getNextData = () => {
@@ -41,10 +71,10 @@ export const HttpsScenarioBuilder = (() => {
     failForNext = 0;
     nextResponse = [];
     isNextRequestShouldFinish = true;
+    useEmit = false;
   };
 
   return {
-    defaultResponse,
     failForTheNextTimes,
     isNextRequestFailed,
     clean,
@@ -52,6 +82,8 @@ export const HttpsScenarioBuilder = (() => {
     getNextData,
     isRequestShouldFinish,
     dontFinishNextRequest,
+    useEmitForNextResponse,
+    isUseEmitForResponse,
   };
 })();
 
@@ -111,7 +143,10 @@ export const HttpsMocker = (() => {
 
     if (nextResponse) callbackEmitter.emit('data', nextResponse);
 
-    if (HttpsScenarioBuilder.isRequestShouldFinish()) {
+    if (
+      HttpsScenarioBuilder.isRequestShouldFinish() &&
+      !HttpsScenarioBuilder.isUseEmitForResponse()
+    ) {
       if (HttpsScenarioBuilder.isNextRequestFailed()) {
         responseEmitter.statusCode = 500;
         responseEmitter.emit('error', 'Error!');

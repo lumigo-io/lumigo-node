@@ -23,10 +23,7 @@ function traverse(xml, attributeMode) {
   let tagShouldBeArray = false;
 
   //recursion base case
-  if (
-    xml === '' ||
-    (xml.charAt(0) !== '<' && xml.charAt(xml.length - 1) !== '>')
-  ) {
+  if (xml === '' || (xml.charAt(0) !== '<' && xml.charAt(xml.length - 1) !== '>')) {
     return xml;
   }
 
@@ -61,10 +58,7 @@ function traverse(xml, attributeMode) {
       substring = '';
       skip = currentTag.length + skip;
     } else {
-      substring = input.substring(
-        input.indexOf('>', skip) + 1,
-        closingTagIndex
-      );
+      substring = input.substring(input.indexOf('>', skip) + 1, closingTagIndex);
       skip = tagLength + substring.length + finishTag.length;
     }
 
@@ -120,10 +114,7 @@ function traverse(xml, attributeMode) {
         }
       }
     } else if (Object.keys(json[tag]).length > 0) {
-      if (
-        (tagShouldBeArray && !json[tag].length) ||
-        typeof json[tag] === 'string'
-      ) {
+      if ((tagShouldBeArray && !json[tag].length) || typeof json[tag] === 'string') {
         const temp = json[tag];
         json[tag] = [temp];
 
@@ -219,9 +210,7 @@ function validate(currentTag) {
 
   if (
     currentTag.charAt(0) === '<' &&
-    (currentTag.charAt(currentTag.length - 2) +
-      currentTag.charAt(currentTag.length - 1) ===
-      '/>' ||
+    (currentTag.charAt(currentTag.length - 2) + currentTag.charAt(currentTag.length - 1) === '/>' ||
       currentTag.charAt(currentTag.length - 1) === '>')
   ) {
     return true;

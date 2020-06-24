@@ -34,11 +34,7 @@ describe('index', () => {
         lumigoManual.addExecutionTag('k0', 'v0');
         return retVal;
       };
-      const result = await lumigoLayer.trace(userHandler)(
-        {},
-        context,
-        callback
-      );
+      const result = await lumigoLayer.trace(userHandler)({}, context, callback);
 
       expect(result).toEqual(retVal);
       const actualTags = HttpsRequestsForTesting.getSentSpans().filter(
@@ -70,10 +66,7 @@ describe('index', () => {
     const actualTags = HttpsRequestsForTesting.getSentSpans().filter(
       span => !span.id.endsWith('_started')
     )[0][EXECUTION_TAGS_KEY];
-    expect(actualTags).toEqual([
-      { key: 'k0', value: 'v0' },
-      { key: 'k1', value: 'v1' },
-    ]);
+    expect(actualTags).toEqual([{ key: 'k0', value: 'v0' }, { key: 'k1', value: 'v1' }]);
   });
 
   test('execution tags - non async handler', async () => {
@@ -93,10 +86,7 @@ describe('index', () => {
     const actualTags = HttpsRequestsForTesting.getSentSpans().filter(
       span => !span.id.endsWith('_started')
     )[0][EXECUTION_TAGS_KEY];
-    expect(actualTags).toEqual([
-      { key: 'k0', value: 'v0' },
-      { key: 'k1', value: 'v1' },
-    ]);
+    expect(actualTags).toEqual([{ key: 'k0', value: 'v0' }, { key: 'k1', value: 'v1' }]);
   });
 
   test('addExecutionTag without tracer not throw exception', async () => {

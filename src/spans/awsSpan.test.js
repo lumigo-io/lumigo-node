@@ -20,8 +20,7 @@ describe('awsSpan', () => {
       AWS_REGION: 'us-east-1',
       AWS_DEFAULT_REGION: 'us-east-1',
       AWS_LAMBDA_LOG_GROUP_NAME: '/aws/lambda/aws-nodejs-dev-hello',
-      AWS_LAMBDA_LOG_STREAM_NAME:
-        '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',
+      AWS_LAMBDA_LOG_STREAM_NAME: '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',
       AWS_LAMBDA_FUNCTION_NAME: 'aws-nodejs-dev-hello',
       AWS_LAMBDA_FUNCTION_MEMORY_SIZE: '1024',
       AWS_LAMBDA_FUNCTION_VERSION: '$LATEST',
@@ -76,9 +75,7 @@ describe('awsSpan', () => {
       logGroupName: '/aws/lambda/aws-nodejs-dev-hello',
       logStreamName: '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',
     };
-    expect(awsSpan.getSpanInfo(exampleApiGatewayEvent)).toEqual(
-      expectedSpanInfo
-    );
+    expect(awsSpan.getSpanInfo(exampleApiGatewayEvent)).toEqual(expectedSpanInfo);
   });
 
   test('getBasicSpan', () => {
@@ -104,8 +101,7 @@ describe('awsSpan', () => {
       messageVersion: 2,
       token: 'DEADBEEF',
       region: 'us-east-1',
-      invokedArn:
-        'arn:aws:lambda:us-east-1:985323015126:function:aws-nodejs-dev-hello',
+      invokedArn: 'arn:aws:lambda:us-east-1:985323015126:function:aws-nodejs-dev-hello',
       invokedVersion: '1',
     };
     spies.isWarm.mockReturnValueOnce(true);
@@ -148,8 +144,7 @@ describe('awsSpan', () => {
       messageVersion: 2,
       token: 'DEADBEEF',
       region: 'us-east-1',
-      invokedArn:
-        'arn:aws:lambda:us-east-1:985323015126:function:aws-nodejs-dev-hello',
+      invokedArn: 'arn:aws:lambda:us-east-1:985323015126:function:aws-nodejs-dev-hello',
       invokedVersion: '1',
       id: '6d26e3c8-60a6-4cee-8a70-f525f47a4caf_started',
       envs:
@@ -198,8 +193,7 @@ describe('awsSpan', () => {
       messageVersion: 2,
       token: 'DEADBEEF',
       region: 'us-east-1',
-      invokedArn:
-        'arn:aws:lambda:us-east-1:985323015126:function:aws-nodejs-dev-hello',
+      invokedArn: 'arn:aws:lambda:us-east-1:985323015126:function:aws-nodejs-dev-hello',
       invokedVersion: '1',
       id: '6d26e3c8-60a6-4cee-8a70-f525f47a4caf_started',
       envs:
@@ -247,8 +241,7 @@ describe('awsSpan', () => {
       name: 'w00t',
       readiness: 'cold',
       region: 'us-east-1',
-      invokedArn:
-        'arn:aws:lambda:us-east-1:985323015126:function:aws-nodejs-dev-hello',
+      invokedArn: 'arn:aws:lambda:us-east-1:985323015126:function:aws-nodejs-dev-hello',
       invokedVersion: '1',
       runtime: 'AWS_Lambda_nodejs8.10',
       started: 895093200000,
@@ -287,8 +280,7 @@ describe('awsSpan', () => {
       name: 'w00t',
       readiness: 'cold',
       region: 'us-east-1',
-      invokedArn:
-        'arn:aws:lambda:us-east-1:985323015126:function:aws-nodejs-dev-hello',
+      invokedArn: 'arn:aws:lambda:us-east-1:985323015126:function:aws-nodejs-dev-hello',
       invokedVersion: '1',
       runtime: 'AWS_Lambda_nodejs8.10',
       started: 895093200000,
@@ -311,9 +303,9 @@ describe('awsSpan', () => {
       type: 'async_callbacked',
     };
     MockDate.set(895179612345);
-    expect(
-      awsSpan.getEndFunctionSpan(functionSpan1, handlerReturnValue1)
-    ).toEqual(expectedFunctionSpan1);
+    expect(awsSpan.getEndFunctionSpan(functionSpan1, handlerReturnValue1)).toEqual(
+      expectedFunctionSpan1
+    );
 
     const err = new Error('new error man');
     const handlerReturnValue2 = {
@@ -346,8 +338,7 @@ describe('awsSpan', () => {
       name: 'w00t',
       readiness: 'cold',
       region: 'us-east-1',
-      invokedArn:
-        'arn:aws:lambda:us-east-1:985323015126:function:aws-nodejs-dev-hello',
+      invokedArn: 'arn:aws:lambda:us-east-1:985323015126:function:aws-nodejs-dev-hello',
       invokedVersion: '1',
       runtime: 'AWS_Lambda_nodejs8.10',
       started: 895093200000,
@@ -365,9 +356,9 @@ describe('awsSpan', () => {
       [EXECUTION_TAGS_KEY]: [],
     };
     MockDate.set(895179612345);
-    expect(
-      awsSpan.getEndFunctionSpan(functionSpan1, handlerReturnValue2)
-    ).toEqual(expectedFunctionSpan2);
+    expect(awsSpan.getEndFunctionSpan(functionSpan1, handlerReturnValue2)).toEqual(
+      expectedFunctionSpan2
+    );
   });
 
   test('getAwsServiceFromHost', () => {
@@ -377,9 +368,7 @@ describe('awsSpan', () => {
 
     const s2 = 'xyz';
     const host2 = `${s2}.cloud.google.com`;
-    expect(awsSpan.getAwsServiceFromHost(host2)).toEqual(
-      awsSpan.EXTERNAL_SERVICE
-    );
+    expect(awsSpan.getAwsServiceFromHost(host2)).toEqual(awsSpan.EXTERNAL_SERVICE);
   });
 
   test('getAwsServiceFromHost -> api-gw', () => {
@@ -406,56 +395,35 @@ describe('awsSpan', () => {
     requestData.host = `dynamodb.amazonaws.com`;
 
     awsSpan.getAwsServiceData(requestData, responseData);
-    expect(awsParsers.dynamodbParser).toHaveBeenCalledWith(
-      requestData,
-      responseData
-    );
+    expect(awsParsers.dynamodbParser).toHaveBeenCalledWith(requestData, responseData);
 
     requestData.host = `sns.amazonaws.com`;
 
     awsSpan.getAwsServiceData(requestData, responseData);
-    expect(awsParsers.snsParser).toHaveBeenCalledWith(
-      requestData,
-      responseData
-    );
+    expect(awsParsers.snsParser).toHaveBeenCalledWith(requestData, responseData);
 
     requestData.host = `lambda.amazonaws.com`;
 
     awsSpan.getAwsServiceData(requestData, responseData);
-    expect(awsParsers.lambdaParser).toHaveBeenCalledWith(
-      requestData,
-      responseData
-    );
+    expect(awsParsers.lambdaParser).toHaveBeenCalledWith(requestData, responseData);
 
     requestData.host = `sqs.amazonaws.com`;
 
     awsSpan.getAwsServiceData(requestData, responseData);
-    expect(awsParsers.sqsParser).toHaveBeenCalledWith(
-      requestData,
-      responseData
-    );
+    expect(awsParsers.sqsParser).toHaveBeenCalledWith(requestData, responseData);
 
     requestData.host = `kinesis.amazonaws.com`;
 
     awsSpan.getAwsServiceData(requestData, responseData);
-    expect(awsParsers.kinesisParser).toHaveBeenCalledWith(
-      requestData,
-      responseData
-    );
+    expect(awsParsers.kinesisParser).toHaveBeenCalledWith(requestData, responseData);
 
     requestData.host = `random.random.execute-api.amazonaws.com`;
     awsSpan.getAwsServiceData(requestData, responseData);
-    expect(awsParsers.apigwParser).toHaveBeenCalledWith(
-      requestData,
-      responseData
-    );
+    expect(awsParsers.apigwParser).toHaveBeenCalledWith(requestData, responseData);
 
     requestData.host = `deadbeef.amazonaws.com`;
     awsSpan.getAwsServiceData(requestData, responseData);
-    expect(awsParsers.awsParser).toHaveBeenCalledWith(
-      requestData,
-      responseData
-    );
+    expect(awsParsers.awsParser).toHaveBeenCalledWith(requestData, responseData);
   });
 
   test('getHttpInfo', () => {
@@ -495,9 +463,7 @@ describe('awsSpan', () => {
     };
 
     process.env.LUMIGO_DOMAINS_SCRUBBER = '["mind"]';
-    expect(awsSpan.getHttpInfo(requestData, responseData)).toEqual(
-      scrubbed_expected
-    );
+    expect(awsSpan.getHttpInfo(requestData, responseData)).toEqual(scrubbed_expected);
   });
 
   test('getBasicHttpSpan', () => {
@@ -524,8 +490,7 @@ describe('awsSpan', () => {
       messageVersion: 2,
       token: 'DEADBEEF',
       region: 'us-east-1',
-      invokedArn:
-        'arn:aws:lambda:us-east-1:985323015126:function:aws-nodejs-dev-hello',
+      invokedArn: 'arn:aws:lambda:us-east-1:985323015126:function:aws-nodejs-dev-hello',
       invokedVersion: '1',
       id,
       type: 'http',
@@ -556,8 +521,7 @@ describe('awsSpan', () => {
       messageVersion: 2,
       token: 'DEADBEEF',
       region: 'us-east-1',
-      invokedArn:
-        'arn:aws:lambda:us-east-1:985323015126:function:aws-nodejs-dev-hello',
+      invokedArn: 'arn:aws:lambda:us-east-1:985323015126:function:aws-nodejs-dev-hello',
       invokedVersion: '1',
       id: spanId,
       type: 'http',
@@ -621,8 +585,7 @@ describe('awsSpan', () => {
       parentId: '6d26e3c8-60a6-4cee-8a70-f525f47a4caf',
       readiness: 'cold',
       region: 'us-east-1',
-      invokedArn:
-        'arn:aws:lambda:us-east-1:985323015126:function:aws-nodejs-dev-hello',
+      invokedArn: 'arn:aws:lambda:us-east-1:985323015126:function:aws-nodejs-dev-hello',
       invokedVersion: '1',
       runtime: 'AWS_Lambda_nodejs8.10',
       service: 'external',
@@ -681,8 +644,7 @@ describe('awsSpan', () => {
       parentId: '6d26e3c8-60a6-4cee-8a70-f525f47a4caf',
       readiness: 'cold',
       region: 'us-east-1',
-      invokedArn:
-        'arn:aws:lambda:us-east-1:985323015126:function:aws-nodejs-dev-hello',
+      invokedArn: 'arn:aws:lambda:us-east-1:985323015126:function:aws-nodejs-dev-hello',
       invokedVersion: '1',
       runtime: 'AWS_Lambda_nodejs8.10',
       service: 'external',

@@ -2,7 +2,7 @@
 import { TracerGlobals } from './globals';
 import * as reporter from './reporter';
 import * as utils from './utils';
-import { HttpsRequestsForTesting } from '../testUtils/httpsMocker';
+import { HttpsRequestsForTesting, HttpsScenarioBuilder } from '../testUtils/httpsMocker';
 import { getJSONBase64Size } from './utils';
 
 describe('reporter', () => {
@@ -126,10 +126,7 @@ describe('reporter', () => {
 
     const result = await reporter.sendSpans(spans);
 
-    const expectedSpans = [
-      { a: 'b', c: 'd' },
-      { e: 'f', g: 'h', secretKey: '****' },
-    ];
+    const expectedSpans = [{ a: 'b', c: 'd' }, { e: 'f', g: 'h', secretKey: '****' }];
     const expectedRequest = buildExpectedRequest(token, expectedSpans);
 
     const requests = HttpsRequestsForTesting.getRequests();

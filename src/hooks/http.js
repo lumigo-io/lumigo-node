@@ -1,4 +1,5 @@
 import shimmer from 'shimmer';
+import * as extender from '../extender';
 import http from 'http';
 import https from 'https';
 import { SpansContainer } from '../globals';
@@ -13,30 +14,28 @@ import {
   getRandomId,
   isTimeoutTimerEnabled,
   isValidAlias,
-  isEncodingType,
   isEmptyString,
-  isValidHttpRequestBody,
+  runOneTimeWrapper,
 } from '../utils';
 import { getHttpSpan } from '../spans/awsSpan';
 import cloneResponse from 'clone-response';
 import { URL } from 'url';
 import { noCirculars } from '../tools/noCirculars';
 import * as logger from '../logger';
+import {
+  extractBodyFromEmitSocketEvent,
+  extractBodyFromEndFunc,
+  extractBodyFromWriteFunc,
+} from './httpUtils';
 
 export const hostBlaclist = new Set(['127.0.0.1']);
-export const isBlacklisted = host =>
-  host === getEdgeHost() || hostBlaclist.has(host);
+export const isBlacklisted = host => host === getEdgeHost() || hostBlaclist.has(host);
 
 export const getHostFromOptionsOrUrl = (options, url) => {
   if (url) {
     return new URL(url).hostname;
   }
-  return (
-    options.hostname ||
-    options.host ||
-    (options.uri && options.uri.hostname) ||
-    'localhost'
-  );
+  return options.hostname || options.host || (options.uri && options.uri.hostname) || 'localhost';
 };
 
 export const parseHttpRequestOptions = (options = {}, url) => {
@@ -55,8 +54,7 @@ export const parseHttpRequestOptions = (options = {}, url) => {
     ({ pathname: path, port, protocol } = myUrl);
   } else {
     path = options.path || '/';
-    port =
-      options.port || options.defaultPort || (agent && agent.defaultPort) || 80;
+    port = options.port || options.defaultPort || (agent && agent.defaultPort) || 80;
     protocol = options.protocol || (port === 443 && 'https:') || 'http:';
   }
 
@@ -79,56 +77,33 @@ export const parseHttpRequestOptions = (options = {}, url) => {
   };
 };
 
-export const httpRequestWriteWrapper = requestData => writeFunc =>
+export const httpRequestWriteWrapper = requestData =>
   function(...args) {
-    safeExecute(() => {
-      if (isEmptyString(requestData.body) && isValidHttpRequestBody(args[0])) {
-        const encoding = isEncodingType(args[1]) ? args[1] : 'utf8';
-        const body =
-          typeof args[0] === 'string'
-            ? Buffer(args[0]).toString(encoding)
-            : args[0].toString();
+    if (isEmptyString(requestData.body)) {
+      const body = extractBodyFromWriteFunc(...args);
+      if (body) requestData.body += body;
+    }
+  };
+
+export const httpRequestEmitWrapper = (requestData, requestRandomId) => {
+  const oneTimerEmitResponseHandler = runOneTimeWrapper(
+    createEmitResponseEmitHandler(requestData, requestRandomId)
+  );
+  return function(...args) {
+    if (args[0] === 'response') {
+      oneTimerEmitResponseHandler(args[1]);
+    }
+    if (args[0] === 'socket') {
+      if (isEmptyString(requestData.body)) {
+        const body = extractBodyFromEmitSocketEvent(args[1]);
         requestData.body += body;
       }
-    }, logger.LOG_LEVELS.INFO)();
-    return writeFunc.apply(this, args);
+    }
   };
+};
 
-export const httpRequestEmitWrapper = requestData => emitFunc =>
-  function(...args) {
-    safeExecute(
-      () => {
-        if (
-          isEmptyString(requestData.body) &&
-          args[1] &&
-          args[1]._httpMessage &&
-          args[1]._httpMessage._hasBody
-        ) {
-          const httpMessage = args[1]._httpMessage;
-          let lines = [];
-          if (httpMessage.hasOwnProperty('outputData')) {
-            lines = httpMessage.outputData[0].data.split('\n');
-          } else if (httpMessage.hasOwnProperty('output')) {
-            lines = httpMessage.output[0].split('\n');
-          }
-          if (lines.length > 0) {
-            requestData.body += lines[lines.length - 1];
-          }
-        }
-      },
-      'Parse data from emit event failed',
-      logger.LOG_LEVELS.INFO
-    )();
-    return emitFunc.apply(this, arguments);
-  };
-
-export const wrappedHttpResponseCallback = (
-  requestData,
-  callback,
-  requestRandomId
-) => response => {
+export const createEmitResponseEmitHandler = (requestData, requestRandomId) => response => {
   const clonedResponse = cloneResponse(response);
-  const clonedResponsePassThrough = cloneResponse(response);
   try {
     const { headers, statusCode } = clonedResponse;
     const receivedTime = new Date().getTime();
@@ -149,11 +124,7 @@ export const wrappedHttpResponseCallback = (
         const fixedRequestData = noCirculars(requestData);
         const fixedResponseData = noCirculars(responseData);
         try {
-          const httpSpan = getHttpSpan(
-            requestRandomId,
-            fixedRequestData,
-            fixedResponseData
-          );
+          const httpSpan = getHttpSpan(requestRandomId, fixedRequestData, fixedResponseData);
           SpansContainer.addSpan(httpSpan);
         } catch (e) {
           logger.warn('Failed to create & add http span', e.message);
@@ -163,46 +134,14 @@ export const wrappedHttpResponseCallback = (
   } catch (err) {
     logger.warn('Failed at wrappedHttpResponseCallback', err.message);
   }
-
-  callback && callback(clonedResponsePassThrough);
 };
 
-export const httpRequestEndWrapper = requestData => originalEndFn =>
+export const httpRequestEndWrapper = requestData =>
   function(...args) {
-    safeExecute(
-      () => {
-        if (
-          isEmptyString(requestData.body) &&
-          isValidHttpRequestBody(args[0])
-        ) {
-          requestData.body += args[0];
-        }
-      },
-      'httpRequestEndWrapper failed',
-      logger.LOG_LEVELS.INFO
-    )();
-    return originalEndFn.apply(this, args);
-  };
-
-export const httpRequestOnWrapper = (
-  requestData,
-  requestRandomId
-) => originalOnFn =>
-  function(event, callback) {
-    let wrappedCallback = callback;
-    if (event === 'response' && callback && !callback.__lumigoSentinel) {
-      try {
-        wrappedCallback = exports.wrappedHttpResponseCallback(
-          requestData,
-          callback,
-          requestRandomId
-        );
-        wrappedCallback.__lumigoSentinel = true;
-      } catch (err) {
-        logger.warn('Failed at wrapping with wrappedHttpResponseCallback', err);
-      }
+    if (isEmptyString(requestData.body)) {
+      const body = extractBodyFromEndFunc(...args);
+      requestData.body += body;
     }
-    return originalOnFn.apply(this, [event, wrappedCallback]);
   };
 
 // http/s.request can be called with either (options, callback) or (url, options, callback)
@@ -237,46 +176,18 @@ export const httpRequestArguments = args => {
   return { url, options, callback };
 };
 
-export const getHookedClientRequestArgs = (
-  url,
-  options,
-  callback,
-  requestData,
-  requestRandomId
-) => {
-  const hookedClientRequestArgs = [];
+const functionIsAlreadyWrapped = originalRequestFn =>
+  !!(originalRequestFn && originalRequestFn.__wrapped);
 
-  !!url && hookedClientRequestArgs.push(url);
-
-  if (options) {
-    hookedClientRequestArgs.push(options);
-  }
-
-  if (callback) {
-    const wrappedCallback = exports.wrappedHttpResponseCallback(
-      requestData,
-      callback,
-      requestRandomId
-    );
-    wrappedCallback.__lumigoSentinel = true;
-    hookedClientRequestArgs.push(wrappedCallback);
-  }
-
-  return hookedClientRequestArgs;
-};
-
-export const isAlreadyTraced = callback =>
-  callback && callback.__lumigoSentinel;
-
-export const httpRequestWrapper = originalRequestFn =>
-  function(...args) {
-    let url, options, callback, host;
+export const httpRequestWrapper = originalRequestFn => {
+  if (functionIsAlreadyWrapped(originalRequestFn)) return originalRequestFn;
+  return function(...args) {
+    let url, options, host;
     let isTraceDisabled = true;
     try {
-      ({ url, options, callback } = httpRequestArguments(args));
+      ({ url, options } = httpRequestArguments(args));
       host = getHostFromOptionsOrUrl(options, url);
-      isTraceDisabled =
-        isBlacklisted(host) || isAlreadyTraced(callback) || !isValidAlias();
+      isTraceDisabled = isBlacklisted(host) || !isValidAlias();
     } catch (err) {
       logger.warn('request parsing error', err);
     }
@@ -306,50 +217,17 @@ export const httpRequestWrapper = originalRequestFn =>
         SpansContainer.addSpan(httpSpan);
       }
 
-      const hookedClientRequestArgs = getHookedClientRequestArgs(
-        url,
-        options,
-        callback,
-        requestData,
-        requestRandomId
-      );
+      const clientRequest = originalRequestFn.apply(this, args);
 
-      const clientRequest = originalRequestFn.apply(
-        this,
-        hookedClientRequestArgs
-      );
+      const endWrapper = httpRequestEndWrapper(requestData, requestRandomId);
+      extender.hook(clientRequest, 'end', { beforeHook: endWrapper });
 
-      try {
-        const endWrapper = httpRequestEndWrapper(requestData, requestRandomId);
-        shimmer.wrap(clientRequest, 'end', endWrapper);
-      } catch (e) {
-        logger.warn('end wrap error', e.message);
-      }
+      const emitWrapper = httpRequestEmitWrapper(requestData, requestRandomId);
+      extender.hook(clientRequest, 'emit', { beforeHook: emitWrapper });
 
-      if (!isRequestToAwsService) {
-        try {
-          const emitWrapper = httpRequestEmitWrapper(requestData);
-          shimmer.wrap(clientRequest, 'emit', emitWrapper);
-        } catch (e) {
-          logger.warn('emit wrap error', e.message);
-        }
-      }
+      const writeWrapper = httpRequestWriteWrapper(requestData);
+      extender.hook(clientRequest, 'write', { beforeHook: writeWrapper });
 
-      try {
-        const writeWrapper = httpRequestWriteWrapper(requestData);
-        shimmer.wrap(clientRequest, 'write', writeWrapper);
-      } catch (e) {
-        logger.warn('write wrap error', e.message);
-      }
-
-      if (!callback) {
-        try {
-          const onWrapper = httpRequestOnWrapper(requestData, requestRandomId);
-          shimmer.wrap(clientRequest, 'on', onWrapper);
-        } catch (e) {
-          logger.warn('on wrap error', e.message);
-        }
-      }
       return clientRequest;
     } catch (err) {
       // eslint-disable-next-line
@@ -357,6 +235,7 @@ export const httpRequestWrapper = originalRequestFn =>
       return originalRequestFn.apply(this, args);
     }
   };
+};
 
 export const httpGetWrapper = httpModule => (/* originalGetFn */) =>
   function(...args) {

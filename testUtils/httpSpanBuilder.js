@@ -21,6 +21,10 @@ export class HttpSpanBuilder {
     uri: `${HttpSpanBuilder.DEFAULT_HOST}/`,
   };
 
+  static getDefaultData = data => {
+    return JSON.parse(JSON.stringify(data));
+  };
+
   constructor() {
     this._span = {
       account: HttpSpanBuilder.DEFAULT_ACCOUNT,
@@ -68,8 +72,7 @@ export class HttpSpanBuilder {
     };
   }
 
-  static parseHeaders = headers =>
-    stringifyAndPrune(lowerCaseObjectKeys(headers));
+  static parseHeaders = headers => stringifyAndPrune(lowerCaseObjectKeys(headers));
 
   static parseBody = body => {
     if (!body) body = '';
@@ -102,10 +105,7 @@ export class HttpSpanBuilder {
     this._span.info.httpInfo.request.host = host;
     this._span.info.httpInfo.host = host;
 
-    const headers = HttpSpanBuilder.addHeader(
-      this._span.info.httpInfo.request.headers,
-      { host }
-    );
+    const headers = HttpSpanBuilder.addHeader(this._span.info.httpInfo.request.headers, { host });
     this._span.info.httpInfo.request.headers = headers;
     return this;
   };
@@ -153,10 +153,8 @@ export class HttpSpanBuilder {
 
   withHttpInfo = httpInfo => {
     this._span.info.httpInfo = httpInfo;
-    this._span.info.httpInfo.request &&
-      this.withRequest(this._span.info.httpInfo.request);
-    this._span.info.httpInfo.response &&
-      this.withResponse(this._span.info.httpInfo.response);
+    this._span.info.httpInfo.request && this.withRequest(this._span.info.httpInfo.request);
+    this._span.info.httpInfo.response && this.withResponse(this._span.info.httpInfo.response);
     return this;
   };
 

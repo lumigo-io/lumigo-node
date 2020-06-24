@@ -19,12 +19,7 @@ import {
   getCurrentTransactionId,
 } from './spans/awsSpan';
 import { sendSingleSpan, sendSpans } from './reporter';
-import {
-  TracerGlobals,
-  SpansContainer,
-  GlobalTimer,
-  clearGlobals,
-} from './globals';
+import { TracerGlobals, SpansContainer, GlobalTimer, clearGlobals } from './globals';
 import * as logger from './logger';
 import { addStepFunctionEvent } from './hooks/http';
 
@@ -85,9 +80,7 @@ export const sendEndTraceSpans = async (functionSpan, handlerReturnValue) => {
   const spansToSend = [];
   const filteredSpans = [];
   spans.forEach(span => {
-    span.transactionId === currentTransactionId
-      ? spansToSend.push(span)
-      : filteredSpans.push(span);
+    span.transactionId === currentTransactionId ? spansToSend.push(span) : filteredSpans.push(span);
   });
   await sendSpans(spansToSend);
   const hasSpansFromPreviousInvocation = spansToSend.length !== spans.length;
@@ -125,12 +118,8 @@ export const promisifyUserHandler = (userHandler, event, context) =>
       const result = userHandler(event, context, callbackResolver(resolve));
       if (isPromise(result)) {
         result
-          .then(data =>
-            resolve({ err: null, data, type: ASYNC_HANDLER_RESOLVED })
-          )
-          .catch(err =>
-            resolve({ err, data: null, type: ASYNC_HANDLER_REJECTED })
-          );
+          .then(data => resolve({ err: null, data, type: ASYNC_HANDLER_RESOLVED }))
+          .catch(err => resolve({ err, data: null, type: ASYNC_HANDLER_REJECTED }));
       }
     } catch (err) {
       resolve({ err, data: null, type: NON_ASYNC_HANDLER_ERRORED });
@@ -189,36 +178,21 @@ export const trace = ({
     logger.warn('Failed to start tracer', err);
   }
   if (context.__wrappedByLumigo) {
-    const { err, data, type } = await promisifyUserHandler(
-      userHandler,
-      event,
-      context,
-      callback
-    );
+    const { err, data, type } = await promisifyUserHandler(userHandler, event, context, callback);
     return performPromisifyType(err, data, type, callback);
   }
   context.__wrappedByLumigo = true;
 
   const pStartTrace = startTrace();
-  const pUserHandler = promisifyUserHandler(
-    userHandler,
-    event,
-    context,
-    callback
-  );
+  const pUserHandler = promisifyUserHandler(userHandler, event, context, callback);
 
-  let [functionSpan, handlerReturnValue] = await Promise.all([
-    pStartTrace,
-    pUserHandler,
-  ]);
+  let [functionSpan, handlerReturnValue] = await Promise.all([pStartTrace, pUserHandler]);
 
   if (isStepFunction()) {
     handlerReturnValue = performStepFunctionLogic(handlerReturnValue);
   }
 
-  const cleanedHandlerReturnValue = removeLumigoFromStacktrace(
-    handlerReturnValue
-  );
+  const cleanedHandlerReturnValue = removeLumigoFromStacktrace(handlerReturnValue);
 
   await endTrace(functionSpan, cleanedHandlerReturnValue);
   const { err, data, type } = cleanedHandlerReturnValue;

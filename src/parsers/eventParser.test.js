@@ -46,8 +46,7 @@ describe('event parser', () => {
         'User-Agent':
           'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36',
         Via: '2.0 59574f77a7cf2d23d64904db278e5711.cloudfront.net (CloudFront)',
-        'X-Amz-Cf-Id':
-          'J4KbOEUrZCnUQSLsDq1PyYXmfpVy8x634huSeBX0HCbscgH-N2AtVA==',
+        'X-Amz-Cf-Id': 'J4KbOEUrZCnUQSLsDq1PyYXmfpVy8x634huSeBX0HCbscgH-N2AtVA==',
         'X-Amzn-Trace-Id': 'Root=1-5e9bf868-1c53a38cfe070266db0bfbd9',
         'X-Forwarded-For': '5.102.206.161, 54.182.243.106',
         'X-Forwarded-Port': '443',
@@ -75,12 +74,8 @@ describe('event parser', () => {
         'User-Agent': [
           'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36',
         ],
-        Via: [
-          '2.0 59574f77a7cf2d23d64904db278e5711.cloudfront.net (CloudFront)',
-        ],
-        'X-Amz-Cf-Id': [
-          'J4KbOEUrZCnUQSLsDq1PyYXmfpVy8x634huSeBX0HCbscgH-N2AtVA==',
-        ],
+        Via: ['2.0 59574f77a7cf2d23d64904db278e5711.cloudfront.net (CloudFront)'],
+        'X-Amz-Cf-Id': ['J4KbOEUrZCnUQSLsDq1PyYXmfpVy8x634huSeBX0HCbscgH-N2AtVA=='],
         'X-Amzn-Trace-Id': ['Root=1-5e9bf868-1c53a38cfe070266db0bfbd9'],
         'X-Forwarded-For': ['5.102.206.161, 54.182.243.106'],
         'X-Forwarded-Port': ['443'],
@@ -193,10 +188,7 @@ describe('event parser', () => {
       routeKey: 'ANY /nodejs-apig-function-1G3XMPLZXVXYI',
       rawPath: '/default/nodejs-apig-function-1G3XMPLZXVXYI',
       rawQueryString: '',
-      cookies: [
-        's_fid=7AABXMPL1AFD9BBF-0643XMPL09956DE2',
-        'regStatus=pre-register',
-      ],
+      cookies: ['s_fid=7AABXMPL1AFD9BBF-0643XMPL09956DE2', 'regStatus=pre-register'],
       headers: {
         accept:
           'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
@@ -263,10 +255,7 @@ describe('event parser', () => {
           'user-agent':
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36',
         },
-        cookies: [
-          's_fid=7AABXMPL1AFD9BBF-0643XMPL09956DE2',
-          'regStatus=pre-register',
-        ],
+        cookies: ['s_fid=7AABXMPL1AFD9BBF-0643XMPL09956DE2', 'regStatus=pre-register'],
         isBase64Encoded: true,
       })
     );
@@ -283,8 +272,7 @@ describe('event parser', () => {
           Sns: {
             SignatureVersion: '1',
             Timestamp: '2019-01-02T12:45:07.000Z',
-            Signature:
-              'tcc6faL2yUC6dgZdmrwh1Y4cGa/ebXEkAi6RibDsvpi+tE/1+82j...65r==',
+            Signature: 'tcc6faL2yUC6dgZdmrwh1Y4cGa/ebXEkAi6RibDsvpi+tE/1+82j...65r==',
             SigningCertUrl:
               'https://sns.us-east-2.amazonaws.com/SimpleNotificationService-ac565b8b1a6c5d002d285f9598aa1d9b.pem',
             MessageId: '95df01b4-ee98-5cb9-9903-4c221d41eb5e',
@@ -308,8 +296,7 @@ describe('event parser', () => {
           Sns: {
             SignatureVersion: '1',
             Timestamp: '2019-01-02T12:45:07.000Z',
-            Signature:
-              'tcc6faL2yUC6dgZdmrwh1Y4cGa/ebXEkAi6RibDsvpi+tE/1+82j...65r==',
+            Signature: 'tcc6faL2yUC6dgZdmrwh1Y4cGa/ebXEkAi6RibDsvpi+tE/1+82j...65r==',
             SigningCertUrl:
               'https://sns.us-east-2.amazonaws.com/SimpleNotificationService-ac565b8b1a6c5d002d285f9598aa1d9b.pem',
             MessageId: '95df01b4-ee98-5cb9-9903-4c221d41eb5e',
