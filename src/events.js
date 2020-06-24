@@ -73,7 +73,7 @@ export const getKinesisData = event => {
 
 export const getDynamodbData = event => {
   const arn = event.Records[0].eventSourceARN;
-  const approxEventCreationTime = event.Records[0].dynamodb.ApproximateCreationDateTime;
+  const approxEventCreationTime = event.Records[0].dynamodb.ApproximateCreationDateTime * 1000;
   const messageIds = (event.Records || [])
     .map(record => {
       if (
