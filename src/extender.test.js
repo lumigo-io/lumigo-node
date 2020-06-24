@@ -19,10 +19,11 @@ export const DummyCounterService = (() => {
 
 describe('extender', () => {
   beforeEach(() => {
-    DummyCounterService.reset();
+    //clean all shimmers
     shimmer.unwrap(DummyCounterService, 'incrementToDummyCounter');
     shimmer.unwrap(DummyCounterService, 'incrementToDummyCounterMultipleParam');
-    shimmer.unwrap(DummyCounterService, 'incrementToDummyCounter');
+    shimmer.unwrap(DummyCounterService, 'getDummyCounter');
+    DummyCounterService.reset();
   });
 
   test('hook -> simple flow', () => {
@@ -115,7 +116,24 @@ describe('extender', () => {
     expect(DummyCounterService.getDummyCounter()).toEqual(1);
   });
 
+  test('hook -> multiple hooks', () => {
+    let beforeCounter = 0;
+    const beforeHandler = () => {
+      beforeCounter++;
+    };
+    extender.hook(DummyCounterService, 'incrementToDummyCounter', {
+      beforeHook: beforeHandler,
+    });
+    extender.hook(DummyCounterService, 'incrementToDummyCounter', {
+      beforeHook: beforeHandler,
+    });
+    DummyCounterService.incrementToDummyCounter();
+    expect(DummyCounterService.getDummyCounter()).toEqual(1);
+    expect(beforeCounter).toEqual(1);
+  });
+
   test('hook -> safe mode - shimmer', () => {
+    //This is have to be the last test
     jest.spyOn(shimmer, 'wrap').mockImplementation(() => {
       throw new Error();
     });

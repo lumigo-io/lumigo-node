@@ -10,7 +10,6 @@ import {
   isAwsService,
   getEdgeHost,
   addHeaders,
-  safeExecute,
   getRandomId,
   isTimeoutTimerEnabled,
   isValidAlias,
@@ -18,7 +17,6 @@ import {
   runOneTimeWrapper,
 } from '../utils';
 import { getHttpSpan } from '../spans/awsSpan';
-import cloneResponse from 'clone-response';
 import { URL } from 'url';
 import { noCirculars } from '../tools/noCirculars';
 import * as logger from '../logger';
@@ -87,7 +85,7 @@ export const httpRequestWriteWrapper = requestData =>
 
 export const httpRequestEmitWrapper = (requestData, requestRandomId) => {
   const oneTimerEmitResponseHandler = runOneTimeWrapper(
-    createEmitResponseEmitHandler(requestData, requestRandomId)
+    createEmitResponseHandler(requestData, requestRandomId)
   );
   return function(...args) {
     if (args[0] === 'response') {
@@ -102,38 +100,35 @@ export const httpRequestEmitWrapper = (requestData, requestRandomId) => {
   };
 };
 
-export const createEmitResponseEmitHandler = (requestData, requestRandomId) => response => {
-  const clonedResponse = cloneResponse(response);
-  try {
-    const { headers, statusCode } = clonedResponse;
-    const receivedTime = new Date().getTime();
+const createEmitResponseOnEmitHandler = (requestData, requestRandomId, response) => {
+  const { headers, statusCode } = response;
+  const receivedTime = new Date().getTime();
+  let body = '';
+  let responseData = {};
+  return function(...args) {
+    if (args[0] === 'data') {
+      body += args[1];
+    }
+    if (args[0] === 'end') {
+      responseData = {
+        statusCode,
+        receivedTime,
+        body,
+        headers: lowerCaseObjectKeys(headers),
+      };
+      const fixedRequestData = noCirculars(requestData);
+      const fixedResponseData = noCirculars(responseData);
+      const httpSpan = getHttpSpan(requestRandomId, fixedRequestData, fixedResponseData);
+      SpansContainer.addSpan(httpSpan);
+    }
+  };
+};
 
-    let body = '';
-    clonedResponse.on('data', chunk => (body += chunk));
-
-    let responseData = {};
-    clonedResponse.on(
-      'end',
-      safeExecute(() => {
-        responseData = {
-          statusCode,
-          receivedTime,
-          body,
-          headers: lowerCaseObjectKeys(headers),
-        };
-        const fixedRequestData = noCirculars(requestData);
-        const fixedResponseData = noCirculars(responseData);
-        try {
-          const httpSpan = getHttpSpan(requestRandomId, fixedRequestData, fixedResponseData);
-          SpansContainer.addSpan(httpSpan);
-        } catch (e) {
-          logger.warn('Failed to create & add http span', e.message);
-        }
-      })
-    );
-  } catch (err) {
-    logger.warn('Failed at wrappedHttpResponseCallback', err.message);
-  }
+export const createEmitResponseHandler = (requestData, requestRandomId) => response => {
+  const onHandler = createEmitResponseOnEmitHandler(requestData, requestRandomId, response);
+  extender.hook(response, 'emit', {
+    beforeHook: onHandler,
+  });
 };
 
 export const httpRequestEndWrapper = requestData =>

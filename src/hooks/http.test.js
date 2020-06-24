@@ -279,7 +279,7 @@ describe('http hook', () => {
     expect(httpHook.parseHttpRequestOptions(options2, url2)).toEqual(expected2);
   });
 
-  test('createEmitResponseEmitHandler - add span simple flow', () => {
+  test('createEmitResponseHandler - add span simple flow', () => {
     const testData = {
       randomId: 'DummyRandomId',
       requestData: {
@@ -307,9 +307,7 @@ describe('http hook', () => {
 
     MockDate.set(testData.responseData.receivedTime);
 
-    httpHook.createEmitResponseEmitHandler(testData.requestData, testData.randomId)(
-      responseEmitter
-    );
+    httpHook.createEmitResponseHandler(testData.requestData, testData.randomId)(responseEmitter);
 
     responseEmitter.emit('data', testData.responseData.body);
     responseEmitter.emit('end');
@@ -361,9 +359,7 @@ describe('http hook', () => {
 
     MockDate.set(testData.responseData.receivedTime);
 
-    httpHook.createEmitResponseEmitHandler(testData.requestData, testData.randomId)(
-      responseEmitter
-    );
+    httpHook.createEmitResponseHandler(testData.requestData, testData.randomId)(responseEmitter);
 
     responseEmitter.emit('data', testData.responseData.body);
     responseEmitter.emit('end');
@@ -378,13 +374,13 @@ describe('http hook', () => {
     //This should raise exception
     const requestData = { host: 'dynamodb.amazonaws.com' };
 
-    httpHook.createEmitResponseEmitHandler(requestData)({});
+    httpHook.createEmitResponseHandler(requestData)({});
     // No exception.
   });
 
   test('wrappedHttpResponseCallback no exception', () => {
     // Calling without params raising Exception
-    httpHook.createEmitResponseEmitHandler()({});
+    httpHook.createEmitResponseHandler()({});
     // Assert No exception.
   });
 
