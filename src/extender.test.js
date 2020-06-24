@@ -48,7 +48,7 @@ describe('extender', () => {
   test('hook -> before Hook - multiple param', () => {
     let beforeCounter = 0;
     extender.hook(DummyCounterService, 'incrementToDummyCounterMultipleParam', {
-      beforeHook: (...args) => {
+      beforeHook: args => {
         expect(DummyCounterService.getDummyCounter()).toEqual(0);
         beforeCounter += args[0];
         beforeCounter += args[1];

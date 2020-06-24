@@ -59,7 +59,7 @@ describe('http hook', () => {
       },
     };
 
-    wrapper(emitEventName, emitArg);
+    wrapper([emitEventName, emitArg]);
 
     expect(requestData).toEqual({
       body: 'HTTP BODY2',
@@ -78,7 +78,7 @@ describe('http hook', () => {
       },
     };
     const wrapper = httpHook.httpRequestEmitWrapper(requestData);
-    wrapper(emitEventName, emitArg);
+    wrapper([emitEventName, emitArg]);
 
     expect(requestData).toEqual({
       body: 'HTTP BODY2',
@@ -112,7 +112,7 @@ describe('http hook', () => {
     const firstArg = 'BODY';
 
     const wrapper = httpHook.httpRequestWriteWrapper(requestData);
-    wrapper(firstArg);
+    wrapper([firstArg]);
 
     expect(requestData).toEqual({ body: 'BODY' });
   });
@@ -124,7 +124,7 @@ describe('http hook', () => {
     const wrapper = httpHook.httpRequestWriteWrapper(requestData);
     const firstArg = Buffer.from('BODY');
 
-    wrapper(firstArg);
+    wrapper([firstArg]);
 
     expect(requestData).toEqual({ body: 'BODY' });
   });
@@ -138,7 +138,7 @@ describe('http hook', () => {
     const secArg = 'base64';
 
     const wrapper = httpHook.httpRequestWriteWrapper(requestData);
-    wrapper(firstArg, secArg);
+    wrapper([firstArg, secArg]);
 
     expect(requestData).toEqual({ body: 'Qk9EWQ==' });
   });
@@ -153,7 +153,7 @@ describe('http hook', () => {
     const thirdArg = () => {};
 
     const wrapper = httpHook.httpRequestWriteWrapper(requestData);
-    wrapper(firstArg, secArg, thirdArg);
+    wrapper([firstArg, secArg, thirdArg]);
 
     expect(requestData).toEqual({ body: 'BODY' });
   });
@@ -167,7 +167,7 @@ describe('http hook', () => {
     const secArg = () => {};
 
     const wrapper = httpHook.httpRequestWriteWrapper(requestData);
-    wrapper(firstArg, secArg);
+    wrapper([firstArg, secArg]);
 
     expect(requestData).toEqual({ body: 'BODY' });
   });
@@ -181,7 +181,7 @@ describe('http hook', () => {
     const secArg = () => {};
 
     const wrapper = httpHook.httpRequestWriteWrapper(requestData);
-    wrapper(firstArg, secArg);
+    wrapper([firstArg, secArg]);
 
     expect(requestData).toEqual({ body: 'BODY' });
   });
@@ -194,7 +194,7 @@ describe('http hook', () => {
     const firstArg = Buffer.from('BODY2');
 
     const wrapper = httpHook.httpRequestWriteWrapper(requestData);
-    wrapper(firstArg);
+    wrapper([firstArg]);
 
     expect(requestData).toEqual({ body: 'BODY1' });
   });
@@ -391,7 +391,7 @@ describe('http hook', () => {
     const data = body;
     const encoding = 'utf8';
     const callback = jest.fn();
-    httpHook.httpRequestEndWrapper(requestData)(data, encoding, callback);
+    httpHook.httpRequestEndWrapper(requestData)([data, encoding, callback]);
 
     expect(requestData).toEqual({ body });
   });

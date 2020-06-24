@@ -76,9 +76,9 @@ export const parseHttpRequestOptions = (options = {}, url) => {
 };
 
 export const httpRequestWriteWrapper = requestData =>
-  function(...args) {
+  function(args) {
     if (isEmptyString(requestData.body)) {
-      const body = extractBodyFromWriteFunc(...args);
+      const body = extractBodyFromWriteFunc(args);
       if (body) requestData.body += body;
     }
   };
@@ -87,7 +87,7 @@ export const httpRequestEmitWrapper = (requestData, requestRandomId) => {
   const oneTimerEmitResponseHandler = runOneTimeWrapper(
     createEmitResponseHandler(requestData, requestRandomId)
   );
-  return function(...args) {
+  return function(args) {
     if (args[0] === 'response') {
       oneTimerEmitResponseHandler(args[1]);
     }
@@ -105,7 +105,7 @@ const createEmitResponseOnEmitHandler = (requestData, requestRandomId, response)
   const receivedTime = new Date().getTime();
   let body = '';
   let responseData = {};
-  return function(...args) {
+  return function(args) {
     if (args[0] === 'data') {
       body += args[1];
     }
@@ -132,9 +132,9 @@ export const createEmitResponseHandler = (requestData, requestRandomId) => respo
 };
 
 export const httpRequestEndWrapper = requestData =>
-  function(...args) {
+  function(args) {
     if (isEmptyString(requestData.body)) {
-      const body = extractBodyFromEndFunc(...args);
+      const body = extractBodyFromEndFunc(args);
       requestData.body += body;
     }
   };

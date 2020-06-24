@@ -47,7 +47,7 @@ describe('httpUtils', () => {
   test('extractBodyFromWriteFunc -> simple flow -> write(str)', () => {
     const firstArg = 'BODY';
 
-    const result = extractBodyFromWriteFunc(firstArg);
+    const result = extractBodyFromWriteFunc([firstArg]);
 
     expect(result).toEqual(firstArg);
   });
@@ -55,7 +55,7 @@ describe('httpUtils', () => {
   test('extractBodyFromWriteFunc -> simple flow -> write(Buffer)', () => {
     const firstArg = Buffer.from('BODY');
 
-    const result = extractBodyFromWriteFunc(firstArg);
+    const result = extractBodyFromWriteFunc([firstArg]);
 
     expect(result).toEqual('BODY');
   });
@@ -64,7 +64,7 @@ describe('httpUtils', () => {
     const firstArg = 'BODY';
     const secArg = 'base64';
 
-    const result = extractBodyFromWriteFunc(firstArg, secArg);
+    const result = extractBodyFromWriteFunc([firstArg, secArg]);
 
     expect(result).toEqual('Qk9EWQ==');
   });
@@ -74,7 +74,7 @@ describe('httpUtils', () => {
     const secArg = 'base64';
     const thirdArg = () => {};
 
-    const result = extractBodyFromWriteFunc(firstArg, secArg, thirdArg);
+    const result = extractBodyFromWriteFunc([firstArg, secArg, thirdArg]);
 
     expect(result).toEqual('BODY');
   });
@@ -83,7 +83,7 @@ describe('httpUtils', () => {
     const firstArg = Buffer.from('BODY');
     const secArg = () => {};
 
-    const result = extractBodyFromWriteFunc(firstArg, secArg);
+    const result = extractBodyFromWriteFunc([firstArg, secArg]);
 
     expect(result).toEqual('BODY');
   });
@@ -92,7 +92,7 @@ describe('httpUtils', () => {
     const firstArg = 'BODY';
     const secArg = () => {};
 
-    const result = extractBodyFromWriteFunc(firstArg, secArg);
+    const result = extractBodyFromWriteFunc([firstArg, secArg]);
 
     expect(result).toEqual('BODY');
   });

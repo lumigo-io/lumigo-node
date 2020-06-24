@@ -12,9 +12,9 @@ export const hook = (module, funcName, options = {}) => {
     const wrapper = originalFn => {
       if (originalFn && originalFn.__wrapped) return originalFn;
       return function(...args) {
-        safeBeforeHook.apply(this, args);
+        safeBeforeHook.call(this, args);
         const originalFnResult = originalFn.apply(this, args);
-        safeAfterHook.apply(this, args);
+        safeAfterHook.call(this, args);
         return originalFnResult;
       };
     };
