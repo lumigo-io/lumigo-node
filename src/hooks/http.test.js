@@ -718,20 +718,6 @@ describe('http hook', () => {
     expect(spans).toEqual([expectedSpan]);
   });
 
-  test('httpGetWrapper', () => {
-    const retVal = 'endCalled';
-    const end = jest.fn(() => retVal);
-    const req = { end };
-    const request = jest.fn(() => req);
-    const httpModule = { request };
-    const fn = httpHook.httpGetWrapper(httpModule)();
-
-    const args = ['x', 'y', 'z'];
-    expect(fn(args)).toEqual(req);
-    expect(httpModule.request).toHaveBeenCalledWith(args);
-    expect(end).toHaveBeenCalled();
-  });
-
   test('export default', () => {
     defaultHttp();
     expect(spies.shimmer).toHaveBeenCalledWith(http, 'request', expect.any(Function));

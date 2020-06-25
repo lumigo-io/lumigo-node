@@ -203,13 +203,6 @@ export const httpAfterRequestWrapper = (args, originalFnResult, extenderContext)
   }
 };
 
-export const httpGetWrapper = httpModule => (/* originalGetFn */) =>
-  function(...args) {
-    const req = httpModule.request(...args);
-    req.end();
-    return req;
-  };
-
 export const addStepFunctionEvent = messageId => {
   const httpSpan = getHttpSpan(messageId, {});
   const stepInfo = Object.assign(httpSpan.info, {
