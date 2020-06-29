@@ -40,6 +40,7 @@ export const sendSpans = async spans => {
   }
 
   const method = 'POST';
+  const timeout = 300;
   const { host, path } = getEdgeUrl();
 
   logger.debug('Edge selected', { host, path });
@@ -49,7 +50,7 @@ export const sendSpans = async spans => {
   const roundTripStart = Date.now();
 
   if (reqBody) {
-    await httpReq({ method, headers, host, path }, reqBody);
+    await httpReq({ method, headers, host, path, timeout }, reqBody);
   }
 
   const roundTripEnd = Date.now();

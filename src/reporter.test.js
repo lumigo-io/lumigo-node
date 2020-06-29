@@ -16,6 +16,7 @@ describe('reporter', () => {
       },
       host: 'us-east-1.lumigo-tracer-edge.golumigo.com',
       path: '/api/spans',
+      timeout: 300,
     },
     body: JSON.stringify(spans),
   });
