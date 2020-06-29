@@ -865,7 +865,7 @@ describe('utils', () => {
 
   test('runOneTime -> simple flow', () => {
     let i = 0;
-    let addToI = () => {
+    const addToI = () => {
       i++;
     };
     const wrappedAddToI = runOneTimeWrapper(addToI, this);
@@ -877,7 +877,7 @@ describe('utils', () => {
 
   test('runOneTime -> without context', () => {
     let i = 0;
-    let addToI = () => {
+    const addToI = () => {
       i++;
     };
     const wrappedAddToI = runOneTimeWrapper(addToI);
@@ -889,7 +889,7 @@ describe('utils', () => {
 
   test('runOneTime -> return value', () => {
     let i = 0;
-    let addToI = () => {
+    const addToI = () => {
       i++;
       return 'OK';
     };
@@ -903,7 +903,7 @@ describe('utils', () => {
 
   test('runOneTime -> use params', () => {
     let i = 0;
-    let addToI = count => {
+    const addToI = count => {
       i += count;
       return 'OK';
     };

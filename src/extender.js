@@ -4,6 +4,8 @@ import { safeExecute } from './utils';
 
 const noop = () => {};
 
+const isFunctionAlreadyWrapped = fn => fn && fn.__wrapped;
+
 export const hook = (module, funcName, options = {}) => {
   const { beforeHook = noop, afterHook = noop } = options;
   const safeBeforeHook = safeExecute(beforeHook, `before hook of ${funcName} fail`);
@@ -11,7 +13,7 @@ export const hook = (module, funcName, options = {}) => {
   const extenderContext = {};
   try {
     const wrapper = originalFn => {
-      if (originalFn && originalFn.__wrapped) return originalFn;
+      if (isFunctionAlreadyWrapped(originalFn)) return originalFn;
       return function(...args) {
         safeBeforeHook.call(this, args, extenderContext);
         const originalFnResult = originalFn.apply(this, args);

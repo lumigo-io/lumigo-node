@@ -104,6 +104,7 @@ describe('httpUtils', () => {
 
   test('isValidHttpRequestBody -> empty flow', () => {
     expect(isValidHttpRequestBody()).toEqual(false);
+    expect(isValidHttpRequestBody('')).toEqual(false);
     expect(isValidHttpRequestBody(0)).toEqual(false);
     expect(isValidHttpRequestBody([])).toEqual(false);
     expect(isValidHttpRequestBody({})).toEqual(false);

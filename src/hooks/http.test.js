@@ -38,12 +38,12 @@ describe('http hook', () => {
     expect(httpHook.isBlacklisted(edgeHost)).toBe(true);
   });
 
-  test('httpRequestEmitWrapper -> outputData flow', () => {
+  test('httpRequestEmitBeforeHookWrapper -> outputData flow', () => {
     const requestData = {
       body: '',
     };
     const randomRequstId = 'REQ';
-    const wrapper = httpHook.httpRequestEmitWrapper(requestData, randomRequstId);
+    const wrapper = httpHook.httpRequestEmitBeforeHookWrapper(requestData, randomRequstId);
     const emitEventName = 'socket';
     const emitArg = {
       _httpMessage: {
@@ -59,7 +59,7 @@ describe('http hook', () => {
     });
   });
 
-  test('httpRequestEmitWrapper -> output flow', () => {
+  test('httpRequestEmitBeforeHookWrapper -> output flow', () => {
     const requestData = {
       body: '',
     };
@@ -70,7 +70,7 @@ describe('http hook', () => {
         output: ['HTTP BODY1\nHTTP BODY2'],
       },
     };
-    const wrapper = httpHook.httpRequestEmitWrapper(requestData);
+    const wrapper = httpHook.httpRequestEmitBeforeHookWrapper(requestData);
     wrapper([emitEventName, emitArg]);
 
     expect(requestData).toEqual({
@@ -78,7 +78,7 @@ describe('http hook', () => {
     });
   });
 
-  test('httpRequestEmitWrapper -> not crashed on bad data', () => {
+  test('httpRequestEmitBeforeHookWrapper -> not crashed on bad data', () => {
     const requestData = {
       body: '',
     };
@@ -91,30 +91,30 @@ describe('http hook', () => {
       },
     };
 
-    const wrapper = httpHook.httpRequestEmitWrapper(requestData);
+    const wrapper = httpHook.httpRequestEmitBeforeHookWrapper(requestData);
     wrapper(emitEventName, emitArg);
 
     expect(requestData).toEqual({ body: '' });
   });
 
-  test('httpRequestWriteWrapper -> simple flow -> write(str)', () => {
+  test('httpRequestWriteBeforeHookWrapper -> simple flow -> write(str)', () => {
     const requestData = {
       body: '',
     };
 
     const firstArg = 'BODY';
 
-    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
+    const wrapper = httpHook.httpRequestWriteBeforeHookWrapper(requestData);
     wrapper([firstArg]);
 
     expect(requestData).toEqual({ body: 'BODY' });
   });
 
-  test('httpRequestWriteWrapper -> simple flow -> write(Buffer)', () => {
+  test('httpRequestWriteBeforeHookWrapper -> simple flow -> write(Buffer)', () => {
     const requestData = {
       body: '',
     };
-    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
+    const wrapper = httpHook.httpRequestWriteBeforeHookWrapper(requestData);
     const firstArg = Buffer.from('BODY');
 
     wrapper([firstArg]);
@@ -122,7 +122,7 @@ describe('http hook', () => {
     expect(requestData).toEqual({ body: 'BODY' });
   });
 
-  test('httpRequestWriteWrapper -> simple flow -> write(Buffer, encoding)', () => {
+  test('httpRequestWriteBeforeHookWrapper -> simple flow -> write(Buffer, encoding)', () => {
     const requestData = {
       body: '',
     };
@@ -130,13 +130,13 @@ describe('http hook', () => {
     const firstArg = 'BODY';
     const secArg = 'base64';
 
-    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
+    const wrapper = httpHook.httpRequestWriteBeforeHookWrapper(requestData);
     wrapper([firstArg, secArg]);
 
     expect(requestData).toEqual({ body: 'Qk9EWQ==' });
   });
 
-  test('httpRequestWriteWrapper -> simple flow -> write(Buffer, encoding, callback)', () => {
+  test('httpRequestWriteBeforeHookWrapper -> simple flow -> write(Buffer, encoding, callback)', () => {
     const requestData = {
       body: '',
     };
@@ -145,13 +145,13 @@ describe('http hook', () => {
     const secArg = 'utf8';
     const thirdArg = () => {};
 
-    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
+    const wrapper = httpHook.httpRequestWriteBeforeHookWrapper(requestData);
     wrapper([firstArg, secArg, thirdArg]);
 
     expect(requestData).toEqual({ body: 'BODY' });
   });
 
-  test('httpRequestWriteWrapper -> simple flow -> write(Buffer, callback)', () => {
+  test('httpRequestWriteBeforeHookWrapper -> simple flow -> write(Buffer, callback)', () => {
     const requestData = {
       body: '',
     };
@@ -159,13 +159,13 @@ describe('http hook', () => {
     const firstArg = Buffer.from('BODY');
     const secArg = () => {};
 
-    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
+    const wrapper = httpHook.httpRequestWriteBeforeHookWrapper(requestData);
     wrapper([firstArg, secArg]);
 
     expect(requestData).toEqual({ body: 'BODY' });
   });
 
-  test('httpRequestWriteWrapper -> simple flow -> write(str, callback)', () => {
+  test('httpRequestWriteBeforeHookWrapper -> simple flow -> write(str, callback)', () => {
     const requestData = {
       body: '',
     };
@@ -173,26 +173,26 @@ describe('http hook', () => {
     const firstArg = 'BODY';
     const secArg = () => {};
 
-    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
+    const wrapper = httpHook.httpRequestWriteBeforeHookWrapper(requestData);
     wrapper([firstArg, secArg]);
 
     expect(requestData).toEqual({ body: 'BODY' });
   });
 
-  test('httpRequestWriteWrapper -> not override body', () => {
+  test('httpRequestWriteBeforeHookWrapper -> not override body', () => {
     const requestData = {
       body: 'BODY1',
     };
 
     const firstArg = Buffer.from('BODY2');
 
-    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
+    const wrapper = httpHook.httpRequestWriteBeforeHookWrapper(requestData);
     wrapper([firstArg]);
 
     expect(requestData).toEqual({ body: 'BODY1' });
   });
 
-  test('httpRequestWriteWrapper -> not crashed on bad data', () => {
+  test('httpRequestWriteBeforeHookWrapper -> not crashed on bad data', () => {
     const requestData = {
       body: '',
     };
@@ -200,7 +200,7 @@ describe('http hook', () => {
     const firstArg = {};
     const secArg = {};
 
-    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
+    const wrapper = httpHook.httpRequestWriteBeforeHookWrapper(requestData);
     wrapper(firstArg, secArg);
 
     expect(requestData).toEqual({ body: '' });

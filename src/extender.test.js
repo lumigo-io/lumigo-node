@@ -11,10 +11,20 @@ export const DummyCounterService = (() => {
     dummyCounter += count2;
   };
   const getDummyCounter = () => dummyCounter;
+
+  const raiseError = () => {
+    throw new Error('ERROR');
+  };
   const reset = () => {
     dummyCounter = 0;
   };
-  return { incrementToDummyCounter, getDummyCounter, incrementToDummyCounterMultipleParam, reset };
+  return {
+    incrementToDummyCounter,
+    getDummyCounter,
+    incrementToDummyCounterMultipleParam,
+    raiseError,
+    reset,
+  };
 })();
 
 describe('extender', () => {
@@ -26,7 +36,7 @@ describe('extender', () => {
     DummyCounterService.reset();
   });
 
-  test('hook -> simple flow', () => {
+  test('hook -> simple flow, empty before and after', () => {
     extender.hook(DummyCounterService, 'incrementToDummyCounter');
     DummyCounterService.incrementToDummyCounter();
     expect(DummyCounterService.getDummyCounter()).toEqual(1);
@@ -180,5 +190,15 @@ describe('extender', () => {
     extender.hook(DummyCounterService, 'incrementToDummyCounter');
     DummyCounterService.incrementToDummyCounter();
     expect(DummyCounterService.getDummyCounter()).toEqual(1);
+  });
+
+  test('hook -> client exception', done => {
+    extender.hook(DummyCounterService, 'raiseError');
+    try {
+      DummyCounterService.raiseError();
+    } catch (e) {
+      expect(e.message).toEqual('ERROR');
+      done();
+    }
   });
 });

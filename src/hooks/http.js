@@ -62,7 +62,7 @@ export const parseHttpRequestOptions = (options = {}, url) => {
     port,
     uri,
     host,
-    body: '', // XXX Filled by the httpRequestEndWrapper or httpRequestEmitWrapper ( / Write)
+    body: '', // XXX Filled by the httpRequestEndWrapper or httpRequestEmitBeforeHookWrapper ( / Write)
     method,
     headers: lowerCaseObjectKeys(headers),
     protocol,
@@ -70,7 +70,7 @@ export const parseHttpRequestOptions = (options = {}, url) => {
   };
 };
 
-export const httpRequestWriteWrapper = requestData =>
+export const httpRequestWriteBeforeHookWrapper = requestData =>
   function(args) {
     if (isEmptyString(requestData.body)) {
       const body = extractBodyFromWriteFunc(args);
@@ -78,7 +78,7 @@ export const httpRequestWriteWrapper = requestData =>
     }
   };
 
-export const httpRequestEmitWrapper = (requestData, requestRandomId) => {
+export const httpRequestEmitBeforeHookWrapper = (requestData, requestRandomId) => {
   const oneTimerEmitResponseHandler = runOneTimeWrapper(
     createEmitResponseHandler(requestData, requestRandomId)
   );
@@ -89,23 +89,22 @@ export const httpRequestEmitWrapper = (requestData, requestRandomId) => {
     if (args[0] === 'socket') {
       if (isEmptyString(requestData.body)) {
         const body = extractBodyFromEmitSocketEvent(args[1]);
-        requestData.body += body;
+        if (body) requestData.body += body;
       }
     }
   };
 };
 
-const createEmitResponseOnEmitHandler = (requestData, requestRandomId, response) => {
-  const { headers, statusCode } = response;
-  const receivedTime = new Date().getTime();
+const createEmitResponseOnEmitBeforeHookHandler = (requestData, requestRandomId, response) => {
   let body = '';
-  let responseData = {};
   return function(args) {
+    const receivedTime = new Date().getTime();
+    const { headers, statusCode } = response;
     if (args[0] === 'data') {
       body += args[1];
     }
     if (args[0] === 'end') {
-      responseData = {
+      const responseData = {
         statusCode,
         receivedTime,
         body,
@@ -120,7 +119,11 @@ const createEmitResponseOnEmitHandler = (requestData, requestRandomId, response)
 };
 
 export const createEmitResponseHandler = (requestData, requestRandomId) => response => {
-  const onHandler = createEmitResponseOnEmitHandler(requestData, requestRandomId, response);
+  const onHandler = createEmitResponseOnEmitBeforeHookHandler(
+    requestData,
+    requestRandomId,
+    response
+  );
   extender.hook(response, 'emit', {
     beforeHook: onHandler,
   });
@@ -130,7 +133,7 @@ export const httpRequestEndWrapper = requestData =>
   function(args) {
     if (isEmptyString(requestData.body)) {
       const body = extractBodyFromEndFunc(args);
-      requestData.body += body;
+      if (body) requestData.body += body;
     }
   };
 
@@ -167,13 +170,13 @@ export const httpRequestArguments = args => {
 };
 
 export const httpBeforeRequestWrapper = (args, extenderContext) => {
-  extenderContext.isTraceDisabled = true;
+  extenderContext.shouldTraceRequest = true;
 
   const { url, options } = httpRequestArguments(args);
   const host = getHostFromOptionsOrUrl(options, url);
-  extenderContext.isTraceDisabled = isBlacklisted(host) || !isValidAlias();
+  extenderContext.shouldTraceRequest = isBlacklisted(host) || !isValidAlias();
 
-  if (!extenderContext.isTraceDisabled) {
+  if (!extenderContext.shouldTraceRequest) {
     const requestData = parseHttpRequestOptions(options, url);
     const requestRandomId = getRandomId();
 
@@ -190,15 +193,15 @@ export const httpBeforeRequestWrapper = (args, extenderContext) => {
 
 export const httpAfterRequestWrapper = (args, originalFnResult, extenderContext) => {
   const clientRequest = originalFnResult;
-  const { requestData, requestRandomId, isTraceDisabled } = extenderContext;
-  if (!isTraceDisabled) {
+  const { requestData, requestRandomId, shouldTraceRequest } = extenderContext;
+  if (!shouldTraceRequest) {
     const endWrapper = httpRequestEndWrapper(requestData, requestRandomId);
     extender.hook(clientRequest, 'end', { beforeHook: endWrapper });
 
-    const emitWrapper = httpRequestEmitWrapper(requestData, requestRandomId);
+    const emitWrapper = httpRequestEmitBeforeHookWrapper(requestData, requestRandomId);
     extender.hook(clientRequest, 'emit', { beforeHook: emitWrapper });
 
-    const writeWrapper = httpRequestWriteWrapper(requestData);
+    const writeWrapper = httpRequestWriteBeforeHookWrapper(requestData);
     extender.hook(clientRequest, 'write', { beforeHook: writeWrapper });
   }
 };
