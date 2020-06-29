@@ -170,13 +170,13 @@ export const httpRequestArguments = args => {
 };
 
 export const httpBeforeRequestWrapper = (args, extenderContext) => {
-  extenderContext.shouldTraceRequest = true;
+  extenderContext.isTracedDisabled = true;
 
   const { url, options } = httpRequestArguments(args);
   const host = getHostFromOptionsOrUrl(options, url);
-  extenderContext.shouldTraceRequest = isBlacklisted(host) || !isValidAlias();
+  extenderContext.isTracedDisabled = isBlacklisted(host) || !isValidAlias();
 
-  if (!extenderContext.shouldTraceRequest) {
+  if (!extenderContext.isTracedDisabled) {
     const requestData = parseHttpRequestOptions(options, url);
     const requestRandomId = getRandomId();
 
@@ -193,8 +193,8 @@ export const httpBeforeRequestWrapper = (args, extenderContext) => {
 
 export const httpAfterRequestWrapper = (args, originalFnResult, extenderContext) => {
   const clientRequest = originalFnResult;
-  const { requestData, requestRandomId, shouldTraceRequest } = extenderContext;
-  if (!shouldTraceRequest) {
+  const { requestData, requestRandomId, isTracedDisabled } = extenderContext;
+  if (!isTracedDisabled) {
     const endWrapper = httpRequestEndWrapper(requestData, requestRandomId);
     extender.hook(clientRequest, 'end', { beforeHook: endWrapper });
 

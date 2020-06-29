@@ -21,8 +21,12 @@ export class HttpSpanBuilder {
     uri: `${HttpSpanBuilder.DEFAULT_HOST}/`,
   };
 
-  static getDefaultData = data => {
+  static cloneResponse = data => {
     return JSON.parse(JSON.stringify(data));
+  };
+
+  static getDefaultData = data => {
+    return HttpSpanBuilder.cloneResponse(data);
   };
 
   constructor() {
