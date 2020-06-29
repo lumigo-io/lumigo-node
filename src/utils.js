@@ -249,7 +249,7 @@ export const prune = (str, maxLength = MAX_ENTITY_SIZE) =>
   (str || '').substr(0, maxLength);
 
 export const stringifyAndPrune = (obj, maxLength = MAX_ENTITY_SIZE) =>
-  prune(JSON.stringify(obj), maxLength);
+  prune(JSON.stringify(omitKeys(obj)), maxLength);
 
 export const pruneData = (data, maxLength) =>
   isString(data) ? prune(data, maxLength) : stringifyAndPrune(data, maxLength);

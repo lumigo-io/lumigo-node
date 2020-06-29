@@ -398,6 +398,14 @@ describe('utils', () => {
     expect(utils.stringifyAndPrune(obj)).toEqual(JSON.stringify(obj));
   });
 
+  test('stringifyAndPrune - omitting keys from pruned data', () => {
+    const obj = { secret: '1234', long: '1'.repeat(2000) };
+
+    expect(utils.stringifyAndPrune(obj, 30)).toEqual(
+      '{"secret":"****","long":"11111'
+    );
+  });
+
   test('pruneData', () => {
     const obj = {
       founder: 'Elon Musk',
