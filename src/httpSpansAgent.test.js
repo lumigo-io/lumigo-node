@@ -1,15 +1,15 @@
 import { AxiosMocker } from '../testUtils/axiosMocker';
 import * as utils from './utils';
-import { HttpAgent } from './httpAgent';
+import { HttpSpansAgent } from './httpSpansAgent';
 import * as globals from './globals';
 
-describe('httpAgent', () => {
+describe('HttpSpansAgent', () => {
   test('postSpans - simple flow', async () => {
     const reqBody = 'abcdefg';
     globals.TracerGlobals.setTracerInputs({ token: 't_xxx' });
     const { url } = utils.getEdgeUrl();
 
-    await HttpAgent.postSpans(reqBody);
+    await HttpSpansAgent.postSpans(reqBody);
 
     const requests = AxiosMocker.getAxiosMocker().history.post;
     expect(requests.length).toEqual(1);
@@ -32,7 +32,7 @@ describe('httpAgent', () => {
       .onPost()
       .reply(500);
 
-    await HttpAgent.postSpans(reqBody);
+    await HttpSpansAgent.postSpans(reqBody);
 
     //no Error throwed
   });
@@ -45,7 +45,7 @@ describe('httpAgent', () => {
       .onPost()
       .networkError();
 
-    await HttpAgent.postSpans(reqBody);
+    await HttpSpansAgent.postSpans(reqBody);
 
     //no Error throwed
   });
@@ -58,7 +58,7 @@ describe('httpAgent', () => {
       .onPost()
       .networkError();
 
-    await HttpAgent.postSpans(reqBody);
+    await HttpSpansAgent.postSpans(reqBody);
 
     //no Error throwed
   });
@@ -71,7 +71,7 @@ describe('httpAgent', () => {
       .onPost()
       .timeout();
 
-    await HttpAgent.postSpans(reqBody);
+    await HttpSpansAgent.postSpans(reqBody);
 
     //no Error throwed
   });

@@ -11,7 +11,7 @@ export const AxiosMocker = (() => {
 
   const getRequests = () => axiosMocker.history.post;
 
-  const getSentSpans = () => axiosMocker.history.post.map(r => JSON.parse(r.data));
+  const getSentSpans = () => getRequests().map(r => JSON.parse(r.data));
 
   const clean = () => {
     axiosMocker.reset();

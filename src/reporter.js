@@ -7,7 +7,7 @@ import {
 } from './utils';
 import * as logger from './logger';
 import { isDebug } from './logger';
-import { HttpAgent } from './httpAgent';
+import { HttpSpansAgent } from './httpSpansAgent';
 
 export const MAX_SENT_BYTES = 1000 * 1000;
 
@@ -33,7 +33,7 @@ export const sendSpans = async spans => {
 
   const roundTripStart = Date.now();
   if (reqBody) {
-    await HttpAgent.postSpans(reqBody);
+    await HttpSpansAgent.postSpans(reqBody);
   }
   const roundTripEnd = Date.now();
   const rtt = roundTripEnd - roundTripStart;

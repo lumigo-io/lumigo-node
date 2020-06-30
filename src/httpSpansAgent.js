@@ -5,7 +5,7 @@ import axios from 'axios';
 import http from 'http';
 import https from 'https';
 
-export const HttpAgent = (() => {
+export const HttpSpansAgent = (() => {
   let sessionInstance = undefined;
 
   const validateStatus = () => true;
@@ -24,7 +24,7 @@ export const HttpAgent = (() => {
     return axios.create({
       baseURL: url,
       timeout: 250,
-      httpAgent: new http.Agent({ keepAlive: true }),
+      HttpSpansAgent: new http.Agent({ keepAlive: true }),
       httpsAgent: new https.Agent({ keepAlive: true }),
       maxRedirects: 0,
       headers,
