@@ -50,19 +50,6 @@ describe('HttpSpansAgent', () => {
     //no Error throwed
   });
 
-  test('postSpans - reject network error', async () => {
-    const reqBody = 'abcdefg';
-    globals.TracerGlobals.setTracerInputs({ token: 't_xxx' });
-
-    AxiosMocker.getAxiosMocker()
-      .onPost()
-      .networkError();
-
-    await HttpSpansAgent.postSpans(reqBody);
-
-    //no Error throwed
-  });
-
   test('postSpans - reject timout', async () => {
     const reqBody = 'abcdefg';
     globals.TracerGlobals.setTracerInputs({ token: 't_xxx' });
