@@ -20,10 +20,7 @@ export const getTriggeredBy = event => {
     }
   }
 
-  if (
-    (event && event['httpMethod']) ||
-    (event && event['headers'] && event['version'] === '2.0')
-  ) {
+  if ((event && event['httpMethod']) || (event && event['headers'] && event['version'] === '2.0')) {
     return 'apigw';
   }
 
@@ -76,8 +73,7 @@ export const getKinesisData = event => {
 
 export const getDynamodbData = event => {
   const arn = event.Records[0].eventSourceARN;
-  const approxEventCreationTime =
-    event.Records[0].dynamodb.ApproximateCreationDateTime * 1000;
+  const approxEventCreationTime = event.Records[0].dynamodb.ApproximateCreationDateTime * 1000;
   const messageIds = (event.Records || [])
     .map(record => {
       if (
@@ -86,11 +82,7 @@ export const getDynamodbData = event => {
         record.dynamodb.Keys
       ) {
         return md5Hash(record.dynamodb.Keys);
-      } else if (
-        record.eventName === 'INSERT' &&
-        record.dynamodb &&
-        record.dynamodb.NewImage
-      ) {
+      } else if (record.eventName === 'INSERT' && record.dynamodb && record.dynamodb.NewImage) {
         return md5Hash(record.dynamodb.NewImage);
       }
     })
@@ -114,9 +106,7 @@ export const getRelevantEventData = (triggeredBy, event) => {
       return getApiGatewayData(event);
     case 'stepFunction':
       return {
-        messageId: recursiveGetKey(event, LUMIGO_EVENT_KEY)[
-          STEP_FUNCTION_UID_KEY
-        ],
+        messageId: recursiveGetKey(event, LUMIGO_EVENT_KEY)[STEP_FUNCTION_UID_KEY],
       };
     case 'invocation':
     default:

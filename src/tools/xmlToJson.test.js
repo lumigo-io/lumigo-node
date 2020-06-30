@@ -10,8 +10,7 @@ const clean = function cleanXML(xml) {
 
 // noinspection HtmlUnknownTag
 let mockData = {
-  TEST1:
-    '<employee id="12345" building="1" geo="US"><name>Alex</name></employee>',
+  TEST1: '<employee id="12345" building="1" geo="US"><name>Alex</name></employee>',
   TEST2:
     '<employee id="12345"><name>Alex</name></employee><employee id="56789"><name>Jon</name></employee>',
   TEST3: '<employee><name>Alex</name><age>25</age></employee>',
@@ -31,10 +30,8 @@ let mockData = {
   TEST11: '<employee id="98765">Alex<employee>',
   TEST12: '<employee id="98765"><employee id="12345">Jon<employee></employee>',
   //nested repetition
-  TEST13:
-    '<employee id="98765" name="alex"><employee id="123" name="jon"></employee></employee>',
-  TEST14:
-    '<employee id="98765" name="alex"><employee>Alex</employee></employee>',
+  TEST13: '<employee id="98765" name="alex"><employee id="123" name="jon"></employee></employee>',
+  TEST14: '<employee id="98765" name="alex"><employee>Alex</employee></employee>',
   TEST15:
     '<aaa> <bbb> <bbb1>ccc</bbb1> <yyy>yyy</yyy> </bbb> <bbb> <ddd>ddd</ddd> <yyy>yyy</yyy> </bbb> </aaa>',
   TEST16:
@@ -140,24 +137,15 @@ describe('TRAVERSE: With Attributes', () => {
       employee: [
         {
           id: '12345',
-          name: [
-            { type: 'first', textNode: 'Alex' },
-            { type: 'last', textNode: 'La Bianca' },
-          ],
+          name: [{ type: 'first', textNode: 'Alex' }, { type: 'last', textNode: 'La Bianca' }],
         },
         {
           id: '98765',
-          name: [
-            { type: 'first', textNode: 'Ash' },
-            { type: 'last', textNode: 'Thrasher' },
-          ],
+          name: [{ type: 'first', textNode: 'Ash' }, { type: 'last', textNode: 'Thrasher' }],
         },
         {
           id: '12332',
-          name: [
-            { type: 'first', textNode: 'Jon' },
-            { type: 'last', textNode: 'Andrews' },
-          ],
+          name: [{ type: 'first', textNode: 'Jon' }, { type: 'last', textNode: 'Andrews' }],
         },
       ],
     };

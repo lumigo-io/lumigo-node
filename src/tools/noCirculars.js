@@ -13,9 +13,7 @@ const noCirculars = v => {
       if (set.has(v)) return '[Circular]';
       set.add(v);
 
-      return fromEntries(
-        Object.entries(v).map(([k, v]) => [k, noCirculars(v)])
-      );
+      return fromEntries(Object.entries(v).map(([k, v]) => [k, noCirculars(v)]));
     }
     return v;
   };

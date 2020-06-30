@@ -33,9 +33,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
 const noop = function() {
   return __awaiter(this, void 0, void 0, function*() {
     console.log('Running noop');
-    console.log(
-      process.env.MESSAGE || 'please set the environment variable MESSAGE'
-    );
+    console.log(process.env.MESSAGE || 'please set the environment variable MESSAGE');
     return {
       statusCode: 200,
       body: 'OK',

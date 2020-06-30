@@ -23,12 +23,8 @@ describe('events', () => {
     expect(events.getTriggeredBy(exampleSesEvent)).toEqual('ses');
     expect(events.getTriggeredBy(exampleKinesisEvent)).toEqual('kinesis');
     expect(events.getTriggeredBy(exampleApiGatewayEvent)).toEqual('apigw');
-    expect(events.getTriggeredBy(exampleDynamoDBInsertEvent)).toEqual(
-      'dynamodb'
-    );
-    expect(events.getTriggeredBy(exampleUnsupportedEvent)).toEqual(
-      'invocation'
-    );
+    expect(events.getTriggeredBy(exampleDynamoDBInsertEvent)).toEqual('dynamodb');
+    expect(events.getTriggeredBy(exampleUnsupportedEvent)).toEqual('invocation');
   });
 
   test('getApiGatewayData', () => {
@@ -40,14 +36,12 @@ describe('events', () => {
       stage: 'testStage',
     });
 
-    expect(events.getApiGatewayData(exampleApiGatewayEventWithoutHost)).toEqual(
-      {
-        api: null,
-        httpMethod: undefined,
-        resource: undefined,
-        stage: null,
-      }
-    );
+    expect(events.getApiGatewayData(exampleApiGatewayEventWithoutHost)).toEqual({
+      api: null,
+      httpMethod: undefined,
+      resource: undefined,
+      stage: null,
+    });
   });
 
   test('getApiGatewayData => API gw v2', () => {
@@ -72,19 +66,15 @@ describe('events', () => {
       arn: 'arn:aws:sqs:us-west-2:123456789012:SQSQueue',
     });
 
-    expect(events.getRelevantEventData('kinesis', exampleKinesisEvent)).toEqual(
-      {
-        arn: 'arn:aws:kinesis:us-east-1:123456789012:stream/simple-stream',
-        messageIds: [
-          '49568167373333333333333333333333333333333333333333333333',
-          '49568167373333333334444444444444444444444444444444444444',
-        ],
-      }
-    );
+    expect(events.getRelevantEventData('kinesis', exampleKinesisEvent)).toEqual({
+      arn: 'arn:aws:kinesis:us-east-1:123456789012:stream/simple-stream',
+      messageIds: [
+        '49568167373333333333333333333333333333333333333333333333',
+        '49568167373333333334444444444444444444444444444444444444',
+      ],
+    });
 
-    expect(
-      events.getRelevantEventData('dynamodb', exampleDynamoDBInsertEvent)
-    ).toEqual({
+    expect(events.getRelevantEventData('dynamodb', exampleDynamoDBInsertEvent)).toEqual({
       arn:
         'arn:aws:dynamodb:us-east-1:123456789012:table/Example-Table/stream/2016-12-01T00:00:00.000',
       messageIds: [
@@ -99,20 +89,14 @@ describe('events', () => {
       approxEventCreationTime: 1480642020000,
     });
 
-    expect(
-      events.getRelevantEventData('dynamodb', exampleDynamoDBModifyEvent)
-    ).toEqual({
-      arn:
-        'arn:aws:dynamodb:us-west-2:723663554526:table/abbbbb/stream/2020-05-25T12:04:49.788',
+    expect(events.getRelevantEventData('dynamodb', exampleDynamoDBModifyEvent)).toEqual({
+      arn: 'arn:aws:dynamodb:us-west-2:723663554526:table/abbbbb/stream/2020-05-25T12:04:49.788',
       messageIds: [md5Hash({ key: { N: '8' } })],
       approxEventCreationTime: 1590509701000,
     });
 
-    expect(
-      events.getRelevantEventData('dynamodb', exampleDynamoDBRemoveEvent)
-    ).toEqual({
-      arn:
-        'arn:aws:dynamodb:us-west-2:723663554526:table/abbbbb/stream/2020-05-25T12:04:49.788',
+    expect(events.getRelevantEventData('dynamodb', exampleDynamoDBRemoveEvent)).toEqual({
+      arn: 'arn:aws:dynamodb:us-west-2:723663554526:table/abbbbb/stream/2020-05-25T12:04:49.788',
       messageIds: [md5Hash({ key: { N: '123' } })],
       approxEventCreationTime: 1590509672000,
     });
@@ -125,9 +109,7 @@ describe('events', () => {
     expect(events.getRelevantEventData('s3', exampleS3Event)).toEqual({
       arn: 'arn:aws:s3:::mybucket',
     });
-    expect(
-      events.getRelevantEventData('apigw', exampleApiGatewayEvent)
-    ).toEqual({
+    expect(events.getRelevantEventData('apigw', exampleApiGatewayEvent)).toEqual({
       api: 'gy415nuibc.execute-api.us-east-1.amazonaws.com',
       httpMethod: 'POST',
       messageId: 'deef4878-7910-11e6-8f14-25afc3e9ae33',
@@ -136,9 +118,7 @@ describe('events', () => {
     });
 
     expect(events.getRelevantEventData('ses', exampleSesEvent)).toEqual({});
-    expect(
-      events.getRelevantEventData('invocation', exampleUnsupportedEvent)
-    ).toEqual({});
+    expect(events.getRelevantEventData('invocation', exampleUnsupportedEvent)).toEqual({});
   });
 
   test('getEventInfo', () => {

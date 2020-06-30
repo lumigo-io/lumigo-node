@@ -1,4 +1,5 @@
 module.exports = {
+  silent: true,
   testEnvironment: 'node',
   coverageDirectory: './coverage/',
   collectCoverage: true,

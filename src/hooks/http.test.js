@@ -1,9 +1,8 @@
 import { lowerCaseObjectKeys } from '../utils';
 import EventEmitter from 'events';
-import defaultHttp from './http';
+import defaultHttp, { wrapHttp } from './http';
 import MockDate from 'mockdate';
 import shimmer from 'shimmer';
-import crypto from 'crypto';
 import https from 'https';
 import http from 'http';
 import { HttpSpanBuilder } from '../../testUtils/httpSpanBuilder';
@@ -18,42 +17,34 @@ import * as utils from '../utils';
 import { SpansContainer, TracerGlobals } from '../globals';
 import { HandlerInputesBuilder } from '../../testUtils/handlerInputesBuilder';
 
-jest.mock('../reporter');
-
 describe('http hook', () => {
   process.env['AWS_REGION'] = 'us-east-x';
   process.env['_X_AMZN_TRACE_ID'] =
     'Root=1-5b1d2450-6ac46730d346cad0e53f89d0;Parent=59fa1aeb03c2ec1f;Sampled=1';
 
   const spies = {};
-  spies.wrappedHttpResponseCallback = jest.spyOn(
-    httpHook,
-    'wrappedHttpResponseCallback'
-  );
-  spies.getEdgeHost = jest.spyOn(utils, 'getEdgeHost');
-  spies.randomBytes = jest.spyOn(crypto, 'randomBytes');
-  spies.getRandomId = jest.spyOn(utils, 'getRandomId');
   spies.shimmer = jest.spyOn(shimmer, 'wrap');
 
   beforeEach(() => {
     spies.shimmer.mockClear();
+    shimmer.unwrap(HttpsMocker, 'request');
   });
 
   test('isBlacklisted', () => {
     const host = 'asdf';
     const edgeHost = 'us-east-x.lumigo-tracer-edge.golumigo.com';
-    utils.getEdgeHost.mockReturnValueOnce(edgeHost);
-    utils.getEdgeHost.mockReturnValueOnce(edgeHost);
+    TracerGlobals.setTracerInputs({ ...TracerGlobals.getTracerInputs(), edgeHost });
     expect(httpHook.isBlacklisted(host)).toBe(false);
     expect(httpHook.isBlacklisted(edgeHost)).toBe(true);
   });
 
-  test('httpRequestEmitWrapper -> outputData flow', dontExitWithoutDone => {
+  test('httpRequestEmitBeforeHookWrapper -> outputData flow', () => {
     const requestData = {
       body: '',
     };
-    const wrapper = httpHook.httpRequestEmitWrapper(requestData);
-    const emitEventName = 'emit';
+    const randomRequstId = 'REQ';
+    const wrapper = httpHook.httpRequestEmitBeforeHookWrapper(requestData, randomRequstId);
+    const emitEventName = 'socket';
     const emitArg = {
       _httpMessage: {
         _hasBody: true,
@@ -61,49 +52,33 @@ describe('http hook', () => {
       },
     };
 
-    const emitFunc = (eventName, arg) => {
-      expect(eventName).toEqual(emitEventName);
-      expect(arg).toEqual(emitArg);
-      // Assert the emitFunc was called
-      dontExitWithoutDone();
-    };
-
-    const wrappedEmit = wrapper(emitFunc);
-    wrappedEmit(emitEventName, emitArg);
+    wrapper([emitEventName, emitArg]);
 
     expect(requestData).toEqual({
       body: 'HTTP BODY2',
     });
   });
 
-  test('httpRequestEmitWrapper -> output flow', dontExitWithoutDone => {
+  test('httpRequestEmitBeforeHookWrapper -> output flow', () => {
     const requestData = {
       body: '',
     };
-    const emitEventName = 'emit';
+    const emitEventName = 'socket';
     const emitArg = {
       _httpMessage: {
         _hasBody: true,
         output: ['HTTP BODY1\nHTTP BODY2'],
       },
     };
-    const emitFunc = (eventName, arg) => {
-      expect(eventName).toEqual(emitEventName);
-      expect(arg).toEqual(emitArg);
-      // Assert the emitFunc was called
-      dontExitWithoutDone();
-    };
-
-    const wrapper = httpHook.httpRequestEmitWrapper(requestData);
-    const wrappedEmit = wrapper(emitFunc);
-    wrappedEmit(emitEventName, emitArg);
+    const wrapper = httpHook.httpRequestEmitBeforeHookWrapper(requestData);
+    wrapper([emitEventName, emitArg]);
 
     expect(requestData).toEqual({
       body: 'HTTP BODY2',
     });
   });
 
-  test('httpRequestEmitWrapper -> not crashed on bad data', dontExitWithoutDone => {
+  test('httpRequestEmitBeforeHookWrapper -> not crashed on bad data', () => {
     const requestData = {
       body: '',
     };
@@ -116,61 +91,38 @@ describe('http hook', () => {
       },
     };
 
-    const emitFunc = (eventName, arg) => {
-      expect(eventName).toEqual(emitEventName);
-      expect(arg).toEqual(emitArg);
-      // Assert the emitFunc was called
-      dontExitWithoutDone();
-    };
-
-    const wrapper = httpHook.httpRequestEmitWrapper(requestData);
-    const wrappedEmit = wrapper(emitFunc);
-    wrappedEmit(emitEventName, emitArg);
+    const wrapper = httpHook.httpRequestEmitBeforeHookWrapper(requestData);
+    wrapper(emitEventName, emitArg);
 
     expect(requestData).toEqual({ body: '' });
   });
 
-  test('httpRequestWriteWrapper -> simple flow -> write(str)', dontExitWithoutDone => {
+  test('httpRequestWriteBeforeHookWrapper -> simple flow -> write(str)', () => {
     const requestData = {
       body: '',
     };
 
     const firstArg = 'BODY';
 
-    const writeFunc = (...args) => {
-      expect(args).toEqual([firstArg]);
-      // Assert the writeFunc was called
-      dontExitWithoutDone();
-    };
-
-    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
-    const wrappedWrite = wrapper(writeFunc);
-    wrappedWrite(firstArg);
+    const wrapper = httpHook.httpRequestWriteBeforeHookWrapper(requestData);
+    wrapper([firstArg]);
 
     expect(requestData).toEqual({ body: 'BODY' });
   });
 
-  test('httpRequestWriteWrapper -> simple flow -> write(Buffer)', dontExitWithoutDone => {
+  test('httpRequestWriteBeforeHookWrapper -> simple flow -> write(Buffer)', () => {
     const requestData = {
       body: '',
     };
-    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
-
+    const wrapper = httpHook.httpRequestWriteBeforeHookWrapper(requestData);
     const firstArg = Buffer.from('BODY');
 
-    const writeFunc = (...args) => {
-      expect(args).toEqual([firstArg]);
-      // Assert the writeFunc was called
-      dontExitWithoutDone();
-    };
-
-    const wrappedWrite = wrapper(writeFunc);
-    wrappedWrite(firstArg);
+    wrapper([firstArg]);
 
     expect(requestData).toEqual({ body: 'BODY' });
   });
 
-  test('httpRequestWriteWrapper -> simple flow -> write(Buffer, encoding)', dontExitWithoutDone => {
+  test('httpRequestWriteBeforeHookWrapper -> simple flow -> write(Buffer, encoding)', () => {
     const requestData = {
       body: '',
     };
@@ -178,20 +130,13 @@ describe('http hook', () => {
     const firstArg = 'BODY';
     const secArg = 'base64';
 
-    const writeFunc = (...args) => {
-      expect(args).toEqual([firstArg, secArg]);
-      // Assert the writeFunc was called
-      dontExitWithoutDone();
-    };
-
-    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
-    const wrappedWrite = wrapper(writeFunc);
-    wrappedWrite(firstArg, secArg);
+    const wrapper = httpHook.httpRequestWriteBeforeHookWrapper(requestData);
+    wrapper([firstArg, secArg]);
 
     expect(requestData).toEqual({ body: 'Qk9EWQ==' });
   });
 
-  test('httpRequestWriteWrapper -> simple flow -> write(Buffer, encoding, callback)', dontExitWithoutDone => {
+  test('httpRequestWriteBeforeHookWrapper -> simple flow -> write(Buffer, encoding, callback)', () => {
     const requestData = {
       body: '',
     };
@@ -200,20 +145,13 @@ describe('http hook', () => {
     const secArg = 'utf8';
     const thirdArg = () => {};
 
-    const writeFunc = (...args) => {
-      expect(args).toEqual([firstArg, secArg, thirdArg]);
-      // Assert the writeFunc was called
-      dontExitWithoutDone();
-    };
-
-    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
-    const wrappedWrite = wrapper(writeFunc);
-    wrappedWrite(firstArg, secArg, thirdArg);
+    const wrapper = httpHook.httpRequestWriteBeforeHookWrapper(requestData);
+    wrapper([firstArg, secArg, thirdArg]);
 
     expect(requestData).toEqual({ body: 'BODY' });
   });
 
-  test('httpRequestWriteWrapper -> simple flow -> write(Buffer, callback)', dontExitWithoutDone => {
+  test('httpRequestWriteBeforeHookWrapper -> simple flow -> write(Buffer, callback)', () => {
     const requestData = {
       body: '',
     };
@@ -221,20 +159,13 @@ describe('http hook', () => {
     const firstArg = Buffer.from('BODY');
     const secArg = () => {};
 
-    const writeFunc = (...args) => {
-      expect(args).toEqual([firstArg, secArg]);
-      // Assert the writeFunc was called
-      dontExitWithoutDone();
-    };
-
-    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
-    const wrappedWrite = wrapper(writeFunc);
-    wrappedWrite(firstArg, secArg);
+    const wrapper = httpHook.httpRequestWriteBeforeHookWrapper(requestData);
+    wrapper([firstArg, secArg]);
 
     expect(requestData).toEqual({ body: 'BODY' });
   });
 
-  test('httpRequestWriteWrapper -> simple flow -> write(str, callback)', dontExitWithoutDone => {
+  test('httpRequestWriteBeforeHookWrapper -> simple flow -> write(str, callback)', () => {
     const requestData = {
       body: '',
     };
@@ -242,40 +173,26 @@ describe('http hook', () => {
     const firstArg = 'BODY';
     const secArg = () => {};
 
-    const writeFunc = (...args) => {
-      expect(args).toEqual([firstArg, secArg]);
-      // Assert the writeFunc was called
-      dontExitWithoutDone();
-    };
-
-    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
-    const wrappedWrite = wrapper(writeFunc);
-    wrappedWrite(firstArg, secArg);
+    const wrapper = httpHook.httpRequestWriteBeforeHookWrapper(requestData);
+    wrapper([firstArg, secArg]);
 
     expect(requestData).toEqual({ body: 'BODY' });
   });
 
-  test('httpRequestWriteWrapper -> not override body', dontExitWithoutDone => {
+  test('httpRequestWriteBeforeHookWrapper -> not override body', () => {
     const requestData = {
       body: 'BODY1',
     };
 
     const firstArg = Buffer.from('BODY2');
 
-    const writeFunc = (...args) => {
-      expect(args).toEqual([firstArg]);
-      // Assert the emitFunc was called
-      dontExitWithoutDone();
-    };
-
-    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
-    const wrappedWrite = wrapper(writeFunc);
-    wrappedWrite(firstArg);
+    const wrapper = httpHook.httpRequestWriteBeforeHookWrapper(requestData);
+    wrapper([firstArg]);
 
     expect(requestData).toEqual({ body: 'BODY1' });
   });
 
-  test('httpRequestWriteWrapper -> not crashed on bad data', dontExitWithoutDone => {
+  test('httpRequestWriteBeforeHookWrapper -> not crashed on bad data', () => {
     const requestData = {
       body: '',
     };
@@ -283,15 +200,8 @@ describe('http hook', () => {
     const firstArg = {};
     const secArg = {};
 
-    const writeFunc = (...args) => {
-      expect(args).toEqual([firstArg, secArg]);
-      // Assert the emitFunc was called
-      dontExitWithoutDone();
-    };
-
-    const wrapper = httpHook.httpRequestWriteWrapper(requestData);
-    const wrappedWrite = wrapper(writeFunc);
-    wrappedWrite(firstArg, secArg);
+    const wrapper = httpHook.httpRequestWriteBeforeHookWrapper(requestData);
+    wrapper(firstArg, secArg);
 
     expect(requestData).toEqual({ body: '' });
   });
@@ -362,7 +272,7 @@ describe('http hook', () => {
     expect(httpHook.parseHttpRequestOptions(options2, url2)).toEqual(expected2);
   });
 
-  test('wrappedHttpResponseCallback', () => {
+  test('createEmitResponseHandler - add span simple flow', () => {
     const testData = {
       randomId: 'DummyRandomId',
       requestData: {
@@ -381,24 +291,16 @@ describe('http hook', () => {
     };
     const handlerInputs = new HandlerInputesBuilder()
       .withAwsRequestId('DummyParentId')
-      .withInvokedFunctionArn(
-        'arn:aws:l:region:335722316285:function:dummy-func'
-      )
+      .withInvokedFunctionArn('arn:aws:l:region:335722316285:function:dummy-func')
       .build();
     TracerGlobals.setHandlerInputs(handlerInputs);
 
     let responseEmitter = new EventEmitter();
     responseEmitter = Object.assign(responseEmitter, testData.responseData);
 
-    const callback = jest.fn();
-
     MockDate.set(testData.responseData.receivedTime);
 
-    httpHook.wrappedHttpResponseCallback(
-      testData.requestData,
-      callback,
-      testData.randomId
-    )(responseEmitter);
+    httpHook.createEmitResponseHandler(testData.requestData, testData.randomId)(responseEmitter);
 
     responseEmitter.emit('data', testData.responseData.body);
     responseEmitter.emit('end');
@@ -441,24 +343,16 @@ describe('http hook', () => {
 
     const handlerInputs = new HandlerInputesBuilder()
       .withAwsRequestId('DummyParentId')
-      .withInvokedFunctionArn(
-        'arn:aws:l:region:335722316285:function:dummy-func'
-      )
+      .withInvokedFunctionArn('arn:aws:l:region:335722316285:function:dummy-func')
       .build();
     TracerGlobals.setHandlerInputs(handlerInputs);
 
     let responseEmitter = new EventEmitter();
     responseEmitter = Object.assign(responseEmitter, testData.responseData);
 
-    const callback = jest.fn();
-
     MockDate.set(testData.responseData.receivedTime);
 
-    httpHook.wrappedHttpResponseCallback(
-      testData.requestData,
-      callback,
-      testData.randomId
-    )(responseEmitter);
+    httpHook.createEmitResponseHandler(testData.requestData, testData.randomId)(responseEmitter);
 
     responseEmitter.emit('data', testData.responseData.body);
     responseEmitter.emit('end');
@@ -473,32 +367,26 @@ describe('http hook', () => {
     //This should raise exception
     const requestData = { host: 'dynamodb.amazonaws.com' };
 
-    httpHook.wrappedHttpResponseCallback(requestData, () => null)({});
+    httpHook.createEmitResponseHandler(requestData)({});
     // No exception.
   });
 
   test('wrappedHttpResponseCallback no exception', () => {
     // Calling without params raising Exception
-    httpHook.wrappedHttpResponseCallback()({});
+    httpHook.createEmitResponseHandler()({});
     // Assert No exception.
   });
 
   test('httpRequestEndWrapper', () => {
-    const originalEndFn = jest.fn();
     const body = 'abcdefg';
     const requestData = { body: '' };
 
     const data = body;
     const encoding = 'utf8';
     const callback = jest.fn();
-    httpHook.httpRequestEndWrapper(requestData)(originalEndFn)(
-      data,
-      encoding,
-      callback
-    );
+    httpHook.httpRequestEndWrapper(requestData)([data, encoding, callback]);
 
     expect(requestData).toEqual({ body });
-    expect(originalEndFn).toHaveBeenCalledWith(data, encoding, callback);
   });
 
   test('httpRequestArguments -> no arguments', () => {
@@ -524,9 +412,7 @@ describe('http hook', () => {
       options: undefined,
       callback,
     };
-    expect(httpHook.httpRequestArguments(['https://x.com', callback])).toEqual(
-      expected2
-    );
+    expect(httpHook.httpRequestArguments(['https://x.com', callback])).toEqual(expected2);
   });
 
   test('httpRequestArguments -> http(stringUrl, options, callback)', () => {
@@ -537,9 +423,7 @@ describe('http hook', () => {
       options,
       callback,
     };
-    expect(
-      httpHook.httpRequestArguments(['https://x.com', options, callback])
-    ).toEqual(expected3);
+    expect(httpHook.httpRequestArguments(['https://x.com', options, callback])).toEqual(expected3);
   });
 
   test('httpRequestArguments -> http(options, callback)', () => {
@@ -550,9 +434,7 @@ describe('http hook', () => {
       options,
       callback,
     };
-    expect(httpHook.httpRequestArguments([options, callback])).toEqual(
-      expected4
-    );
+    expect(httpHook.httpRequestArguments([options, callback])).toEqual(expected4);
   });
 
   test('httpRequestArguments -> http(objectUrl)', () => {
@@ -587,297 +469,20 @@ describe('http hook', () => {
     expect(httpHook.httpRequestArguments([url, callback])).toEqual(expected1);
   });
 
-  test('getHookedClientRequestArgs -> request(options, callback)', () => {
-    const url1 = undefined;
-    const options1 = { a: 'b' };
-    const callback1 = () => {};
-    const requestData1 = { c: 'd' };
-
-    const retVal1 = { mock: 'value1' };
-    spies.wrappedHttpResponseCallback.mockReturnValueOnce(retVal1);
-
-    const expected1 = [options1, retVal1];
-    expect(
-      httpHook.getHookedClientRequestArgs(
-        url1,
-        options1,
-        callback1,
-        requestData1
-      )
-    ).toEqual(expected1);
-  });
-
-  test('getHookedClientRequestArgs -> request(url, callback)', () => {
-    const url2 = 'https://xaws.com';
-    const options2 = undefined;
-    const callback2 = () => {};
-    const requestData2 = { c: 'd' };
-
-    const retVal2 = { mock: 'value2' };
-    spies.wrappedHttpResponseCallback.mockReturnValueOnce(retVal2);
-
-    const expected2 = [url2, retVal2];
-    expect(
-      httpHook.getHookedClientRequestArgs(
-        url2,
-        options2,
-        callback2,
-        requestData2
-      )
-    ).toEqual(expected2);
-  });
-
-  test('getHookedClientRequestArgs -> request(url)', () => {
-    const url3 = 'https://x.com';
-    const options3 = undefined;
-    const callback3 = undefined;
-    const requestData3 = { c: 'd' };
-
-    const expected3 = [url3];
-    expect(
-      httpHook.getHookedClientRequestArgs(
-        url3,
-        options3,
-        callback3,
-        requestData3
-      )
-    ).toEqual(expected3);
-  });
-
-  test('getHookedClientRequestArgs -> request(url, options)', () => {
-    const url4 = 'https://bla.amazonaws.com/asdf';
-    const options4 = { headers: { 'Content-Type': 'text/plain' } };
-    const callback4 = undefined;
-    const requestData4 = { c: 'd' };
-    const expected4 = [
-      'https://bla.amazonaws.com/asdf',
-      {
-        headers: {
-          'Content-Type': 'text/plain',
-          //'X-Amzn-Trace-Id':
-          //  'Root=1-00006161-6ac46730d346cad0e53f89d0;Parent=59fa1aeb03c2ec1f;Sampled=1',
-        },
-      },
-    ];
-    spies.randomBytes.mockReturnValueOnce(Buffer.from('aa'));
-
-    expect(
-      httpHook.getHookedClientRequestArgs(
-        url4,
-        options4,
-        callback4,
-        requestData4
-      )
-    ).toEqual(expected4);
-  });
-
-  test('httpRequestOnWrapper', () => {
-    const requestId = 'Random';
-    const requestData1 = { a: 'b' };
-    const originalOnFn1 = jest.fn();
-    const event1 = 'response';
-    const callback1 = jest.fn();
-    const retVal1 = 'xyz';
-
-    const retWrappedCallback1 = jest.fn();
-    spies.wrappedHttpResponseCallback.mockReturnValueOnce(retWrappedCallback1);
-    originalOnFn1.mockReturnValueOnce(retVal1);
-
-    expect(
-      httpHook.httpRequestOnWrapper(requestData1, requestId)(originalOnFn1)(
-        event1,
-        callback1
-      )
-    ).toEqual(retVal1);
-
-    expect(originalOnFn1).toHaveBeenCalledWith(event1, retWrappedCallback1);
-
-    expect(spies.wrappedHttpResponseCallback).toHaveBeenCalledWith(
-      requestData1,
-      callback1,
-      requestId
-    );
-    expect(retWrappedCallback1.__lumigoSentinel).toBe(true);
-
-    const requestData2 = { a: 'b' };
-    const originalOnFn2 = jest.fn();
-    const event2 = 'something_else';
-    const callback2 = jest.fn();
-    const retVal2 = 'xyz';
-
-    originalOnFn2.mockReturnValueOnce(retVal2);
-
-    expect(
-      httpHook.httpRequestOnWrapper(requestData2)(originalOnFn2)(
-        event2,
-        callback2
-      )
-    ).toEqual(retVal2);
-
-    expect(originalOnFn2).toHaveBeenCalledWith(event2, callback2);
-  });
-
-  test('httpRequestWrapper - shimmer all wraps failed', () => {
-    utils.setWarm();
-    const handlerInputs = new HandlerInputesBuilder().build();
-    TracerGlobals.setHandlerInputs(handlerInputs);
-    const requestData = HttpSpanBuilder.DEFAULT_REQUEST_DATA;
-
-    spies.shimmer.mockImplementation((obj, funcName) => {
-      if (['end', 'emit', 'on', 'write'].includes(funcName)) {
-        throw Error(funcName);
-      }
-    });
-    const wrappedRequest = httpHook.httpRequestWrapper(HttpsMocker.request);
-
-    wrappedRequest(requestData, () => {});
-
-    expect(HttpsRequestsForTesting.getStartedRequests()).toEqual(1);
-  });
-
-  test('httpRequestWrapper', () => {
-    const originalRequestFn = jest.fn();
-    const edgeHost = 'edge-asdf.com';
-    utils.getEdgeHost.mockReturnValueOnce(edgeHost);
-    const callback1 = jest.fn();
-
-    // Blacklisted.
-    const options1 = { host: edgeHost };
-    httpHook.httpRequestWrapper(originalRequestFn)(options1, callback1);
-    expect(originalRequestFn).toHaveBeenCalledWith(options1, callback1);
-
-    originalRequestFn.mockClear();
-
-    // Already traced.
-    const options3 = { host: 'bla.com' };
-    const callback3 = jest.fn();
-    callback3.__lumigoSentinel = true;
-    utils.getEdgeHost.mockReturnValueOnce(edgeHost);
-    httpHook.httpRequestWrapper(originalRequestFn)(options3, callback3);
-    expect(originalRequestFn).toHaveBeenCalledWith(options3, callback3);
-
-    originalRequestFn.mockClear();
-
-    // Error within Lumigo's code.
-    const options5 = { host: 'bla.com' };
-    const callback5 = jest.fn();
-    utils.getEdgeHost.mockReturnValueOnce(edgeHost);
-    originalRequestFn.mockImplementationOnce(() => {
-      throw new Error();
-    });
-
-    httpHook.httpRequestWrapper(originalRequestFn)(options5, callback5);
-    expect(originalRequestFn).toHaveBeenCalledTimes(2);
-    expect(originalRequestFn).toHaveBeenCalledWith(
-      options5,
-      expect.any(Function)
-    );
-    originalRequestFn.mockClear();
-
-    spies.randomBytes.mockReturnValueOnce(Buffer.from('aa'));
-    // Regular case
-    const options2 = {
-      host: 'baba.amazonaws.com',
-      port: 443,
-      protocol: 'https:',
-      path: '/api/where/is/satoshi',
-      method: 'POST',
-      headers: { X: 'Y' },
-    };
-
-    const callback2 = jest.fn();
-
-    const clientRequest = { a: 'b' };
-    originalRequestFn.mockReturnValueOnce(clientRequest);
-    utils.getEdgeHost.mockReturnValueOnce(edgeHost);
-
-    const expectedHeaders2 = {
-      X: 'Y',
-      ['X-Amzn-Trace-Id']:
-        'Root=1-00006161-64a1b06067c2100c52e51ef4;Parent=28effe37598bb622;Sampled=0',
-    };
-    const expectedOptions2 = Object.assign({}, options2, {
-      headers: expectedHeaders2,
-    });
-    expect(
-      httpHook.httpRequestWrapper(originalRequestFn)(options2, callback2)
-    ).toEqual(clientRequest);
-
-    expect(originalRequestFn).toHaveBeenCalledWith(
-      expectedOptions2,
-      expect.any(Function)
-    );
-
-    originalRequestFn.mockClear();
-    // No callback provided case
-    const options4 = {
-      host: 'asdf1.com',
-      port: 443,
-      protocol: 'https:',
-      path: '/api/where/is/satoshi',
-      method: 'POST',
-      headers: { X: 'Y' },
-    };
-
-    const clientRequest4 = { a: 'b' };
-    originalRequestFn.mockReturnValueOnce(clientRequest4);
-    utils.getEdgeHost.mockReturnValueOnce(edgeHost);
-    expect(httpHook.httpRequestWrapper(originalRequestFn)(options4)).toEqual(
-      clientRequest4
-    );
-
-    expect(originalRequestFn).toHaveBeenCalledWith(options4);
-
-    expect(spies.shimmer).toHaveBeenCalledWith(
-      clientRequest4,
-      'on',
-      expect.any(Function)
-    );
-
-    //Circular object
-    const a6 = {};
-    const b6 = { a6 };
-    a6.b6 = b6;
-    const options6 = {
-      host: 'asdf1.com',
-      port: 443,
-      protocol: 'https:',
-      path: '/api/where/is/satoshi',
-      method: 'POST',
-      headers: { X: 'Y' },
-      a6,
-    };
-
-    const clientRequest6 = { a: 'b' };
-    originalRequestFn.mockReturnValueOnce(clientRequest6);
-    utils.getEdgeHost.mockReturnValueOnce(edgeHost);
-    expect(httpHook.httpRequestWrapper(originalRequestFn)(options6)).toEqual(
-      clientRequest6
-    );
-
-    expect(originalRequestFn).toHaveBeenCalledWith(options4);
-
-    expect(spies.shimmer).toHaveBeenCalledWith(
-      clientRequest6,
-      'on',
-      expect.any(Function)
-    );
-  });
-
-  test('httpRequestWrapper - simple flow', () => {
+  test('wrapHttp - simple flow', () => {
     utils.setTimeoutTimerDisabled();
     const handlerInputs = new HandlerInputesBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
-    const requestData = HttpSpanBuilder.DEFAULT_REQUEST_DATA;
+    const requestData = HttpSpanBuilder.getDefaultData(HttpSpanBuilder.DEFAULT_REQUEST_DATA);
     const responseData = {
       statusCode: 200,
       body: 'OK',
     };
 
-    HttpsScenarioBuilder.appendNextResponse(responseData.body);
-    const wrappedRequest = httpHook.httpRequestWrapper(HttpsMocker.request);
+    wrapHttp(HttpsMocker);
 
-    wrappedRequest(requestData, () => {});
+    const req = HttpsMocker.request(requestData, () => {});
+    HttpsScenarioBuilder.appendNextResponse(req, responseData.body);
 
     const spans = SpansContainer.getSpans();
 
@@ -895,15 +500,70 @@ describe('http hook', () => {
 
     expect(spans).toEqual([expectedSpan]);
   });
-  test('httpRequestWrapper - added span before request finish', () => {
+
+  test('wrapHttp - no callback provided', () => {
+    utils.setTimeoutTimerDisabled();
     const handlerInputs = new HandlerInputesBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
-    const requestData = HttpSpanBuilder.DEFAULT_REQUEST_DATA;
+    const requestData = HttpSpanBuilder.getDefaultData(HttpSpanBuilder.DEFAULT_REQUEST_DATA);
+    const responseData = {
+      statusCode: 200,
+      body: 'OK',
+    };
+
+    wrapHttp(HttpsMocker);
+
+    const req = HttpsMocker.request(requestData);
+    HttpsScenarioBuilder.appendNextResponse(req, responseData.body);
+
+    const spans = SpansContainer.getSpans();
+
+    const expectedSpan = new HttpSpanBuilder()
+      .withStarted(spans[0].started)
+      .withEnded(spans[0].ended)
+      .withSpanId(spans[0].id)
+      .withHttpInfo({
+        host: HttpSpanBuilder.DEFAULT_HOST,
+        request: requestData,
+        response: responseData,
+      })
+      .withRequestTimesFromSpan(spans[0])
+      .build();
+
+    expect(spans).toEqual([expectedSpan]);
+  });
+
+  test('wrapHttp - black listed url', () => {
+    const edgeHost = 'http://a.com';
+    const handlerInputs = new HandlerInputesBuilder().build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
+    TracerGlobals.setTracerInputs({ ...TracerGlobals.getTracerInputs(), edgeHost });
+
+    const requestData = { host: edgeHost };
+    const responseData = {
+      statusCode: 200,
+      body: 'OK',
+    };
+
+    wrapHttp(HttpsMocker);
+
+    const req = HttpsMocker.request(requestData);
+    HttpsScenarioBuilder.appendNextResponse(req, responseData.body);
+
+    const spans = SpansContainer.getSpans();
+
+    expect(spans).toEqual([]);
+  });
+
+  test('wrapHttp - added span before request finish', () => {
+    const handlerInputs = new HandlerInputesBuilder().build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
+    const requestData = HttpSpanBuilder.getDefaultData(HttpSpanBuilder.DEFAULT_REQUEST_DATA);
 
     HttpsScenarioBuilder.dontFinishNextRequest();
-    const wrappedRequest = httpHook.httpRequestWrapper(HttpsMocker.request);
 
-    wrappedRequest(requestData, () => {});
+    wrapHttp(HttpsMocker);
+    HttpsMocker.request(requestData, () => {});
 
     const spans = SpansContainer.getSpans();
 
@@ -922,57 +582,20 @@ describe('http hook', () => {
     expect(spans).toEqual([expectedSpan]);
   });
 
-  test('httpRequestWrapper - shimmer end wrap failed', () => {
-    utils.setWarm();
-    const handlerInputs = new HandlerInputesBuilder().build();
-    TracerGlobals.setHandlerInputs(handlerInputs);
-    const requestData = HttpSpanBuilder.DEFAULT_REQUEST_DATA;
-    const responseData = {
-      statusCode: 200,
-      body: 'DummyDataChunk',
-    };
-
-    spies.shimmer.mockImplementationOnce(() => {
-      throw Error();
-    });
-
-    const wrappedRequest = httpHook.httpRequestWrapper(HttpsMocker.request);
-
-    wrappedRequest(requestData, () => {});
-
-    const spans = SpansContainer.getSpans();
-
-    const expectedSpan = new HttpSpanBuilder()
-      .withWarm()
-      .withStarted(spans[0].started)
-      .withEnded(spans[0].ended)
-      .withSpanId(spans[0].id)
-      .withHttpInfo({
-        host: HttpSpanBuilder.DEFAULT_HOST,
-        request: requestData,
-        response: responseData,
-      })
-      .withRequestTimesFromSpan(spans[0])
-      .build();
-
-    expect(spans).toEqual([expectedSpan]);
-    expect(HttpsRequestsForTesting.getStartedRequests()).toEqual(1);
-  });
-
-  test('httpRequestWrapper - added span before request finish for aws service', () => {
+  test('wrapHttp - added span before request finish for aws service', () => {
     const host = 'random.amazonaws.com';
 
     const handlerInputs = new HandlerInputesBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
-    let requestData = HttpSpanBuilder.DEFAULT_REQUEST_DATA;
+    let requestData = HttpSpanBuilder.getDefaultData(HttpSpanBuilder.DEFAULT_REQUEST_DATA);
     requestData.host = host;
     requestData.headers.host = host;
     requestData.uri = `${host}/`;
 
     HttpsScenarioBuilder.dontFinishNextRequest();
-    const wrappedRequest = httpHook.httpRequestWrapper(HttpsMocker.request);
 
-    wrappedRequest(requestData, () => {});
+    wrapHttp(HttpsMocker);
+    HttpsMocker.request(requestData, () => {});
 
     const spans = SpansContainer.getSpans();
 
@@ -991,21 +614,21 @@ describe('http hook', () => {
     expect(spans).toEqual([expectedSpan]);
   });
 
-  test('httpRequestWrapper - wrapping twice not effecting', () => {
+  test('wrapHttp - wrapping twice not effecting', () => {
     utils.setTimeoutTimerDisabled();
     const handlerInputs = new HandlerInputesBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
-    const requestData = HttpSpanBuilder.DEFAULT_REQUEST_DATA;
+    const requestData = HttpSpanBuilder.getDefaultData(HttpSpanBuilder.DEFAULT_REQUEST_DATA);
     const responseData = {
       statusCode: 200,
       body: 'OK',
     };
 
-    HttpsScenarioBuilder.appendNextResponse(responseData.body);
-    const wrappedRequest = httpHook.httpRequestWrapper(HttpsMocker.request);
-    const wrappedRequestTwice = httpHook.httpRequestWrapper(wrappedRequest);
+    wrapHttp(HttpsMocker);
+    wrapHttp(HttpsMocker);
 
-    wrappedRequestTwice(requestData, () => {});
+    const reqContext = HttpsMocker.request(requestData, () => {});
+    HttpsScenarioBuilder.appendNextResponse(reqContext, responseData.body);
 
     const spans = SpansContainer.getSpans();
 
@@ -1013,6 +636,7 @@ describe('http hook', () => {
       .withStarted(spans[0].started)
       .withEnded(spans[0].ended)
       .withSpanId(spans[0].id)
+      .withHost(HttpSpanBuilder.DEFAULT_HOST)
       .withHttpInfo({
         host: HttpSpanBuilder.DEFAULT_HOST,
         request: requestData,
@@ -1024,11 +648,11 @@ describe('http hook', () => {
     expect(spans).toEqual([expectedSpan]);
   });
 
-  test('httpRequestWrapper - invalid alias dont save spans', () => {
+  test('wrapHttp - invalid alias dont save spans', () => {
     utils.setTimeoutTimerDisabled();
     const handlerInputs = new HandlerInputesBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
-    const cleanRequestData = HttpSpanBuilder.DEFAULT_REQUEST_DATA;
+    const cleanRequestData = HttpSpanBuilder.getDefaultData(HttpSpanBuilder.DEFAULT_REQUEST_DATA);
     let a = {};
     let requestData = { ...cleanRequestData };
     a.requestData = requestData;
@@ -1047,21 +671,21 @@ describe('http hook', () => {
     });
     process.env['LUMIGO_VALID_ALIASES'] = '["wrong"]';
 
-    HttpsScenarioBuilder.appendNextResponse(responseData.body);
-    const wrappedRequest = httpHook.httpRequestWrapper(HttpsMocker.request);
+    wrapHttp(HttpsMocker);
 
-    wrappedRequest(requestData, () => {});
+    const requestContext = HttpsMocker.request(requestData, () => {});
+    HttpsScenarioBuilder.appendNextResponse(requestContext, responseData.body);
 
     const spans = SpansContainer.getSpans();
 
     expect(spans).toEqual([]);
   });
 
-  test('httpRequestWrapper - circular object wrapper cutting object', () => {
+  test('wrapHttp - circular object wrapper cutting object', () => {
     utils.setTimeoutTimerDisabled();
     const handlerInputs = new HandlerInputesBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
-    const cleanRequestData = HttpSpanBuilder.DEFAULT_REQUEST_DATA;
+    const cleanRequestData = HttpSpanBuilder.getDefaultData(HttpSpanBuilder.DEFAULT_REQUEST_DATA);
     let a = {};
     let requestData = { ...cleanRequestData };
     a.requestData = requestData;
@@ -1072,10 +696,10 @@ describe('http hook', () => {
       body: 'OK',
     };
 
-    HttpsScenarioBuilder.appendNextResponse(responseData.body);
-    const wrappedRequest = httpHook.httpRequestWrapper(HttpsMocker.request);
+    wrapHttp(HttpsMocker);
 
-    wrappedRequest(requestData, () => {});
+    const requstContext = HttpsMocker.request(requestData, () => {});
+    HttpsScenarioBuilder.appendNextResponse(requstContext, responseData.body);
 
     const spans = SpansContainer.getSpans();
 
@@ -1094,55 +718,12 @@ describe('http hook', () => {
     expect(spans).toEqual([expectedSpan]);
   });
 
-  test('httpGetWrapper', () => {
-    const retVal = 'endCalled';
-    const end = jest.fn(() => retVal);
-    const req = { end };
-    const request = jest.fn(() => req);
-    const httpModule = { request };
-    const fn = httpHook.httpGetWrapper(httpModule)();
-
-    const args = ['x', 'y', 'z'];
-    expect(fn(args)).toEqual(req);
-    expect(httpModule.request).toHaveBeenCalledWith(args);
-    expect(end).toHaveBeenCalled();
-  });
-
   test('export default', () => {
     defaultHttp();
-    expect(spies.shimmer).toHaveBeenCalledWith(
-      http,
-      'request',
-      httpHook.httpRequestWrapper
-    );
-    expect(spies.shimmer).toHaveBeenCalledWith(
-      https,
-      'request',
-      httpHook.httpRequestWrapper
-    );
-    expect(spies.shimmer).toHaveBeenCalledWith(
-      https,
-      'get',
-      expect.any(Function)
-    );
-    expect(spies.shimmer).toHaveBeenCalledWith(
-      https,
-      'get',
-      expect.any(Function)
-    );
-  });
-
-  test('httpRequestWrapper no exception', () => {
-    httpHook.httpRequestWrapper(() => {})(/* No argument */);
-    // No exception.
-  });
-
-  test('httpRequestOnWrapper no exception', () => {
-    spies.wrappedHttpResponseCallback.mockImplementationOnce(() => {
-      throw new Error('Mocked error');
-    });
-    httpHook.httpRequestOnWrapper({})(() => true)('response', () => true);
-    // No exception.
+    expect(spies.shimmer).toHaveBeenCalledWith(http, 'request', expect.any(Function));
+    expect(spies.shimmer).toHaveBeenCalledWith(https, 'request', expect.any(Function));
+    expect(spies.shimmer).toHaveBeenCalledWith(https, 'get', expect.any(Function));
+    expect(spies.shimmer).toHaveBeenCalledWith(https, 'get', expect.any(Function));
   });
 
   test('addStepFunctionEvent', () => {
@@ -1154,5 +735,23 @@ describe('http hook', () => {
     expect(spans[0].info.resourceName).toEqual('StepFunction');
     expect(spans[0].info.httpInfo.host).toEqual('StepFunction');
     expect(spans[0].info.messageId).toEqual('123');
+  });
+
+  test('wrapHttp - shimmer all wraps failed', () => {
+    utils.setWarm();
+    const handlerInputs = new HandlerInputesBuilder().build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
+    const requestData = HttpSpanBuilder.getDefaultData(HttpSpanBuilder.DEFAULT_REQUEST_DATA);
+
+    spies.shimmer.mockImplementation((obj, funcName) => {
+      if (['end', 'emit', 'on', 'write'].includes(funcName)) {
+        throw Error(funcName);
+      }
+    });
+    wrapHttp(HttpsMocker.request);
+
+    HttpsMocker.request(requestData, () => {});
+
+    expect(HttpsRequestsForTesting.getStartedRequests()).toEqual(1);
   });
 });

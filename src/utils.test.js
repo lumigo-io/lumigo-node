@@ -20,10 +20,7 @@ import { isDebug } from './logger';
 import { GET_KEY_DEPTH_ENV_KEY } from './utils';
 import { HttpsScenarioBuilder } from '../testUtils/httpsMocker';
 import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
-import { getEnvVarAsList } from './utils';
-import { isEncodingType } from './utils';
-import { isEmptyString } from './utils';
-import { isValidHttpRequestBody } from './utils';
+import { getEnvVarAsList, isEncodingType, isEmptyString, runOneTimeWrapper } from './utils';
 
 describe('utils', () => {
   const spies = {};
@@ -83,9 +80,7 @@ describe('utils', () => {
     };
     expect(utils.getTraceId(awsXAmznTraceId)).toEqual(expected);
 
-    expect(() => utils.getTraceId(null)).toThrow(
-      'Missing _X_AMZN_TRACE_ID in Lambda Env Vars.'
-    );
+    expect(() => utils.getTraceId(null)).toThrow('Missing _X_AMZN_TRACE_ID in Lambda Env Vars.');
 
     expect(() => utils.getTraceId('x;y')).toThrow(
       'Expected 3 semi-colon separated parts in _X_AMZN_TRACE_ID.'
@@ -100,8 +95,7 @@ describe('utils', () => {
     spies.randomBytes.mockReturnValueOnce(Buffer.from('aa'));
     const awsXAmznTraceId =
       'Root=1-5b1d2450-6ac46730d346cad0e53f89d0;Parent=59fa1aeb03c2ec1f;Sampled=1';
-    const expected =
-      'Root=1-00006161-6ac46730d346cad0e53f89d0;Parent=59fa1aeb03c2ec1f;Sampled=1';
+    const expected = 'Root=1-00006161-6ac46730d346cad0e53f89d0;Parent=59fa1aeb03c2ec1f;Sampled=1';
     expect(utils.getPatchedTraceId(awsXAmznTraceId)).toEqual(expected);
   });
 
@@ -113,8 +107,7 @@ describe('utils', () => {
       AWS_REGION: 'us-east-1',
       AWS_DEFAULT_REGION: 'us-east-1',
       AWS_LAMBDA_LOG_GROUP_NAME: '/aws/lambda/aws-nodejs-dev-hello',
-      AWS_LAMBDA_LOG_STREAM_NAME:
-        '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',
+      AWS_LAMBDA_LOG_STREAM_NAME: '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',
       AWS_LAMBDA_FUNCTION_NAME: 'aws-nodejs-dev-hello',
       AWS_LAMBDA_FUNCTION_MEMORY_SIZE: '1024',
       AWS_LAMBDA_FUNCTION_VERSION: '$LATEST',
@@ -134,13 +127,11 @@ describe('utils', () => {
       awsLambdaFunctionName: 'aws-nodejs-dev-hello',
       awsLambdaFunctionVersion: '$LATEST',
       awsLambdaLogGroupName: '/aws/lambda/aws-nodejs-dev-hello',
-      awsLambdaLogStreamName:
-        '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',
+      awsLambdaLogStreamName: '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',
       awsLambdaRuntimeDir: '/var/runtime',
       awsLambdaTaskRoot: '/var/task',
       awsRegion: 'us-east-1',
-      awsXAmznTraceId:
-        'Root=1-5cdcf03a-64a1b06067c2100c52e51ef4;Parent=28effe37598bb622;Sampled=0',
+      awsXAmznTraceId: 'Root=1-5cdcf03a-64a1b06067c2100c52e51ef4;Parent=28effe37598bb622;Sampled=0',
     };
     expect(utils.getAWSEnvironment()).toEqual(expected);
     process.env = { ...oldEnv };
@@ -321,8 +312,7 @@ describe('utils', () => {
     TracerGlobals.setHandlerInputs({
       event: {},
       context: {
-        invokedFunctionArn:
-          'arn:aws:lambda:region:account:function:name:currentAlias',
+        invokedFunctionArn: 'arn:aws:lambda:region:account:function:name:currentAlias',
       },
     });
     process.env['LUMIGO_VALID_ALIASES'] = '[]';
@@ -518,9 +508,11 @@ describe('utils', () => {
       expectedHandlerReturnValue
     );
 
-    expect(
-      utils.removeLumigoFromStacktrace({ err: null, data: 'y', type: 'x' })
-    ).toEqual({ err: null, data: 'y', type: 'x' });
+    expect(utils.removeLumigoFromStacktrace({ err: null, data: 'y', type: 'x' })).toEqual({
+      err: null,
+      data: 'y',
+      type: 'x',
+    });
   });
 
   test('removeLumigoFromStacktrace no exception', () => {
@@ -532,7 +524,7 @@ describe('utils', () => {
     const options = { bla: 'bla' };
     const reqBody = 'abcdefg';
 
-    HttpsScenarioBuilder.appendNextResponse('DummyResponse');
+    HttpsScenarioBuilder.appendNextResponse(null, 'DummyResponse');
     const p = utils.httpReq(options, reqBody);
     await expect(p).resolves.toEqual({
       statusCode: 200,
@@ -555,9 +547,7 @@ describe('utils', () => {
 
     TracerGlobals.setTracerInputs({ token: '', edgeHost: '' });
 
-    expect(utils.getEdgeHost()).toEqual(
-      'us-east-1.lumigo-tracer-edge.golumigo.com'
-    );
+    expect(utils.getEdgeHost()).toEqual('us-east-1.lumigo-tracer-edge.golumigo.com');
   });
 
   test('spanHasErrors', () => {
@@ -712,12 +702,8 @@ describe('utils', () => {
     process.env[LUMIGO_SECRET_MASKING_REGEX] = ['[".*evilPlan.*"]'];
     expect(keyToOmitRegexes().map(p => String(p))).toEqual(['/.*evilPlan.*/i']);
     process.env[LUMIGO_SECRET_MASKING_REGEX] = undefined;
-    process.env[LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP] = [
-      '[".*evilPlan2.*"]',
-    ];
-    expect(keyToOmitRegexes().map(p => String(p))).toEqual([
-      '/.*evilPlan2.*/i',
-    ]);
+    process.env[LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP] = ['[".*evilPlan2.*"]'];
+    expect(keyToOmitRegexes().map(p => String(p))).toEqual(['/.*evilPlan2.*/i']);
     process.env[LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP] = undefined;
   });
 
@@ -772,10 +758,7 @@ describe('utils', () => {
     expect(omitKeys(stringNotObject)).toEqual(stringNotObject);
 
     const unsafeList = [{ password: '123' }, { hello: 'world' }];
-    expect(omitKeys(unsafeList)).toEqual([
-      { password: '****' },
-      { hello: 'world' },
-    ]);
+    expect(omitKeys(unsafeList)).toEqual([{ password: '****' }, { hello: 'world' }]);
 
     const dummy = {};
     const circularObject = { dummy };
@@ -795,6 +778,10 @@ describe('utils', () => {
 
   test('safeExecute run function', () => {
     expect(safeExecute(() => 5)()).toEqual(5);
+  });
+
+  test('safeExecute - parameters', () => {
+    expect(safeExecute(param => param)(5)).toEqual(5);
   });
 
   test('safeExecute catch exception', () => {
@@ -876,24 +863,59 @@ describe('utils', () => {
     expect(isEmptyString({})).toEqual(false);
   });
 
-  test('isValidHttpRequestBody - simple flow', () => {
-    expect(isValidHttpRequestBody('BODY')).toEqual(true);
-    expect(isValidHttpRequestBody(Buffer.from('BODY'))).toEqual(true);
+  test('runOneTime -> simple flow', () => {
+    let i = 0;
+    const addToI = () => {
+      i++;
+    };
+    const wrappedAddToI = runOneTimeWrapper(addToI, this);
+    wrappedAddToI();
+    wrappedAddToI();
+
+    expect(i).toEqual(1);
   });
 
-  test('isValidHttpRequestBody -> empty flow', () => {
-    expect(isValidHttpRequestBody()).toEqual(false);
-    expect(isValidHttpRequestBody(0)).toEqual(false);
-    expect(isValidHttpRequestBody([])).toEqual(false);
-    expect(isValidHttpRequestBody({})).toEqual(false);
-    expect(isValidHttpRequestBody(undefined)).toEqual(false);
-    expect(isValidHttpRequestBody(null)).toEqual(false);
+  test('runOneTime -> without context', () => {
+    let i = 0;
+    const addToI = () => {
+      i++;
+    };
+    const wrappedAddToI = runOneTimeWrapper(addToI);
+    wrappedAddToI();
+    wrappedAddToI();
+
+    expect(i).toEqual(1);
+  });
+
+  test('runOneTime -> return value', () => {
+    let i = 0;
+    const addToI = () => {
+      i++;
+      return 'OK';
+    };
+    const wrappedAddToI = runOneTimeWrapper(addToI, this);
+    const retValue = wrappedAddToI();
+    wrappedAddToI();
+
+    expect(i).toEqual(1);
+    expect(retValue).toEqual('OK');
+  });
+
+  test('runOneTime -> use params', () => {
+    let i = 0;
+    const addToI = count => {
+      i += count;
+      return 'OK';
+    };
+    const wrappedAddToI = runOneTimeWrapper(addToI, this);
+    wrappedAddToI(5);
+    wrappedAddToI(10);
+
+    expect(i).toEqual(5);
   });
 
   test('md5Hash should yield the same result for the same items', () => {
-    expect(md5Hash({ a: 1, b: { c: 2, d: 3 } })).toEqual(
-      md5Hash({ b: { d: 3, c: 2 }, a: 1 })
-    );
+    expect(md5Hash({ a: 1, b: { c: 2, d: 3 } })).toEqual(md5Hash({ b: { d: 3, c: 2 }, a: 1 }));
   });
 
   test('md5Hash recursive items', () => {

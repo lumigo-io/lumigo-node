@@ -9,8 +9,7 @@ export const SPAN_PATH = '/api/spans';
 export const LUMIGO_TRACER_EDGE = 'lumigo-tracer-edge.golumigo.com';
 export const LUMIGO_DEFAULT_DOMAIN_SCRUBBERS =
   '["secretsmanager.*.amazonaws.com", "ssm.*.amazonaws.com", "kms.*.amazonaws.com", "sts..*amazonaws.com"]';
-export const LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP =
-  'LUMIGO_BLACKLIST_REGEX';
+export const LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP = 'LUMIGO_BLACKLIST_REGEX';
 export const LUMIGO_SECRET_MASKING_REGEX = 'LUMIGO_SECRET_MASKING_REGEX';
 export const OMITTING_KEYS_REGEXES = [
   '.*pass.*',
@@ -39,9 +38,7 @@ export const getContextInfo = context => {
     invokedFunctionArn,
     callbackWaitsForEmptyEventLoop,
   } = context;
-  const awsAccountId = invokedFunctionArn
-    ? invokedFunctionArn.split(':')[4]
-    : '';
+  const awsAccountId = invokedFunctionArn ? invokedFunctionArn.split(':')[4] : '';
 
   return {
     functionName,
@@ -74,9 +71,7 @@ export const getTraceId = awsXAmznTraceId => {
 
   const traceIdArr = awsXAmznTraceId.split(';');
   if (traceIdArr.length !== 3) {
-    throw new Error(
-      'Expected 3 semi-colon separated parts in _X_AMZN_TRACE_ID.'
-    );
+    throw new Error('Expected 3 semi-colon separated parts in _X_AMZN_TRACE_ID.');
   }
 
   const traceId = {};
@@ -101,13 +96,10 @@ export const getPatchedTraceId = awsXAmznTraceId => {
   const { Root, Parent, Sampled, transactionId } = getTraceId(awsXAmznTraceId);
   const rootArr = Root.split('-');
   const shortId = getRandomString(4);
-  return `Root=${
-    rootArr[0]
-  }-0000${shortId}-${transactionId};Parent=${Parent};Sampled=${Sampled}`;
+  return `Root=${rootArr[0]}-0000${shortId}-${transactionId};Parent=${Parent};Sampled=${Sampled}`;
 };
 
-export const isPromise = obj =>
-  obj && obj.then && typeof obj.then === 'function';
+export const isPromise = obj => obj && obj.then && typeof obj.then === 'function';
 
 export const getAWSEnvironment = () => {
   const {
@@ -146,10 +138,7 @@ const PRUNE_TRACE_OFF_FLAG = 'LUMIGO_PRUNE_TRACE_OFF';
 const STORE_LOGS_FLAG = 'LUMIGO_STORE_LOGS';
 
 const validateEnvVar = (envVar, value = 'TRUE') =>
-  !!(
-    process.env[envVar] &&
-    process.env[envVar].toUpperCase() === value.toUpperCase()
-  );
+  !!(process.env[envVar] && process.env[envVar].toUpperCase() === value.toUpperCase());
 
 export const isAwsEnvironment = () => !!process.env['LAMBDA_RUNTIME_DIR'];
 
@@ -160,8 +149,7 @@ export const getEnvVarAsList = (key, def) => {
   return def;
 };
 
-export const isTimeoutTimerEnabled = () =>
-  !validateEnvVar(TIMEOUT_ENABLE_FLAG, 'FALSE');
+export const isTimeoutTimerEnabled = () => !validateEnvVar(TIMEOUT_ENABLE_FLAG, 'FALSE');
 
 export const isVerboseMode = () => validateEnvVar(VERBOSE_FLAG);
 
@@ -190,27 +178,21 @@ export const getValidAliases = () =>
     return JSON.parse(process.env['LUMIGO_VALID_ALIASES'] || '[]');
   })() || [];
 
-export const getHandlerContext = () =>
-  TracerGlobals.getHandlerInputs().context || {};
+export const getHandlerContext = () => TracerGlobals.getHandlerInputs().context || {};
 
 export const getInvokedArn = () => getHandlerContext().invokedFunctionArn || '';
-export const getInvokedVersion = () =>
-  getHandlerContext().functionVersion || '';
+export const getInvokedVersion = () => getHandlerContext().functionVersion || '';
 
 export const getInvokedAliasOrNull = () =>
   safeExecute(() => {
-    return getInvokedArn().split(':').length >= 8
-      ? getInvokedArn().split(':')[7]
-      : null;
+    return getInvokedArn().split(':').length >= 8 ? getInvokedArn().split(':')[7] : null;
   })() || null;
 
 export const isValidAlias = () => {
   const validAliases = getValidAliases();
   const currentAlias = getInvokedAliasOrNull();
   const validAlias =
-    !currentAlias ||
-    validAliases.length === 0 ||
-    validAliases.includes(currentAlias);
+    !currentAlias || validAliases.length === 0 || validAliases.includes(currentAlias);
   if (!validAlias) {
     logger.info(`Alias is invalid, alias: ${currentAlias}`);
   }
@@ -219,11 +201,9 @@ export const isValidAlias = () => {
 
 export const setWarm = () => (process.env[WARM_FLAG] = 'TRUE');
 
-export const setSendOnlyIfErrors = () =>
-  (process.env[SEND_ONLY_IF_ERROR_FLAG] = 'TRUE');
+export const setSendOnlyIfErrors = () => (process.env[SEND_ONLY_IF_ERROR_FLAG] = 'TRUE');
 
-export const setPruneTraceOff = () =>
-  (process.env[PRUNE_TRACE_OFF_FLAG] = 'TRUE');
+export const setPruneTraceOff = () => (process.env[PRUNE_TRACE_OFF_FLAG] = 'TRUE');
 
 export const setStoreLogsOn = () => (process.env[STORE_LOGS_FLAG] = 'TRUE');
 
@@ -233,11 +213,9 @@ export const setSwitchOff = () => (process.env['LUMIGO_SWITCH_OFF'] = 'TRUE');
 
 export const setDebug = () => (process.env['LUMIGO_DEBUG'] = 'TRUE');
 
-export const setTimeoutTimerDisabled = () =>
-  (process.env[TIMEOUT_ENABLE_FLAG] = 'FALSE');
+export const setTimeoutTimerDisabled = () => (process.env[TIMEOUT_ENABLE_FLAG] = 'FALSE');
 
-export const isString = x =>
-  Object.prototype.toString.call(x) === '[object String]';
+export const isString = x => Object.prototype.toString.call(x) === '[object String]';
 
 export const MAX_ENTITY_SIZE = 1024;
 
@@ -245,8 +223,7 @@ export const getEventEntitySize = () => {
   return parseInt(process.env['MAX_EVENT_ENTITY_SIZE']) || MAX_ENTITY_SIZE;
 };
 
-export const prune = (str, maxLength = MAX_ENTITY_SIZE) =>
-  (str || '').substr(0, maxLength);
+export const prune = (str, maxLength = MAX_ENTITY_SIZE) => (str || '').substr(0, maxLength);
 
 export const stringifyAndPrune = (obj, maxLength = MAX_ENTITY_SIZE) =>
   prune(JSON.stringify(obj), maxLength);
@@ -261,9 +238,7 @@ export const parseErrorObject = err => ({
 });
 
 export const lowerCaseObjectKeys = o =>
-  o
-    ? Object.keys(o).reduce((c, k) => ((c[k.toLowerCase()] = o[k]), c), {})
-    : {};
+  o ? Object.keys(o).reduce((c, k) => ((c[k.toLowerCase()] = o[k]), c), {}) : {};
 
 export const getRandomString = evenNrChars =>
   crypto
@@ -287,8 +262,7 @@ export const isAwsService = (host, responseData) => {
   return !!(
     responseData &&
     responseData.headers &&
-    (responseData.headers['x-amzn-requestid'] ||
-      responseData.headers['x-amz-request-id'])
+    (responseData.headers['x-amzn-requestid'] || responseData.headers['x-amz-request-id'])
   );
 };
 
@@ -386,9 +360,9 @@ export const parseQueryParams = queryParams => {
 };
 
 const domainScrubbers = () =>
-  JSON.parse(
-    process.env.LUMIGO_DOMAINS_SCRUBBER || LUMIGO_DEFAULT_DOMAIN_SCRUBBERS
-  ).map(x => new RegExp(x, 'i'));
+  JSON.parse(process.env.LUMIGO_DOMAINS_SCRUBBER || LUMIGO_DEFAULT_DOMAIN_SCRUBBERS).map(
+    x => new RegExp(x, 'i')
+  );
 
 export const shouldScrubDomain = url => {
   return !!url && domainScrubbers().some(regex => url.match(regex));
@@ -406,18 +380,12 @@ export const parseJsonFromEnvVar = (envVar, warnClient = false) => {
 export const keyToOmitRegexes = () => {
   let regexesList = OMITTING_KEYS_REGEXES;
   if (process.env[LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP]) {
-    const parseResponse = parseJsonFromEnvVar(
-      LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP,
-      true
-    );
+    const parseResponse = parseJsonFromEnvVar(LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP, true);
     if (parseResponse) {
       regexesList = parseResponse;
     }
   } else if (process.env[LUMIGO_SECRET_MASKING_REGEX]) {
-    const parseResponse = parseJsonFromEnvVar(
-      LUMIGO_SECRET_MASKING_REGEX,
-      true
-    );
+    const parseResponse = parseJsonFromEnvVar(LUMIGO_SECRET_MASKING_REGEX, true);
     if (parseResponse) {
       regexesList = parseResponse;
     }
@@ -459,13 +427,14 @@ export const safeExecute = (
   callback,
   message = 'Error in Lumigo tracer',
   logLevel = logger.LOG_LEVELS.WARNING
-) => () => {
-  try {
-    return callback();
-  } catch (err) {
-    logger.log(logLevel, message, err.message);
-  }
-};
+) =>
+  function(...args) {
+    try {
+      return callback.apply(this, args);
+    } catch (err) {
+      logger.log(logLevel, message, err.message);
+    }
+  };
 
 export const recursiveGetKey = (event, keyToSearch) => {
   return recursiveGetKeyByDepth(event, keyToSearch, recursiveGetKeyDepth());
@@ -509,13 +478,18 @@ export const isEncodingType = encodingType =>
   !!(
     encodingType &&
     typeof encodingType === 'string' &&
-    ['ascii', 'utf8', 'utf16le', 'ucs2', 'base64', 'binary', 'hex'].includes(
-      encodingType
-    )
+    ['ascii', 'utf8', 'utf16le', 'ucs2', 'base64', 'binary', 'hex'].includes(encodingType)
   );
 
-export const isEmptyString = str =>
-  !!(!str || (typeof str === 'string' && str.length === 0));
+export const isEmptyString = str => !!(!str || (typeof str === 'string' && str.length === 0));
 
-export const isValidHttpRequestBody = reqBody =>
-  !!(reqBody && (typeof reqBody === 'string' || reqBody instanceof Buffer));
+export const runOneTimeWrapper = (func, context) => {
+  let done = false;
+  return (...args) => {
+    if (!done) {
+      const result = func.apply(context || this, args);
+      done = true;
+      return result;
+    }
+  };
+};

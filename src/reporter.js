@@ -16,8 +16,7 @@ export const MAX_SENT_BYTES = 1000 * 1000;
 
 export const sendSingleSpan = async span => exports.sendSpans([span]);
 
-export const logSpans = spans =>
-  spans.map(span => logger.debug('Span sent', span.id));
+export const logSpans = spans => spans.map(span => logger.debug('Span sent', span.id));
 
 export const isSpansContainsErrors = spans => {
   const safeGetStatusCode = s => (s['returnValue'] || {})['statusCode'] || 0;
@@ -36,9 +35,7 @@ export const sendSpans = async spans => {
   };
 
   if (isSendOnlyIfErrors() && !isSpansContainsErrors(spans)) {
-    logger.debug(
-      'No Spans was sent, `SEND_ONLY_IF_ERROR` is on and no span has error'
-    );
+    logger.debug('No Spans was sent, `SEND_ONLY_IF_ERROR` is on and no span has error');
     return { rtt: 0 };
   }
 
@@ -73,17 +70,12 @@ export const forgeRequestBody = (spans, maxSendBytes = MAX_SENT_BYTES) => {
   logger.debug('Starting trim spans before send');
 
   const functionEndSpan = spans[spans.length - 1];
-  const errorSpans = spans.filter(
-    span => spanHasErrors(span) && span !== functionEndSpan
-  );
-  const normalSpans = spans.filter(
-    span => !spanHasErrors(span) && span !== functionEndSpan
-  );
+  const errorSpans = spans.filter(span => spanHasErrors(span) && span !== functionEndSpan);
+  const normalSpans = spans.filter(span => !spanHasErrors(span) && span !== functionEndSpan);
 
   const orderedSpans = [...errorSpans, ...normalSpans];
 
-  let totalSize =
-    getJSONBase64Size(resultSpans) + getJSONBase64Size(functionEndSpan);
+  let totalSize = getJSONBase64Size(resultSpans) + getJSONBase64Size(functionEndSpan);
 
   for (let errorSpan of orderedSpans) {
     let spanSize = getJSONBase64Size(errorSpan);

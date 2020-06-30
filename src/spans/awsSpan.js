@@ -54,10 +54,7 @@ export const getCurrentTransactionId = () => {
 };
 
 export const getBasicSpan = () => {
-  const {
-    event: lambdaEvent,
-    context: lambdaContext,
-  } = TracerGlobals.getHandlerInputs();
+  const { event: lambdaEvent, context: lambdaContext } = TracerGlobals.getHandlerInputs();
   const { token } = TracerGlobals.getTracerInputs();
 
   const info = getSpanInfo(lambdaEvent);
@@ -101,10 +98,7 @@ export const getBasicSpan = () => {
 };
 
 export const getFunctionSpan = () => {
-  const {
-    event: lambdaEvent,
-    context: lambdaContext,
-  } = TracerGlobals.getHandlerInputs();
+  const { event: lambdaEvent, context: lambdaContext } = TracerGlobals.getHandlerInputs();
 
   const basicSpan = getBasicSpan();
   const info = { ...basicSpan.info, ...getEventInfo(lambdaEvent) };
@@ -113,17 +107,10 @@ export const getFunctionSpan = () => {
   const started = new Date().getTime();
   const ended = started; // Indicates a StartSpan.
 
-  const event = stringifyAndPrune(
-    parseEvent(lambdaEvent),
-    getEventEntitySize()
-  );
+  const event = stringifyAndPrune(parseEvent(lambdaEvent), getEventEntitySize());
   const envs = stringifyAndPrune(process.env);
 
-  const {
-    functionName: name,
-    awsRequestId,
-    remainingTimeInMillis,
-  } = getContextInfo(lambdaContext);
+  const { functionName: name, awsRequestId, remainingTimeInMillis } = getContextInfo(lambdaContext);
 
   const id = `${awsRequestId}_started`;
   const maxFinishTime = started + remainingTimeInMillis;
@@ -161,13 +148,7 @@ export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
   return newSpan;
 };
 
-export const AWS_PARSED_SERVICES = [
-  'dynamodb',
-  'sns',
-  'lambda',
-  'sqs',
-  'kinesis',
-];
+export const AWS_PARSED_SERVICES = ['dynamodb', 'sns', 'lambda', 'sqs', 'kinesis'];
 
 export const getAwsServiceFromHost = host => {
   const service = host.split('.')[0];
@@ -224,8 +205,7 @@ export const getHttpInfo = (requestData, responseData) => {
     request.headers = stringifyAndPrune(request.headers);
     request.body = stringifyAndPrune(request.body);
 
-    if (response.headers)
-      response.headers = stringifyAndPrune(response.headers);
+    if (response.headers) response.headers = stringifyAndPrune(response.headers);
     if (response.body) response.body = stringifyAndPrune(response.body);
   }
 
@@ -251,11 +231,7 @@ export const getHttpSpanId = (randomRequestId, awsRequestId = null) => {
   return awsRequestId ? awsRequestId : randomRequestId;
 };
 
-export const getHttpSpan = (
-  randomRequestId,
-  requestData,
-  responseData = null
-) => {
+export const getHttpSpan = (randomRequestId, requestData, responseData = null) => {
   let serviceData = {};
   try {
     if (isAwsService(requestData.host, responseData)) {

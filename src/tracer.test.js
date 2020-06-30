@@ -30,19 +30,10 @@ describe('tracer', () => {
   spies.getFunctionSpan = jest.spyOn(awsSpan, 'getFunctionSpan');
   spies.getEndFunctionSpan = jest.spyOn(awsSpan, 'getEndFunctionSpan');
   spies.addRttToFunctionSpan = jest.spyOn(awsSpan, 'addRttToFunctionSpan');
-  spies.getCurrentTransactionId = jest.spyOn(
-    awsSpan,
-    'getCurrentTransactionId'
-  );
+  spies.getCurrentTransactionId = jest.spyOn(awsSpan, 'getCurrentTransactionId');
   spies.SpansContainer = {};
-  spies.SpansContainer.getSpans = jest.spyOn(
-    globals.SpansContainer,
-    'getSpans'
-  );
-  spies.SpansContainer.clearSpans = jest.spyOn(
-    globals.SpansContainer,
-    'clearSpans'
-  );
+  spies.SpansContainer.getSpans = jest.spyOn(globals.SpansContainer, 'getSpans');
+  spies.SpansContainer.clearSpans = jest.spyOn(globals.SpansContainer, 'clearSpans');
   spies.SpansContainer.addSpan = jest.spyOn(globals.SpansContainer, 'addSpan');
   spies.clearGlobals = jest.spyOn(globals, 'clearGlobals');
   spies.warnClient = jest.spyOn(logger, 'warnClient');
@@ -52,9 +43,7 @@ describe('tracer', () => {
 
   beforeEach(() => {
     httpHook.mockClear();
-    Object.keys(spies).map(
-      x => typeof x === 'function' && spies[x].mockClear()
-    );
+    Object.keys(spies).map(x => typeof x === 'function' && spies[x].mockClear());
   });
   test('startTrace - not failed on error', async () => {
     //TODO: Rewrite this test without mocks
@@ -105,9 +94,7 @@ describe('tracer', () => {
     const testBuffer = 50;
 
     new EnvironmentBuilder().awsEnvironment().applyEnv();
-    const handlerInputs = new HandlerInputesBuilder()
-      .withTimeout(timeout)
-      .build();
+    const handlerInputs = new HandlerInputesBuilder().withTimeout(timeout).build();
     TracerGlobals.setHandlerInputs(handlerInputs);
 
     await tracer.startTrace();
@@ -126,9 +113,7 @@ describe('tracer', () => {
     const testBuffer = 50;
 
     new EnvironmentBuilder().awsEnvironment().applyEnv();
-    const handlerInputs = new HandlerInputesBuilder()
-      .withTimeout(timeout)
-      .build();
+    const handlerInputs = new HandlerInputesBuilder().withTimeout(timeout).build();
     TracerGlobals.setHandlerInputs(handlerInputs);
 
     await tracer.startTrace();
@@ -148,9 +133,7 @@ describe('tracer', () => {
     const testBuffer = 50;
 
     new EnvironmentBuilder().awsEnvironment().applyEnv();
-    const handlerInputs = new HandlerInputesBuilder()
-      .withTimeout(timeout)
-      .build();
+    const handlerInputs = new HandlerInputesBuilder().withTimeout(timeout).build();
     TracerGlobals.setHandlerInputs(handlerInputs);
 
     await tracer.startTrace();
@@ -170,9 +153,7 @@ describe('tracer', () => {
 
     utils.setSendOnlyIfErrors();
     new EnvironmentBuilder().awsEnvironment().applyEnv();
-    const handlerInputs = new HandlerInputesBuilder()
-      .withTimeout(timeout)
-      .build();
+    const handlerInputs = new HandlerInputesBuilder().withTimeout(timeout).build();
     TracerGlobals.setHandlerInputs(handlerInputs);
 
     await tracer.startTrace();
@@ -188,9 +169,7 @@ describe('tracer', () => {
   test('isCallbacked', async () => {
     expect(tracer.isCallbacked({ type: tracer.HANDLER_CALLBACKED })).toBe(true);
     expect(tracer.isCallbacked({ type: tracer.HANDLER_CALLBACKED })).toBe(true);
-    expect(tracer.isCallbacked({ type: tracer.ASYNC_HANDLER_RESOLVED })).toBe(
-      false
-    );
+    expect(tracer.isCallbacked({ type: tracer.ASYNC_HANDLER_RESOLVED })).toBe(false);
   });
 
   test('endTrace; callbackWaitsForEmptyEventLoop is false', async () => {
@@ -218,10 +197,7 @@ describe('tracer', () => {
 
     expect(spies.isSwitchedOff).toHaveBeenCalled();
     expect(spies.isAwsEnvironment).toHaveBeenCalled();
-    expect(spies.getEndFunctionSpan).toHaveBeenCalledWith(
-      functionSpan,
-      handlerReturnValue
-    );
+    expect(spies.getEndFunctionSpan).toHaveBeenCalledWith(functionSpan, handlerReturnValue);
     expect(spies.sendSpans).toHaveBeenCalledWith([dummySpan, endFunctionSpan]);
     expect(spies.clearGlobals).toHaveBeenCalled();
 
@@ -298,18 +274,14 @@ describe('tracer', () => {
     const data = 'Satoshi was here';
     const err = new Error('w00t');
     const userHandler1 = async () => Promise.resolve(data);
-    expect(
-      tracer.promisifyUserHandler(userHandler1, event, context)
-    ).resolves.toEqual({
+    expect(tracer.promisifyUserHandler(userHandler1, event, context)).resolves.toEqual({
       err: null,
       data,
       type: tracer.ASYNC_HANDLER_RESOLVED,
     });
 
     const userHandler2 = async () => Promise.reject(err);
-    expect(
-      tracer.promisifyUserHandler(userHandler2, event, context)
-    ).resolves.toEqual({
+    expect(tracer.promisifyUserHandler(userHandler2, event, context)).resolves.toEqual({
       err,
       data: null,
       type: tracer.ASYNC_HANDLER_REJECTED,
@@ -320,9 +292,7 @@ describe('tracer', () => {
       const data = 'async callbacked?';
       callback(err, data);
     };
-    expect(
-      tracer.promisifyUserHandler(userHandler3, event, context)
-    ).resolves.toEqual({
+    expect(tracer.promisifyUserHandler(userHandler3, event, context)).resolves.toEqual({
       err: null,
       data: 'async callbacked?',
       type: tracer.HANDLER_CALLBACKED,
@@ -337,9 +307,7 @@ describe('tracer', () => {
     const userHandler1 = () => {
       throw err;
     };
-    expect(
-      tracer.promisifyUserHandler(userHandler1, event, context)
-    ).resolves.toEqual({
+    expect(tracer.promisifyUserHandler(userHandler1, event, context)).resolves.toEqual({
       err,
       data: null,
       type: tracer.NON_ASYNC_HANDLER_ERRORED,
@@ -350,9 +318,7 @@ describe('tracer', () => {
       const data = 'non async callbacked?';
       callback(err, data);
     };
-    await expect(
-      tracer.promisifyUserHandler(userHandler2, event, context)
-    ).resolves.toEqual({
+    await expect(tracer.promisifyUserHandler(userHandler2, event, context)).resolves.toEqual({
       err: null,
       data: 'non async callbacked?',
       type: tracer.HANDLER_CALLBACKED,
@@ -410,9 +376,9 @@ describe('tracer', () => {
       throw new Error('bla');
     };
     const callback2 = jest.fn();
-    await expect(
-      lumigoTracer.trace(userHandler2)(event, context, callback2)
-    ).rejects.toEqual(new Error('bla'));
+    await expect(lumigoTracer.trace(userHandler2)(event, context, callback2)).rejects.toEqual(
+      new Error('bla')
+    );
 
     expect(httpHook).toHaveBeenCalledTimes(1);
   });
@@ -449,9 +415,9 @@ describe('tracer', () => {
     const userHandler4 = async (event, context, callback) => {
       return retVal;
     };
-    await expect(
-      lumigoTracer.trace(userHandler4)(event, context, callback4)
-    ).resolves.toEqual(retVal);
+    await expect(lumigoTracer.trace(userHandler4)(event, context, callback4)).resolves.toEqual(
+      retVal
+    );
 
     expect(httpHook).toHaveBeenCalledTimes(1);
   });
@@ -469,9 +435,9 @@ describe('tracer', () => {
     const userHandler5 = async (event, context, callback) => {
       throw new Error(retVal);
     };
-    await expect(
-      lumigoTracer.trace(userHandler5)(event, context, callback5)
-    ).rejects.toEqual(new Error(retVal));
+    await expect(lumigoTracer.trace(userHandler5)(event, context, callback5)).rejects.toEqual(
+      new Error(retVal)
+    );
 
     expect(httpHook).toHaveBeenCalledTimes(1);
   });
@@ -489,10 +455,7 @@ describe('tracer', () => {
       { transactionId: '123', id: '1' },
       { transactionId: '123', id: '2' },
     ]);
-    await tracer.sendEndTraceSpans(
-      { id: '1_started' },
-      { err: null, data: null }
-    );
+    await tracer.sendEndTraceSpans({ id: '1_started' }, { err: null, data: null });
     expect(spies.warnClient).not.toHaveBeenCalled();
     expect(TracerGlobals.getTracerInputs().token).toEqual('');
 
@@ -501,10 +464,7 @@ describe('tracer', () => {
       { transactionId: '123', id: '1' },
       { transactionId: '456', id: '2' },
     ]);
-    await tracer.sendEndTraceSpans(
-      { id: '1_started' },
-      { err: null, data: null }
-    );
+    await tracer.sendEndTraceSpans({ id: '1_started' }, { err: null, data: null });
     expect(spies.warnClient).toHaveBeenCalled();
   });
 
@@ -515,10 +475,7 @@ describe('tracer', () => {
     const event = { a: 'b', c: 'd' };
 
     const userHandlerAsync = async (event, context, callback) => 1;
-    const result = lumigoTracer.trace(lumigoTracer.trace(userHandlerAsync))(
-      event,
-      {}
-    );
+    const result = lumigoTracer.trace(lumigoTracer.trace(userHandlerAsync))(event, {});
     await expect(result).resolves.toEqual(1);
     expect(httpHook).toHaveBeenCalledTimes(1);
 
@@ -533,9 +490,11 @@ describe('tracer', () => {
       }, 0);
       return 1; // we should ignore this!
     };
-    const result2 = tracer.trace({ token })(
-      tracer.trace({ token })(userHandlerSync)
-    )(event, {}, callback);
+    const result2 = tracer.trace({ token })(tracer.trace({ token })(userHandlerSync))(
+      event,
+      {},
+      callback
+    );
     await expect(result2).resolves.toEqual(undefined);
     expect(callBackCalled).toEqual(true);
   });

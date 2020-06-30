@@ -85,9 +85,7 @@ describe('aws parser', () => {
         messageId: md5Hash({ key: { S: 'value' } }),
       },
     };
-    expect(aws.dynamodbParser(requestDataWriteBatch)).toEqual(
-      expectedWriteBatch
-    );
+    expect(aws.dynamodbParser(requestDataWriteBatch)).toEqual(expectedWriteBatch);
 
     const bodyDeleteBatch = JSON.stringify({
       RequestItems: {
@@ -108,9 +106,7 @@ describe('aws parser', () => {
         messageId: md5Hash({ key: { S: 'value' } }),
       },
     };
-    expect(aws.dynamodbParser(requestDataDeleteBatch)).toEqual(
-      expectedDeleteBatch
-    );
+    expect(aws.dynamodbParser(requestDataDeleteBatch)).toEqual(expectedDeleteBatch);
   });
 
   test('lambdaParser', () => {
@@ -320,11 +316,7 @@ describe('aws parser', () => {
     };
     const responseData = {
       body: JSON.stringify({
-        Records: [
-          { SequenceNumber: '1' },
-          { SequenceNumber: '2' },
-          { Error: true },
-        ],
+        Records: [{ SequenceNumber: '1' }, { SequenceNumber: '2' }, { Error: true }],
       }),
     };
 

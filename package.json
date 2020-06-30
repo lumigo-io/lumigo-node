@@ -34,7 +34,6 @@
     "@semantic-release/git": "^7.0.16",
     "aws-sdk": "^2.465.0",
     "babel-eslint": "^10.0.1",
-    "clone-response": "^1.0.2",
     "codecov": "^3.5.0",
     "eslint": "^5.16.0",
     "eslint-config-prettier": "^4.3.0",

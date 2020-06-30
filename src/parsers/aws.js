@@ -34,8 +34,7 @@ const extractDynamodbTableName = (reqBody, method) => {
 export const dynamodbParser = requestData => {
   const { headers: reqHeaders, body: reqBody } = requestData;
   const dynamodbMethod =
-    (reqHeaders['x-amz-target'] && reqHeaders['x-amz-target'].split('.')[1]) ||
-    '';
+    (reqHeaders['x-amz-target'] && reqHeaders['x-amz-target'].split('.')[1]) || '';
 
   const reqBodyJSON = (!!reqBody && JSON.parse(reqBody)) || {};
   const resourceName = extractDynamodbTableName(reqBodyJSON, dynamodbMethod);
@@ -51,10 +50,7 @@ export const lambdaParser = (requestData, responseData) => {
   const resourceName = path.split('/')[3]; // FunctionName
   const invocationType = headers['x-amz-invocation-type'];
   const { headers: responseHeaders } = responseData;
-  const spanId =
-    responseHeaders['x-amzn-requestid'] ||
-    responseHeaders['x-amz-requestid'] ||
-    '';
+  const spanId = responseHeaders['x-amzn-requestid'] || responseHeaders['x-amz-requestid'] || '';
   const awsServiceData = { resourceName, invocationType };
   return { awsServiceData, spanId };
 };
@@ -65,13 +61,9 @@ export const snsParser = (requestData, responseData) => {
   const { body: resBody } = responseData;
   const parsedRequestBody = reqBody ? parseQueryParams(reqBody) : undefined;
   const parsedResponseBody = resBody ? parseXml(resBody) : undefined;
-  const resourceName = parsedRequestBody
-    ? parsedRequestBody['TopicArn']
-    : undefined;
+  const resourceName = parsedRequestBody ? parsedRequestBody['TopicArn'] : undefined;
   const messageId = parsedResponseBody
-    ? ((parsedResponseBody['PublishResponse'] || {})['PublishResult'] || {})[
-        'MessageId'
-      ]
+    ? ((parsedResponseBody['PublishResponse'] || {})['PublishResult'] || {})['MessageId']
     : undefined;
 
   const awsServiceData = { resourceName, targetArn: resourceName, messageId };
@@ -114,8 +106,7 @@ export const kinesisParser = (requestData, responseData) => {
     logger.info(`Unable to parse response, ${e}`);
     resBodyJSON = {};
   }
-  const resourceName =
-    (reqBodyJSON['StreamName'] && reqBodyJSON.StreamName) || undefined;
+  const resourceName = (reqBodyJSON['StreamName'] && reqBodyJSON.StreamName) || undefined;
   const awsServiceData = { resourceName };
   if (resBodyJSON['SequenceNumber']) {
     awsServiceData.messageId = resBodyJSON['SequenceNumber'];

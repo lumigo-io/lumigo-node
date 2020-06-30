@@ -23,10 +23,10 @@ const API_GW_REQUEST_CONTEXT_FILTER_KEYS = getEnvVarAsList(
   'LUMIGO_API_GW_REQUEST_CONTEXT_FILTER_KEYS',
   ['authorizer', 'http']
 );
-const API_GW_KEYS_DELETE_KEYS = getEnvVarAsList(
-  'LUMIGO_API_GW_KEYS_DELETE_KEYS',
-  ['multiValueHeaders', 'multiValueQueryStringParameters']
-);
+const API_GW_KEYS_DELETE_KEYS = getEnvVarAsList('LUMIGO_API_GW_KEYS_DELETE_KEYS', [
+  'multiValueHeaders',
+  'multiValueQueryStringParameters',
+]);
 const SQS_KEYS_ORDER = getEnvVarAsList('LUMIGO_SQS_KEYS_ORDER', [
   'body',
   'messageAttributes',
@@ -79,8 +79,7 @@ export const parseApiGwEvent = event => {
     parsed_event['requestContext'] = {};
     for (const rc_key of Object.keys(event.requestContext)) {
       if (API_GW_REQUEST_CONTEXT_FILTER_KEYS.includes(rc_key.toLowerCase())) {
-        parsed_event['requestContext'][rc_key] =
-          event['requestContext'][rc_key];
+        parsed_event['requestContext'][rc_key] = event['requestContext'][rc_key];
       }
     }
   }
@@ -89,9 +88,7 @@ export const parseApiGwEvent = event => {
     parsed_event['headers'] = {};
     for (const h_key of Object.keys(event.headers)) {
       if (
-        API_GW_PREFIX_KEYS_HEADERS_DELETE_KEYS.find(v =>
-          h_key.toLowerCase().startsWith(v)
-        ) == null
+        API_GW_PREFIX_KEYS_HEADERS_DELETE_KEYS.find(v => h_key.toLowerCase().startsWith(v)) == null
       ) {
         parsed_event['headers'][h_key] = event['headers'][h_key];
       }
@@ -99,10 +96,7 @@ export const parseApiGwEvent = event => {
   }
   // Add all other keys
   for (const key of Object.keys(event)) {
-    if (
-      !API_GW_KEYS_ORDER.includes(key) &&
-      !API_GW_KEYS_DELETE_KEYS.includes(key)
-    ) {
+    if (!API_GW_KEYS_ORDER.includes(key) && !API_GW_KEYS_DELETE_KEYS.includes(key)) {
       parsed_event[key] = event[key];
     }
   }

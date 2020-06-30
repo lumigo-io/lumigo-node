@@ -4,9 +4,7 @@ const ORIGINAL_HANDLER_KEY = 'LUMIGO_ORIGINAL_HANDLER';
 
 const parseOriginalHandler = originalHandler => {
   if (!originalHandler) {
-    throw Error(
-      'Could not load the original handler. Are you sure that the handler is correct?'
-    );
+    throw Error('Could not load the original handler. Are you sure that the handler is correct?');
   }
   // The handler's format is `file_path.function`, where the `file_path` is inside `/var/task`
   if (!originalHandler.includes('.')) {
