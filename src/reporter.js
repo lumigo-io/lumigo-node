@@ -1,9 +1,5 @@
-import { TracerGlobals } from './globals';
 import {
-  getEdgeUrl,
   getJSONBase64Size,
-  getTracerInfo,
-  httpReq,
   isPruneTraceOff,
   isSendOnlyIfErrors,
   omitKeys,
@@ -11,12 +7,16 @@ import {
 } from './utils';
 import * as logger from './logger';
 import { isDebug } from './logger';
+import { HttpAgent } from './httpAgent';
 
 export const MAX_SENT_BYTES = 1000 * 1000;
 
 export const sendSingleSpan = async span => exports.sendSpans([span]);
 
-export const logSpans = spans => spans.map(span => logger.debug('Span sent', span.id));
+export const logSpans = spans => {
+  const spanIds = spans.map(span => span.id);
+  logger.debug('Spans sent', spanIds);
+};
 
 export const isSpansContainsErrors = spans => {
   const safeGetStatusCode = s => (s['returnValue'] || {})['statusCode'] || 0;
@@ -25,33 +25,16 @@ export const isSpansContainsErrors = spans => {
 };
 
 export const sendSpans = async spans => {
-  const { token } = TracerGlobals.getTracerInputs();
-  const { name, version } = getTracerInfo();
-
-  const headers = {
-    Authorization: token,
-    'User-Agent': `${name}$${version}`,
-    'Content-Type': 'application/json',
-  };
-
   if (isSendOnlyIfErrors() && !isSpansContainsErrors(spans)) {
     logger.debug('No Spans was sent, `SEND_ONLY_IF_ERROR` is on and no span has error');
     return { rtt: 0 };
   }
-
-  const method = 'POST';
-  const { host, path } = getEdgeUrl();
-
-  logger.debug('Edge selected', { host, path });
-
   const reqBody = forgeRequestBody(spans);
 
   const roundTripStart = Date.now();
-
   if (reqBody) {
-    await httpReq({ method, headers, host, path }, reqBody);
+    await HttpAgent.postSpans(reqBody);
   }
-
   const roundTripEnd = Date.now();
   const rtt = roundTripEnd - roundTripStart;
 

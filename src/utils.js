@@ -1,5 +1,4 @@
 import { TracerGlobals } from './globals';
-import https from 'https';
 import crypto from 'crypto';
 import { noCirculars } from './tools/noCirculars';
 import * as logger from './logger';
@@ -300,19 +299,6 @@ export const removeLumigoFromStacktrace = handleReturnValue => {
   }
 };
 
-export const httpReq = (options = {}, reqBody) =>
-  new Promise((resolve, reject) => {
-    const req = https.request(options, res => {
-      const { statusCode } = res;
-      let data = '';
-      res.on('data', chunk => (data += chunk));
-      res.on('end', () => resolve({ statusCode, data }));
-    });
-    req.on('error', e => reject(e));
-    !!reqBody && req.write(reqBody);
-    req.end();
-  });
-
 export const getAwsEdgeHost = () => {
   const { awsRegion } = getAWSEnvironment();
   return `${awsRegion}.${LUMIGO_TRACER_EDGE}`;
@@ -342,7 +328,8 @@ export const spanHasErrors = span =>
 export const getEdgeUrl = () => {
   const host = getEdgeHost();
   const path = SPAN_PATH;
-  return { host, path };
+  const url = `https://${host}${path}`;
+  return { host, path, url };
 };
 
 //Base64 calculation taken from : https://stackoverflow.com/questions/13378815/base64-length-calculation
