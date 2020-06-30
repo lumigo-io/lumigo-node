@@ -574,7 +574,7 @@ describe('tracer', () => {
     );
 
     expect(result[LUMIGO_EVENT_KEY][STEP_FUNCTION_UID_KEY]).not.toEqual('old');
-    const requests = AxiosMocker.getAxiosMocker().history.post;
+    const requests = AxiosMocker.getRequests();
     expect(requests.length).toEqual(2);
   });
 });
