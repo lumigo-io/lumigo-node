@@ -2,8 +2,6 @@ import * as logger from './logger';
 import { TracerGlobals } from './globals';
 import { getEdgeUrl, getJSONBase64Size, getTracerInfo } from './utils';
 import axios from 'axios';
-import http from 'http';
-import https from 'https';
 
 export const HttpSpansAgent = (() => {
   let sessionInstance = undefined;
@@ -24,8 +22,6 @@ export const HttpSpansAgent = (() => {
     return axios.create({
       baseURL: url,
       timeout: 250,
-      HttpSpansAgent: new http.Agent({ keepAlive: true }),
-      httpsAgent: new https.Agent({ keepAlive: true }),
       maxRedirects: 0,
       headers,
       validateStatus,

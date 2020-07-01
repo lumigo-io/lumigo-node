@@ -6,16 +6,15 @@ import {
   spanHasErrors,
 } from './utils';
 import * as logger from './logger';
-import { isDebug } from './logger';
 import { HttpSpansAgent } from './httpSpansAgent';
 
 export const MAX_SENT_BYTES = 1000 * 1000;
 
 export const sendSingleSpan = async span => exports.sendSpans([span]);
 
-export const logSpans = spans => {
+export const logSpans = (rtt, spans) => {
   const spanIds = spans.map(span => span.id);
-  logger.debug('Spans sent', spanIds);
+  logger.debug(`Spans sent [${rtt}ms]`, spanIds);
 };
 
 export const isSpansContainsErrors = spans => {
@@ -38,7 +37,7 @@ export const sendSpans = async spans => {
   const roundTripEnd = Date.now();
   const rtt = roundTripEnd - roundTripStart;
 
-  isDebug() && logSpans(spans);
+  logSpans(rtt, spans);
   return { rtt };
 };
 
