@@ -1,5 +1,7 @@
 const EventEmitter = require('events');
 
+class Agent {}
+
 export const HttpsScenarioBuilder = (() => {
   const defaultResponse = 'DummyDataChunk';
   let failForNext = 0;
@@ -168,5 +170,5 @@ export const HttpsMocker = (() => {
     return responseEmitter;
   };
 
-  return { request };
+  return { request, Agent };
 })();

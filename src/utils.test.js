@@ -18,7 +18,6 @@ import { TracerGlobals } from './globals';
 import crypto from 'crypto';
 import { isDebug } from './logger';
 import { GET_KEY_DEPTH_ENV_KEY } from './utils';
-import { HttpsScenarioBuilder } from '../testUtils/httpsMocker';
 import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
 import { getEnvVarAsList, isEncodingType, isEmptyString, runOneTimeWrapper } from './utils';
 
@@ -520,27 +519,6 @@ describe('utils', () => {
     // No exception.
   });
 
-  test('httpReq - simple flow', async () => {
-    const options = { bla: 'bla' };
-    const reqBody = 'abcdefg';
-
-    HttpsScenarioBuilder.appendNextResponse(null, 'DummyResponse');
-    const p = utils.httpReq(options, reqBody);
-    await expect(p).resolves.toEqual({
-      statusCode: 200,
-      data: 'DummyResponse',
-    });
-  });
-
-  test('httpReq - reject errors', async () => {
-    const options = { bla: 'bla' };
-    const reqBody = 'abcdefg';
-
-    HttpsScenarioBuilder.failForTheNextTimes(1);
-    const p = utils.httpReq(options, reqBody);
-    await expect(p).rejects;
-  });
-
   test('getEdgeHost', () => {
     TracerGlobals.setTracerInputs({ token: '', edgeHost: 'zarathustra.com' });
     expect(utils.getEdgeHost()).toEqual('zarathustra.com');
@@ -651,6 +629,7 @@ describe('utils', () => {
     const expected = {
       host: 'us-east-1.lumigo-tracer-edge.golumigo.com',
       path: '/api/spans',
+      url: 'https://us-east-1.lumigo-tracer-edge.golumigo.com/api/spans',
     };
     expect(utils.getEdgeUrl()).toEqual(expected);
   });

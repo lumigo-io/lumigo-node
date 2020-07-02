@@ -12,6 +12,7 @@ import {
   isEmptyString,
   runOneTimeWrapper,
 } from '../utils';
+import * as logger from '../logger';
 import { getHttpSpan } from '../spans/awsSpan';
 import { URL } from 'url';
 import { noCirculars } from '../tools/noCirculars';
@@ -173,10 +174,13 @@ export const httpBeforeRequestWrapper = (args, extenderContext) => {
   extenderContext.isTracedDisabled = true;
 
   const { url, options } = httpRequestArguments(args);
+  const { headers } = options || {};
   const host = getHostFromOptionsOrUrl(options, url);
   extenderContext.isTracedDisabled = isBlacklisted(host) || !isValidAlias();
 
   if (!extenderContext.isTracedDisabled) {
+    logger.debug('Starting hook', { host, url, headers });
+
     const requestData = parseHttpRequestOptions(options, url);
     const requestRandomId = getRandomId();
 

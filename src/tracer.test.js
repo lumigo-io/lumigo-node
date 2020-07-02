@@ -15,6 +15,7 @@ import { HandlerInputesBuilder } from '../testUtils/handlerInputesBuilder';
 import { HttpsRequestsForTesting } from '../testUtils/httpsMocker';
 import { EnvironmentBuilder } from '../testUtils/environmentBuilder';
 import { SpansContainer } from './globals';
+import { AxiosMocker } from '../testUtils/axiosMocker';
 
 jest.mock('./hooks/http');
 describe('tracer', () => {
@@ -62,7 +63,7 @@ describe('tracer', () => {
 
     await tracer.startTrace();
 
-    const requests = HttpsRequestsForTesting.getRequests();
+    const requests = AxiosMocker.getRequests();
     expect(requests.length).toEqual(1);
   });
 
@@ -73,7 +74,7 @@ describe('tracer', () => {
 
     await tracer.startTrace();
 
-    const requests = HttpsRequestsForTesting.getRequests();
+    const requests = AxiosMocker.getRequests();
     expect(requests.length).toEqual(0);
   });
 
@@ -85,7 +86,7 @@ describe('tracer', () => {
 
     await tracer.startTrace();
 
-    const requests = HttpsRequestsForTesting.getRequests();
+    const requests = AxiosMocker.getRequests();
     expect(requests.length).toEqual(0);
   });
 
@@ -101,7 +102,7 @@ describe('tracer', () => {
     SpansContainer.addSpan({ id: 'SomeRandomHttpSpan' });
 
     setTimeout(() => {
-      const requests = HttpsRequestsForTesting.getRequests();
+      const requests = AxiosMocker.getRequests();
       //1 for start span, 1 for SomeRandomHttpSpan
       expect(requests.length).toEqual(2);
       done();
@@ -121,7 +122,7 @@ describe('tracer', () => {
     SpansContainer.addSpan({ id: 'SomeRandomHttpSpan' });
 
     setTimeout(() => {
-      const requests = HttpsRequestsForTesting.getRequests();
+      const requests = AxiosMocker.getRequests();
       //Expect 3 - 2 start spans and 1 from the timer
       expect(requests.length).toEqual(3);
       done();
@@ -140,7 +141,7 @@ describe('tracer', () => {
     SpansContainer.addSpan({ id: 'SomeRandomHttpSpan' });
 
     setTimeout(() => {
-      const requests = HttpsRequestsForTesting.getRequests();
+      const requests = AxiosMocker.getRequests();
       //Expect 1 for start span
       expect(requests.length).toEqual(1);
       done();
@@ -160,7 +161,7 @@ describe('tracer', () => {
     SpansContainer.addSpan({ id: 'SomeRandomHttpSpan' });
 
     setTimeout(() => {
-      const requests = HttpsRequestsForTesting.getRequests();
+      const requests = AxiosMocker.getRequests();
       expect(requests.length).toEqual(0);
       done();
     }, timeout + testBuffer);
@@ -573,7 +574,7 @@ describe('tracer', () => {
     );
 
     expect(result[LUMIGO_EVENT_KEY][STEP_FUNCTION_UID_KEY]).not.toEqual('old');
-    const requests = HttpsRequestsForTesting.getRequests();
+    const requests = AxiosMocker.getRequests();
     expect(requests.length).toEqual(2);
   });
 });

@@ -2,24 +2,10 @@
 import { TracerGlobals } from './globals';
 import * as reporter from './reporter';
 import * as utils from './utils';
-import { HttpsRequestsForTesting, HttpsScenarioBuilder } from '../testUtils/httpsMocker';
+import { AxiosMocker } from '../testUtils/axiosMocker';
 import { getJSONBase64Size } from './utils';
 
 describe('reporter', () => {
-  const buildExpectedRequest = (token, spans) => ({
-    options: {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'User-Agent': `@lumigo/tracerMock$1.2.3`,
-        Authorization: token,
-      },
-      host: 'us-east-1.lumigo-tracer-edge.golumigo.com',
-      path: '/api/spans',
-    },
-    body: JSON.stringify(spans),
-  });
-
   test('sendSingleSpan', async () => {
     const token = 'DEADBEEF';
     utils.setDebug();
@@ -28,10 +14,8 @@ describe('reporter', () => {
 
     const result = await reporter.sendSingleSpan(span);
 
-    const requests = HttpsRequestsForTesting.getRequests();
-    const expectedRequest = buildExpectedRequest(token, [span]);
-
-    expect(requests).toEqual([expectedRequest]);
+    const spans = AxiosMocker.getSentSpans();
+    expect(spans).toEqual([[span]]);
 
     expect(result.rtt).toBeGreaterThanOrEqual(0);
   });
@@ -65,10 +49,8 @@ describe('reporter', () => {
 
     const result = await reporter.sendSpans(spans);
 
-    const requests = HttpsRequestsForTesting.getRequests();
-    const expectedRequest = buildExpectedRequest(token, spans);
-
-    expect(requests).toEqual([expectedRequest]);
+    const sentSpans = AxiosMocker.getSentSpans();
+    expect(sentSpans).toEqual([spans]);
 
     expect(result.rtt).toBeGreaterThanOrEqual(0);
   });
@@ -81,9 +63,9 @@ describe('reporter', () => {
 
     const result = await reporter.sendSpans(spans);
 
-    const requests = HttpsRequestsForTesting.getRequests();
+    const sentSpans = AxiosMocker.getSentSpans();
+    expect(sentSpans).toEqual([]);
 
-    expect(requests).toEqual([]);
     expect(result.rtt).toEqual(0);
   });
 
@@ -95,10 +77,8 @@ describe('reporter', () => {
 
     const result = await reporter.sendSpans(spans);
 
-    const expectedRequest = buildExpectedRequest(token, spans);
-    const requests = HttpsRequestsForTesting.getRequests();
-
-    expect(requests).toEqual([expectedRequest]);
+    const sentSpans = AxiosMocker.getSentSpans();
+    expect(sentSpans).toEqual([spans]);
     expect(result.rtt).toBeGreaterThanOrEqual(0);
   });
 
@@ -111,10 +91,8 @@ describe('reporter', () => {
 
     const result = await reporter.sendSpans(spans);
 
-    const expectedRequest = buildExpectedRequest(token, spans);
-    const requests = HttpsRequestsForTesting.getRequests();
-
-    expect(requests).toEqual([expectedRequest]);
+    const sentSpans = AxiosMocker.getSentSpans();
+    expect(sentSpans).toEqual([spans]);
     expect(result.rtt).toBeGreaterThanOrEqual(0);
   });
 
@@ -127,11 +105,9 @@ describe('reporter', () => {
     const result = await reporter.sendSpans(spans);
 
     const expectedSpans = [{ a: 'b', c: 'd' }, { e: 'f', g: 'h', secretKey: '****' }];
-    const expectedRequest = buildExpectedRequest(token, expectedSpans);
 
-    const requests = HttpsRequestsForTesting.getRequests();
-
-    expect(requests).toEqual([expectedRequest]);
+    const sentSpans = AxiosMocker.getSentSpans();
+    expect(sentSpans).toEqual([expectedSpans]);
     expect(result.rtt).toBeGreaterThanOrEqual(0);
   });
 

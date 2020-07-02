@@ -4,6 +4,7 @@ import * as utils from './utils';
 import { EXECUTION_TAGS_KEY } from './utils';
 import { HttpsRequestsForTesting } from '../testUtils/httpsMocker';
 import * as fsExtra from 'fs-extra';
+import { AxiosMocker } from '../testUtils/axiosMocker';
 
 describe('index', () => {
   const spies = {};
@@ -37,9 +38,10 @@ describe('index', () => {
       const result = await lumigoLayer.trace(userHandler)({}, context, callback);
 
       expect(result).toEqual(retVal);
-      const actualTags = HttpsRequestsForTesting.getSentSpans().filter(
-        span => !span.id.endsWith('_started')
-      )[0][EXECUTION_TAGS_KEY];
+      const sentSpans = AxiosMocker.getSentSpans()[1];
+      const actualTags = sentSpans.filter(span => !span.id.endsWith('_started'))[0][
+        EXECUTION_TAGS_KEY
+      ];
       expect(actualTags).toEqual([{ key: 'k0', value: 'v0' }]);
     } finally {
       await fsExtra.remove(dupDirPath);
@@ -63,9 +65,10 @@ describe('index', () => {
     const result = await lumigo.trace(userHandler)({}, context, callback);
 
     expect(result).toEqual(retVal);
-    const actualTags = HttpsRequestsForTesting.getSentSpans().filter(
-      span => !span.id.endsWith('_started')
-    )[0][EXECUTION_TAGS_KEY];
+    const sentSpans = AxiosMocker.getSentSpans()[1];
+    const actualTags = sentSpans.filter(span => !span.id.endsWith('_started'))[0][
+      EXECUTION_TAGS_KEY
+    ];
     expect(actualTags).toEqual([{ key: 'k0', value: 'v0' }, { key: 'k1', value: 'v1' }]);
   });
 
@@ -83,9 +86,10 @@ describe('index', () => {
     };
     await lumigo.trace(userHandler)({}, context, jest.fn());
 
-    const actualTags = HttpsRequestsForTesting.getSentSpans().filter(
-      span => !span.id.endsWith('_started')
-    )[0][EXECUTION_TAGS_KEY];
+    const sentSpans = AxiosMocker.getSentSpans()[1];
+    const actualTags = sentSpans.filter(span => !span.id.endsWith('_started'))[0][
+      EXECUTION_TAGS_KEY
+    ];
     expect(actualTags).toEqual([{ key: 'k0', value: 'v0' }, { key: 'k1', value: 'v1' }]);
   });
 
