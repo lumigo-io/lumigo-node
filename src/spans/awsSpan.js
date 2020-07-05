@@ -15,6 +15,7 @@ import {
   getInvokedArn,
   getInvokedVersion,
   EXECUTION_TAGS_KEY,
+  prune,
 } from '../utils';
 import {
   dynamodbParser,
@@ -140,7 +141,7 @@ export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
   try {
     return_value = data ? pruneData(data) : null;
   } catch (e) {
-    return_value = data.toString();
+    return_value = prune(data.toString());
     error = {
       type: 'ReturnValueError',
       message: `Could not JSON.stringify the return value. This will probably fail the lambda. Original error: ${e &&
