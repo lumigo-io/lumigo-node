@@ -11,6 +11,7 @@ import {
   isValidAlias,
   isEmptyString,
   runOneTimeWrapper,
+  prune,
 } from '../utils';
 import * as logger from '../logger';
 import { getHttpSpan } from '../spans/awsSpan';
@@ -75,7 +76,7 @@ export const httpRequestWriteBeforeHookWrapper = requestData =>
   function(args) {
     if (isEmptyString(requestData.body)) {
       const body = extractBodyFromWriteFunc(args);
-      if (body) requestData.body += body;
+      if (body) requestData.body += prune(body);
     }
   };
 
@@ -90,7 +91,7 @@ export const httpRequestEmitBeforeHookWrapper = (requestData, requestRandomId) =
     if (args[0] === 'socket') {
       if (isEmptyString(requestData.body)) {
         const body = extractBodyFromEmitSocketEvent(args[1]);
-        if (body) requestData.body += body;
+        if (body) requestData.body += prune(body);
       }
     }
   };
@@ -134,7 +135,7 @@ export const httpRequestEndWrapper = requestData =>
   function(args) {
     if (isEmptyString(requestData.body)) {
       const body = extractBodyFromEndFunc(args);
-      if (body) requestData.body += body;
+      if (body) requestData.body += prune(body);
     }
   };
 
