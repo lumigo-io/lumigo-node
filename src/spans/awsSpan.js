@@ -142,12 +142,11 @@ export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
     return_value = data ? pruneData(data) : null;
   } catch (e) {
     return_value = prune(data.toString());
-    error = {
-      type: 'ReturnValueError',
+    error = parseErrorObject({
+      name: 'ReturnValueError',
       message: `Could not JSON.stringify the return value. This will probably fail the lambda. Original error: ${e &&
         e.message}`,
-      stacktrace: {},
-    };
+    });
   }
 
   const newSpan = Object.assign({}, functionSpan, {
