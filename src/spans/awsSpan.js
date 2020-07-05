@@ -134,9 +134,21 @@ export const removeStartedFromId = id => id.split('_')[0];
 export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
   const { err, data } = handlerReturnValue;
   const id = removeStartedFromId(functionSpan.id);
-  const error = err ? parseErrorObject(err) : undefined;
+  let error = err ? parseErrorObject(err) : undefined;
   const ended = new Date().getTime();
-  const return_value = data ? pruneData(data) : null;
+  let return_value;
+  try {
+    return_value = data ? pruneData(data) : null;
+  } catch (e) {
+    return_value = data.toString();
+    error = {
+      type: 'ReturnValueError',
+      message: `Could not JSON.stringify the return value. This will probably fail the lambda. Original error: ${e &&
+        e.message}`,
+      stacktrace: {},
+    };
+  }
+
   const newSpan = Object.assign({}, functionSpan, {
     id,
     ended,
