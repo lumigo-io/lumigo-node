@@ -7,7 +7,6 @@ import {
 } from './utils';
 import * as logger from './logger';
 import { HttpSpansAgent } from './httpSpansAgent';
-import { HttpAgent } from './httpAgent';
 
 export const MAX_SENT_BYTES = 1000 * 1000;
 
