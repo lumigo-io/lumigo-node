@@ -12,6 +12,7 @@ import {
   getContextInfo,
   isTimeoutTimerEnabled,
   getTimeoutTimerBuffer,
+  getTimeoutMinDuration,
 } from './utils';
 import {
   getFunctionSpan,
@@ -36,7 +37,8 @@ const setupTimeoutTimer = () => {
   const { context } = TracerGlobals.getHandlerInputs();
   const { remainingTimeInMillis } = getContextInfo(context);
   const timeoutBuffer = getTimeoutTimerBuffer();
-  if (timeoutBuffer < remainingTimeInMillis) {
+  const minDuration = getTimeoutMinDuration();
+  if (timeoutBuffer < remainingTimeInMillis && remainingTimeInMillis >= minDuration) {
     GlobalTimer.setGlobalTimeout(async () => {
       logger.debug('Invocation is about to timeout, sending trace data.');
       const spans = SpansContainer.getSpans();

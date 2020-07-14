@@ -28,6 +28,7 @@ export const GET_KEY_DEPTH_ENV_KEY = 'LUMIGO_KEY_DEPTH';
 export const DEFAULT_GET_KEY_DEPTH = 3;
 export const EXECUTION_TAGS_KEY = 'lumigo_execution_tags_no_scrub';
 export const SKIP_SCRUBBING_KEYS = [EXECUTION_TAGS_KEY];
+export const DEFAULT_TIMEOUT_MIN_DURATION = 2000;
 
 export const getContextInfo = context => {
   const remainingTimeInMillis = context.getRemainingTimeInMillis();
@@ -136,6 +137,7 @@ const SEND_ONLY_IF_ERROR_FLAG = 'SEND_ONLY_IF_ERROR';
 const PRUNE_TRACE_OFF_FLAG = 'LUMIGO_PRUNE_TRACE_OFF';
 const STORE_LOGS_FLAG = 'LUMIGO_STORE_LOGS';
 const TIMEOUT_BUFFER_FLAG = 'LUMIGO_TIMEOUT_BUFFER';
+const TIMEOUT_MIN_DURATION = 'LUMIGO_TIMEOUT_MIN_DURATION';
 const TIMEOUT_BUFFER_FLAG_MS = 'LUMIGO_TIMEOUT_BUFFER_MS';
 
 const validateEnvVar = (envVar, value = 'TRUE') =>
@@ -158,6 +160,11 @@ export const getTimeoutTimerBuffer = () => {
   const { context } = TracerGlobals.getHandlerInputs();
   const { remainingTimeInMillis } = getContextInfo(context);
   return Math.max(500, Math.min(remainingTimeInMillis / 10, 3000));
+};
+
+export const getTimeoutMinDuration = () => {
+  if (process.env[TIMEOUT_MIN_DURATION]) return parseFloat(process.env[TIMEOUT_MIN_DURATION]);
+  return DEFAULT_TIMEOUT_MIN_DURATION;
 };
 
 export const isVerboseMode = () => validateEnvVar(VERBOSE_FLAG);

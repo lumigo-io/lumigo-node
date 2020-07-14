@@ -20,6 +20,7 @@ import { isDebug } from './logger';
 import { GET_KEY_DEPTH_ENV_KEY } from './utils';
 import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
 import { getEnvVarAsList, isEncodingType, isEmptyString, runOneTimeWrapper } from './utils';
+import { DEFAULT_TIMEOUT_MIN_DURATION } from './utils';
 
 describe('utils', () => {
   const spies = {};
@@ -321,6 +322,15 @@ describe('utils', () => {
     process.env['LUMIGO_VALID_ALIASES'] = '["1", "2", "currentAlias"]';
     expect(utils.isValidAlias()).toEqual(true);
     process.env['LUMIGO_VALID_ALIASES'] = undefined;
+  });
+
+  test('getTimeoutMinDuration -> ENV_VAR', () => {
+    process.env['LUMIGO_TIMEOUT_MIN_DURATION'] = '500';
+    expect(utils.getTimeoutMinDuration()).toEqual(500);
+  });
+
+  test('getTimeoutMinDuration -> default', () => {
+    expect(utils.getTimeoutMinDuration()).toEqual(DEFAULT_TIMEOUT_MIN_DURATION);
   });
 
   test('getTimeoutTimerBuffer -> ENV_VAR', () => {
