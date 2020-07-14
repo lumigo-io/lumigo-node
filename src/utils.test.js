@@ -323,6 +323,46 @@ describe('utils', () => {
     process.env['LUMIGO_VALID_ALIASES'] = undefined;
   });
 
+  test('getTimeoutTimerBuffer -> ENV_VAR', () => {
+    process.env['LUMIGO_TIMEOUT_BUFFER'] = '0.35';
+    expect(utils.getTimeoutTimerBuffer()).toEqual(350);
+  });
+
+  test('getTimeoutTimerBuffer -> ENV_VAR ms', () => {
+    process.env['LUMIGO_TIMEOUT_BUFFER_MS'] = '350';
+    expect(utils.getTimeoutTimerBuffer()).toEqual(350);
+  });
+
+  test('getTimeoutTimerBuffer -> Min value', () => {
+    expect(utils.isValidAlias()).toEqual(true);
+    TracerGlobals.setHandlerInputs({
+      context: {
+        getRemainingTimeInMillis: () => 1000,
+      },
+    });
+    expect(utils.getTimeoutTimerBuffer()).toEqual(500);
+  });
+
+  test('getTimeoutTimerBuffer -> Max value', () => {
+    expect(utils.isValidAlias()).toEqual(true);
+    TracerGlobals.setHandlerInputs({
+      context: {
+        getRemainingTimeInMillis: () => 60000,
+      },
+    });
+    expect(utils.getTimeoutTimerBuffer()).toEqual(3000);
+  });
+
+  test('getTimeoutTimerBuffer -> 10% of the run time', () => {
+    expect(utils.isValidAlias()).toEqual(true);
+    TracerGlobals.setHandlerInputs({
+      context: {
+        getRemainingTimeInMillis: () => 20000,
+      },
+    });
+    expect(utils.getTimeoutTimerBuffer()).toEqual(2000);
+  });
+
   test('setSwitchOff', () => {
     expect(utils.isSwitchedOff()).toBe(false);
     utils.setSwitchOff();

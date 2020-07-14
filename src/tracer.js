@@ -11,6 +11,7 @@ import {
   STEP_FUNCTION_UID_KEY,
   getContextInfo,
   isTimeoutTimerEnabled,
+  getTimeoutTimerBuffer,
 } from './utils';
 import {
   getFunctionSpan,
@@ -29,19 +30,19 @@ export const ASYNC_HANDLER_REJECTED = 'async_handler_rejected';
 export const NON_ASYNC_HANDLER_ERRORED = 'non_async_errored';
 export const LEAK_MESSAGE =
   'Execution leak detected. More information is available in: https://docs.lumigo.io/docs/execution-leak-detected';
-const TIMEOUT_BUFFER_MS = 250;
 
 const setupTimeoutTimer = () => {
   logger.debug('Timeout timer set-up started');
   const { context } = TracerGlobals.getHandlerInputs();
   const { remainingTimeInMillis } = getContextInfo(context);
-  if (TIMEOUT_BUFFER_MS < remainingTimeInMillis) {
+  const timeoutBuffer = getTimeoutTimerBuffer();
+  if (timeoutBuffer < remainingTimeInMillis) {
     GlobalTimer.setGlobalTimeout(async () => {
       logger.debug('Invocation is about to timeout, sending trace data.');
       const spans = SpansContainer.getSpans();
       SpansContainer.clearSpans();
       await sendSpans(spans);
-    }, remainingTimeInMillis - TIMEOUT_BUFFER_MS);
+    }, remainingTimeInMillis - timeoutBuffer);
   }
 };
 

@@ -135,6 +135,8 @@ const VERBOSE_FLAG = 'LUMIGO_VERBOSE';
 const SEND_ONLY_IF_ERROR_FLAG = 'SEND_ONLY_IF_ERROR';
 const PRUNE_TRACE_OFF_FLAG = 'LUMIGO_PRUNE_TRACE_OFF';
 const STORE_LOGS_FLAG = 'LUMIGO_STORE_LOGS';
+const TIMEOUT_BUFFER_FLAG = 'LUMIGO_TIMEOUT_BUFFER';
+const TIMEOUT_BUFFER_FLAG_MS = 'LUMIGO_TIMEOUT_BUFFER_MS';
 
 const validateEnvVar = (envVar, value = 'TRUE') =>
   !!(process.env[envVar] && process.env[envVar].toUpperCase() === value.toUpperCase());
@@ -149,6 +151,14 @@ export const getEnvVarAsList = (key, def) => {
 };
 
 export const isTimeoutTimerEnabled = () => !validateEnvVar(TIMEOUT_ENABLE_FLAG, 'FALSE');
+
+export const getTimeoutTimerBuffer = () => {
+  if (process.env[TIMEOUT_BUFFER_FLAG_MS]) return parseFloat(process.env[TIMEOUT_BUFFER_FLAG_MS]);
+  if (process.env[TIMEOUT_BUFFER_FLAG]) return parseFloat(process.env[TIMEOUT_BUFFER_FLAG]) * 1000;
+  const { context } = TracerGlobals.getHandlerInputs();
+  const { remainingTimeInMillis } = getContextInfo(context);
+  return Math.max(500, Math.min(remainingTimeInMillis / 10, 3000));
+};
 
 export const isVerboseMode = () => validateEnvVar(VERBOSE_FLAG);
 
