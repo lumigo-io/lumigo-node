@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import * as extender from '../extender';
 import http from 'http';
 import https from 'https';
@@ -76,7 +77,11 @@ export const httpRequestWriteBeforeHookWrapper = requestData =>
   function(args) {
     if (isEmptyString(requestData.body)) {
       const body = extractBodyFromWriteFunc(args);
-      if (body) requestData.body += prune(body);
+      if (body) {
+        console.log('BODY', body);
+        if (obj) requestData.body = body;
+        if (str) requestData.body += prune(body);
+      }
     }
   };
 
@@ -91,7 +96,10 @@ export const httpRequestEmitBeforeHookWrapper = (requestData, requestRandomId) =
     if (args[0] === 'socket') {
       if (isEmptyString(requestData.body)) {
         const body = extractBodyFromEmitSocketEvent(args[1]);
-        if (body) requestData.body += prune(body);
+        if (body) {
+          console.log('BODY', body);
+          requestData.body += prune(body);
+        }
       }
     }
   };
@@ -103,7 +111,7 @@ const createEmitResponseOnEmitBeforeHookHandler = (requestData, requestRandomId,
     const receivedTime = new Date().getTime();
     const { headers, statusCode } = response;
     if (args[0] === 'data') {
-      body += args[1];
+      if (body.length >= 1024) body += args[1];
     }
     if (args[0] === 'end') {
       const responseData = {
@@ -135,7 +143,10 @@ export const httpRequestEndWrapper = requestData =>
   function(args) {
     if (isEmptyString(requestData.body)) {
       const body = extractBodyFromEndFunc(args);
-      if (body) requestData.body += prune(body);
+      if (body) {
+        console.log('BODY', body);
+        requestData.body += prune(body);
+      }
     }
   };
 

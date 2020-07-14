@@ -16,8 +16,13 @@ export const hook = (module, funcName, options = {}) => {
       if (isFunctionAlreadyWrapped(originalFn)) return originalFn;
       return function(...args) {
         safeBeforeHook.call(this, args, extenderContext);
-        const originalFnResult = originalFn.apply(this, args);
-        safeAfterHook.call(this, args, originalFnResult, extenderContext);
+        try {
+          const originalFnResult = originalFn.apply(this, args);
+          safeAfterHook.call(this, args, originalFnResult, extenderContext);
+        } catch (e) {
+          exceptionHook.call(this, args, originalFnResult, extenderContext);
+        }
+
         return originalFnResult;
       };
     };
