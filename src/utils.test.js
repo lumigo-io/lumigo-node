@@ -20,6 +20,7 @@ import { isDebug } from './logger';
 import { GET_KEY_DEPTH_ENV_KEY } from './utils';
 import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
 import { getEnvVarAsList, isEncodingType, isEmptyString, runOneTimeWrapper } from './utils';
+import { DEFAULT_TIMEOUT_MIN_DURATION } from './utils';
 
 describe('utils', () => {
   const spies = {};
@@ -321,6 +322,55 @@ describe('utils', () => {
     process.env['LUMIGO_VALID_ALIASES'] = '["1", "2", "currentAlias"]';
     expect(utils.isValidAlias()).toEqual(true);
     process.env['LUMIGO_VALID_ALIASES'] = undefined;
+  });
+
+  test('getTimeoutMinDuration -> ENV_VAR', () => {
+    process.env['LUMIGO_TIMEOUT_MIN_DURATION'] = '500';
+    expect(utils.getTimeoutMinDuration()).toEqual(500);
+  });
+
+  test('getTimeoutMinDuration -> default', () => {
+    expect(utils.getTimeoutMinDuration()).toEqual(DEFAULT_TIMEOUT_MIN_DURATION);
+  });
+
+  test('getTimeoutTimerBuffer -> ENV_VAR', () => {
+    process.env['LUMIGO_TIMEOUT_BUFFER'] = '0.35';
+    expect(utils.getTimeoutTimerBuffer()).toEqual(350);
+  });
+
+  test('getTimeoutTimerBuffer -> ENV_VAR ms', () => {
+    process.env['LUMIGO_TIMEOUT_BUFFER_MS'] = '350';
+    expect(utils.getTimeoutTimerBuffer()).toEqual(350);
+  });
+
+  test('getTimeoutTimerBuffer -> Min value', () => {
+    expect(utils.isValidAlias()).toEqual(true);
+    TracerGlobals.setHandlerInputs({
+      context: {
+        getRemainingTimeInMillis: () => 1000,
+      },
+    });
+    expect(utils.getTimeoutTimerBuffer()).toEqual(500);
+  });
+
+  test('getTimeoutTimerBuffer -> Max value', () => {
+    expect(utils.isValidAlias()).toEqual(true);
+    TracerGlobals.setHandlerInputs({
+      context: {
+        getRemainingTimeInMillis: () => 60000,
+      },
+    });
+    expect(utils.getTimeoutTimerBuffer()).toEqual(3000);
+  });
+
+  test('getTimeoutTimerBuffer -> 10% of the run time', () => {
+    expect(utils.isValidAlias()).toEqual(true);
+    TracerGlobals.setHandlerInputs({
+      context: {
+        getRemainingTimeInMillis: () => 20000,
+      },
+    });
+    expect(utils.getTimeoutTimerBuffer()).toEqual(2000);
   });
 
   test('setSwitchOff', () => {

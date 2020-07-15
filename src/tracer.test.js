@@ -90,7 +90,7 @@ describe('tracer', () => {
   });
 
   test('startTrace - timeout timer - simple flow', async done => {
-    const timeout = 1000;
+    const timeout = 2000;
     const testBuffer = 50;
 
     new EnvironmentBuilder().awsEnvironment().applyEnv();
@@ -108,8 +108,27 @@ describe('tracer', () => {
     }, timeout + testBuffer);
   });
 
+  test('startTrace - timeout timer - too short timeout', async done => {
+    const timeout = 500;
+    const testBuffer = 50;
+
+    new EnvironmentBuilder().awsEnvironment().applyEnv();
+    const handlerInputs = new HandlerInputesBuilder().withTimeout(timeout).build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
+
+    await tracer.startTrace();
+    SpansContainer.addSpan({ id: 'SomeRandomHttpSpan' });
+
+    setTimeout(() => {
+      const requests = AxiosMocker.getRequests();
+      //1 for start span
+      expect(requests.length).toEqual(1);
+      done();
+    }, timeout + testBuffer);
+  });
+
   test('startTrace - timeout timer - called twice', async done => {
-    const timeout = 1000;
+    const timeout = 2000;
     const testBuffer = 50;
 
     new EnvironmentBuilder().awsEnvironment().applyEnv();
