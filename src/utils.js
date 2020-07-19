@@ -139,6 +139,7 @@ const STORE_LOGS_FLAG = 'LUMIGO_STORE_LOGS';
 const TIMEOUT_BUFFER_FLAG = 'LUMIGO_TIMEOUT_BUFFER';
 const TIMEOUT_MIN_DURATION = 'LUMIGO_TIMEOUT_MIN_DURATION';
 const TIMEOUT_BUFFER_FLAG_MS = 'LUMIGO_TIMEOUT_BUFFER_MS';
+const AGENT_KEEPALIVE = 'LUMIGO_AGENT_KEEPALIVE_MS';
 
 const validateEnvVar = (envVar, value = 'TRUE') =>
   !!(process.env[envVar] && process.env[envVar].toUpperCase() === value.toUpperCase());
@@ -160,6 +161,11 @@ export const getTimeoutTimerBuffer = () => {
   const { context } = TracerGlobals.getHandlerInputs();
   const { remainingTimeInMillis } = getContextInfo(context);
   return Math.max(500, Math.min(remainingTimeInMillis / 10, 3000));
+};
+
+export const getAgentKeepAlive = () => {
+  if (process.env[AGENT_KEEPALIVE]) return parseFloat(process.env[AGENT_KEEPALIVE]);
+  return undefined;
 };
 
 export const getTimeoutMinDuration = () => {
