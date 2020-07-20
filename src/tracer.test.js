@@ -4,7 +4,6 @@ import * as utils from './utils';
 import * as globals from './globals';
 import * as reporter from './reporter';
 import * as awsSpan from './spans/awsSpan';
-import startHooks from './hooks';
 import * as http from './hooks/http';
 import httpHook from './hooks/http';
 import * as logger from './logger';
@@ -12,10 +11,10 @@ import { TracerGlobals } from './globals';
 import { STEP_FUNCTION_UID_KEY } from './utils';
 import { LUMIGO_EVENT_KEY } from './utils';
 import { HandlerInputesBuilder } from '../testUtils/handlerInputesBuilder';
-import { HttpsRequestsForTesting } from '../testUtils/httpsMocker';
 import { EnvironmentBuilder } from '../testUtils/environmentBuilder';
 import { SpansContainer } from './globals';
 import { AxiosMocker } from '../testUtils/axiosMocker';
+import { createContext } from '../testUtils/awsTestUtils';
 
 jest.mock('./hooks/http');
 describe('tracer', () => {
@@ -91,7 +90,7 @@ describe('tracer', () => {
   });
 
   test('startTrace - timeout timer - simple flow', async done => {
-    const timeout = 1000;
+    const timeout = 2000;
     const testBuffer = 50;
 
     new EnvironmentBuilder().awsEnvironment().applyEnv();
@@ -109,8 +108,27 @@ describe('tracer', () => {
     }, timeout + testBuffer);
   });
 
+  test('startTrace - timeout timer - too short timeout', async done => {
+    const timeout = 500;
+    const testBuffer = 50;
+
+    new EnvironmentBuilder().awsEnvironment().applyEnv();
+    const handlerInputs = new HandlerInputesBuilder().withTimeout(timeout).build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
+
+    await tracer.startTrace();
+    SpansContainer.addSpan({ id: 'SomeRandomHttpSpan' });
+
+    setTimeout(() => {
+      const requests = AxiosMocker.getRequests();
+      //1 for start span
+      expect(requests.length).toEqual(1);
+      done();
+    }, timeout + testBuffer);
+  });
+
   test('startTrace - timeout timer - called twice', async done => {
-    const timeout = 1000;
+    const timeout = 2000;
     const testBuffer = 50;
 
     new EnvironmentBuilder().awsEnvironment().applyEnv();
@@ -441,6 +459,51 @@ describe('tracer', () => {
     );
 
     expect(httpHook).toHaveBeenCalledTimes(1);
+  });
+
+  test('trace; follow AWS stringify on the return value - happy flow', async () => {
+    // According to node's runtime: var/runtime/RAPIDClient.js:134, AWS stringify the message.
+    new EnvironmentBuilder().awsEnvironment().applyEnv();
+    const handlerInputs = new HandlerInputesBuilder().build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
+
+    const lumigoTracer = require('./index')({});
+
+    const userHandler = async () => {
+      // define object with specialized toJSON (like ddb items)
+      return { a: 'b', toJSON: () => 'json magic' };
+    };
+
+    await lumigoTracer.trace(userHandler)({}, createContext(), jest.fn());
+
+    const spans = AxiosMocker.getSentSpans();
+    expect(spans[1][0].return_value).toEqual('"json magic"');
+  });
+
+  test('trace; follow AWS stringify on the return value - bad flow', async () => {
+    // According to node's runtime: var/runtime/RAPIDClient.js:134, AWS raise exception if JSON.stringify fails.
+    new EnvironmentBuilder().awsEnvironment().applyEnv();
+    const handlerInputs = new HandlerInputesBuilder().build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
+
+    const lumigoTracer = require('./index')({});
+
+    const userHandler = async () => {
+      return {
+        toJSON: () => {
+          throw Error('FAIL');
+        },
+        toString: () => 'str',
+      };
+    };
+
+    await lumigoTracer.trace(userHandler)({}, createContext(), jest.fn());
+
+    const spans = AxiosMocker.getSentSpans();
+    expect(spans[1][0].return_value).toEqual('str');
+    expect(spans[1][0].error.message).toEqual(
+      'Could not JSON.stringify the return value. This will probably fail the lambda. Original error: FAIL'
+    );
   });
 
   test('sendEndTraceSpans; dont clear globals in case of a leak', async () => {

@@ -15,3 +15,7 @@ export const createAwsEnvVars = () => ({
   _X_AMZN_TRACE_ID: 'Root=1-5cdcf03a-64a1b06067c2100c52e51ef4;Parent=28effe37598bb622;Sampled=0',
   AWS_EXECUTION_ENV: 'AWS_Lambda_nodejs8.10',
 });
+
+export const createContext = () => ({
+  getRemainingTimeInMillis: () => 1,
+});

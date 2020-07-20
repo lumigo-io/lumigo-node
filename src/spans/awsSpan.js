@@ -26,7 +26,7 @@ import { TracerGlobals, ExecutionTags } from '../globals';
 import { getEventInfo } from '../events';
 import { parseEvent } from '../parsers/eventParser';
 import * as logger from '../logger';
-import { payloadStringify } from '../utils/payloadStringify';
+import { payloadStringify, prune } from '../utils/payloadStringify';
 
 export const HTTP_SPAN = 'http';
 export const FUNCTION_SPAN = 'function';
@@ -132,9 +132,19 @@ export const removeStartedFromId = id => id.split('_')[0];
 export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
   const { err, data } = handlerReturnValue;
   const id = removeStartedFromId(functionSpan.id);
-  const error = err ? parseErrorObject(err) : undefined;
+  let error = err ? parseErrorObject(err) : undefined;
   const ended = new Date().getTime();
-  const return_value = data ? payloadStringify(data) : null;
+  let return_value;
+  try {
+    return_value = payloadStringify(data);
+  } catch (e) {
+    return_value = prune(data.toString());
+    error = parseErrorObject({
+      name: 'ReturnValueError',
+      message: `Could not JSON.stringify the return value. This will probably fail the lambda. Original error: ${e &&
+        e.message}`,
+    });
+  }
   const newSpan = Object.assign({}, functionSpan, {
     id,
     ended,

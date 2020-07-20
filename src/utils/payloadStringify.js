@@ -30,7 +30,7 @@ export const keyToOmitRegexes = () => {
   return regexesList.map(x => new RegExp(x, 'i'));
 };
 
-const prune = (str, maxLength) => (str || '').substr(0, maxLength);
+export const prune = (str, maxLength) => (str || '').substr(0, maxLength);
 
 const isSecretKey = (regexes, key) => {
   if (!isNaN(key)) {

@@ -377,7 +377,7 @@ describe('awsSpan', () => {
       error: parseErrorObject(err),
       event: null,
       maxFinishTime: 895093323456,
-      return_value: null,
+      return_value: '',
       [EXECUTION_TAGS_KEY]: [],
     };
     MockDate.set(895179612345);
