@@ -319,6 +319,15 @@ describe('utils', () => {
     process.env['LUMIGO_VALID_ALIASES'] = undefined;
   });
 
+  test('getAgentKeepAlive -> ENV_VAR', () => {
+    process.env['LUMIGO_AGENT_KEEPALIVE_MS'] = '350';
+    expect(utils.getAgentKeepAlive()).toEqual(350);
+  });
+
+  test('getAgentKeepAlive -> default', () => {
+    expect(utils.getAgentKeepAlive()).toEqual(undefined);
+  });
+
   test('getTimeoutMinDuration -> ENV_VAR', () => {
     process.env['LUMIGO_TIMEOUT_MIN_DURATION'] = '500';
     expect(utils.getTimeoutMinDuration()).toEqual(500);

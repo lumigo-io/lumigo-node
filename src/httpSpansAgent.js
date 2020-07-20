@@ -1,7 +1,9 @@
 import * as logger from './logger';
 import { TracerGlobals } from './globals';
-import { getEdgeUrl, getJSONBase64Size, getTracerInfo } from './utils';
+import { getEdgeUrl, getJSONBase64Size, getTracerInfo, getAgentKeepAlive } from './utils';
 import axios from 'axios';
+import http from 'http';
+import https from 'https';
 
 export const HttpSpansAgent = (() => {
   let sessionInstance = undefined;
@@ -19,6 +21,17 @@ export const HttpSpansAgent = (() => {
   };
 
   const createSessionInstance = (url, headers) => {
+    const keepAliveMsecs = getAgentKeepAlive();
+    if (keepAliveMsecs)
+      return axios.create({
+        baseURL: url,
+        timeout: 250,
+        maxRedirects: 0,
+        HttpSpansAgent: new http.Agent({ keepAlive: true, keepAliveMsecs }),
+        httpsAgent: new https.Agent({ keepAlive: true, keepAliveMsecs }),
+        headers,
+        validateStatus,
+      });
     return axios.create({
       baseURL: url,
       timeout: 250,
@@ -41,6 +54,10 @@ export const HttpSpansAgent = (() => {
     return sessionInstance;
   };
 
+  const cleanSessionInstance = () => {
+    sessionInstance = undefined;
+  };
+
   const postSpans = async requestBody => {
     const session = getSessionInstance();
     const bodySize = getJSONBase64Size(requestBody);
@@ -50,5 +67,5 @@ export const HttpSpansAgent = (() => {
     });
   };
 
-  return { postSpans };
+  return { postSpans, cleanSessionInstance };
 })();

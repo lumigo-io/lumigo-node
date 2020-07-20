@@ -3,6 +3,7 @@ import { AxiosMocker } from './axiosMocker';
 import { createAwsEnvVars } from './awsTestUtils';
 import { LogStore } from '../src/logger';
 import { ConsoleMocker, ConsoleWritesForTesting } from './consoleMocker';
+import { HttpSpansAgent } from '../src/httpSpansAgent';
 import * as globals from '../src/globals';
 import axios from 'axios';
 
@@ -20,6 +21,7 @@ beforeEach(() => {
   ConsoleWritesForTesting.clean();
   globals.clearGlobals();
   LogStore.clean();
+  HttpSpansAgent.cleanSessionInstance();
 
   const awsEnv = createAwsEnvVars();
   process.env = { ...oldEnv, ...awsEnv };
