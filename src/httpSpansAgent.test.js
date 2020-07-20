@@ -22,6 +22,29 @@ describe('HttpSpansAgent', () => {
     });
     expect(requests[0].timeout).toEqual(250);
     expect(requests[0].baseURL).toEqual(url);
+    expect(requests[0].httpsAgent).toBeUndefined();
+  });
+
+  test('postSpans - keepalive flag', async () => {
+    const reqBody = 'abcdefg';
+    process.env['LUMIGO_AGENT_KEEPALIVE_MS'] = '350';
+    globals.TracerGlobals.setTracerInputs({ token: 't_xxx' });
+    const { url } = utils.getEdgeUrl();
+
+    await HttpSpansAgent.postSpans(reqBody);
+
+    const requests = AxiosMocker.getAxiosMocker().history.post;
+    expect(requests.length).toEqual(1);
+    expect(requests[0].data).toEqual(reqBody);
+    expect(requests[0].headers).toEqual({
+      Accept: 'application/json, text/plain, */*',
+      'Content-Type': 'application/json',
+      Authorization: 't_xxx',
+      'User-Agent': '@lumigo/tracerMock$1.2.3',
+    });
+    expect(requests[0].timeout).toEqual(250);
+    expect(requests[0].baseURL).toEqual(url);
+    expect(requests[0].httpsAgent).toBeDefined();
   });
 
   test('postSpans - reject 500', async () => {
