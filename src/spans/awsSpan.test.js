@@ -4,13 +4,13 @@ import MockDate from 'mockdate';
 import { TracerGlobals } from '../globals';
 import * as awsParsers from '../parsers/aws';
 import * as utils from '../utils';
+import { payloadStringify } from '../utils/payloadStringify';
 
 const exampleApiGatewayEvent = require('../testdata/events/apigw-request.json');
 
 jest.mock('../parsers/aws');
 describe('awsSpan', () => {
   const spies = {};
-  const oldEnv = Object.assign({}, process.env);
   spies['isWarm'] = jest.spyOn(utils, 'isWarm');
 
   beforeEach(() => {
@@ -57,10 +57,6 @@ describe('awsSpan', () => {
     TracerGlobals.setHandlerInputs({ event, context });
     TracerGlobals.setTracerInputs({ token });
     MockDate.set('05/14/1998');
-  });
-
-  afterEach(() => {
-    process.env = { ...oldEnv };
   });
 
   test('getSpanInfo', () => {
@@ -147,21 +143,34 @@ describe('awsSpan', () => {
       invokedArn: 'arn:aws:lambda:us-east-1:985323015126:function:aws-nodejs-dev-hello',
       invokedVersion: '1',
       id: '6d26e3c8-60a6-4cee-8a70-f525f47a4caf_started',
-      envs:
-        '{"LAMBDA_TASK_ROOT":"/var/task","LAMBDA_RUNTIME_DIR":"/var/runtime","AWS_REGION":"us-east-1","AWS_DEFAULT_REGION":"us-east-1","AWS_LAMBDA_LOG_GROUP_NAME":"/aws/lambda/aws-nodejs-dev-hello","AWS_LAMBDA_LOG_STREAM_NAME":"2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73","AWS_LAMBDA_FUNCTION_NAME":"aws-nodejs-dev-hello","AWS_LAMBDA_FUNCTION_MEMORY_SIZE":"1024","AWS_LAMBDA_FUNCTION_VERSION":"$LATEST","_AWS_XRAY_DAEMON_ADDRESS":"169.254.79.2","_AWS_XRAY_DAEMON_PORT":"2000","AWS_XRAY_DAEMON_ADDRESS":"169.254.79.2:2000","AWS_XRAY_CONTEXT_MISSING":"LOG_ERROR","_X_AMZN_TRACE_ID":"Root=1-5cdcf03a-64a1b06067c2100c52e51ef4;Parent=28effe37598bb622;Sampled=0","AWS_EXECUTION_ENV":"AWS_Lambda_nodejs8.10","MAX_EVENT_ENTITY_SIZE":"10","LUMIGO_IS_WARM":"TRUE"}',
+      envs: payloadStringify({
+        LAMBDA_TASK_ROOT: '/var/task',
+        LAMBDA_RUNTIME_DIR: '/var/runtime',
+        AWS_REGION: 'us-east-1',
+        AWS_DEFAULT_REGION: 'us-east-1',
+        AWS_LAMBDA_LOG_GROUP_NAME: '/aws/lambda/aws-nodejs-dev-hello',
+        AWS_LAMBDA_LOG_STREAM_NAME: '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',
+        AWS_LAMBDA_FUNCTION_NAME: 'aws-nodejs-dev-hello',
+        AWS_LAMBDA_FUNCTION_MEMORY_SIZE: '1024',
+        AWS_LAMBDA_FUNCTION_VERSION: '$LATEST',
+        _AWS_XRAY_DAEMON_ADDRESS: '169.254.79.2',
+        _AWS_XRAY_DAEMON_PORT: '2000',
+        AWS_XRAY_DAEMON_ADDRESS: '169.254.79.2:2000',
+        AWS_XRAY_CONTEXT_MISSING: 'LOG_ERROR',
+        _X_AMZN_TRACE_ID:
+          'Root=1-5cdcf03a-64a1b06067c2100c52e51ef4;Parent=28effe37598bb622;Sampled=0',
+        AWS_EXECUTION_ENV: 'AWS_Lambda_nodejs8.10',
+        LUMIGO_IS_WARM: 'TRUE',
+      }),
       name: 'w00t',
       type: 'function',
       ended: 895093200000,
-      event: '{"resource',
+      event: payloadStringify(exampleApiGatewayEvent),
       started: 895093200000,
       maxFinishTime: 895093323456,
     };
 
-    const oldEnv = Object.assign({}, process.env);
-    process.env = { ...oldEnv, MAX_EVENT_ENTITY_SIZE: '10' };
     expect(awsSpan.getFunctionSpan()).toEqual(expectedStartSpan);
-
-    process.env = { ...oldEnv };
   });
 
   test('getFunctionSpan', () => {
@@ -196,13 +205,29 @@ describe('awsSpan', () => {
       invokedArn: 'arn:aws:lambda:us-east-1:985323015126:function:aws-nodejs-dev-hello',
       invokedVersion: '1',
       id: '6d26e3c8-60a6-4cee-8a70-f525f47a4caf_started',
-      envs:
-        '{"LAMBDA_TASK_ROOT":"/var/task","LAMBDA_RUNTIME_DIR":"/var/runtime","AWS_REGION":"us-east-1","AWS_DEFAULT_REGION":"us-east-1","AWS_LAMBDA_LOG_GROUP_NAME":"/aws/lambda/aws-nodejs-dev-hello","AWS_LAMBDA_LOG_STREAM_NAME":"2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73","AWS_LAMBDA_FUNCTION_NAME":"aws-nodejs-dev-hello","AWS_LAMBDA_FUNCTION_MEMORY_SIZE":"1024","AWS_LAMBDA_FUNCTION_VERSION":"$LATEST","_AWS_XRAY_DAEMON_ADDRESS":"169.254.79.2","_AWS_XRAY_DAEMON_PORT":"2000","AWS_XRAY_DAEMON_ADDRESS":"169.254.79.2:2000","AWS_XRAY_CONTEXT_MISSING":"LOG_ERROR","_X_AMZN_TRACE_ID":"Root=1-5cdcf03a-64a1b06067c2100c52e51ef4;Parent=28effe37598bb622;Sampled=0","AWS_EXECUTION_ENV":"AWS_Lambda_nodejs8.10","LUMIGO_IS_WARM":"TRUE"}',
+      envs: payloadStringify({
+        LAMBDA_TASK_ROOT: '/var/task',
+        LAMBDA_RUNTIME_DIR: '/var/runtime',
+        AWS_REGION: 'us-east-1',
+        AWS_DEFAULT_REGION: 'us-east-1',
+        AWS_LAMBDA_LOG_GROUP_NAME: '/aws/lambda/aws-nodejs-dev-hello',
+        AWS_LAMBDA_LOG_STREAM_NAME: '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',
+        AWS_LAMBDA_FUNCTION_NAME: 'aws-nodejs-dev-hello',
+        AWS_LAMBDA_FUNCTION_MEMORY_SIZE: '1024',
+        AWS_LAMBDA_FUNCTION_VERSION: '$LATEST',
+        _AWS_XRAY_DAEMON_ADDRESS: '169.254.79.2',
+        _AWS_XRAY_DAEMON_PORT: '2000',
+        AWS_XRAY_DAEMON_ADDRESS: '169.254.79.2:2000',
+        AWS_XRAY_CONTEXT_MISSING: 'LOG_ERROR',
+        _X_AMZN_TRACE_ID:
+          'Root=1-5cdcf03a-64a1b06067c2100c52e51ef4;Parent=28effe37598bb622;Sampled=0',
+        AWS_EXECUTION_ENV: 'AWS_Lambda_nodejs8.10',
+        LUMIGO_IS_WARM: 'TRUE',
+      }),
       name: 'w00t',
       type: 'function',
       ended: 895093200000,
-      event:
-        '{"resource":"/{proxy+}","path":"/hello/world","httpMethod":"POST","headers":{"Accept":"*/*","Accept-Encoding":"gzip, deflate","cache-control":"no-cache","CloudFront-Forwarded-Proto":"https","CloudFront-Is-Desktop-Viewer":"true","CloudFront-Is-Mobile-Viewer":"false","CloudFront-Is-SmartTV-Viewer":"false","CloudFront-Is-Tablet-Viewer":"false","CloudFront-Viewer-Country":"US","Content-Type":"application/json","headerName":"headerValue","Host":"gy415nuibc.execute-api.us-east-1.amazonaws.com","Postman-Token":"9f583ef0-ed83-4a38-aef3-eb9ce3f7a57f","User-Agent":"PostmanRuntime/2.4.5","Via":"1.1 d98420743a69852491bbdea73f7680bd.cloudfront.net (CloudFront)","X-Amz-Cf-Id":"pn-PWIJc6thYnZm5P0NMgOUglL1DYtl0gdeJky8tqsg8iS_sgsKD1A==","X-Forwarded-For":"54.240.196.186, 54.182.214.83","X-Forwarded-Port":"443","X-Forwarded-Proto":"https"},"multiValueHeaders":{"Accept":["*/*"],"Accept-Encoding":["gzip, deflate"],"cache-control":["no-cache"],"CloudFront-Forwarded-Proto":["https"],"CloudFront-Is-Desktop-Viewer":["true"],"CloudFr',
+      event: payloadStringify(exampleApiGatewayEvent),
       started: 895093200000,
       maxFinishTime: 895093323456,
     };
@@ -294,7 +319,7 @@ describe('awsSpan', () => {
       envs: null,
       event: null,
       maxFinishTime: 895093323456,
-      return_value: 'data man',
+      return_value: '"data man"',
       [EXECUTION_TAGS_KEY]: [],
     };
     const handlerReturnValue1 = {
@@ -440,7 +465,7 @@ describe('awsSpan', () => {
       host: 'your.mind.com',
       request: {
         body: '"the first rule of fight club"',
-        headers: '{"Tyler":"Durden","secretKey":"lumigo"}',
+        headers: '{"Tyler":"Durden","secretKey":"****"}',
         host: 'your.mind.com',
       },
       response: {

@@ -12,17 +12,17 @@ import {
   isValidAlias,
   isEmptyString,
   runOneTimeWrapper,
-  prune,
+  getEventEntitySize,
 } from '../utils';
 import * as logger from '../logger';
 import { getHttpSpan } from '../spans/awsSpan';
 import { URL } from 'url';
-import { noCirculars } from '../tools/noCirculars';
 import {
   extractBodyFromEmitSocketEvent,
   extractBodyFromEndFunc,
   extractBodyFromWriteFunc,
 } from './httpUtils';
+import { payloadStringify } from '../utils/payloadStringify';
 
 export const hostBlaclist = new Set(['127.0.0.1']);
 export const isBlacklisted = host => host === getEdgeHost() || hostBlaclist.has(host);
@@ -78,9 +78,7 @@ export const httpRequestWriteBeforeHookWrapper = requestData =>
     if (isEmptyString(requestData.body)) {
       const body = extractBodyFromWriteFunc(args);
       if (body) {
-        console.log('BODY', body);
-        if (obj) requestData.body = body;
-        if (str) requestData.body += prune(body);
+        requestData.body += payloadStringify(body);
       }
     }
   };
@@ -97,8 +95,7 @@ export const httpRequestEmitBeforeHookWrapper = (requestData, requestRandomId) =
       if (isEmptyString(requestData.body)) {
         const body = extractBodyFromEmitSocketEvent(args[1]);
         if (body) {
-          console.log('BODY', body);
-          requestData.body += prune(body);
+          requestData.body += payloadStringify(body);
         }
       }
     }
@@ -107,11 +104,12 @@ export const httpRequestEmitBeforeHookWrapper = (requestData, requestRandomId) =
 
 const createEmitResponseOnEmitBeforeHookHandler = (requestData, requestRandomId, response) => {
   let body = '';
+  const payloadSize = getEventEntitySize();
   return function(args) {
     const receivedTime = new Date().getTime();
     const { headers, statusCode } = response;
     if (args[0] === 'data') {
-      if (body.length >= 1024) body += args[1];
+      if (body.length <= payloadSize) body += args[1];
     }
     if (args[0] === 'end') {
       const responseData = {
@@ -120,9 +118,7 @@ const createEmitResponseOnEmitBeforeHookHandler = (requestData, requestRandomId,
         body,
         headers: lowerCaseObjectKeys(headers),
       };
-      const fixedRequestData = noCirculars(requestData);
-      const fixedResponseData = noCirculars(responseData);
-      const httpSpan = getHttpSpan(requestRandomId, fixedRequestData, fixedResponseData);
+      const httpSpan = getHttpSpan(requestRandomId, requestData, responseData);
       SpansContainer.addSpan(httpSpan);
     }
   };
@@ -144,8 +140,7 @@ export const httpRequestEndWrapper = requestData =>
     if (isEmptyString(requestData.body)) {
       const body = extractBodyFromEndFunc(args);
       if (body) {
-        console.log('BODY', body);
-        requestData.body += prune(body);
+        requestData.body += payloadStringify(body);
       }
     }
   };
@@ -200,8 +195,7 @@ export const httpBeforeRequestWrapper = (args, extenderContext) => {
     extenderContext.requestData = requestData;
 
     if (isTimeoutTimerEnabled()) {
-      const fixedRequestData = noCirculars(requestData);
-      const httpSpan = getHttpSpan(requestRandomId, fixedRequestData);
+      const httpSpan = getHttpSpan(requestRandomId, requestData);
       SpansContainer.addSpan(httpSpan);
     }
   }
