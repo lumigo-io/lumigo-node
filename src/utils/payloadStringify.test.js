@@ -101,7 +101,7 @@ describe('payloadStringify', () => {
   });
 
   test('payloadStringify -> Huge String', () => {
-    const length = 10000000;
+    const length = 100000;
     let payload = '';
     for (let i = 0; i < length; i++) {
       payload += 'x';
