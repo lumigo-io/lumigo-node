@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import * as extender from '../extender';
 import http from 'http';
 import https from 'https';
