@@ -1,5 +1,3 @@
-// import { keyToOmitRegexes, MAX_ENTITY_SIZE, SKIP_SCRUBBING_KEYS } from '../utils';
-
 import {
   getEventEntitySize,
   LUMIGO_SECRET_MASKING_REGEX,
@@ -26,7 +24,6 @@ export const keyToOmitRegexes = () => {
       regexesList = parseResponse;
     }
   }
-
   return regexesList.map(x => new RegExp(x, 'i'));
 };
 
@@ -49,7 +46,9 @@ export const payloadStringify = (payload, maxPayloadSize = getEventEntitySize())
   const regexes = keyToOmitRegexes();
 
   const result = JSON.stringify(payload, (key, value) => {
-    const isObj = typeof value === 'object';
+    const type = typeof value;
+    const isObj = type === 'object';
+    const isStr = type === 'string';
     if (!(isObj && refsFound.includes(value)))
       if (totalSize < maxPayloadSize) {
         if (isSecretKey(regexes, key)) return SCRUBBED_TEXT;
@@ -59,8 +58,7 @@ export const payloadStringify = (payload, maxPayloadSize = getEventEntitySize())
         if (isObj) {
           refsFound.push(value);
         }
-        if (value && value.length && value.length > maxPayloadSize)
-          return prune(value, maxPayloadSize);
+        if (value && isStr && value.length > maxPayloadSize) return prune(value, maxPayloadSize);
         return value;
       }
   });

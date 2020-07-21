@@ -10,6 +10,14 @@ describe('payloadStringify', () => {
     expect(result).toEqual('{"a":2,"b":3}');
   });
 
+  test('payloadStringify -> simple flow -> null', () => {
+    const payload = null;
+
+    const result = payloadStringify(payload);
+
+    expect(result).toEqual('null');
+  });
+
   test('payloadStringify -> simple flow -> complex object', () => {
     const payload = { a: [{ a: 2 }], b: 3 };
 

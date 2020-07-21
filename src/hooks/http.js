@@ -108,7 +108,9 @@ const createEmitResponseOnEmitBeforeHookHandler = (requestData, requestRandomId,
     const receivedTime = new Date().getTime();
     const { headers, statusCode } = response;
     if (args[0] === 'data') {
-      if (body.length <= payloadSize) body += args[1];
+      if (body.length + args[1].length <= payloadSize) {
+        body += args[1];
+      }
     }
     if (args[0] === 'end') {
       const responseData = {
