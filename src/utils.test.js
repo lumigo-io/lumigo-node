@@ -192,6 +192,12 @@ describe('utils', () => {
     expect(utils.getEventEntitySize()).toBe(2048);
   });
 
+  test('getEventEntitySize -> LUMIGO_MAX_SIZE_FOR_REQUEST', () => {
+    expect(utils.getEventEntitySize()).toBe(MAX_ENTITY_SIZE);
+    process.env.LUMIGO_MAX_SIZE_FOR_REQUEST = '2048';
+    expect(utils.getEventEntitySize()).toBe(2048);
+  });
+
   test('getEventEntitySize NaN', () => {
     process.env.MAX_EVENT_ENTITY_SIZE = 'A 2048';
     expect(utils.getEventEntitySize()).toBe(MAX_ENTITY_SIZE);
