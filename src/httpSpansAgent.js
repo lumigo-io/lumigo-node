@@ -69,7 +69,7 @@ export const HttpSpansAgent = (() => {
       logger.debug(`Edge connection timeout [${CONNECTION_TIMEOUT}ms] (Tracer skipping)`);
     }, CONNECTION_TIMEOUT);
     await session
-      .post(url, requestBody)
+      .post(url, requestBody, { cancelToken: source.token })
       .catch(e => {
         logger.debug('Edge error (Tracer skipping)', e.message);
       })
