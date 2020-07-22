@@ -1,9 +1,12 @@
 import * as logger from './logger';
 import { TracerGlobals } from './globals';
 import { getEdgeUrl, getJSONBase64Size, getTracerInfo, getAgentKeepAlive } from './utils';
-import axios from 'axios';
+import axios, { CancelToken } from 'axios';
 import http from 'http';
 import https from 'https';
+
+const REQUEST_TIMEOUT = 250;
+const CONNECTION_TIMEOUT = 300;
 
 export const HttpSpansAgent = (() => {
   let sessionInstance = undefined;
@@ -25,7 +28,7 @@ export const HttpSpansAgent = (() => {
     if (keepAliveMsecs)
       return axios.create({
         baseURL: url,
-        timeout: 250,
+        timeout: REQUEST_TIMEOUT,
         maxRedirects: 0,
         HttpSpansAgent: new http.Agent({ keepAlive: true, keepAliveMsecs }),
         httpsAgent: new https.Agent({ keepAlive: true, keepAliveMsecs }),
@@ -34,7 +37,7 @@ export const HttpSpansAgent = (() => {
       });
     return axios.create({
       baseURL: url,
-      timeout: 250,
+      timeout: REQUEST_TIMEOUT,
       maxRedirects: 0,
       headers,
       validateStatus,
@@ -58,13 +61,27 @@ export const HttpSpansAgent = (() => {
     sessionInstance = undefined;
   };
 
-  const postSpans = async requestBody => {
+  const sendHttpRequest = async (url, requestBody) => {
+    const source = CancelToken.source();
     const session = getSessionInstance();
+    const timer = setTimeout(() => {
+      source.cancel();
+      logger.debug(`Edge connection timeout [${CONNECTION_TIMEOUT}ms] (Tracer skipping)`);
+    }, CONNECTION_TIMEOUT);
+    await session
+      .post(url, requestBody)
+      .catch(e => {
+        logger.debug('Edge error (Tracer skipping)', e.message);
+      })
+      .finally(() => {
+        clearTimeout(timer);
+      });
+  };
+
+  const postSpans = async requestBody => {
     const bodySize = getJSONBase64Size(requestBody);
     logger.debug('Starting request to edge', { bodySize });
-    await session.post('', requestBody).catch(e => {
-      logger.debug('Edge error (Tracer skipping)', e.message);
-    });
+    await sendHttpRequest('', requestBody);
   };
 
   return { postSpans, cleanSessionInstance };
