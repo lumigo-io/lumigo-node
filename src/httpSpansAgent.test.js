@@ -88,7 +88,8 @@ describe('HttpSpansAgent', () => {
     //no Error throwed
   });
 
-  test('postSpans - reject connection timout', async done => {
+  test('postSpans - reject connection timout', async () => {
+    let called = false;
     const reqBody = 'abcdefg';
     globals.TracerGlobals.setTracerInputs({ token: 't_xxx' });
 
@@ -96,12 +97,13 @@ describe('HttpSpansAgent', () => {
       return {
         post: async (url, body, options) => {
           expect(options.cancelToken).toBeDefined();
-          done();
+          called = true;
           await sleep(500);
         },
       };
     });
 
     await HttpSpansAgent.postSpans(reqBody);
+    expect(called).toBe(true);
   });
 });
