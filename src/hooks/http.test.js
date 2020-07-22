@@ -16,7 +16,6 @@ import * as httpHook from './http';
 import * as utils from '../utils';
 import { SpansContainer, TracerGlobals } from '../globals';
 import { HandlerInputesBuilder } from '../../testUtils/handlerInputesBuilder';
-import { payloadStringify } from '../utils/payloadStringify';
 
 describe('http hook', () => {
   process.env['AWS_REGION'] = 'us-east-x';
@@ -56,7 +55,7 @@ describe('http hook', () => {
     wrapper([emitEventName, emitArg]);
 
     expect(requestData).toEqual({
-      body: payloadStringify('HTTP BODY2'),
+      body: 'HTTP BODY2',
     });
   });
 
@@ -75,7 +74,7 @@ describe('http hook', () => {
     wrapper([emitEventName, emitArg]);
 
     expect(requestData).toEqual({
-      body: payloadStringify('HTTP BODY2'),
+      body: 'HTTP BODY2',
     });
   });
 
@@ -94,7 +93,7 @@ describe('http hook', () => {
     const wrapper = httpHook.httpRequestEmitBeforeHookWrapper(requestData);
     wrapper([emitEventName, emitArg]);
 
-    const expectedBody = payloadStringify(body.substr(0, MAX_ENTITY_SIZE));
+    const expectedBody = body.substr(0, MAX_ENTITY_SIZE);
     expect(requestData).toEqual({
       body: expectedBody,
     });
@@ -129,7 +128,7 @@ describe('http hook', () => {
     const wrapper = httpHook.httpRequestWriteBeforeHookWrapper(requestData);
     wrapper([firstArg]);
 
-    expect(requestData).toEqual({ body: payloadStringify('BODY') });
+    expect(requestData).toEqual({ body: 'BODY' });
   });
 
   test('httpRequestWriteBeforeHookWrapper -> simple flow -> write(Buffer)', () => {
@@ -141,7 +140,7 @@ describe('http hook', () => {
 
     wrapper([firstArg]);
 
-    expect(requestData).toEqual({ body: payloadStringify('BODY') });
+    expect(requestData).toEqual({ body: 'BODY' });
   });
 
   test('httpRequestWriteBeforeHookWrapper -> simple flow -> write(Buffer, encoding)', () => {
@@ -155,7 +154,7 @@ describe('http hook', () => {
     const wrapper = httpHook.httpRequestWriteBeforeHookWrapper(requestData);
     wrapper([firstArg, secArg]);
 
-    expect(requestData).toEqual({ body: payloadStringify('Qk9EWQ==') });
+    expect(requestData).toEqual({ body: 'Qk9EWQ==' });
   });
 
   test('httpRequestWriteBeforeHookWrapper -> simple flow -> write(Buffer, encoding, callback)', () => {
@@ -170,7 +169,7 @@ describe('http hook', () => {
     const wrapper = httpHook.httpRequestWriteBeforeHookWrapper(requestData);
     wrapper([firstArg, secArg, thirdArg]);
 
-    expect(requestData).toEqual({ body: payloadStringify('BODY') });
+    expect(requestData).toEqual({ body: 'BODY' });
   });
 
   test('httpRequestWriteBeforeHookWrapper -> simple flow -> write(Buffer, callback)', () => {
@@ -184,7 +183,7 @@ describe('http hook', () => {
     const wrapper = httpHook.httpRequestWriteBeforeHookWrapper(requestData);
     wrapper([firstArg, secArg]);
 
-    expect(requestData).toEqual({ body: payloadStringify('BODY') });
+    expect(requestData).toEqual({ body: 'BODY' });
   });
 
   test('httpRequestWriteBeforeHookWrapper -> simple flow -> write(str, callback)', () => {
@@ -198,7 +197,7 @@ describe('http hook', () => {
     const wrapper = httpHook.httpRequestWriteBeforeHookWrapper(requestData);
     wrapper([firstArg, secArg]);
 
-    expect(requestData).toEqual({ body: payloadStringify('BODY') });
+    expect(requestData).toEqual({ body: 'BODY' });
   });
 
   test('httpRequestWriteBeforeHookWrapper -> handle big payload', () => {
@@ -212,7 +211,7 @@ describe('http hook', () => {
     const wrapper = httpHook.httpRequestWriteBeforeHookWrapper(requestData);
     wrapper([firstArg, secArg]);
 
-    const expectedBody = payloadStringify(firstArg.substr(0, MAX_ENTITY_SIZE));
+    const expectedBody = firstArg.substr(0, MAX_ENTITY_SIZE);
     expect(requestData).toEqual({ body: expectedBody });
   });
 
@@ -423,7 +422,7 @@ describe('http hook', () => {
     const callback = jest.fn();
     httpHook.httpRequestEndWrapper(requestData)([data, encoding, callback]);
 
-    expect(requestData).toEqual({ body: payloadStringify(body) });
+    expect(requestData).toEqual({ body: body });
   });
 
   test('httpRequestEndWrapper -> handle big input', () => {
@@ -435,7 +434,7 @@ describe('http hook', () => {
     const callback = jest.fn();
     httpHook.httpRequestEndWrapper(requestData)([data, encoding, callback]);
 
-    const expectedBody = payloadStringify(body.substr(0, MAX_ENTITY_SIZE));
+    const expectedBody = body.substr(0, MAX_ENTITY_SIZE);
     expect(requestData).toEqual({ body: expectedBody });
   });
 

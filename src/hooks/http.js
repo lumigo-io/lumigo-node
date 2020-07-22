@@ -21,7 +21,6 @@ import {
   extractBodyFromEndFunc,
   extractBodyFromWriteFunc,
 } from './httpUtils';
-import { payloadStringify } from '../utils/payloadStringify';
 
 export const hostBlaclist = new Set(['127.0.0.1']);
 export const isBlacklisted = host => host === getEdgeHost() || hostBlaclist.has(host);
@@ -77,7 +76,7 @@ export const httpRequestWriteBeforeHookWrapper = requestData =>
     if (isEmptyString(requestData.body)) {
       const body = extractBodyFromWriteFunc(args);
       if (body) {
-        requestData.body += payloadStringify(body);
+        requestData.body += body;
       }
     }
   };
@@ -94,7 +93,7 @@ export const httpRequestEmitBeforeHookWrapper = (requestData, requestRandomId) =
       if (isEmptyString(requestData.body)) {
         const body = extractBodyFromEmitSocketEvent(args[1]);
         if (body) {
-          requestData.body += payloadStringify(body);
+          requestData.body += body;
         }
       }
     }
@@ -141,7 +140,7 @@ export const httpRequestEndWrapper = requestData =>
     if (isEmptyString(requestData.body)) {
       const body = extractBodyFromEndFunc(args);
       if (body) {
-        requestData.body += payloadStringify(body);
+        requestData.body += body;
       }
     }
   };

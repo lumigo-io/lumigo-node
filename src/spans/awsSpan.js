@@ -253,8 +253,8 @@ export const getHttpSpan = (randomRequestId, requestData, responseData = null) =
   const prioritizedSpanId = getHttpSpanId(randomRequestId, spanId);
   let httpInfo = {
     host: requestData.host,
-    request: requestData,
-    response: responseData,
+    request: payloadStringify(requestData),
+    response: payloadStringify(responseData),
   };
   try {
     httpInfo = getHttpInfo(requestData, responseData);
