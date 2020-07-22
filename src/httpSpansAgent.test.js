@@ -21,13 +21,13 @@ describe('HttpSpansAgent', () => {
       'User-Agent': '@lumigo/tracerMock$1.2.3',
     });
     expect(requests[0].timeout).toEqual(250);
-    expect(requests[0].baseURL).toEqual(url);
+    expect(requests[0].url).toEqual(url);
     expect(requests[0].httpsAgent).toBeUndefined();
   });
 
   test('postSpans - keepalive flag', async () => {
     const reqBody = 'abcdefg';
-    process.env['LUMIGO_AGENT_KEEPALIVE_MS'] = '350';
+    process.env['LUMIGO_REUSE_HTTP_CONNECTION'] = 'TRUE';
     globals.TracerGlobals.setTracerInputs({ token: 't_xxx' });
     const { url } = utils.getEdgeUrl();
 
@@ -43,8 +43,7 @@ describe('HttpSpansAgent', () => {
       'User-Agent': '@lumigo/tracerMock$1.2.3',
     });
     expect(requests[0].timeout).toEqual(250);
-    expect(requests[0].baseURL).toEqual(url);
-    expect(requests[0].httpsAgent).toBeDefined();
+    expect(requests[0].url).toEqual(url);
   });
 
   test('postSpans - reject 500', async () => {
