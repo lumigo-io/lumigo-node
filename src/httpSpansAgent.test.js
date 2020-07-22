@@ -94,7 +94,8 @@ describe('HttpSpansAgent', () => {
 
     jest.spyOn(axios, 'create').mockImplementationOnce(() => {
       return {
-        post: async () => {
+        post: async (url, body, options) => {
+          expect(options.cancelToken).toBeDefined();
           await sleep(500);
         },
       };
