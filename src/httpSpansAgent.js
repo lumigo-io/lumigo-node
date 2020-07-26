@@ -66,16 +66,32 @@ export const HttpSpansAgent = (() => {
     const session = getSessionInstance();
     const timer = setTimeout(() => {
       source.cancel();
-      logger.debug(`Edge connection timeout [${CONNECTION_TIMEOUT}ms] (Tracer skipping)`);
+      logger.debug(
+        `Edge connection timeout [${CONNECTION_TIMEOUT}ms] from CancelToken (Tracer skipping)`
+      );
     }, CONNECTION_TIMEOUT);
-    await session
+
+    let requestTimeoutTimer;
+    const requestTimeout = new Promise(resolve => {
+      requestTimeoutTimer = setTimeout(() => {
+        clearTimeout(requestTimeoutTimer);
+        logger.debug(
+          `Edge connection timeout [${CONNECTION_TIMEOUT}ms] from setTimeout (Tracer skipping)`
+        );
+        resolve(1);
+      }, CONNECTION_TIMEOUT);
+    });
+
+    const requestPromise = session
       .post(url, requestBody, { cancelToken: source.token })
       .catch(e => {
         logger.debug('Edge error (Tracer skipping)', e.message);
-      })
-      .finally(() => {
-        clearTimeout(timer);
       });
+
+    await Promise.race([requestTimeout, requestPromise]).finally(() => {
+      clearTimeout(requestTimeoutTimer);
+      clearTimeout(timer);
+    });
   };
 
   const postSpans = async requestBody => {
