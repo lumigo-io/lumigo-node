@@ -71,6 +71,13 @@ export const getKinesisData = event => {
   return { arn, messageIds };
 };
 
+export const getSqsData = event => {
+  const arn = event.Records[0].eventSourceARN;
+  const messageIds = (event.Records || []).map(r => r['messageId']).filter(x => !!x);
+  if (messageIds.length === 1) return { arn, messageId: messageIds[0] };
+  return { arn, messageIds };
+};
+
 export const getDynamodbData = event => {
   const arn = event.Records[0].eventSourceARN;
   const approxEventCreationTime = event.Records[0].dynamodb.ApproximateCreationDateTime * 1000;
@@ -93,7 +100,7 @@ export const getDynamodbData = event => {
 export const getRelevantEventData = (triggeredBy, event) => {
   switch (triggeredBy) {
     case 'sqs':
-      return { arn: event.Records[0].eventSourceARN };
+      return getSqsData(event);
     case 'dynamodb':
       return getDynamodbData(event);
     case 'kinesis':

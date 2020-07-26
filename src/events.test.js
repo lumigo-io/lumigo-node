@@ -7,6 +7,7 @@ const exampleS3Event = require('./testdata/events/s3-event.json');
 const exampleSnsEvent = require('./testdata/events/sns-event.json');
 const exampleSesEvent = require('./testdata/events/ses-event.json');
 const exampleSqsEvent = require('./testdata/events/sqs-event.json');
+const exampleSqsManyMessagesEvent = require('./testdata/events/sqs-event-many-messages.json');
 const exampleKinesisEvent = require('./testdata/events/kinesis-event.json');
 const exampleDynamoDBInsertEvent = require('./testdata/events/dynamodb-insert-event.json');
 const exampleDynamoDBModifyEvent = require('./testdata/events/dynamodb-modify-event.json');
@@ -64,6 +65,12 @@ describe('events', () => {
   test('getRelevantEventData', () => {
     expect(events.getRelevantEventData('sqs', exampleSqsEvent)).toEqual({
       arn: 'arn:aws:sqs:us-west-2:123456789012:SQSQueue',
+      messageId: 'MessageID_1',
+    });
+
+    expect(events.getRelevantEventData('sqs', exampleSqsManyMessagesEvent)).toEqual({
+      arn: 'arn:aws:sqs:us-west-2:123456789012:SQSQueue',
+      messageIds: ['MessageID_1', 'MessageID_2'],
     });
 
     expect(events.getRelevantEventData('kinesis', exampleKinesisEvent)).toEqual({
