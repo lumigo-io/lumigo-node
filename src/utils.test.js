@@ -13,6 +13,7 @@ import {
   recursiveGetKey,
   SKIP_SCRUBBING_KEYS,
   md5Hash,
+  safeGet,
 } from './utils';
 import { TracerGlobals } from './globals';
 import crypto from 'crypto';
@@ -960,5 +961,17 @@ describe('utils', () => {
     const i = { a: 1 };
     i.i = i;
     expect(md5Hash(i)).toEqual(undefined);
+  });
+
+  test('safeGet happyFlow', () => {
+    expect(safeGet({ a: { b: 'c' } }, ['a', 'b'])).toEqual('c');
+  });
+
+  test('safeGet happyFlow with array', () => {
+    expect(safeGet({ a: { b: ['c', 'd'] } }, ['a', 'b', 1])).toEqual('d');
+  });
+
+  test('safeGet default flow', () => {
+    expect(safeGet({ a: { b: 'c' } }, ['a', 'b', 'arg'], 'dflt')).toEqual('dflt');
   });
 });
