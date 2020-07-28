@@ -92,18 +92,21 @@ describe('HttpSpansAgent', () => {
   test(
     'postSpans - reject connection timout',
     async () => {
+      let called = false;
       const reqBody = 'abcdefg';
       globals.TracerGlobals.setTracerInputs({ token: 't_xxx' });
 
       jest.spyOn(axios, 'create').mockImplementationOnce(() => {
         return {
           post: async () => {
+            called = true;
             await sleep(60000);
           },
         };
       });
 
       await HttpSpansAgent.postSpans(reqBody);
+      expect(called).toBe(true);
     },
     testTimeout
   );
