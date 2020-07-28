@@ -1,55 +1,66 @@
+import { HttpsAgent } from 'agentkeepalive';
 import * as logger from './logger';
 import { TracerGlobals } from './globals';
-import { getEdgeUrl, getJSONBase64Size, getTracerInfo, getAgentKeepAlive } from './utils';
+import {
+  getAgentKeepAlive,
+  getEdgeUrl,
+  getJSONBase64Size,
+  getTracerInfo,
+  isReuseHttpConnection,
+} from './utils';
 import axios from 'axios';
-import http from 'http';
-import https from 'https';
 
 export const HttpSpansAgent = (() => {
-  let sessionInstance = undefined;
+  let sessionInstance;
+  let sessionAgent;
+  let headersCache;
 
   const validateStatus = () => true;
 
-  const createHeaders = () => {
-    const { token } = TracerGlobals.getTracerInputs();
-    const { name, version } = getTracerInfo();
-    return {
-      Authorization: token,
-      'User-Agent': `${name}$${version}`,
-      'Content-Type': 'application/json',
-    };
+  const getHeaders = () => {
+    if (!headersCache) {
+      const { token } = TracerGlobals.getTracerInputs();
+      const { name, version } = getTracerInfo();
+      headersCache = {
+        Authorization: token,
+        'User-Agent': `${name}$${version}`,
+        'Content-Type': 'application/json',
+      };
+    }
+    return headersCache;
   };
 
-  const createSessionInstance = (url, headers) => {
-    const keepAliveMsecs = getAgentKeepAlive();
-    if (keepAliveMsecs)
-      return axios.create({
-        baseURL: url,
-        timeout: 250,
-        maxRedirects: 0,
-        HttpSpansAgent: new http.Agent({ keepAlive: true, keepAliveMsecs }),
-        httpsAgent: new https.Agent({ keepAlive: true, keepAliveMsecs }),
-        headers,
-        validateStatus,
-      });
-    return axios.create({
-      baseURL: url,
-      timeout: 250,
-      maxRedirects: 0,
-      headers,
-      validateStatus,
+  const initAgent = () => {
+    sessionAgent = createHttpAgent();
+    sessionInstance = createSessionInstance(sessionAgent);
+    logger.debug('Http session created to');
+  };
+
+  const createHttpAgent = () => {
+    const timeout = getAgentKeepAlive() || 900000;
+    return new HttpsAgent({
+      maxSockets: 5,
+      maxFreeSockets: 5,
+      timeout: timeout,
+      freeSocketTimeout: timeout,
     });
+  };
+
+  const createSessionInstance = httpAgent => {
+    const baseConfiguration = { timeout: 250, maxRedirects: 0, validateStatus };
+    if (isReuseHttpConnection()) {
+      return axios.create({
+        ...baseConfiguration,
+        httpsAgent: httpAgent,
+        httpAgent: httpAgent,
+      });
+    }
+    return axios.create(baseConfiguration);
   };
 
   const getSessionInstance = () => {
     if (!sessionInstance) {
-      const { url } = getEdgeUrl();
-      const headers = createHeaders();
-      sessionInstance = createSessionInstance(url, headers);
-      logger.debug('Http session created to', {
-        url,
-        headers,
-      });
+      sessionInstance = createSessionInstance();
     }
     return sessionInstance;
   };
@@ -59,13 +70,18 @@ export const HttpSpansAgent = (() => {
   };
 
   const postSpans = async requestBody => {
+    const { url } = getEdgeUrl();
+    const headers = getHeaders();
+
     const session = getSessionInstance();
+
     const bodySize = getJSONBase64Size(requestBody);
-    logger.debug('Starting request to edge', { bodySize });
-    await session.post('', requestBody).catch(e => {
+
+    logger.debug('Starting request to edge', { url, headers, bodySize });
+    await session.post(url, requestBody, { headers }).catch(e => {
       logger.debug('Edge error (Tracer skipping)', e.message);
     });
   };
 
-  return { postSpans, cleanSessionInstance };
+  return { postSpans, cleanSessionInstance, initAgent };
 })();

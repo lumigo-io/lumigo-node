@@ -3,6 +3,7 @@ import { safeExecute, setSwitchOff, setVerboseMode } from './utils';
 import { debug } from './logger';
 import { ExecutionTags } from './globals';
 import startHooks from './hooks';
+import { HttpSpansAgent } from './httpSpansAgent';
 
 debug('Tracer imported');
 
@@ -19,6 +20,7 @@ module.exports = function({
   switchOff && setSwitchOff();
 
   safeExecute(startHooks)();
+  HttpSpansAgent.initAgent();
 
   return {
     trace: trace({
