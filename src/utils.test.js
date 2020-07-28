@@ -214,6 +214,12 @@ describe('utils', () => {
     expect(utils.isStoreLogs()).toBe(true);
   });
 
+  test('isReuseHttpConnection', () => {
+    expect(utils.isReuseHttpConnection()).toBe(false);
+    process.env['LUMIGO_REUSE_HTTP_CONNECTION'] = 'TRUE';
+    expect(utils.isReuseHttpConnection()).toBe(true);
+  });
+
   test('setSendOnlyIfErrors', () => {
     expect(utils.isSendOnlyIfErrors()).toBe(false);
     utils.setSendOnlyIfErrors();
