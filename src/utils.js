@@ -140,6 +140,7 @@ const TIMEOUT_BUFFER_FLAG = 'LUMIGO_TIMEOUT_BUFFER';
 const TIMEOUT_MIN_DURATION = 'LUMIGO_TIMEOUT_MIN_DURATION';
 const TIMEOUT_BUFFER_FLAG_MS = 'LUMIGO_TIMEOUT_BUFFER_MS';
 const AGENT_KEEPALIVE = 'LUMIGO_AGENT_KEEPALIVE_MS';
+const REUSE_CONNECTION = 'LUMIGO_REUSE_HTTP_CONNECTION';
 
 const validateEnvVar = (envVar, value = 'TRUE') =>
   !!(process.env[envVar] && process.env[envVar].toUpperCase() === value.toUpperCase());
@@ -193,6 +194,8 @@ export const isHttpWrapped = () => validateEnvVar(HTTP_WRAPPED_FLAG);
 export const setHttpWrapped = () => (process.env[HTTP_WRAPPED_FLAG] = 'TRUE');
 
 export const isStoreLogs = () => validateEnvVar(STORE_LOGS_FLAG);
+
+export const isReuseHttpConnection = () => validateEnvVar(REUSE_CONNECTION);
 
 export const isSendOnlyIfErrors = () => validateEnvVar(SEND_ONLY_IF_ERROR_FLAG);
 
