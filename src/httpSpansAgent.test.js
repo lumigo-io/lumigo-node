@@ -3,6 +3,9 @@ import * as utils from './utils';
 import { HttpSpansAgent } from './httpSpansAgent';
 import * as globals from './globals';
 
+import axios from 'axios';
+import { sleep } from '../testUtils/sleep';
+
 describe('HttpSpansAgent', () => {
   test('postSpans - simple flow', async () => {
     const reqBody = 'abcdefg';
@@ -84,4 +87,24 @@ describe('HttpSpansAgent', () => {
 
     //no Error throwed
   });
+
+  const testTimeout = 350; //in MS
+  test(
+    'postSpans - reject connection timout',
+    async () => {
+      const reqBody = 'abcdefg';
+      globals.TracerGlobals.setTracerInputs({ token: 't_xxx' });
+
+      jest.spyOn(axios, 'create').mockImplementationOnce(() => {
+        return {
+          post: async () => {
+            await sleep(60000);
+          },
+        };
+      });
+
+      await HttpSpansAgent.postSpans(reqBody);
+    },
+    testTimeout
+  );
 });
