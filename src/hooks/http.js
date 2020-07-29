@@ -11,11 +11,11 @@ import {
   isValidAlias,
   isEmptyString,
   runOneTimeWrapper,
+  getEventEntitySize,
 } from '../utils';
 import * as logger from '../logger';
 import { getHttpSpan } from '../spans/awsSpan';
 import { URL } from 'url';
-import { noCirculars } from '../tools/noCirculars';
 import {
   extractBodyFromEmitSocketEvent,
   extractBodyFromEndFunc,
@@ -75,7 +75,9 @@ export const httpRequestWriteBeforeHookWrapper = requestData =>
   function(args) {
     if (isEmptyString(requestData.body)) {
       const body = extractBodyFromWriteFunc(args);
-      if (body) requestData.body += body;
+      if (body) {
+        requestData.body += body;
+      }
     }
   };
 
@@ -90,7 +92,9 @@ export const httpRequestEmitBeforeHookWrapper = (requestData, requestRandomId) =
     if (args[0] === 'socket') {
       if (isEmptyString(requestData.body)) {
         const body = extractBodyFromEmitSocketEvent(args[1]);
-        if (body) requestData.body += body;
+        if (body) {
+          requestData.body += body;
+        }
       }
     }
   };
@@ -98,11 +102,14 @@ export const httpRequestEmitBeforeHookWrapper = (requestData, requestRandomId) =
 
 const createEmitResponseOnEmitBeforeHookHandler = (requestData, requestRandomId, response) => {
   let body = '';
+  const payloadSize = getEventEntitySize();
   return function(args) {
     const receivedTime = new Date().getTime();
     const { headers, statusCode } = response;
     if (args[0] === 'data') {
-      body += args[1];
+      if (body.length + args[1].length <= payloadSize) {
+        body += args[1];
+      }
     }
     if (args[0] === 'end') {
       const responseData = {
@@ -111,9 +118,7 @@ const createEmitResponseOnEmitBeforeHookHandler = (requestData, requestRandomId,
         body,
         headers: lowerCaseObjectKeys(headers),
       };
-      const fixedRequestData = noCirculars(requestData);
-      const fixedResponseData = noCirculars(responseData);
-      const httpSpan = getHttpSpan(requestRandomId, fixedRequestData, fixedResponseData);
+      const httpSpan = getHttpSpan(requestRandomId, requestData, responseData);
       SpansContainer.addSpan(httpSpan);
     }
   };
@@ -134,7 +139,9 @@ export const httpRequestEndWrapper = requestData =>
   function(args) {
     if (isEmptyString(requestData.body)) {
       const body = extractBodyFromEndFunc(args);
-      if (body) requestData.body += body;
+      if (body) {
+        requestData.body += body;
+      }
     }
   };
 
@@ -188,8 +195,7 @@ export const httpBeforeRequestWrapper = (args, extenderContext) => {
     extenderContext.requestData = requestData;
 
     if (isTimeoutTimerEnabled()) {
-      const fixedRequestData = noCirculars(requestData);
-      const httpSpan = getHttpSpan(requestRandomId, fixedRequestData);
+      const httpSpan = getHttpSpan(requestRandomId, requestData);
       SpansContainer.addSpan(httpSpan);
     }
   }

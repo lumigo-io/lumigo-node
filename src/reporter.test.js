@@ -96,21 +96,6 @@ describe('reporter', () => {
     expect(result.rtt).toBeGreaterThanOrEqual(0);
   });
 
-  test('sendSpans - remove secret from payload', async () => {
-    const token = 'DEADBEEF';
-    TracerGlobals.setTracerInputs({ token });
-
-    const spans = [{ a: 'b', c: 'd' }, { e: 'f', g: 'h', secretKey: 'SECRET' }];
-
-    const result = await reporter.sendSpans(spans);
-
-    const expectedSpans = [{ a: 'b', c: 'd' }, { e: 'f', g: 'h', secretKey: '****' }];
-
-    const sentSpans = AxiosMocker.getSentSpans();
-    expect(sentSpans).toEqual([expectedSpans]);
-    expect(result.rtt).toBeGreaterThanOrEqual(0);
-  });
-
   test('forgeRequestBody - simple flow', async () => {
     const dummy = 'dummy';
     const dummyEnd = 'dummyEnd';
