@@ -562,6 +562,7 @@ describe('utils', () => {
         '    at b (/var/task/child.js:17:19)\n' +
         '    at a (/var/task/child.js:18:19)\n' +
         '    at childFn (/var/task/child.js:19:3)\n' +
+        '    at new Promise (<anonymous>)\n' +
         '    at Runtime.handleOnce (/var/runtime/Runtime.js:63:25)\n' +
         '    at process._tickCallback (internal/process/next_tick.js:68:7)',
     };
@@ -577,6 +578,38 @@ describe('utils', () => {
       data: 'y',
       type: 'x',
     });
+  });
+
+  test('removeLumigoFromStacktrace - anonymous func', () => {
+    const err = {
+      stack: `at createError (/var/task/node_modules/axios/lib/core/createError.js:16:15)
+    at settle (/var/task/node_modules/axios/lib/core/settle.js:17:12)
+    at IncomingMessage.handleStreamEnd (/var/task/node_modules/axios/lib/adapters/http.js:236:11)
+    at IncomingMessage.emit (events.js:203:15)
+    at IncomingMessage.EventEmitter.emit (domain.js:448:20)
+    at IncomingMessage.<anonymous> (/var/task/node_modules/@lumigo/tracer/dist/lumigo.js:27:18868)
+    at endReadableNT (_stream_readable.js:1145:12)
+    at process._tickCallback (internal/process/next_tick.js:63:19)`,
+    };
+    const data = 'abcd';
+    const type = '1234';
+    const handlerReturnValue = { err, data, type };
+
+    const expectedErr = {
+      stack: `at createError (/var/task/node_modules/axios/lib/core/createError.js:16:15)
+    at settle (/var/task/node_modules/axios/lib/core/settle.js:17:12)
+    at IncomingMessage.handleStreamEnd (/var/task/node_modules/axios/lib/adapters/http.js:236:11)
+    at IncomingMessage.emit (events.js:203:15)
+    at IncomingMessage.EventEmitter.emit (domain.js:448:20)
+    at endReadableNT (_stream_readable.js:1145:12)
+    at process._tickCallback (internal/process/next_tick.js:63:19)`,
+    };
+
+    const expectedHandlerReturnValue = { err: expectedErr, data, type };
+
+    expect(utils.removeLumigoFromStacktrace(handlerReturnValue)).toEqual(
+      expectedHandlerReturnValue
+    );
   });
 
   test('removeLumigoFromStacktrace no exception', () => {
