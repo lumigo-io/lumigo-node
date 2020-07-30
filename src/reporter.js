@@ -1,10 +1,4 @@
-import {
-  getJSONBase64Size,
-  isPruneTraceOff,
-  isSendOnlyIfErrors,
-  omitKeys,
-  spanHasErrors,
-} from './utils';
+import { getJSONBase64Size, isPruneTraceOff, isSendOnlyIfErrors, spanHasErrors } from './utils';
 import * as logger from './logger';
 import { HttpSpansAgent } from './httpSpansAgent';
 
@@ -45,7 +39,6 @@ export const forgeRequestBody = (spans, maxSendBytes = MAX_SENT_BYTES) => {
   let resultSpans = [];
 
   if (isPruneTraceOff() || getJSONBase64Size(spans) <= maxSendBytes) {
-    spans = spans.map(omitKeys); // extra validation
     return spans.length > 0 ? JSON.stringify(spans) : undefined;
   }
 
@@ -68,8 +61,6 @@ export const forgeRequestBody = (spans, maxSendBytes = MAX_SENT_BYTES) => {
   }
 
   resultSpans.push(functionEndSpan);
-
-  resultSpans = resultSpans.map(omitKeys); // extra validation
 
   if (spans.length - resultSpans.length > 0) {
     logger.debug(`Trimmed spans due to size`);

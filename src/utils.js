@@ -1,6 +1,5 @@
 import { TracerGlobals } from './globals';
 import crypto from 'crypto';
-import { noCirculars } from './tools/noCirculars';
 import * as logger from './logger';
 import jsonSortify from 'json.sortify';
 
@@ -27,7 +26,6 @@ export const STEP_FUNCTION_UID_KEY = 'step_function_uid';
 export const GET_KEY_DEPTH_ENV_KEY = 'LUMIGO_KEY_DEPTH';
 export const DEFAULT_GET_KEY_DEPTH = 3;
 export const EXECUTION_TAGS_KEY = 'lumigo_execution_tags_no_scrub';
-export const SKIP_SCRUBBING_KEYS = [EXECUTION_TAGS_KEY];
 export const DEFAULT_TIMEOUT_MIN_DURATION = 2000;
 
 export const getContextInfo = context => {
@@ -242,19 +240,11 @@ export const setTimeoutTimerDisabled = () => (process.env[TIMEOUT_ENABLE_FLAG] =
 
 export const isString = x => Object.prototype.toString.call(x) === '[object String]';
 
-export const MAX_ENTITY_SIZE = 1024;
+export const MAX_ENTITY_SIZE = 2048;
 
 export const getEventEntitySize = () => {
   return parseInt(process.env['MAX_EVENT_ENTITY_SIZE']) || MAX_ENTITY_SIZE;
 };
-
-export const prune = (str, maxLength = MAX_ENTITY_SIZE) => (str || '').substr(0, maxLength);
-
-export const stringifyAndPrune = (obj, maxLength = MAX_ENTITY_SIZE) =>
-  prune(JSON.stringify(obj), maxLength);
-
-export const pruneData = (data, maxLength) =>
-  isString(data) ? prune(data, maxLength) : stringifyAndPrune(data, maxLength);
 
 export const parseErrorObject = err => ({
   type: err && err.name,
@@ -365,8 +355,8 @@ const domainScrubbers = () =>
     x => new RegExp(x, 'i')
   );
 
-export const shouldScrubDomain = url => {
-  return !!url && domainScrubbers().some(regex => url.match(regex));
+export const shouldScrubDomain = (url, domains = domainScrubbers()) => {
+  return !!url && domains.some(regex => url.match(regex));
 };
 
 export const parseJsonFromEnvVar = (envVar, warnClient = false) => {
@@ -376,52 +366,6 @@ export const parseJsonFromEnvVar = (envVar, warnClient = false) => {
     warnClient && logger.warnClient(`${envVar} need to be a valid JSON`);
   }
   return undefined;
-};
-
-export const keyToOmitRegexes = () => {
-  let regexesList = OMITTING_KEYS_REGEXES;
-  if (process.env[LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP]) {
-    const parseResponse = parseJsonFromEnvVar(LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP, true);
-    if (parseResponse) {
-      regexesList = parseResponse;
-    }
-  } else if (process.env[LUMIGO_SECRET_MASKING_REGEX]) {
-    const parseResponse = parseJsonFromEnvVar(LUMIGO_SECRET_MASKING_REGEX, true);
-    if (parseResponse) {
-      regexesList = parseResponse;
-    }
-  }
-
-  return regexesList.map(x => new RegExp(x, 'i'));
-};
-
-export const omitKeys = obj => {
-  if (obj instanceof Array) {
-    return obj.map(omitKeys);
-  }
-  if (typeof obj === 'string') {
-    try {
-      const parsedObject = JSON.parse(obj);
-      return typeof parsedObject === 'object' ? omitKeys(parsedObject) : obj;
-    } catch (e) {
-      return obj;
-    }
-  }
-  if (!obj || typeof obj !== 'object') {
-    return obj;
-  }
-  obj = noCirculars(obj);
-  const regexes = keyToOmitRegexes();
-  return Object.keys(obj).reduce((newObj, key) => {
-    if (SKIP_SCRUBBING_KEYS.includes(key)) {
-      newObj[key] = obj[key];
-    } else if (regexes.some(regex => regex.test(key))) {
-      newObj[key] = '****';
-    } else {
-      newObj[key] = omitKeys(obj[key]);
-    }
-    return newObj;
-  }, {});
 };
 
 export const safeExecute = (
