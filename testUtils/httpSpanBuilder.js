@@ -1,4 +1,5 @@
-import { lowerCaseObjectKeys, stringifyAndPrune } from '../src/utils';
+import { lowerCaseObjectKeys } from '../src/utils';
+import { payloadStringify } from '../src/utils/payloadStringify';
 
 export class HttpSpanBuilder {
   static DEFAULT_ACCOUNT = '985323015126';
@@ -76,11 +77,11 @@ export class HttpSpanBuilder {
     };
   }
 
-  static parseHeaders = headers => stringifyAndPrune(lowerCaseObjectKeys(headers));
+  static parseHeaders = headers => payloadStringify(lowerCaseObjectKeys(headers));
 
   static parseBody = body => {
     if (!body) body = '';
-    return stringifyAndPrune(body);
+    return payloadStringify(body);
   };
 
   static addHeader = (headers, obj) => {

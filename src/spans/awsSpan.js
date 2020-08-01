@@ -1,21 +1,17 @@
 import {
   isWarm,
   setWarm,
-  pruneData,
   getTraceId,
   getAccountId,
   getTracerInfo,
   getContextInfo,
   getAWSEnvironment,
-  stringifyAndPrune,
   isAwsService,
   parseErrorObject,
-  getEventEntitySize,
   shouldScrubDomain,
   getInvokedArn,
   getInvokedVersion,
   EXECUTION_TAGS_KEY,
-  prune,
 } from '../utils';
 import {
   dynamodbParser,
@@ -30,6 +26,7 @@ import { TracerGlobals, ExecutionTags } from '../globals';
 import { getEventInfo } from '../events';
 import { parseEvent } from '../parsers/eventParser';
 import * as logger from '../logger';
+import { payloadStringify, prune } from '../utils/payloadStringify';
 
 export const HTTP_SPAN = 'http';
 export const FUNCTION_SPAN = 'function';
@@ -108,8 +105,8 @@ export const getFunctionSpan = () => {
   const started = new Date().getTime();
   const ended = started; // Indicates a StartSpan.
 
-  const event = stringifyAndPrune(parseEvent(lambdaEvent), getEventEntitySize());
-  const envs = stringifyAndPrune(process.env);
+  const event = payloadStringify(parseEvent(lambdaEvent));
+  const envs = payloadStringify(process.env);
 
   const { functionName: name, awsRequestId, remainingTimeInMillis } = getContextInfo(lambdaContext);
 
@@ -139,7 +136,7 @@ export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
   const ended = new Date().getTime();
   let return_value;
   try {
-    return_value = data ? pruneData(data) : null;
+    return_value = payloadStringify(data);
   } catch (e) {
     return_value = prune(data.toString());
     error = parseErrorObject({
@@ -148,7 +145,6 @@ export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
         e.message}`,
     });
   }
-
   const newSpan = Object.assign({}, functionSpan, {
     id,
     ended,
@@ -214,11 +210,11 @@ export const getHttpInfo = (requestData, responseData) => {
     delete response.headers;
     delete request.uri;
   } else {
-    request.headers = stringifyAndPrune(request.headers);
-    request.body = stringifyAndPrune(request.body);
+    request.headers = payloadStringify(request.headers);
+    request.body = payloadStringify(request.body);
 
-    if (response.headers) response.headers = stringifyAndPrune(response.headers);
-    if (response.body) response.body = stringifyAndPrune(response.body);
+    if (response.headers) response.headers = payloadStringify(response.headers);
+    if (response.body) response.body = payloadStringify(response.body);
   }
 
   return { host, request, response };
@@ -257,8 +253,8 @@ export const getHttpSpan = (randomRequestId, requestData, responseData = null) =
   const prioritizedSpanId = getHttpSpanId(randomRequestId, spanId);
   let httpInfo = {
     host: requestData.host,
-    request: requestData,
-    response: responseData,
+    request: payloadStringify(requestData),
+    response: payloadStringify(responseData),
   };
   try {
     httpInfo = getHttpInfo(requestData, responseData);

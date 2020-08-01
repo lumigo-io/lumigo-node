@@ -2,16 +2,11 @@ import * as utils from './utils';
 import {
   getJSONBase64Size,
   MAX_ENTITY_SIZE,
-  omitKeys,
   parseErrorObject,
   parseQueryParams,
   shouldScrubDomain,
-  keyToOmitRegexes,
-  LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP,
-  LUMIGO_SECRET_MASKING_REGEX,
   safeExecute,
   recursiveGetKey,
-  SKIP_SCRUBBING_KEYS,
   md5Hash,
   safeGet,
 } from './utils';
@@ -408,12 +403,6 @@ describe('utils', () => {
     expect(utils.isString({ satoshi: 'nakamoto' })).toBe(false);
   });
 
-  test('prune', () => {
-    expect(utils.prune('abcdefg', 3)).toEqual('abc');
-    expect(utils.prune('abcdefg')).toEqual('abcdefg');
-    expect(utils.prune(undefined)).toEqual('');
-  });
-
   test('parseJsonFromEnvVar -> simple flow', () => {
     process.env.TEST_STR = '"TEST"';
     process.env.TEST_NUM = '1';
@@ -442,24 +431,6 @@ describe('utils', () => {
         obj: undefined,
       },
     ]);
-  });
-
-  test('stringifyAndPrune', () => {
-    const obj = {
-      founder: 'Elon Musk',
-      companies: ['SpaceX', 'Tesla', 'Boring Company', 'PayPal', 'X.com'],
-    };
-    expect(utils.stringifyAndPrune(obj, 4)).toEqual('{"fo');
-    expect(utils.stringifyAndPrune(obj)).toEqual(JSON.stringify(obj));
-  });
-
-  test('pruneData', () => {
-    const obj = {
-      founder: 'Elon Musk',
-      companies: ['SpaceX', 'Tesla', 'Boring Company', 'PayPal', 'X.com'],
-    };
-    expect(utils.pruneData(obj, 4)).toEqual('{"fo');
-    expect(utils.pruneData('abcdefg', 3)).toEqual('abc');
   });
 
   test('parseErrorObject', () => {
@@ -741,84 +712,6 @@ describe('utils', () => {
     process.env.LUMIGO_DOMAINS_SCRUBBER = '["google", "facebook"]';
     expect(shouldScrubDomain(facebook_url)).toEqual(true);
     expect(shouldScrubDomain(instagram_url)).toEqual(false);
-  });
-
-  test('keyToOmitRegexes', () => {
-    process.env[LUMIGO_SECRET_MASKING_REGEX] = ['[".*evilPlan.*"]'];
-    expect(keyToOmitRegexes().map(p => String(p))).toEqual(['/.*evilPlan.*/i']);
-    process.env[LUMIGO_SECRET_MASKING_REGEX] = undefined;
-    process.env[LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP] = ['[".*evilPlan2.*"]'];
-    expect(keyToOmitRegexes().map(p => String(p))).toEqual(['/.*evilPlan2.*/i']);
-    process.env[LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP] = undefined;
-  });
-
-  test('omitKeys', () => {
-    const safeObj = { hello: 'world', inner: { check: 'abc' } };
-    expect(omitKeys(safeObj)).toEqual(safeObj);
-
-    for (const unsafeKey of [
-      'password',
-      'secretPassword',
-      'secretName',
-      'credential',
-      'passphrase',
-    ]) {
-      const unsafeObj = { hello: 'world' };
-      unsafeObj[unsafeKey] = 'value';
-      const afterOmitted = { hello: 'world' };
-      afterOmitted[unsafeKey] = '****';
-      expect(omitKeys(unsafeObj)).toEqual(afterOmitted);
-    }
-
-    const unsafeInnerObj = { hello: 'world', inner: { secretPassword: 'abc' } };
-    expect(omitKeys(unsafeInnerObj)).toEqual({
-      hello: 'world',
-      inner: { secretPassword: '****' },
-    });
-
-    process.env[LUMIGO_SECRET_MASKING_REGEX] = ['[".*evilPlan.*"]'];
-    const unpredictedObj = {
-      password: 'abc',
-      evilPlan: { take: 'over', the: 'world' },
-    };
-    expect(omitKeys(unpredictedObj)).toEqual({
-      password: 'abc',
-      evilPlan: '****',
-    });
-    process.env[LUMIGO_SECRET_MASKING_REGEX] = undefined;
-
-    const unsafeString = '{"hello": "world", "password": "abc"}';
-    expect(omitKeys(unsafeString)).toEqual({
-      hello: 'world',
-      password: '****',
-    });
-
-    const notJsonString = '{"hello": "w';
-    expect(omitKeys(notJsonString)).toEqual(notJsonString);
-
-    const notString = 5;
-    expect(omitKeys(notString)).toEqual(notString);
-
-    const stringNotObject = '5';
-    expect(omitKeys(stringNotObject)).toEqual(stringNotObject);
-
-    const unsafeList = [{ password: '123' }, { hello: 'world' }];
-    expect(omitKeys(unsafeList)).toEqual([{ password: '****' }, { hello: 'world' }]);
-
-    const dummy = {};
-    const circularObject = { dummy };
-    dummy['circularObject'] = circularObject;
-    expect(omitKeys(circularObject)).toEqual({
-      dummy: { circularObject: '[Circular]' },
-    });
-
-    const nullObject = null;
-    expect(omitKeys(nullObject)).toEqual(null);
-  });
-
-  test('omitKeys - SKIP_SCRUBBING_KEYS', () => {
-    const obj = { [SKIP_SCRUBBING_KEYS[0]]: { password: 1 } };
-    expect(omitKeys(obj)).toEqual(obj);
   });
 
   test('safeExecute run function', () => {

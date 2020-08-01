@@ -1,4 +1,4 @@
-import { lowerCaseObjectKeys } from '../utils';
+import { getRandomString, lowerCaseObjectKeys, MAX_ENTITY_SIZE } from '../utils';
 import EventEmitter from 'events';
 import defaultHttp, { wrapHttp } from './http';
 import MockDate from 'mockdate';
@@ -75,6 +75,27 @@ describe('http hook', () => {
 
     expect(requestData).toEqual({
       body: 'HTTP BODY2',
+    });
+  });
+
+  test('httpRequestEmitBeforeHookWrapper -> handle big input', () => {
+    const requestData = {
+      body: '',
+    };
+    const body = getRandomString(MAX_ENTITY_SIZE * 2);
+    const emitEventName = 'socket';
+    const emitArg = {
+      _httpMessage: {
+        _hasBody: true,
+        output: [`HTTP BODY1\n${body}`],
+      },
+    };
+    const wrapper = httpHook.httpRequestEmitBeforeHookWrapper(requestData);
+    wrapper([emitEventName, emitArg]);
+
+    const expectedBody = body.substr(0, MAX_ENTITY_SIZE);
+    expect(requestData).toEqual({
+      body: expectedBody,
     });
   });
 
@@ -177,6 +198,21 @@ describe('http hook', () => {
     wrapper([firstArg, secArg]);
 
     expect(requestData).toEqual({ body: 'BODY' });
+  });
+
+  test('httpRequestWriteBeforeHookWrapper -> handle big payload', () => {
+    const requestData = {
+      body: '',
+    };
+
+    const firstArg = getRandomString(MAX_ENTITY_SIZE * 2);
+    const secArg = () => {};
+
+    const wrapper = httpHook.httpRequestWriteBeforeHookWrapper(requestData);
+    wrapper([firstArg, secArg]);
+
+    const expectedBody = firstArg.substr(0, MAX_ENTITY_SIZE);
+    expect(requestData).toEqual({ body: expectedBody });
   });
 
   test('httpRequestWriteBeforeHookWrapper -> not override body', () => {
@@ -386,7 +422,20 @@ describe('http hook', () => {
     const callback = jest.fn();
     httpHook.httpRequestEndWrapper(requestData)([data, encoding, callback]);
 
-    expect(requestData).toEqual({ body });
+    expect(requestData).toEqual({ body: body });
+  });
+
+  test('httpRequestEndWrapper -> handle big input', () => {
+    const body = getRandomString(MAX_ENTITY_SIZE * 2);
+    const requestData = { body: '' };
+
+    const data = body;
+    const encoding = 'utf8';
+    const callback = jest.fn();
+    httpHook.httpRequestEndWrapper(requestData)([data, encoding, callback]);
+
+    const expectedBody = body.substr(0, MAX_ENTITY_SIZE);
+    expect(requestData).toEqual({ body: expectedBody });
   });
 
   test('httpRequestArguments -> no arguments', () => {
