@@ -10,6 +10,9 @@ import {
 } from './utils';
 import axios from 'axios';
 
+const REQUEST_TIMEOUT = 250;
+const CONNECTION_TIMEOUT = 300;
+
 export const HttpSpansAgent = (() => {
   let sessionInstance;
   let sessionAgent;
@@ -47,7 +50,7 @@ export const HttpSpansAgent = (() => {
   };
 
   const createSessionInstance = httpAgent => {
-    const baseConfiguration = { timeout: 250, maxRedirects: 0, validateStatus };
+    const baseConfiguration = { timeout: REQUEST_TIMEOUT, maxRedirects: 0, validateStatus };
     if (isReuseHttpConnection()) {
       return axios.create({
         ...baseConfiguration,
@@ -69,18 +72,34 @@ export const HttpSpansAgent = (() => {
     sessionInstance = undefined;
   };
 
+  const sendHttpRequest = async (url, headers, requestBody) => {
+    const session = getSessionInstance();
+    let requestTimeoutTimer;
+    const requestTimeout = new Promise(resolve => {
+      requestTimeoutTimer = setTimeout(() => {
+        clearTimeout(requestTimeoutTimer);
+        logger.debug(
+          `Edge connection timeout [${CONNECTION_TIMEOUT}ms] from setTimeout (Tracer skipping)`
+        );
+        resolve(1);
+      }, CONNECTION_TIMEOUT);
+    });
+    const requestPromise = session.post(url, requestBody, { headers }).catch(e => {
+      logger.debug('Edge error (Tracer skipping)', e.message);
+    });
+
+    await Promise.race([requestPromise, requestTimeout]).finally(() => {
+      clearTimeout(requestTimeoutTimer);
+    });
+  };
+
   const postSpans = async requestBody => {
     const { url } = getEdgeUrl();
     const headers = getHeaders();
-
-    const session = getSessionInstance();
-
     const bodySize = getJSONBase64Size(requestBody);
 
     logger.debug('Starting request to edge', { url, headers, bodySize });
-    await session.post(url, requestBody, { headers }).catch(e => {
-      logger.debug('Edge error (Tracer skipping)', e.message);
-    });
+    await sendHttpRequest(url, headers, requestBody);
   };
 
   return { postSpans, cleanSessionInstance, initAgent };
