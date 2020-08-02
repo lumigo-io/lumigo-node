@@ -292,21 +292,9 @@ export const removeLumigoFromStacktrace = handleReturnValue => {
     const stackArr = stack.split('\n');
 
     const pattern = '/dist/lumigo.js:';
-    const reducer = (acc, v, i) => {
-      if (v.includes(pattern)) {
-        acc.push(i);
-      }
-      return acc;
-    };
+    const cleanedStack = stackArr.filter(v => !v.includes(pattern));
 
-    const pattrenIndices = stackArr.reduce(reducer, []);
-
-    const minIndex = pattrenIndices.shift();
-    const maxIndex = pattrenIndices.pop();
-    const nrItemsToRemove = maxIndex - minIndex + 1;
-
-    stackArr.splice(minIndex, nrItemsToRemove);
-    err.stack = stackArr.join('\n');
+    err.stack = cleanedStack.join('\n');
 
     return { err, data, type };
   } catch (err) {
