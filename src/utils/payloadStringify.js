@@ -67,11 +67,9 @@ export const payloadStringify = (payload, maxPayloadSize = getEventEntitySize())
         return value;
       } else isPruned = true;
   });
-  if (result) {
+  if (result && isPruned) {
     result = result.replace(/,null/g, '');
-    if (isPruned) {
-      result = result.concat(TRUNCATED_TEXT);
-    }
+    result = result.concat(TRUNCATED_TEXT);
   }
   return result || '';
 };
