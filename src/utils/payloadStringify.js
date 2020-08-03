@@ -8,6 +8,7 @@ import {
 
 const nativeTypes = ['string', 'bigint', 'number', 'undefined', 'boolean'];
 const SCRUBBED_TEXT = '****';
+const TRUNCATED_TEXT = '...[too long]';
 
 const isNativeType = obj => nativeTypes.includes(typeof obj);
 
@@ -45,7 +46,8 @@ export const payloadStringify = (payload, maxPayloadSize = getEventEntitySize())
   let refsFound = [];
   const regexes = keyToOmitRegexes();
 
-  const result = JSON.stringify(payload, (key, value) => {
+  let isPruned = false;
+  let result = JSON.stringify(payload, (key, value) => {
     const type = typeof value;
     const isObj = type === 'object';
     const isStr = type === 'string';
@@ -58,10 +60,13 @@ export const payloadStringify = (payload, maxPayloadSize = getEventEntitySize())
         if (isObj) {
           refsFound.push(value);
         }
-        if (value && isStr && value.length > maxPayloadSize) return prune(value, maxPayloadSize);
+        if (value && isStr && value.length > maxPayloadSize) {
+          isPruned = true;
+          return prune(value, maxPayloadSize);
+        }
         return value;
       }
   });
-
+  if (result && isPruned) result = result.concat(TRUNCATED_TEXT);
   return result || '';
 };

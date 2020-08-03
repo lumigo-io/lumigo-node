@@ -117,8 +117,8 @@ describe('payloadStringify', () => {
 
     const result = payloadStringify(payload, 10);
 
-    expect(result).toEqual('"xxxxxxxxxx"');
-    expect(result.length).toEqual(12);
+    expect(result).toEqual('"xxxxxxxxxx"...[too long]');
+    expect(result.length).toEqual(25);
   });
 
   test('payloadStringify -> circular object', () => {
