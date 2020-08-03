@@ -108,6 +108,14 @@ describe('payloadStringify', () => {
     expect(result).toEqual('{"a":2,"b":3,"c":3,"d":4,"e":5,"f":6,"g":7,"aa":11}');
   });
 
+  test('payloadStringify -> prune after 10B -> list', () => {
+    const payload = [2, 3, 3, 4, 5, 6, 7, 11, 22, 33, 44, 55, 111, 222, 333, 444, 555];
+
+    const result = payloadStringify(payload, 10);
+
+    expect(result).toEqual('[2,3,3,4,5,6,7,11]');
+  });
+
   test('payloadStringify -> Huge String', () => {
     const length = 100000;
     let payload = '';
