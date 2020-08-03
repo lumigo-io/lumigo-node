@@ -65,7 +65,7 @@ export const payloadStringify = (payload, maxPayloadSize = getEventEntitySize())
           return prune(value, maxPayloadSize);
         }
         return value;
-      }
+      } else isPruned = true;
   });
   if (result) {
     result = result.replace(/,null/g, '');
