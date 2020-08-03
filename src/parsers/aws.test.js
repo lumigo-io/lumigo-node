@@ -260,12 +260,17 @@ describe('aws parser', () => {
       protocol: 'https:',
       sendTime: 1564474992235,
     };
+    const responseData = {
+      body:
+        '<?xml version="1.0"?><SendMessageResponse xmlns="http://queue.amazonaws.com/doc/2012-11-05/"><SendMessageResult><MessageId>85dc3997-b060-47bc-9d89-c754d7260dbd</MessageId><MD5OfMessageBody>c5cb6abef11b88049177473a73ed662f</MD5OfMessageBody></SendMessageResult><ResponseMetadata><RequestId>b6b5a045-23c6-5e3a-a54f-f7dd99f7b379</RequestId></ResponseMetadata></SendMessageResponse>',
+    };
 
-    const result = aws.sqsParser(requestData, {});
+    const result = aws.sqsParser(requestData, responseData);
 
     expect(result).toEqual({
       awsServiceData: {
         resourceName: queueUrl,
+        messageId: '85dc3997-b060-47bc-9d89-c754d7260dbd',
       },
     });
   });
@@ -281,6 +286,7 @@ describe('aws parser', () => {
 
     expect(result).toEqual({
       awsServiceData: {
+        messageId: null,
         resourceName: undefined,
       },
     });
