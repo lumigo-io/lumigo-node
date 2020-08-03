@@ -105,7 +105,15 @@ describe('payloadStringify', () => {
 
     const result = payloadStringify(payload, 10);
 
-    expect(result).toEqual('{"a":2,"b":3,"c":3,"d":4,"e":5,"f":6,"g":7,"aa":11}');
+    expect(result).toEqual('{"a":2,"b":3,"c":3,"d":4,"e":5,"f":6,"g":7,"aa":11}...[too long]');
+  });
+
+  test('payloadStringify -> prune after 10B -> list', () => {
+    const payload = [2, 3, 3, 4, 5, 6, 7, 11, 22, 33, 44, 55, 111, 222, 333, 444, 555];
+
+    const result = payloadStringify(payload, 10);
+
+    expect(result).toEqual('[2,3,3,4,5,6,7,11]...[too long]');
   });
 
   test('payloadStringify -> Huge String', () => {
@@ -117,8 +125,8 @@ describe('payloadStringify', () => {
 
     const result = payloadStringify(payload, 10);
 
-    expect(result).toEqual('"xxxxxxxxxx"');
-    expect(result.length).toEqual(12);
+    expect(result).toEqual('"xxxxxxxxxx"...[too long]');
+    expect(result.length).toEqual(25);
   });
 
   test('payloadStringify -> circular object', () => {
