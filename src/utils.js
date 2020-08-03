@@ -152,6 +152,17 @@ export const getEnvVarAsList = (key, def) => {
   return def;
 };
 
+export const safeGet = (obj, arr, dflt = null) => {
+  let current = obj;
+  for (let i in arr) {
+    if (!current) {
+      return dflt;
+    }
+    current = current[arr[i]];
+  }
+  return current || dflt;
+};
+
 export const isTimeoutTimerEnabled = () => !validateEnvVar(TIMEOUT_ENABLE_FLAG, 'FALSE');
 
 export const getTimeoutTimerBuffer = () => {
