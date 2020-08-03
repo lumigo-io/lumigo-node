@@ -1,4 +1,4 @@
-import { md5Hash, parseQueryParams } from '../utils';
+import { md5Hash, parseQueryParams, safeGet } from '../utils';
 import parseXml from '../tools/xmlToJson';
 import * as logger from '../logger';
 
@@ -87,11 +87,26 @@ export const apigwParser = (requestData, responseData) => {
   return baseData;
 };
 
-export const sqsParser = requestData => {
+export const sqsParser = (requestData, responseData) => {
   const { body: reqBody } = requestData;
-  const parsedBody = reqBody ? parseQueryParams(reqBody) : undefined;
-  const resourceName = parsedBody ? parsedBody['QueueUrl'] : undefined;
+  const { body: resBody } = responseData;
+  const parsedReqBody = reqBody ? parseQueryParams(reqBody) : undefined;
+  const parsedResBody = resBody ? parseXml(resBody) : undefined;
+  const resourceName = parsedReqBody ? parsedReqBody['QueueUrl'] : undefined;
   const awsServiceData = { resourceName };
+  awsServiceData.messageId =
+    safeGet(parsedResBody, ['SendMessageResponse', 'SendMessageResult', 'MessageId'], undefined) ||
+    safeGet(
+      parsedResBody,
+      [
+        'SendMessageBatchResponse',
+        'SendMessageBatchResult',
+        'SendMessageBatchResultEntry',
+        0,
+        'MessageId',
+      ],
+      undefined
+    );
   return { awsServiceData };
 };
 
