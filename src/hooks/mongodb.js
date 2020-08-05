@@ -1,6 +1,6 @@
 import { safeRequire } from '../utils/requireUtils';
 import { getRandomId, safeExecute } from '../utils';
-import { createMongoDbSpan, extendMondoDbSpan } from '../spans/mongoDbSpan';
+import { createMongoDbSpan, extendMongoDbSpan } from '../spans/mongoDbSpan';
 import { SpansContainer } from '../globals';
 import * as logger from '../logger';
 
@@ -11,7 +11,7 @@ const PendingRequests = (() => {
     pendingRequests[requestId] = spanId;
   };
 
-  const getPendingRequestSpanId = requestId => {
+  const popPendingRequestSpanId = requestId => {
     const spanId = pendingRequests[requestId];
     delete pendingRequests[requestId];
     return spanId;
@@ -19,7 +19,7 @@ const PendingRequests = (() => {
 
   return {
     addPendingRequest,
-    getPendingRequestSpanId,
+    popPendingRequestSpanId,
   };
 })();
 
@@ -47,9 +47,9 @@ const onStartedHook = event => {
 
 const onSucceededHook = event => {
   const { duration, reply, requestId } = event;
-  const currentSpanId = PendingRequests.getPendingRequestSpanId(requestId);
+  const currentSpanId = PendingRequests.popPendingRequestSpanId(requestId);
   const currentSpan = SpansContainer.getSpanById(currentSpanId);
-  const extendedMondoDbSpan = extendMondoDbSpan(currentSpan, {
+  const extendedMondoDbSpan = extendMongoDbSpan(currentSpan, {
     duration,
     reply,
   });
@@ -58,9 +58,9 @@ const onSucceededHook = event => {
 
 const onFailedHook = event => {
   const { duration, failure, requestId } = event;
-  const currentSpanId = PendingRequests.getPendingRequestSpanId(requestId);
+  const currentSpanId = PendingRequests.popPendingRequestSpanId(requestId);
   const currentSpan = SpansContainer.getSpanById(currentSpanId);
-  const extendedMondoDbSpan = extendMondoDbSpan(currentSpan, {
+  const extendedMondoDbSpan = extendMongoDbSpan(currentSpan, {
     duration,
     failure,
   });

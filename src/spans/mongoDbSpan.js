@@ -15,7 +15,7 @@ export const createMongoDbSpan = (spanId, requestMetadata, mongoFields) => {
   };
 };
 
-export const extendMondoDbSpan = (currentSpan, extendData) => {
+export const extendMongoDbSpan = (currentSpan, extendData) => {
   // This function is not pure for ensure performance
   if (extendData.reply) {
     currentSpan.response = payloadStringify(extendData.reply);

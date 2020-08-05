@@ -1,13 +1,13 @@
 import httpHook from './http';
-import { isSwitchedOff, isAwsEnvironment, isHttpWrapped, setHttpWrapped } from '../utils';
+import { isSwitchedOff, isAwsEnvironment, isLambdaWrapped, setLambdaWrapped } from '../utils';
 import { hookMongoDb } from './mongodb';
 
 export default () => {
   if (!isSwitchedOff() && isAwsEnvironment()) {
-    if (!isHttpWrapped()) {
+    if (!isLambdaWrapped()) {
       httpHook();
-      setHttpWrapped();
+      hookMongoDb();
+      setLambdaWrapped();
     }
-    hookMongoDb();
   }
 };

@@ -158,15 +158,15 @@ describe('utils', () => {
     expect(utils.isWarm()).toBe(true);
   });
 
-  test('isHttpWrapped', () => {
-    expect(utils.isHttpWrapped()).toBe(false);
-    process.env.LUMIGO_IS_HTTP_WRAPPED = 'TRUE';
-    expect(utils.isHttpWrapped()).toBe(true);
+  test('isLambdaWrapped', () => {
+    expect(utils.isLambdaWrapped()).toBe(false);
+    process.env.LUMIGO_IS_WRAPPED = 'TRUE';
+    expect(utils.isLambdaWrapped()).toBe(true);
   });
 
-  test('setHttpWrapped', () => {
-    utils.setHttpWrapped();
-    expect(utils.isHttpWrapped()).toBe(true);
+  test('setLambdaWrapped', () => {
+    utils.setLambdaWrapped();
+    expect(utils.isLambdaWrapped()).toBe(true);
   });
 
   test('isSendOnlyIfErrors', () => {

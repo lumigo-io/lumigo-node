@@ -68,7 +68,6 @@ export const wrapMongoCollection = (collection, funcName, failed = false) => {
 export const getMockedMongoClient = (options = {}) => {
   const MongoClient = mongodb.MongoClient;
   mongodb.max_delay = 0;
-  MongoClient.persist = 'mongo.js'; //persist the data to disk
   if (options.instrumentFailed) {
     mongodb.instrument = (options, errCallback) => {
       errCallback('RandomError');
