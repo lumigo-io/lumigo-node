@@ -13,9 +13,10 @@ export const SpansContainer = (() => {
     logger.debug('Span created', span);
   };
   const getSpans = () => Object.values(spansToSend);
+  const getSpanById = spanId => spansToSend[spanId];
   const clearSpans = () => (spansToSend = {});
 
-  return { addSpan, getSpans, clearSpans };
+  return { addSpan, getSpanById, getSpans, clearSpans };
 })();
 
 export const GlobalTimer = (() => {
