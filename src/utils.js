@@ -129,7 +129,7 @@ export const getAWSEnvironment = () => {
 
 const TIMEOUT_ENABLE_FLAG = 'LUMIGO_TIMEOUT_TIMER_ENABLED';
 const WARM_FLAG = 'LUMIGO_IS_WARM';
-const HTTP_WRAPPED_FLAG = 'LUMIGO_IS_HTTP_WRAPPED';
+const WRAPPED_FLAG = 'LUMIGO_IS_WRAPPED';
 const VERBOSE_FLAG = 'LUMIGO_VERBOSE';
 const SEND_ONLY_IF_ERROR_FLAG = 'SEND_ONLY_IF_ERROR';
 const PRUNE_TRACE_OFF_FLAG = 'LUMIGO_PRUNE_TRACE_OFF';
@@ -187,9 +187,9 @@ export const isVerboseMode = () => validateEnvVar(VERBOSE_FLAG);
 
 export const isWarm = () => validateEnvVar(WARM_FLAG);
 
-export const isHttpWrapped = () => validateEnvVar(HTTP_WRAPPED_FLAG);
+export const isLambdaWrapped = () => validateEnvVar(WRAPPED_FLAG);
 
-export const setHttpWrapped = () => (process.env[HTTP_WRAPPED_FLAG] = 'TRUE');
+export const setLambdaWrapped = () => (process.env[WRAPPED_FLAG] = 'TRUE');
 
 export const isStoreLogs = () => validateEnvVar(STORE_LOGS_FLAG);
 

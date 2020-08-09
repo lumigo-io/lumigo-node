@@ -31,6 +31,7 @@ import { payloadStringify, prune } from '../utils/payloadStringify';
 export const HTTP_SPAN = 'http';
 export const FUNCTION_SPAN = 'function';
 export const EXTERNAL_SERVICE = 'external';
+export const MONGO_SPAN = 'mongoDb';
 
 export const getSpanInfo = () => {
   const tracer = getTracerInfo();
@@ -220,11 +221,11 @@ export const getHttpInfo = (requestData, responseData) => {
   return { host, request, response };
 };
 
-export const getBasicHttpSpan = spanId => {
+export const getBasicChildSpan = (spanId, spanType) => {
   const { context } = TracerGlobals.getHandlerInputs();
   const { awsRequestId: parentId } = context;
   const id = spanId;
-  const type = HTTP_SPAN;
+  const type = spanType;
   const basicSpan = getBasicSpan();
   return { ...basicSpan, id, type, parentId };
 };
@@ -262,7 +263,7 @@ export const getHttpSpan = (randomRequestId, requestData, responseData = null) =
     logger.warn('Failed to scrub & stringify http data', e.message);
   }
 
-  const basicHttpSpan = getBasicHttpSpan(prioritizedSpanId);
+  const basicHttpSpan = getBasicChildSpan(prioritizedSpanId, HTTP_SPAN);
 
   const info = Object.assign({}, basicHttpSpan.info, {
     httpInfo,

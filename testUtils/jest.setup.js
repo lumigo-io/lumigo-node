@@ -6,6 +6,7 @@ import { ConsoleMocker, ConsoleWritesForTesting } from './consoleMocker';
 import { HttpSpansAgent } from '../src/httpSpansAgent';
 import * as globals from '../src/globals';
 import axios from 'axios';
+import { MongoMockerEventEmitter } from './mongoMocker';
 
 jest.mock('../package.json');
 jest.mock('https');
@@ -22,6 +23,7 @@ beforeEach(() => {
   globals.clearGlobals();
   LogStore.clean();
   HttpSpansAgent.cleanSessionInstance();
+  MongoMockerEventEmitter.cleanEventEmitter();
 
   const awsEnv = createAwsEnvVars();
   process.env = { ...oldEnv, ...awsEnv };

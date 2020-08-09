@@ -5,6 +5,17 @@ export class HttpSpanBuilder {
   static DEFAULT_ACCOUNT = '985323015126';
   static DEFAULT_REGION = 'us-east-1';
   static DEFAULT_FUNC_NAME = 'aws-nodejs-dev-hello';
+  static DEFAULT_TRACE_ID = {
+    Parent: '28effe37598bb622',
+    Root: '1-5cdcf03a-64a1b06067c2100c52e51ef4',
+    Sampled: '0',
+    transactionId: '64a1b06067c2100c52e51ef4',
+  };
+
+  static DEFAULT_TRACER = {
+    name: '@lumigo/tracerMock',
+    version: '1.2.3',
+  };
 
   static DEFAULT_ARN = `arn:aws:lambda:${HttpSpanBuilder.DEFAULT_REGION}:${HttpSpanBuilder.DEFAULT_ACCOUNT}:function:${HttpSpanBuilder.DEFAULT_FUNC_NAME}`;
   static DEFAULT_VERSION = '1';
@@ -48,16 +59,8 @@ export class HttpSpanBuilder {
         },
         logGroupName: `/aws/lambda/${HttpSpanBuilder.DEFAULT_FUNC_NAME}`,
         logStreamName: '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',
-        traceId: {
-          Parent: '28effe37598bb622',
-          Root: '1-5cdcf03a-64a1b06067c2100c52e51ef4',
-          Sampled: '0',
-          transactionId: '64a1b06067c2100c52e51ef4',
-        },
-        tracer: {
-          name: '@lumigo/tracerMock',
-          version: '1.2.3',
-        },
+        traceId: HttpSpanBuilder.DEFAULT_TRACE_ID,
+        tracer: HttpSpanBuilder.DEFAULT_TRACER,
       },
       memoryAllocated: '1024',
       messageVersion: 2,

@@ -5,6 +5,7 @@ import { TracerGlobals } from '../globals';
 import * as awsParsers from '../parsers/aws';
 import * as utils from '../utils';
 import { payloadStringify } from '../utils/payloadStringify';
+import { HTTP_SPAN } from './awsSpan';
 
 const exampleApiGatewayEvent = require('../testdata/events/apigw-request.json');
 
@@ -491,7 +492,7 @@ describe('awsSpan', () => {
     expect(awsSpan.getHttpInfo(requestData, responseData)).toEqual(scrubbed_expected);
   });
 
-  test('getBasicHttpSpan', () => {
+  test('getBasicChildSpan', () => {
     const id = 'not-a-random-id';
     const expected = {
       info: {
@@ -521,7 +522,7 @@ describe('awsSpan', () => {
       type: 'http',
       parentId: '6d26e3c8-60a6-4cee-8a70-f525f47a4caf',
     };
-    expect(awsSpan.getBasicHttpSpan(id)).toEqual(expected);
+    expect(awsSpan.getBasicChildSpan(id, HTTP_SPAN)).toEqual(expected);
 
     const spanId = 'abcdefg';
     const expected2 = {
@@ -552,7 +553,7 @@ describe('awsSpan', () => {
       type: 'http',
       parentId: '6d26e3c8-60a6-4cee-8a70-f525f47a4caf',
     };
-    expect(awsSpan.getBasicHttpSpan(spanId)).toEqual(expected2);
+    expect(awsSpan.getBasicChildSpan(spanId, HTTP_SPAN)).toEqual(expected2);
   });
 
   test('getHttpSpan ', () => {

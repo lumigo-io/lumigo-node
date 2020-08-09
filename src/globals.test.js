@@ -20,6 +20,12 @@ describe('globals', () => {
     expect(globals.SpansContainer.getSpans()).toEqual([span2]);
   });
 
+  test('SpansContainer - getSpanById', () => {
+    const span1 = { a: 'b', c: 'd', id: '1' };
+    globals.SpansContainer.addSpan(span1);
+    expect(globals.SpansContainer.getSpanById('1')).toEqual(span1);
+  });
+
   test('SpansContainer - clean is pure', () => {
     const span1 = { a: 'b', c: 'd', id: '1' };
     globals.SpansContainer.addSpan(span1);
