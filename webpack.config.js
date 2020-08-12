@@ -2,6 +2,9 @@ module.exports = () => {
   return {
     target: 'node',
     mode: 'production',
-    output: { libraryTarget: 'umd' },
+    output: { libraryTarget: 'commonjs2' },
+    externals: {
+      mongodb: 'mongodb',
+    },
   };
 };
