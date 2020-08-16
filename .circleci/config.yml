@@ -139,7 +139,7 @@ jobs:
       - run: cd ../dashboard && npm i
       - run: cd ../dashboard && ./scripts/prepare_env.sh --profile $(cat ~/envs/cypress.env.json | jq -r '.PROFILE_NAME') --env $(cat ~/envs/cypress.env.json | jq -r '.ENV')
       - run: cd ../integration-tests/src/e2e-test && npm i
-      - run: (cd ../dashboard && npm run start:ci) & (cd ../integration-testing && ./src/e2e-test/node_modules/.bin/wait-on http://127.0.0.1:3000 && npm run cypress:run)
+      - run: (cd ../dashboard && npm run start:ci) & (cd ../integration-tests && ./src/e2e-test/node_modules/.bin/wait-on http://127.0.0.1:3000 && npm run cypress:run)
       - store_artifacts:
           path: ~/integration-tests/src/e2e-test/cypress/videos
       - store_artifacts:
