@@ -18,7 +18,11 @@ const createCallbackHandler = redisSpan => args => {
 
 function sendCommandBeforeHook(args) {
   const command = args[0];
-  if (this.ready === false || this.stream.writable === false || command.command === 'info') {
+  if (
+    this.ready === false ||
+    (this.stream && this.stream.writable === false) ||
+    command.command === 'info'
+  ) {
     // We skip this cases
     return;
   }

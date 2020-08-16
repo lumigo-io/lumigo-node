@@ -3,6 +3,7 @@ import { SpansContainer, TracerGlobals } from '../globals';
 import { hookRedis } from './redis';
 import { HandlerInputesBuilder } from '../../testUtils/handlerInputesBuilder';
 import { RedisSpanBuilder } from '../../testUtils/redisSpanBuilder';
+import { createRedisSpan } from '../spans/redisSpan';
 
 const noop = () => {};
 
@@ -69,5 +70,11 @@ describe('redis', () => {
       .withError(`"Bad data"`)
       .build();
     expect(spans).toEqual([expectedSpan]);
+  });
+
+  test('createRedisSpan -> empty', async () => {
+    const result = createRedisSpan('123', { started: 123 }, {});
+    expect(result.requestCommand).toBe(null);
+    expect(result.requestArgs).toBe(null);
   });
 });

@@ -3,11 +3,12 @@ import { payloadStringify } from '../utils/payloadStringify';
 
 export const createRedisSpan = (spanId, requestMetadata, redisFields) => {
   const baseSpan = getBasicChildSpan(spanId, REDIS_SPAN);
+  const { command = null, args = null } = redisFields.command || {};
   return {
     ...baseSpan,
     started: requestMetadata.started,
-    requestCommand: redisFields.command.command,
-    requestArgs: payloadStringify(redisFields.command.args),
+    requestCommand: command,
+    requestArgs: args ? payloadStringify(args) : args,
     connectionOptions: redisFields.connectionOptions,
   };
 };
