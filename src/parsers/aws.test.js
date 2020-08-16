@@ -87,6 +87,29 @@ describe('aws parser', () => {
     };
     expect(aws.dynamodbParser(requestDataWriteBatch)).toEqual(expectedWriteBatch);
 
+    const bodyGetBatch = JSON.stringify({
+      ReturnConsumedCapacity: "TOTAL",
+      RequestItems: {
+        [resourceName]: {
+          Keys: [{ key: { S: 'value' } }]
+        }
+      }
+    });
+    const headersGetBatch = {
+      'x-amz-target': 'DynamoDB_20120810.BatchGetItem',
+    };
+    const requestDataGetBatch = {
+      headers: headersGetBatch,
+      body: bodyGetBatch,
+    };
+    const expectedDataGetBatch = {
+      awsServiceData: {
+        resourceName: resourceName,
+        dynamodbMethod: 'BatchGetItem',
+      },
+    };
+    expect(aws.dynamodbParser(requestDataGetBatch)).toEqual(expectedDataGetBatch);
+
     const bodyDeleteBatch = JSON.stringify({
       RequestItems: {
         [resourceName]: [{ DeleteRequest: { Key: { key: { S: 'value' } } } }],
