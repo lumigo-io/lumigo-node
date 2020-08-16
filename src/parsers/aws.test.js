@@ -88,12 +88,11 @@ describe('aws parser', () => {
     expect(aws.dynamodbParser(requestDataWriteBatch)).toEqual(expectedWriteBatch);
 
     const bodyGetBatch = JSON.stringify({
-      ReturnConsumedCapacity: "TOTAL",
       RequestItems: {
         [resourceName]: {
-          Keys: [{ key: { S: 'value' } }]
-        }
-      }
+          Keys: [{ key: { S: 'value' } }],
+        },
+      },
     });
     const headersGetBatch = {
       'x-amz-target': 'DynamoDB_20120810.BatchGetItem',
