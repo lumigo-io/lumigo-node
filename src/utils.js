@@ -139,6 +139,9 @@ const TIMEOUT_MIN_DURATION = 'LUMIGO_TIMEOUT_MIN_DURATION';
 const TIMEOUT_BUFFER_FLAG_MS = 'LUMIGO_TIMEOUT_BUFFER_MS';
 const AGENT_KEEPALIVE = 'LUMIGO_AGENT_KEEPALIVE_MS';
 const REUSE_CONNECTION = 'LUMIGO_REUSE_HTTP_CONNECTION';
+const DEBUG_FLAG = 'LUMIGO_DEBUG';
+const SWITCH_OFF_FLAG = 'LUMIGO_SWITCH_OFF';
+const IS_STEP_FUNCTION_FLAG = 'LUMIGO_STEP_FUNCTION';
 
 const validateEnvVar = (envVar, value = 'TRUE') =>
   !!(process.env[envVar] && process.env[envVar].toUpperCase() === value.toUpperCase());
@@ -187,6 +190,8 @@ export const isVerboseMode = () => validateEnvVar(VERBOSE_FLAG);
 
 export const isWarm = () => validateEnvVar(WARM_FLAG);
 
+export const isDebug = () => validateEnvVar(DEBUG_FLAG) || TracerGlobals.getTracerInputs().debug;
+
 export const isLambdaWrapped = () => validateEnvVar(WRAPPED_FLAG);
 
 export const setLambdaWrapped = () => (process.env[WRAPPED_FLAG] = 'TRUE');
@@ -200,12 +205,15 @@ export const isSendOnlyIfErrors = () => validateEnvVar(SEND_ONLY_IF_ERROR_FLAG);
 export const isPruneTraceOff = () => validateEnvVar(PRUNE_TRACE_OFF_FLAG);
 
 export const isSwitchedOff = () =>
-  safeExecute(() => {
-    return TracerGlobals.getTracerInputs().switchOff || !isValidAlias();
-  })();
+  safeExecute(
+    () =>
+      validateEnvVar(SWITCH_OFF_FLAG) ||
+      TracerGlobals.getTracerInputs().switchOff ||
+      !isValidAlias()
+  )();
 
 export const isStepFunction = () =>
-  safeExecute(() => TracerGlobals.getTracerInputs().isStepFunction)();
+  validateEnvVar(IS_STEP_FUNCTION_FLAG) || TracerGlobals.getTracerInputs().isStepFunction;
 
 export const getValidAliases = () =>
   safeExecute(() => {
@@ -228,7 +236,7 @@ export const isValidAlias = () => {
   const validAlias =
     !currentAlias || validAliases.length === 0 || validAliases.includes(currentAlias);
   if (!validAlias) {
-    logger.info(`Alias is invalid, alias: ${currentAlias}`);
+    logger.debug(`Alias is invalid, alias: ${currentAlias}`);
   }
   return validAlias;
 };

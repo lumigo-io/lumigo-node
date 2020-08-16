@@ -1,5 +1,4 @@
-import { TracerGlobals } from './globals';
-import { isStoreLogs } from './utils';
+import { isDebug, isStoreLogs } from './utils';
 const LOG_PREFIX = '#LUMIGO#';
 const WARN_CLIENT_PREFIX = 'Lumigo Warning';
 
@@ -42,11 +41,6 @@ export const LogStore = (() => {
   return { addLog, clean };
 })();
 
-export const isDebug = () => {
-  let tracerInputs = TracerGlobals.getTracerInputs();
-  return tracerInputs.debug;
-};
-
 const invokeLog = type => (msg, obj = undefined) => log(type, msg, obj);
 
 export const info = invokeLog('INFO');
@@ -60,7 +54,7 @@ export const debug = invokeLog('DEBUG');
 export const log = (levelname, message, obj) => {
   const storeLogsIsOn = isStoreLogs();
   storeLogsIsOn && LogStore.addLog(levelname, message, obj);
-  if (exports.isDebug() && !storeLogsIsOn) {
+  if (isDebug() && !storeLogsIsOn) {
     forceLog(levelname, message, obj);
   }
 };
