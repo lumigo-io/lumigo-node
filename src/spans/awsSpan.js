@@ -32,6 +32,7 @@ export const HTTP_SPAN = 'http';
 export const FUNCTION_SPAN = 'function';
 export const EXTERNAL_SERVICE = 'external';
 export const MONGO_SPAN = 'mongoDb';
+export const REDIS_SPAN = 'redis';
 
 export const getSpanInfo = () => {
   const tracer = getTracerInfo();
