@@ -82,5 +82,8 @@ export const hookMongoDb = mongoLib => {
       listener.on('succeeded', safeSucceededHook);
       listener.on('failed', safeFailedHook);
     })();
+    logger.info('MongoDB instrumentation done');
+  } else {
+    logger.debug('MongoDB SDK not found');
   }
 };

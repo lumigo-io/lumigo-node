@@ -7,6 +7,7 @@ module.exports = {
     '**/src/**/**/**/**.js',
     '!./src/tools/xmlToJson.js',
     '!./src/testdata/functions/**/**.js',
+    '!./d_example/**/**',
   ],
   coverageThreshold: {
     global: {

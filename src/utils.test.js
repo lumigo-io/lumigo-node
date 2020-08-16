@@ -9,14 +9,15 @@ import {
   recursiveGetKey,
   md5Hash,
   safeGet,
+  isDebug,
 } from './utils';
 import { TracerGlobals } from './globals';
 import crypto from 'crypto';
-import { isDebug } from './logger';
 import { GET_KEY_DEPTH_ENV_KEY } from './utils';
 import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
 import { getEnvVarAsList, isEncodingType, isEmptyString, runOneTimeWrapper } from './utils';
 import { DEFAULT_TIMEOUT_MIN_DURATION } from './utils';
+import * as globals from './globals';
 
 describe('utils', () => {
   const spies = {};
@@ -158,6 +159,18 @@ describe('utils', () => {
     expect(utils.isWarm()).toBe(true);
   });
 
+  test('isDebug -> ENV VAR', () => {
+    expect(utils.isDebug()).toBe(false);
+    process.env.LUMIGO_DEBUG = 'TRUE';
+    expect(utils.isDebug()).toBe(true);
+  });
+
+  test('isDebug -> TracerInputs', () => {
+    expect(utils.isDebug()).toBe(false);
+    globals.TracerGlobals.setTracerInputs({ debug: true });
+    expect(utils.isDebug()).toBe(true);
+  });
+
   test('isLambdaWrapped', () => {
     expect(utils.isLambdaWrapped()).toBe(false);
     process.env.LUMIGO_IS_WRAPPED = 'TRUE';
@@ -243,6 +256,14 @@ describe('utils', () => {
     });
     expect(utils.getInvokedAliasOrNull()).toEqual(null);
     TracerGlobals.clearHandlerInputs();
+  });
+
+  test('isSwitchedOff -> TracerInputs', () => {
+    expect(utils.isSwitchedOff()).toBe(false);
+    TracerGlobals.setTracerInputs({
+      switchOff: true,
+    });
+    expect(utils.isSwitchedOff()).toBe(true);
   });
 
   test('isSwitchedOffInvalidAlias', () => {
