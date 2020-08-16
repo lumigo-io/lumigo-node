@@ -15,7 +15,7 @@ function RedisClient(options, mockedOptions = {}) {
   };
 }
 
-//In this implantation we create only 1 client at time
+//In this implementation we create only 1 client at time
 export const createMockedClient = (options = {}) => {
   const { shouldFail, notReady } = options;
   RedisClient.prototype.internal_send_command = function(args) {
