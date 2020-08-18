@@ -5,10 +5,8 @@ function RedisClient(options, mockedOptions = {}) {
   return {
     set: (key, value, callback) => {
       this.internal_send_command({
-        command: {
-          command: 'set',
-          args: [key, value],
-        },
+        command: 'set',
+        args: [key, value],
         callback: callback,
       });
     },

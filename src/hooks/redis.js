@@ -6,7 +6,7 @@ import { SpansContainer } from '../globals';
 import * as logger from '../logger';
 
 const createCallbackHandler = redisSpan => args => {
-  const ended = new Date();
+  const ended = Date.now();
   const [error, result] = args;
   const span = extendRedisSpan(redisSpan, {
     ended,
@@ -27,13 +27,13 @@ function sendCommandBeforeHook(args) {
     return;
   }
   const spanId = getRandomId();
-  const started = new Date();
+  const started = Date.now();
 
   const span = createRedisSpan(
     spanId,
     { started },
     {
-      command: command.command,
+      command: command,
       connectionOptions: this.connection_options,
     }
   );
