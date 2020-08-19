@@ -66,3 +66,8 @@ const handler = (event, context, callback) => {
 };
 
 module.exports = { ORIGINAL_HANDLER_KEY, handler };
+try {
+  // require the user's handler during initialization time, just as without Lumigo
+  const [moduleName] = parseOriginalHandler(process.env[ORIGINAL_HANDLER_KEY]);
+  require(moduleName);
+} catch (e) {}
