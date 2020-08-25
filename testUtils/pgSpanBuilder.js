@@ -31,6 +31,7 @@ export class PgSpanBuilder {
       ...baseSpan,
       connectionParameters: null,
       query: null,
+      values: '[]',
     };
   }
 
@@ -60,6 +61,10 @@ export class PgSpanBuilder {
   };
   withError = error => {
     this._span.error = error;
+    return this;
+  };
+  withValues = values => {
+    this._span.values = values;
     return this;
   };
 

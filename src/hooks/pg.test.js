@@ -113,6 +113,7 @@ describe('pg', () => {
         .withQuery('SELECT * from users')
         .withConnectionParameters(DUMMY_PG_OPTIONS)
         .withResponse(createExpectedResponse())
+        .withValues(payloadStringify(['Value']))
         .build(),
     ]);
   });
@@ -165,11 +166,12 @@ describe('pg', () => {
           .withQuery('SELECT * from users')
           .withConnectionParameters(DUMMY_PG_OPTIONS)
           .withResponse(createExpectedResponse())
+          .withValues(payloadStringify(['Value']))
           .build(),
       ]);
       done();
     };
 
-    client.query('SELECT * from users', ['Value ?'], testFunc);
+    client.query('SELECT * from users', ['Value'], testFunc);
   });
 });

@@ -19,7 +19,7 @@ export const createMockedResponse = (rowCount = 5) => {
 };
 const createMockClientWithOptions = mockedOptions => {
   const { error, rowCount } = mockedOptions;
-  const Client = function Client(options = {}) {
+  const Client = function(options = {}) {
     this.connectionParameters = options;
     this.activeQuery = {};
     return this;

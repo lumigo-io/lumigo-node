@@ -9,14 +9,15 @@ import { payloadStringify } from '../utils/payloadStringify';
 function queryBeforeHook(args, extenderContext) {
   const started = Date.now();
   const [query] = args;
+  const values = Array.isArray(args[1]) ? args[1] : [];
   const { connectionParameters } = this;
   const spanId = getRandomId();
-  const span = createPgSpan(spanId, { started }, { query, connectionParameters });
+  const span = createPgSpan(spanId, { started }, { query, connectionParameters, values });
   SpansContainer.addSpan(span);
   extenderContext.currentSpan = span;
 }
 
-const handlePgResponse = (currentSpan, error, result) => {
+const createSpanFromPgResponse = (currentSpan, error, result) => {
   const ended = Date.now();
   let extendData = { ended };
   if (error) {
@@ -34,23 +35,23 @@ const handlePgResponse = (currentSpan, error, result) => {
 };
 
 function queryAfterHook(args, originalFnResult, extenderContext) {
-  // If the query function not receive callback, he will return a Promise
+  // If the query function doesn't receive a callback, it will return a Promise
   const { currentSpan } = extenderContext;
   if (args[1] instanceof Function || args[2] instanceof Function) {
     hook(this.activeQuery, 'callback', {
       beforeHook: args => {
         const [error, result] = args;
-        handlePgResponse(currentSpan, error, result);
+        createSpanFromPgResponse(currentSpan, error, result);
       },
     });
   } else {
     if (originalFnResult instanceof Promise) {
       originalFnResult.then(
         safeExecute(result => {
-          handlePgResponse(currentSpan, null, result);
+          createSpanFromPgResponse(currentSpan, null, result);
         }),
         safeExecute(error => {
-          handlePgResponse(currentSpan, error, null);
+          createSpanFromPgResponse(currentSpan, error, null);
         })
       );
     }

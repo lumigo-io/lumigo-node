@@ -1,4 +1,6 @@
 import { getBasicChildSpan, PG_SPAN } from './awsSpan';
+import { payloadStringify, prune } from '../utils/payloadStringify';
+import { getEventEntitySize } from '../utils';
 
 export const createPgSpan = (spanId, requestMetadata, pgFields) => {
   const baseSpan = getBasicChildSpan(spanId, PG_SPAN);
@@ -11,7 +13,8 @@ export const createPgSpan = (spanId, requestMetadata, pgFields) => {
       database: pgFields.connectionParameters.database,
       user: pgFields.connectionParameters.user,
     },
-    query: pgFields.query,
+    query: prune(pgFields.query, getEventEntitySize()),
+    values: payloadStringify(pgFields.values),
   };
 };
 
