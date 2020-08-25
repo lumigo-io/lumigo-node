@@ -51,7 +51,7 @@ export const payloadStringify = (payload, maxPayloadSize = getEventEntitySize())
     const type = typeof value;
     const isObj = type === 'object';
     const isStr = type === 'string';
-    if (!(isObj && refsFound.includes(value)))
+    if (!(isObj && refsFound.includes(value))) {
       if (totalSize < maxPayloadSize) {
         if (isSecretKey(regexes, key)) return SCRUBBED_TEXT;
         if (isNativeType(value)) {
@@ -64,8 +64,17 @@ export const payloadStringify = (payload, maxPayloadSize = getEventEntitySize())
           isPruned = true;
           return prune(value, maxPayloadSize);
         }
+        if (value instanceof Error)
+          return {
+            stack: prune(value.stack, maxPayloadSize),
+            message: value.message,
+          };
+
         return value;
       } else isPruned = true;
+    } else {
+      isPruned = true;
+    }
   });
   if (result && isPruned) {
     result = result.replace(/,null/g, '');

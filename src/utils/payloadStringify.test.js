@@ -148,7 +148,7 @@ describe('payloadStringify', () => {
 
     const result = payloadStringify(payload, 10);
 
-    expect(result).toEqual('{"a":[{"dummy":{}},2]}');
+    expect(result).toEqual('{"a":[{"dummy":{}},2]}...[too long]');
   });
 
   test('payloadStringify -> circular -> inherited property', function() {
@@ -163,6 +163,15 @@ describe('payloadStringify', () => {
     const result = payloadStringify(new Child());
 
     expect(result).toEqual('{"child":true}');
+  });
+
+  test('payloadStringify -> exception', function() {
+    const error = new Error('SomeRandomError');
+    const result = payloadStringify(error);
+
+    const resultAsObject = JSON.parse(result);
+    expect(resultAsObject.message).toEqual('SomeRandomError');
+    expect(resultAsObject.stack.length).toBeGreaterThan(0);
   });
 
   test('keyToOmitRegexes', () => {
