@@ -6,6 +6,8 @@ module.exports = () => {
     externals: {
       mongodb: 'mongodb',
       redis: 'redis',
+      pg: 'pg',
+      'pg-pool': 'pg-pool',
     },
   };
 };
