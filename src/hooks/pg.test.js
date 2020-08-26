@@ -149,7 +149,7 @@ describe('pg', () => {
           .withError(payloadStringify(error))
           .build(),
       ]);
-      expect(err).toEqual(err);
+      expect(err).toEqual(error);
       done();
     };
 
