@@ -7,6 +7,7 @@ module.exports = () => {
       mongodb: 'mongodb',
       redis: 'redis',
       pg: 'pg',
+      'pg-pool': 'pg-pool',
     },
   };
 };
