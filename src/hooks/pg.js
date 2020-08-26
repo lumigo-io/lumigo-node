@@ -67,4 +67,12 @@ export const hookPg = (pgClient = null) => {
       afterHook: queryAfterHook,
     });
   }
+  const pgPool = pgClient || safeRequire('pg-pool');
+  if (pgPool) {
+    logger.info('Starting to instrument pg-pool');
+    hook(pgPool.prototype, 'query', {
+      beforeHook: queryBeforeHook,
+      afterHook: queryAfterHook,
+    });
+  }
 };
