@@ -319,6 +319,67 @@ describe('http hook', () => {
     expect(SpansContainer.getSpans()).toEqual([expectedHttpSpan]);
   });
 
+  test('createEmitResponseHandler - change request id from headers', () => {
+    const testData = {
+      randomId: 'DummyRandomId',
+      requestData: {
+        a: 'request',
+        sendTime: 1,
+        host: 'lambda.amazonaws.com',
+        path: 'a/b/c/FuncName',
+        headers: { host: 'lambda.amazonaws.com' },
+        body: '',
+      },
+      responseData: {
+        statusCode: 200,
+        receivedTime: 895179612345,
+        headers: { X: 'Y', z: 'A', 'x-amzn-requestid': 'newSpanId' },
+        body: 'SomeResponse',
+      },
+    };
+    const handlerInputs = new HandlerInputesBuilder()
+      .withAwsRequestId('DummyParentId')
+      .withInvokedFunctionArn('arn:aws:l:region:335722316285:function:dummy-func')
+      .build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
+
+    const previousSpan = new HttpSpanBuilder()
+      .withSpanId(testData.randomId)
+      .withParentId('DummyParentId')
+      .withInvokedArn('arn:aws:l:region:335722316285:function:dummy-func')
+      .withEnded(testData.responseData.receivedTime)
+      .withStarted(1)
+      .withAccountId('335722316285')
+      .withResponse(testData.responseData)
+      .withRequest(testData.requestData)
+      .withHost(testData.requestData.host)
+      .build();
+
+    SpansContainer.addSpan(previousSpan);
+
+    let responseEmitter = new EventEmitter();
+    responseEmitter = Object.assign(responseEmitter, testData.responseData);
+
+    MockDate.set(testData.responseData.receivedTime);
+
+    httpHook.createEmitResponseHandler(testData.requestData, testData.randomId)(responseEmitter);
+
+    responseEmitter.emit('data', testData.responseData.body);
+    responseEmitter.emit('end');
+
+    const expectedHttpSpan = {
+      ...previousSpan,
+      id: 'newSpanId',
+      info: {
+        ...previousSpan.info,
+        invocationType: undefined,
+        resourceName: 'FuncName',
+      },
+      service: 'lambda',
+    };
+    expect(SpansContainer.getSpans()).toEqual([expectedHttpSpan]);
+  });
+
   test('wrappedHttpResponseCallback -> fail on getHttpSpan', () => {
     const testData = {
       randomId: 'DummyRandomId',
