@@ -72,6 +72,25 @@ describe('index', () => {
     expect(actualTags).toEqual([{ key: 'k0', value: 'v0' }, { key: 'k1', value: 'v1' }]);
   });
 
+  test('execution tags - with undefined', async () => {
+    const context = { getRemainingTimeInMillis: () => 30000 };
+
+    const lumigoImport = require('./index');
+    const lumigo = lumigoImport({ token: 'T' });
+    const userHandler = async (event, context, callback) => {
+      lumigoImport.addExecutionTag('k', undefined);
+      return 'retVal';
+    };
+    const result = await lumigo.trace(userHandler)({}, context, jest.fn());
+
+    expect(result).toEqual('retVal');
+    const sentSpans = AxiosMocker.getSentSpans()[1];
+    const actualTags = sentSpans.filter(span => !span.id.endsWith('_started'))[0][
+      EXECUTION_TAGS_KEY
+    ];
+    expect(actualTags).toEqual([{ key: 'k', value: 'undefined' }]);
+  });
+
   test('execution tags - non async handler', async () => {
     const context = { getRemainingTimeInMillis: () => 30000 };
 

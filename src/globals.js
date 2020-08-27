@@ -77,7 +77,7 @@ export const ExecutionTags = (() => {
     try {
       logger.debug(`Adding tag: ${key} - ${value}`);
       if (!validateTag(key, value, shouldLogErrors)) return false;
-      global.tags.push({ key, value });
+      global.tags.push({ key: String(key), value: String(value) });
     } catch (err) {
       shouldLogErrors && logger.warnClient(ADD_TAG_ERROR_MSG_PREFIX);
       logger.warn(ADD_TAG_ERROR_MSG_PREFIX, err);
