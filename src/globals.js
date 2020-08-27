@@ -16,7 +16,7 @@ export const SpansContainer = (() => {
   const getSpanById = spanId => spansToSend[spanId];
   const changeSpanId = (oldId, newId) => {
     const oldSpan = spansToSend[oldId];
-    if (oldId) {
+    if (oldSpan) {
       oldSpan.id = newId;
       spansToSend[newId] = oldSpan;
     }
