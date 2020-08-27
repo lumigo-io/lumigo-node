@@ -139,6 +139,7 @@ const TIMEOUT_MIN_DURATION = 'LUMIGO_TIMEOUT_MIN_DURATION';
 const TIMEOUT_BUFFER_FLAG_MS = 'LUMIGO_TIMEOUT_BUFFER_MS';
 const AGENT_KEEPALIVE = 'LUMIGO_AGENT_KEEPALIVE_MS';
 const REUSE_CONNECTION = 'LUMIGO_REUSE_HTTP_CONNECTION';
+const KEEP_HEADERS = 'LUMIGO_KEEP_HTTP_HEADERS';
 const DEBUG_FLAG = 'LUMIGO_DEBUG';
 const SWITCH_OFF_FLAG = 'LUMIGO_SWITCH_OFF';
 const IS_STEP_FUNCTION_FLAG = 'LUMIGO_STEP_FUNCTION';
@@ -203,6 +204,8 @@ export const isReuseHttpConnection = () => validateEnvVar(REUSE_CONNECTION);
 export const isSendOnlyIfErrors = () => validateEnvVar(SEND_ONLY_IF_ERROR_FLAG);
 
 export const isPruneTraceOff = () => validateEnvVar(PRUNE_TRACE_OFF_FLAG);
+
+export const isKeepHeadersOn = () => validateEnvVar(KEEP_HEADERS);
 
 export const isSwitchedOff = () =>
   safeExecute(

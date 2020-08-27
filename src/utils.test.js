@@ -153,6 +153,12 @@ describe('utils', () => {
     expect(utils.isStoreLogs()).toBe(true);
   });
 
+  test('isKeepHeadersOn', () => {
+    expect(utils.isKeepHeadersOn()).toBe(false);
+    process.env.LUMIGO_KEEP_HTTP_HEADERS = 'TRUE';
+    expect(utils.isKeepHeadersOn()).toBe(true);
+  });
+
   test('isWarm', () => {
     expect(utils.isWarm()).toBe(false);
     process.env.LUMIGO_IS_WARM = 'TRUE';

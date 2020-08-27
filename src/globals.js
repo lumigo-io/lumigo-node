@@ -14,9 +14,17 @@ export const SpansContainer = (() => {
   };
   const getSpans = () => Object.values(spansToSend);
   const getSpanById = spanId => spansToSend[spanId];
+  const changeSpanId = (oldId, newId) => {
+    const oldSpan = spansToSend[oldId];
+    if (oldId) {
+      oldSpan.id = newId;
+      spansToSend[newId] = oldSpan;
+    }
+    delete spansToSend[oldId];
+  };
   const clearSpans = () => (spansToSend = {});
 
-  return { addSpan, getSpanById, getSpans, clearSpans };
+  return { addSpan, getSpanById, getSpans, clearSpans, changeSpanId };
 })();
 
 export const GlobalTimer = (() => {

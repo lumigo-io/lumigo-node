@@ -12,6 +12,10 @@ import {
   isEmptyString,
   runOneTimeWrapper,
   getEventEntitySize,
+  isAwsService,
+  getAWSEnvironment,
+  getPatchedTraceId,
+  isKeepHeadersOn,
 } from '../utils';
 import * as logger from '../logger';
 import { getHttpSpan } from '../spans/awsSpan';
@@ -119,6 +123,10 @@ const createEmitResponseOnEmitBeforeHookHandler = (requestData, requestRandomId,
         headers: lowerCaseObjectKeys(headers),
       };
       const httpSpan = getHttpSpan(requestRandomId, requestData, responseData);
+      if (httpSpan.id !== requestRandomId) {
+        // In this case, one of our parser decide to change the spanId for async connection
+        SpansContainer.changeSpanId(requestRandomId, httpSpan.id);
+      }
       SpansContainer.addSpan(httpSpan);
     }
   };
@@ -187,6 +195,13 @@ export const httpBeforeRequestWrapper = (args, extenderContext) => {
 
   if (!extenderContext.isTracedDisabled) {
     logger.debug('Starting hook', { host, url, headers });
+
+    const isRequestToAwsService = isAwsService(host);
+    if (isRequestToAwsService && !isKeepHeadersOn()) {
+      const { awsXAmznTraceId } = getAWSEnvironment();
+      const traceId = getPatchedTraceId(awsXAmznTraceId);
+      options.headers['X-Amzn-Trace-Id'] = traceId;
+    }
 
     const requestData = parseHttpRequestOptions(options, url);
     const requestRandomId = getRandomId();
