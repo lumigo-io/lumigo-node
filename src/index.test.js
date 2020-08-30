@@ -88,7 +88,7 @@ describe('index', () => {
     const actualTags = sentSpans.filter(span => !span.id.endsWith('_started'))[0][
       EXECUTION_TAGS_KEY
     ];
-    expect(actualTags).toEqual([{ key: 'k', value: 'undefined' }]);
+    expect(actualTags).toEqual([{ key: 'k', value: null }]);
   });
 
   test('execution tags - non async handler', async () => {
