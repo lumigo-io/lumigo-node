@@ -73,11 +73,13 @@ export const ExecutionTags = (() => {
     return true;
   };
 
+  const normalizeTag = val => (val === undefined || val === null ? null : String(val));
+
   const addTag = (key, value, shouldLogErrors = true) => {
     try {
       logger.debug(`Adding tag: ${key} - ${value}`);
       if (!validateTag(key, value, shouldLogErrors)) return false;
-      global.tags.push({ key, value });
+      global.tags.push({ key: normalizeTag(key), value: normalizeTag(value) });
     } catch (err) {
       shouldLogErrors && logger.warnClient(ADD_TAG_ERROR_MSG_PREFIX);
       logger.warn(ADD_TAG_ERROR_MSG_PREFIX, err);
