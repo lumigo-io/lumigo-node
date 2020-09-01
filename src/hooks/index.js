@@ -3,6 +3,7 @@ import { isSwitchedOff, isAwsEnvironment, isLambdaWrapped, setLambdaWrapped } fr
 import { hookMongoDb } from './mongodb';
 import { hookRedis } from './redis';
 import { hookPg } from './pg';
+import { hookMySql } from './mySql';
 
 export default () => {
   if (!isSwitchedOff() && isAwsEnvironment()) {
@@ -11,6 +12,7 @@ export default () => {
       hookMongoDb();
       hookRedis();
       hookPg();
+      hookMySql();
       setLambdaWrapped();
     }
   }
