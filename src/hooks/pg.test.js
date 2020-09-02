@@ -2,7 +2,7 @@ import { createMockedClient, createMockedResponse } from '../../testUtils/pgMock
 import { hookPg } from './pg';
 import { SpansContainer, TracerGlobals } from '../globals';
 import { HandlerInputesBuilder } from '../../testUtils/handlerInputesBuilder';
-import { PgSpanBuilder } from '../../testUtils/pgSpanBuilder';
+import { SqlSpanBuilder } from '../../testUtils/sqlSpanBuilder';
 import { payloadStringify } from '../utils/payloadStringify';
 
 const DUMMY_PG_OPTIONS = {
@@ -22,7 +22,7 @@ const createHookedPgClient = (mockOptions = {}) => {
 };
 
 const createBaseBuilderFromSpan = span =>
-  new PgSpanBuilder()
+  new SqlSpanBuilder()
     .withId(span.id)
     .withStarted(span.started)
     .withEnded(span.ended);

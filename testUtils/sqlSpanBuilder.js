@@ -1,6 +1,6 @@
 import { HttpSpanBuilder } from './httpSpanBuilder';
 
-export class PgSpanBuilder {
+export class SqlSpanBuilder {
   constructor() {
     const baseSpan = {
       account: HttpSpanBuilder.DEFAULT_ACCOUNT,
@@ -65,6 +65,10 @@ export class PgSpanBuilder {
   };
   withValues = values => {
     this._span.values = values;
+    return this;
+  };
+  withType = type => {
+    this._span.type = type;
     return this;
   };
 

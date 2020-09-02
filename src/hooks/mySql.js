@@ -5,9 +5,9 @@ import { getRandomId } from '../utils';
 import { SpansContainer } from '../globals';
 import { extendSqlSpan, createSqlSpan } from '../spans/sqlSpan';
 import { payloadStringify } from '../utils/payloadStringify';
+import { MYSQL_SPAN } from '../spans/awsSpan';
 
 const createResultHook = currentSpan => args => {
-  // console.log('onResultHook args', args);
   const ended = Date.now();
   let extendData = { ended };
   const [error, result] = args;
@@ -25,8 +25,6 @@ const createResultHook = currentSpan => args => {
 };
 
 function queryBeforeHook(args, extenderContext) {
-  // console.log('queryBeforeHook', { args: args, this: this });
-
   const query = args[0];
   const values = Array.isArray(args[1]) ? args[1] : [];
   const connectionParameters = this.config;
@@ -39,7 +37,8 @@ function queryBeforeHook(args, extenderContext) {
     {
       started,
     },
-    { connectionParameters, query, values }
+    { connectionParameters, query, values },
+    MYSQL_SPAN
   );
 
   SpansContainer.addSpan(span);
