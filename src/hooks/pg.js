@@ -2,9 +2,10 @@ import { safeRequire } from '../utils/requireUtils';
 import * as logger from '../logger';
 import { hook } from '../extender';
 import { getRandomId, safeExecute } from '../utils';
-import { createPgSpan, extendPgSpan } from '../spans/pgSpan';
+import { createSqlSpan, extendSqlSpan } from '../spans/sqlSpan';
 import { SpansContainer } from '../globals';
 import { payloadStringify } from '../utils/payloadStringify';
+import { PG_SPAN } from '../spans/awsSpan';
 
 function queryBeforeHook(args, extenderContext) {
   const started = Date.now();
@@ -12,7 +13,7 @@ function queryBeforeHook(args, extenderContext) {
   const values = Array.isArray(args[1]) ? args[1] : [];
   const { connectionParameters } = this;
   const spanId = getRandomId();
-  const span = createPgSpan(spanId, { started }, { query, connectionParameters, values });
+  const span = createSqlSpan(spanId, { started }, { query, connectionParameters, values }, PG_SPAN);
   SpansContainer.addSpan(span);
   extenderContext.currentSpan = span;
 }
@@ -30,7 +31,7 @@ const createSpanFromPgResponse = (currentSpan, error, result) => {
       };
     }
   }
-  const span = extendPgSpan(currentSpan, extendData);
+  const span = extendSqlSpan(currentSpan, extendData);
   SpansContainer.addSpan(span);
 };
 
