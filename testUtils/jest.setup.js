@@ -7,6 +7,7 @@ import { HttpSpansAgent } from '../src/httpSpansAgent';
 import * as globals from '../src/globals';
 import axios from 'axios';
 import { MongoMockerEventEmitter } from './mongoMocker';
+import path from 'path';
 
 jest.mock('../package.json');
 jest.mock('https');
@@ -29,6 +30,7 @@ beforeEach(() => {
   process.env = { ...oldEnv, ...awsEnv };
 
   global.console = ConsoleMocker;
+  process.env.NODE_PATH = path.resolve(__dirname, '../node_modules');
 });
 
 afterEach(() => {
