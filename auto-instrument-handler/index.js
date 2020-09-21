@@ -25,8 +25,8 @@ const removeLumigoFromStacktrace = err => {
     const { stack } = err;
     const stackArr = stack.split('\n');
 
-    const pattern = 'lumigo';
-    const cleanedStack = stackArr.filter(v => !v.includes(pattern));
+    const patterns = ['/dist/lumigo.js:', 'auto-instrument'];
+    const cleanedStack = stackArr.filter(v => !patterns.some(p => v.includes(p)));
 
     err.stack = cleanedStack.join('\n');
 
