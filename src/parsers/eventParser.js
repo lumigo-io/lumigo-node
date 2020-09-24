@@ -39,6 +39,26 @@ const SNS_KEYS_ORDER = getEnvVarAsList('LUMIGO_SNS_KEYS_ORDER', [
   'MessageId',
 ]);
 
+const S3_KEYS_ORDER = getEnvVarAsList('LUMIGO_S3_KEYS_ORDER', [
+  'awsRegion',
+  'eventTime',
+  'eventName',
+  'userIdentity',
+  'requestParameters',
+]);
+
+const S3_OBJECT_KEYS_ORDER = getEnvVarAsList('LUMIGO_S3_OBJECT_KEYS_ORDER', ['bucket', 'object']);
+
+const CLOUDFRONT_KEYS_ORDER = getEnvVarAsList('LUMIGO_CLOUDFRONT_KEYS_ORDER', ['config']);
+
+const CLOUDFRONT_REQUEST_KEYS_ORDER = getEnvVarAsList('LUMIGO_CLOUDFRONT_REQUEST_KEYS_ORDER', [
+  'body',
+  'clientIp',
+  'method',
+  'querystring',
+  'uri',
+]);
+
 export const isApiGwEvent = event => {
   return (
     event != null &&
@@ -63,6 +83,26 @@ export const isSqsEvent = event => {
     event.Records != null &&
     event.Records[0] != null &&
     event.Records[0].eventSource === 'aws:sqs'
+  );
+};
+
+export const isS3Event = event => {
+  return (
+    event != null &&
+    event.Records != null &&
+    event.Records[0] != null &&
+    event.Records[0].eventSource === 'aws:s3'
+  );
+};
+
+export const isCloudfrontEvent = event => {
+  return (
+    event != null &&
+    event.Records != null &&
+    event.Records[0] != null &&
+    event.Records[0].cf != null &&
+    event.Records[0].cf.config != null &&
+    event.Records[0].cf.config.distributionId != null
   );
 };
 
@@ -135,6 +175,55 @@ export const parseSqsEvent = event => {
   return new_sqs_event;
 };
 
+export const parseS3Event = event => {
+  const new_s3_event = {};
+  new_s3_event['Records'] = [];
+  // Add order keys
+  for (const rec of event['Records']) {
+    const new_s3_record_event = {};
+    for (const key of S3_KEYS_ORDER) {
+      if (rec.hasOwnProperty(key) != null) {
+        new_s3_record_event[key] = rec[key];
+      }
+    }
+    if (rec.hasOwnProperty('s3')) {
+      new_s3_record_event.s3 = {};
+      for (const key of S3_OBJECT_KEYS_ORDER) {
+        if (rec.s3.hasOwnProperty(key)) {
+          new_s3_record_event.s3[key] = rec.s3[key];
+        }
+      }
+    }
+    new_s3_event['Records'].push(new_s3_record_event);
+  }
+  return new_s3_event;
+};
+
+export const parseCloudfrontEvent = event => {
+  const new_cloudfront_event = {};
+  new_cloudfront_event['Records'] = [];
+  // Add order keys
+  for (const rec of event['Records']) {
+    const cfRecord = rec['cf'] || {};
+    const new_cloudfront_record_event = {};
+    for (const key of CLOUDFRONT_KEYS_ORDER) {
+      if (cfRecord.hasOwnProperty(key) != null) {
+        new_cloudfront_record_event[key] = cfRecord[key];
+      }
+    }
+    if (cfRecord.hasOwnProperty('request')) {
+      new_cloudfront_record_event.request = {};
+      for (const key of CLOUDFRONT_REQUEST_KEYS_ORDER) {
+        if (cfRecord.request.hasOwnProperty(key)) {
+          new_cloudfront_record_event.request[key] = cfRecord.request[key];
+        }
+      }
+    }
+    new_cloudfront_event['Records'].push(new_cloudfront_record_event);
+  }
+  return new_cloudfront_event;
+};
+
 export const parseEvent = event => {
   try {
     if (isApiGwEvent(event)) {
@@ -145,6 +234,12 @@ export const parseEvent = event => {
     }
     if (isSqsEvent(event)) {
       return parseSqsEvent(event);
+    }
+    if (isS3Event(event)) {
+      return parseS3Event(event);
+    }
+    if (isCloudfrontEvent(event)) {
+      return parseCloudfrontEvent(event);
     }
   } catch (e) {
     logger.warn('Failed to parse event', e);
