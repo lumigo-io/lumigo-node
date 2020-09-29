@@ -20,7 +20,7 @@ describe('event parser', () => {
   });
 
   test('api gw v1', () => {
-    const not_order_api_gw_event = {
+    const notOrderApiGwEvent = {
       resource: '/add-user',
       path: '/add-user',
       httpMethod: 'POST',
@@ -36,6 +36,7 @@ describe('event parser', () => {
         'CloudFront-Is-Tablet-Viewer': 'false',
         'CloudFront-Viewer-Country': 'IL',
         'content-type': 'application/json;charset=UTF-8',
+        // eslint-disable-next-line camelcase
         customer_id: 'c_1111',
         Host: 'aaaa.execute-api.us-west-2.amazonaws.com',
         origin: 'https://aaa.io',
@@ -64,6 +65,7 @@ describe('event parser', () => {
         'CloudFront-Is-Tablet-Viewer': ['false'],
         'CloudFront-Viewer-Country': ['IL'],
         'content-type': ['application/json;charset=UTF-8'],
+        // eslint-disable-next-line camelcase
         customer_id: ['c_1111'],
         Host: ['a.execute-api.us-west-2.amazonaws.com'],
         origin: ['https://aaa.io'],
@@ -95,8 +97,11 @@ describe('event parser', () => {
             'custom:customer-name': 'a',
             'cognito:username': 'aa',
             aud: '4lidcnek50hi18996gadaop8j0',
+            // eslint-disable-next-line camelcase
             event_id: '9fe80735-f265-41d5-a7ca-04b88c2a4a4c',
+            // eslint-disable-next-line camelcase
             token_use: 'id',
+            // eslint-disable-next-line camelcase
             auth_time: '1587038744',
             exp: 'Sun Apr 19 08:06:14 UTC 2020',
             'custom:role': 'admin',
@@ -137,9 +142,9 @@ describe('event parser', () => {
       isBase64Encoded: false,
     };
 
-    const order_api_gw_event = parseEvent(not_order_api_gw_event);
+    const orderApiGwEvent = parseEvent(notOrderApiGwEvent);
 
-    expect(JSON.stringify(order_api_gw_event)).toEqual(
+    expect(JSON.stringify(orderApiGwEvent)).toEqual(
       JSON.stringify({
         resource: '/add-user',
         path: '/add-user',
@@ -156,8 +161,11 @@ describe('event parser', () => {
               'custom:customer-name': 'a',
               'cognito:username': 'aa',
               aud: '4lidcnek50hi18996gadaop8j0',
+              // eslint-disable-next-line camelcase
               event_id: '9fe80735-f265-41d5-a7ca-04b88c2a4a4c',
+              // eslint-disable-next-line camelcase
               token_use: 'id',
+              // eslint-disable-next-line camelcase
               auth_time: '1587038744',
               exp: 'Sun Apr 19 08:06:14 UTC 2020',
               'custom:role': 'admin',
@@ -169,6 +177,7 @@ describe('event parser', () => {
         headers: {
           Authorization: 'auth',
           'content-type': 'application/json;charset=UTF-8',
+          // eslint-disable-next-line camelcase
           customer_id: 'c_1111',
           Host: 'aaaa.execute-api.us-west-2.amazonaws.com',
           origin: 'https://aaa.io',
@@ -183,7 +192,7 @@ describe('event parser', () => {
   });
 
   test('api gw v2', () => {
-    const not_order_api_gw_event = {
+    const notOrderApiGwEvent = {
       version: '2.0',
       routeKey: 'ANY /nodejs-apig-function-1G3XMPLZXVXYI',
       rawPath: '/default/nodejs-apig-function-1G3XMPLZXVXYI',
@@ -230,9 +239,9 @@ describe('event parser', () => {
       isBase64Encoded: true,
     };
 
-    const order_api_gw_event = parseEvent(not_order_api_gw_event);
+    const orderApiGwEvent = parseEvent(notOrderApiGwEvent);
 
-    expect(JSON.stringify(order_api_gw_event)).toEqual(
+    expect(JSON.stringify(orderApiGwEvent)).toEqual(
       JSON.stringify({
         version: '2.0',
         routeKey: 'ANY /nodejs-apig-function-1G3XMPLZXVXYI',
@@ -262,7 +271,7 @@ describe('event parser', () => {
   });
 
   test('sns parse', () => {
-    const not_order_sns_event = {
+    const notOrderSnsEvent = {
       Records: [
         {
           EventVersion: '1.0',
@@ -315,9 +324,9 @@ describe('event parser', () => {
       ],
     };
 
-    const order_sns_event = parseEvent(not_order_sns_event);
+    const orderSnsEvent = parseEvent(notOrderSnsEvent);
 
-    expect(JSON.stringify(order_sns_event)).toEqual(
+    expect(JSON.stringify(orderSnsEvent)).toEqual(
       JSON.stringify({
         Records: [
           {
@@ -346,7 +355,7 @@ describe('event parser', () => {
   });
 
   test('sqs parse', () => {
-    const not_order_sqs_event = {
+    const notOrderSqsEvent = {
       Records: [
         {
           messageId: '059f36b4-87a3-44ab-83d2-661975830a7d',
@@ -383,9 +392,9 @@ describe('event parser', () => {
       ],
     };
 
-    const order_sqs_event = parseEvent(not_order_sqs_event);
+    const orderSqsEvent = parseEvent(notOrderSqsEvent);
 
-    expect(JSON.stringify(order_sqs_event)).toEqual(
+    expect(JSON.stringify(orderSqsEvent)).toEqual(
       JSON.stringify({
         Records: [
           {
@@ -404,7 +413,7 @@ describe('event parser', () => {
   });
 
   test('s3 parse', () => {
-    const not_ordered_s3_event = {
+    const notOrderedS3Event = {
       Records: [
         {
           eventVersion: '2.1',
@@ -438,9 +447,9 @@ describe('event parser', () => {
       ],
     };
 
-    const ordered_s3_event = parseEvent(not_ordered_s3_event);
+    const orderedS3Event = parseEvent(notOrderedS3Event);
 
-    expect(JSON.stringify(ordered_s3_event)).toEqual(
+    expect(JSON.stringify(orderedS3Event)).toEqual(
       JSON.stringify({
         Records: [
           {
@@ -465,7 +474,7 @@ describe('event parser', () => {
   });
 
   test('cloudfront parse', () => {
-    const not_ordered_cloudfront_event = {
+    const notOrderedCloudfrontEvent = {
       Records: [
         {
           cf: {
@@ -511,9 +520,9 @@ describe('event parser', () => {
         },
       ],
     };
-    const ordered_cloudfront_event = parseEvent(not_ordered_cloudfront_event);
+    const orderedCloudfrontEvent = parseEvent(notOrderedCloudfrontEvent);
 
-    expect(JSON.stringify(ordered_cloudfront_event)).toEqual(
+    expect(JSON.stringify(orderedCloudfrontEvent)).toEqual(
       JSON.stringify({
         Records: [
           {

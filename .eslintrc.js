@@ -2,6 +2,9 @@ module.exports = {
   parser: 'babel-eslint',
   extends: ['eslint:recommended', 'prettier'],
   plugins: ['jest'],
+  rules: {
+    camelcase: "error"
+  },
   globals: {
     process: true,
     console: true,

@@ -320,6 +320,7 @@ describe('awsSpan', () => {
       envs: null,
       event: null,
       maxFinishTime: 895093323456,
+      // eslint-disable-next-line camelcase
       return_value: '"data man"',
       [EXECUTION_TAGS_KEY]: [],
     };
@@ -378,6 +379,7 @@ describe('awsSpan', () => {
       error: parseErrorObject(err),
       event: null,
       maxFinishTime: 895093323456,
+      // eslint-disable-next-line camelcase
       return_value: '',
       [EXECUTION_TAGS_KEY]: [],
     };
@@ -477,7 +479,7 @@ describe('awsSpan', () => {
 
     expect(awsSpan.getHttpInfo(requestData, responseData)).toEqual(expected);
 
-    const scrubbed_expected = {
+    const scrubbedExpected = {
       host: 'your.mind.com',
       request: {
         body: 'The data is not available',
@@ -489,7 +491,7 @@ describe('awsSpan', () => {
     };
 
     process.env.LUMIGO_DOMAINS_SCRUBBER = '["mind"]';
-    expect(awsSpan.getHttpInfo(requestData, responseData)).toEqual(scrubbed_expected);
+    expect(awsSpan.getHttpInfo(requestData, responseData)).toEqual(scrubbedExpected);
   });
 
   test('getBasicChildSpan', () => {
@@ -731,6 +733,7 @@ describe('awsSpan', () => {
   test('addRttToFunctionSpan', () => {
     const functionSpan = { a: 'b' };
     const rtt = 1234;
+    // eslint-disable-next-line camelcase
     const expected = { reporter_rtt: rtt, ...functionSpan };
     expect(awsSpan.addRttToFunctionSpan(functionSpan, rtt)).toEqual(expected);
   });

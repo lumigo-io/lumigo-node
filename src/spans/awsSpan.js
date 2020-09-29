@@ -138,11 +138,11 @@ export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
   const id = removeStartedFromId(functionSpan.id);
   let error = err ? parseErrorObject(err) : undefined;
   const ended = new Date().getTime();
-  let return_value;
+  let returnValue;
   try {
-    return_value = payloadStringify(data);
+    returnValue = payloadStringify(data);
   } catch (e) {
-    return_value = prune(data.toString());
+    returnValue = prune(data.toString());
     error = parseErrorObject({
       name: 'ReturnValueError',
       message: `Could not JSON.stringify the return value. This will probably fail the lambda. Original error: ${e &&
@@ -153,7 +153,8 @@ export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
     id,
     ended,
     error,
-    return_value,
+    // eslint-disable-next-line camelcase
+    return_value: returnValue,
     [EXECUTION_TAGS_KEY]: ExecutionTags.getTags(),
   });
   logger.debug('End span created', newSpan);
@@ -286,4 +287,5 @@ export const getHttpSpan = (randomRequestId, requestData, responseData = null) =
 };
 
 export const addRttToFunctionSpan = (functionSpan, rtt) =>
+  // eslint-disable-next-line camelcase
   Object.assign({}, functionSpan, { reporter_rtt: rtt });
