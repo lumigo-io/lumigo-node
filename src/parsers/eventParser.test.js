@@ -451,15 +451,11 @@ describe('event parser', () => {
             requestParameters: { sourceIPAddress: '77.127.93.97' },
             s3: {
               bucket: {
-                name: 'testingbuckets3testing',
-                ownerIdentity: { principalId: 'A2QVTU9T5VMOU3' },
                 arn: 'arn:aws:s3:::testingbuckets3testing',
               },
               object: {
                 key: 'Screen+Shot+2020-05-27+at+12.37.36.png',
                 size: 61211,
-                eTag: '714ee5196a5c0a6e6b9019caa7b6e970',
-                sequencer: '005F6C8A510EE02021',
               },
             },
           },

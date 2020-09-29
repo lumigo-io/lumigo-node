@@ -47,7 +47,9 @@ const S3_KEYS_ORDER = getEnvVarAsList('LUMIGO_S3_KEYS_ORDER', [
   'requestParameters',
 ]);
 
-const S3_OBJECT_KEYS_ORDER = getEnvVarAsList('LUMIGO_S3_OBJECT_KEYS_ORDER', ['bucket', 'object']);
+const S3_BUCKET_KEYS_ORDER = getEnvVarAsList('LUMIGO_S3_OBJECT_KEYS_ORDER', ['arn']);
+
+const S3_OBJECT_KEYS_ORDER = getEnvVarAsList('LUMIGO_S3_OBJECT_KEYS_ORDER', ['key', 'size']);
 
 const CLOUDFRONT_KEYS_ORDER = getEnvVarAsList('LUMIGO_CLOUDFRONT_KEYS_ORDER', ['config']);
 
@@ -188,9 +190,16 @@ export const parseS3Event = event => {
     }
     if (rec.hasOwnProperty('s3')) {
       new_s3_record_event.s3 = {};
-      for (const key of S3_OBJECT_KEYS_ORDER) {
-        if (rec.s3.hasOwnProperty(key)) {
-          new_s3_record_event.s3[key] = rec.s3[key];
+      if (rec.s3.hasOwnProperty('bucket')) {
+        new_s3_record_event.s3.bucket = {};
+        for (const key of S3_BUCKET_KEYS_ORDER) {
+          new_s3_record_event.s3.bucket[key] = rec.s3.bucket[key];
+        }
+      }
+      if (rec.s3.hasOwnProperty('object')) {
+        new_s3_record_event.s3.object = {};
+        for (const key of S3_OBJECT_KEYS_ORDER) {
+          new_s3_record_event.s3.object[key] = rec.s3.object[key];
         }
       }
     }
