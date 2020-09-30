@@ -214,17 +214,17 @@ export const parseCloudfrontEvent = event => {
   // Add order keys
   for (const rec of event['Records']) {
     const cfRecord = rec['cf'] || {};
-    const newCloudfrontRecordEvent = {};
+    const newCloudfrontRecordEvent = { cf: {} };
     for (const key of CLOUDFRONT_KEYS_ORDER) {
       if (cfRecord.hasOwnProperty(key) != null) {
-        newCloudfrontRecordEvent[key] = cfRecord[key];
+        newCloudfrontRecordEvent.cf[key] = cfRecord[key];
       }
     }
     if (cfRecord.hasOwnProperty('request')) {
-      newCloudfrontRecordEvent.request = {};
+      newCloudfrontRecordEvent.cf.request = {};
       for (const key of CLOUDFRONT_REQUEST_KEYS_ORDER) {
         if (cfRecord.request.hasOwnProperty(key)) {
-          newCloudfrontRecordEvent.request[key] = cfRecord.request[key];
+          newCloudfrontRecordEvent.cf.request[key] = cfRecord.request[key];
         }
       }
     }

@@ -526,23 +526,25 @@ describe('event parser', () => {
       JSON.stringify({
         Records: [
           {
-            config: {
-              distributionDomainName: 'd3f1hyel7d5adt.cloudfront.net',
-              distributionId: 'E8PDQHVQH1V0Q',
-              eventType: 'origin-request',
-              requestId: 'hnql0vH8VDvTTLGwmKn337OH08mMiV5sTPsYGyBqCKgCXPZbfNqYlw==',
-            },
-            request: {
-              body: {
-                action: 'read-only',
-                data: '',
-                encoding: 'base64',
-                inputTruncated: false,
+            cf: {
+              config: {
+                distributionDomainName: 'd3f1hyel7d5adt.cloudfront.net',
+                distributionId: 'E8PDQHVQH1V0Q',
+                eventType: 'origin-request',
+                requestId: 'hnql0vH8VDvTTLGwmKn337OH08mMiV5sTPsYGyBqCKgCXPZbfNqYlw==',
               },
-              clientIp: '176.12.196.206',
-              method: 'GET',
-              querystring: '',
-              uri: '/favicon.ico',
+              request: {
+                body: {
+                  action: 'read-only',
+                  data: '',
+                  encoding: 'base64',
+                  inputTruncated: false,
+                },
+                clientIp: '176.12.196.206',
+                method: 'GET',
+                querystring: '',
+                uri: '/favicon.ico',
+              },
             },
           },
         ],
