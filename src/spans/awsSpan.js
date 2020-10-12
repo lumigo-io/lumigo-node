@@ -12,6 +12,7 @@ import {
   getInvokedArn,
   getInvokedVersion,
   EXECUTION_TAGS_KEY,
+  getEventEntitySize,
 } from '../utils';
 import {
   dynamodbParser,
@@ -99,6 +100,17 @@ export const getBasicSpan = () => {
   };
 };
 
+const addEventToSpan = (span, hasError = false) => {
+  span.event = payloadStringify(
+    parseEvent(TracerGlobals.getHandlerInputs().event),
+    getEventEntitySize(hasError)
+  );
+};
+
+const addEnvsToSpan = (span, hasError = false) => {
+  span.envs = payloadStringify(process.env, getEventEntitySize(hasError));
+};
+
 export const getFunctionSpan = () => {
   const { event: lambdaEvent, context: lambdaContext } = TracerGlobals.getHandlerInputs();
 
@@ -109,8 +121,9 @@ export const getFunctionSpan = () => {
   const started = new Date().getTime();
   const ended = started; // Indicates a StartSpan.
 
-  const event = payloadStringify(parseEvent(lambdaEvent));
-  const envs = payloadStringify(process.env);
+  // We need to keep sending them in the startSpan because we don't always have an endSpan
+  addEventToSpan(basicSpan);
+  addEnvsToSpan(basicSpan);
 
   const { functionName: name, awsRequestId, remainingTimeInMillis } = getContextInfo(lambdaContext);
 
@@ -121,11 +134,9 @@ export const getFunctionSpan = () => {
     ...basicSpan,
     info,
     id,
-    envs,
     name,
     type,
     ended,
-    event,
     started,
     maxFinishTime,
   };
@@ -156,6 +167,10 @@ export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
     return_value,
     [EXECUTION_TAGS_KEY]: ExecutionTags.getTags(),
   });
+  if (error !== undefined) {
+    addEventToSpan(newSpan, true);
+    addEnvsToSpan(newSpan, true);
+  }
   logger.debug('End span created', newSpan);
   return newSpan;
 };
