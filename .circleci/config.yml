@@ -93,8 +93,6 @@ jobs:
     - save_cache:
         key: IT-{{ .Branch }}-{{ checksum "../commits" }}
         paths:
-          - ../integration-tests/src/e2e-test/cypress.env.json
-          - ../integration-tests/src/e2e-test/cypress/cf-stack.json
           - ../integration-tests/.env
           - ../integration-tests/.env2
           - ../integration-tests/.env3
@@ -106,46 +104,12 @@ jobs:
         command: cd ../integration-tests && export CURRENT_REPO=lumigo-node && export testNode=true && npm run test-parallel
     - store_test_results:
           path: ../integration-tests/src/test/test-results
-    - run: mkdir -p ../envs && cd ../integration-tests && cp src/e2e-test/cypress.env.json ../envs
-    - run: mkdir -p ../stack && cd ../integration-tests && cp src/e2e-test/cypress/cf-stack.json ../stack
     - persist_to_workspace:
         root: ../
         paths:
           - envs/
           - stack/
           - .aws/
-  e2e-test:
-    working_directory: ~/lumigo-node
-    docker:
-      - image: lumigo/ci:latest
-        auth:
-          username: lumigo
-          password: $DOCKERHUB_PASSWORD
-    steps:
-      - attach_workspace:
-          at: ../
-      - run:
-          command: |
-            mkdir ~/.ssh/ && echo -e "Host github.com\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
-            cd ..
-            git clone git@github.com:lumigo-io/common-resources.git
-            git clone git@github.com:lumigo-io/utils.git
-            git clone git@github.com:lumigo-io/integration-tests.git
-            git clone git@github.com:lumigo-io/dashboard.git
-      - run: mv ~/.aws/credentials tmp && { echo '[default]' ; echo 'region=us-west-2' ; cat tmp; } > ~/.aws/credentials
-      - run: cat ../envs/cypress.env.json
-      - run: cd ../integration-tests && cp ../envs/cypress.env.json ./src/e2e-test/
-      - run: cd ../integration-tests && cp ../stack/cf-stack.json ./src/e2e-test/cypress/
-      - run: cd ../dashboard && npm i
-      - run: cd ../dashboard && ./scripts/prepare_env.sh --profile $(cat ~/envs/cypress.env.json | jq -r '.PROFILE_NAME') --env $(cat ~/envs/cypress.env.json | jq -r '.ENV')
-      - run: cd ../integration-tests/src/e2e-test && npm i
-      - run: (cd ../dashboard && npm run start:ci) & (cd ../integration-tests && ./src/e2e-test/node_modules/.bin/wait-on http://127.0.0.1:3000 && npm run cypress:run)
-      - store_artifacts:
-          path: ~/integration-tests/src/e2e-test/cypress/videos
-      - store_artifacts:
-          path: ~/integration-tests/src/e2e-test/cypress/cf-stack.json
-      - store_artifacts:
-          path: ~/integration-tests/src/e2e-test/mochawesome-report
   deploy-beta:
     working_directory: ~/lumigo-node
     docker:
@@ -235,12 +199,6 @@ workflows:
             ignore: master
         requires:
         - test
-    - e2e-test:
-        requires:
-          - integration-test
-        filters:
-          branches:
-            ignore: master
     - deploy-beta:
         filters:
           branches:
