@@ -160,8 +160,8 @@ export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
         e.message}`,
     });
   }
-  const event = error === undefined ? functionSpan.event : getEventForSpan(true);
-  const envs = error === undefined ? functionSpan.envs : getEnvsForSpan(true);
+  const event = error ? getEventForSpan(true) : functionSpan.event;
+  const envs = error ? getEnvsForSpan(true) : functionSpan.envs;
   const newSpan = Object.assign({}, functionSpan, {
     id,
     ended,
