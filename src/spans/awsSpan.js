@@ -253,7 +253,6 @@ export const getHttpSpan = (randomRequestId, requestData, responseData = null) =
     logger.warn('Failed to parse aws service data', e.message);
   }
   const { awsServiceData, spanId } = serviceData;
-
   const prioritizedSpanId = getHttpSpanId(randomRequestId, spanId);
   let httpInfo = {
     host: requestData.host,
