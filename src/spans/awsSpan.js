@@ -279,9 +279,7 @@ export const getHttpSpan = (randomRequestId, requestData, responseData = null) =
   } catch (e) {
     logger.warn('Failed to get service type', e.message);
   }
-
   const { started, ended } = getHttpSpanTimings(requestData, responseData);
-
   return { ...basicHttpSpan, info, service, started, ended };
 };
 
