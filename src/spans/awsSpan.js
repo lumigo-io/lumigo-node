@@ -213,31 +213,40 @@ export const getAwsServiceData = (requestData, responseData) => {
   }
 };
 
-export const getHttpInfo = (requestData, responseData, sizeLimit) => {
+export const getHttpInfo = (requestData, responseData) => {
+  const sizeLimit = getEventEntitySize(isErrorResponse(responseData));
   const { host } = requestData;
+  try {
+    const request = Object.assign({}, requestData);
+    const response = Object.assign({}, responseData);
 
-  const request = Object.assign({}, requestData);
-  const response = Object.assign({}, responseData);
+    if (
+      shouldScrubDomain(host) ||
+      (request.host && shouldScrubDomain(request.host)) ||
+      (response.host && shouldScrubDomain(response.host))
+    ) {
+      request.body = 'The data is not available';
+      response.body = 'The data is not available';
+      delete request.headers;
+      delete response.headers;
+      delete request.uri;
+    } else {
+      request.headers = payloadStringify(request.headers, sizeLimit);
+      request.body = payloadStringify(request.body, sizeLimit);
 
-  if (
-    shouldScrubDomain(host) ||
-    (request.host && shouldScrubDomain(request.host)) ||
-    (response.host && shouldScrubDomain(response.host))
-  ) {
-    request.body = 'The data is not available';
-    response.body = 'The data is not available';
-    delete request.headers;
-    delete response.headers;
-    delete request.uri;
-  } else {
-    request.headers = payloadStringify(request.headers, sizeLimit);
-    request.body = payloadStringify(request.body, sizeLimit);
+      if (response.headers) response.headers = payloadStringify(response.headers, sizeLimit);
+      if (response.body) response.body = payloadStringify(response.body, sizeLimit);
+    }
 
-    if (response.headers) response.headers = payloadStringify(response.headers, sizeLimit);
-    if (response.body) response.body = payloadStringify(response.body, sizeLimit);
+    return { host, request, response };
+  } catch (e) {
+    logger.warn('Failed to scrub & stringify http data', e.message);
+    return {
+      host,
+      request: payloadStringify(requestData, sizeLimit),
+      response: payloadStringify(responseData, sizeLimit),
+    };
   }
-
-  return { host, request, response };
 };
 
 export const getBasicChildSpan = (spanId, spanType) => {
@@ -273,18 +282,7 @@ export const getHttpSpan = (randomRequestId, requestData, responseData = null) =
   const { awsServiceData, spanId } = serviceData;
 
   const prioritizedSpanId = getHttpSpanId(randomRequestId, spanId);
-  const sizeLimit = getEventEntitySize(isErrorResponse(responseData));
-  let httpInfo;
-  try {
-    httpInfo = getHttpInfo(requestData, responseData, sizeLimit);
-  } catch (e) {
-    logger.warn('Failed to scrub & stringify http data', e.message);
-    httpInfo = {
-      host: requestData.host,
-      request: payloadStringify(requestData, sizeLimit),
-      response: payloadStringify(responseData, sizeLimit),
-    };
-  }
+  const httpInfo = getHttpInfo(requestData, responseData);
 
   const basicHttpSpan = getBasicChildSpan(prioritizedSpanId, HTTP_SPAN);
 
