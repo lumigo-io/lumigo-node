@@ -1,8 +1,14 @@
 import { getBasicChildSpan, REDIS_SPAN } from './awsSpan';
 import { payloadStringify } from '../utils/payloadStringify';
 
-export const createRedisSpan = (spanId, requestMetadata, redisFields) => {
-  const baseSpan = getBasicChildSpan(spanId, REDIS_SPAN);
+export const createRedisSpan = (
+  transactionId,
+  awsRequestId,
+  spanId,
+  requestMetadata,
+  redisFields
+) => {
+  const baseSpan = getBasicChildSpan(transactionId, awsRequestId, spanId, REDIS_SPAN);
   const { command = null, args = null } = redisFields.command || {};
   return {
     ...baseSpan,

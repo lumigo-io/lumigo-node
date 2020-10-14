@@ -5,6 +5,7 @@ export class HttpSpanBuilder {
   static DEFAULT_ACCOUNT = '985323015126';
   static DEFAULT_REGION = 'us-east-1';
   static DEFAULT_FUNC_NAME = 'aws-nodejs-dev-hello';
+  static DEFAULT_TRANSACTION_ID = '64a1b06067c2100c52e51ef4';
   static DEFAULT_TRACE_ID = {
     Parent: '28effe37598bb622',
     Root: '1-5cdcf03a-64a1b06067c2100c52e51ef4',
@@ -65,6 +66,7 @@ export class HttpSpanBuilder {
       memoryAllocated: '1024',
       messageVersion: 2,
       parentId: HttpSpanBuilder.DEFAULT_PARENT_ID,
+      reporterAwsRequestId: HttpSpanBuilder.DEFAULT_PARENT_ID,
       readiness: 'cold',
       region: HttpSpanBuilder.DEFAULT_REGION,
       invokedArn: HttpSpanBuilder.DEFAULT_ARN,
@@ -73,7 +75,7 @@ export class HttpSpanBuilder {
       service: 'external',
       started: 1234,
       token: '',
-      transactionId: '64a1b06067c2100c52e51ef4',
+      transactionId: HttpSpanBuilder.DEFAULT_TRANSACTION_ID,
       type: 'http',
       vendor: 'AWS',
       version: '$LATEST',
@@ -136,6 +138,11 @@ export class HttpSpanBuilder {
 
   withParentId = parentId => {
     this._span.parentId = parentId;
+    return this;
+  };
+
+  withReporterAwsRequestId = reporterAwsRequestId => {
+    this._span.reporterAwsRequestId = reporterAwsRequestId;
     return this;
   };
 

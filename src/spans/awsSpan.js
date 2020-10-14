@@ -55,12 +55,17 @@ export const getCurrentTransactionId = () => {
   return getSpanInfo(lambdaEvent).traceId.transactionId;
 };
 
-export const getBasicSpan = () => {
+export const isSpanIsFromAnotherInvocation = span => {
+  return (
+    !span.id.includes(span.reporterAwsRequestId) && span.parentId !== span.reporterAwsRequestId
+  );
+};
+
+export const getBasicSpan = transactionId => {
   const { event: lambdaEvent, context: lambdaContext } = TracerGlobals.getHandlerInputs();
   const { token } = TracerGlobals.getTracerInputs();
 
   const info = getSpanInfo(lambdaEvent);
-  const transactionId = getCurrentTransactionId();
 
   const awsAccountId = getAccountId(lambdaContext);
   const invokedArn = getInvokedArn();
@@ -102,7 +107,8 @@ export const getBasicSpan = () => {
 export const getFunctionSpan = () => {
   const { event: lambdaEvent, context: lambdaContext } = TracerGlobals.getHandlerInputs();
 
-  const basicSpan = getBasicSpan();
+  const transactionId = getCurrentTransactionId();
+  const basicSpan = getBasicSpan(transactionId);
   const info = { ...basicSpan.info, ...getEventInfo(lambdaEvent) };
   const type = FUNCTION_SPAN;
 
@@ -224,13 +230,13 @@ export const getHttpInfo = (requestData, responseData) => {
   return { host, request, response };
 };
 
-export const getBasicChildSpan = (spanId, spanType) => {
+export const getBasicChildSpan = (transactionId, awsRequestId, spanId, spanType) => {
   const { context } = TracerGlobals.getHandlerInputs();
-  const { awsRequestId: parentId } = context;
+  const { awsRequestId: reporterAwsRequestId } = context;
   const id = spanId;
   const type = spanType;
-  const basicSpan = getBasicSpan();
-  return { ...basicSpan, id, type, parentId };
+  const basicSpan = getBasicSpan(transactionId);
+  return { ...basicSpan, id, type, parentId: awsRequestId, reporterAwsRequestId };
 };
 
 export const getHttpSpanTimings = (requestData, responseData) => {
@@ -243,7 +249,13 @@ export const getHttpSpanId = (randomRequestId, awsRequestId = null) => {
   return awsRequestId ? awsRequestId : randomRequestId;
 };
 
-export const getHttpSpan = (randomRequestId, requestData, responseData = null) => {
+export const getHttpSpan = (
+  transactionId,
+  awsRequestId,
+  randomRequestId,
+  requestData,
+  responseData = null
+) => {
   let serviceData = {};
   try {
     if (isAwsService(requestData.host, responseData)) {
@@ -266,7 +278,12 @@ export const getHttpSpan = (randomRequestId, requestData, responseData = null) =
     logger.warn('Failed to scrub & stringify http data', e.message);
   }
 
-  const basicHttpSpan = getBasicChildSpan(prioritizedSpanId, HTTP_SPAN);
+  const basicHttpSpan = getBasicChildSpan(
+    transactionId,
+    awsRequestId,
+    prioritizedSpanId,
+    HTTP_SPAN
+  );
 
   const info = Object.assign({}, basicHttpSpan.info, {
     httpInfo,

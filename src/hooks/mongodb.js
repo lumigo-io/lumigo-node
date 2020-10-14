@@ -1,8 +1,9 @@
 import { safeRequire } from '../utils/requireUtils';
 import { getRandomId, safeExecute } from '../utils';
 import { createMongoDbSpan, extendMongoDbSpan } from '../spans/mongoDbSpan';
-import { SpansContainer } from '../globals';
+import { SpansContainer, TracerGlobals } from '../globals';
 import * as logger from '../logger';
+import { getCurrentTransactionId } from '../spans/awsSpan';
 
 const PendingRequests = (() => {
   let pendingRequests = {};
@@ -24,11 +25,15 @@ const PendingRequests = (() => {
 })();
 
 const onStartedHook = event => {
+  const awsRequestId = TracerGlobals.getHandlerInputs().context.awsRequestId;
+  const transactionId = getCurrentTransactionId();
   const { command, databaseName, commandName, requestId, operationId, connectionId } = event;
   const started = Date.now();
   const spanId = getRandomId();
   PendingRequests.addPendingRequest(requestId, spanId);
   const mongoSpan = createMongoDbSpan(
+    transactionId,
+    awsRequestId,
     spanId,
     {
       started,

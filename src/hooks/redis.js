@@ -2,8 +2,9 @@ import { safeRequire } from '../utils/requireUtils';
 import { hook } from '../extender';
 import { getRandomId } from '../utils';
 import { createRedisSpan, extendRedisSpan } from '../spans/redisSpan';
-import { SpansContainer } from '../globals';
+import { SpansContainer, TracerGlobals } from '../globals';
 import * as logger from '../logger';
+import { getCurrentTransactionId } from '../spans/awsSpan';
 
 const createCallbackHandler = redisSpan => args => {
   const ended = Date.now();
@@ -17,6 +18,8 @@ const createCallbackHandler = redisSpan => args => {
 };
 
 function sendCommandBeforeHook(args) {
+  const { awsRequestId } = TracerGlobals.getHandlerInputs().context;
+  const transactionId = getCurrentTransactionId();
   const command = args[0];
   if (
     this.ready === false ||
@@ -30,6 +33,8 @@ function sendCommandBeforeHook(args) {
   const started = Date.now();
 
   const span = createRedisSpan(
+    transactionId,
+    awsRequestId,
     spanId,
     { started },
     {

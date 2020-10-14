@@ -13,12 +13,13 @@ import {
   isTimeoutTimerEnabled,
   getTimeoutTimerBuffer,
   getTimeoutMinDuration,
+  runOneTimeWrapper,
 } from './utils';
 import {
   getFunctionSpan,
   getEndFunctionSpan,
   addRttToFunctionSpan,
-  getCurrentTransactionId,
+  isSpanIsFromAnotherInvocation,
 } from './spans/awsSpan';
 import { sendSingleSpan, sendSpans } from './reporter';
 import { TracerGlobals, SpansContainer, GlobalTimer, clearGlobals } from './globals';
@@ -76,22 +77,23 @@ export const startTrace = async () => {
   }
 };
 
+const logLeakedSpans = allSpans => {
+  const warnClientOnce = runOneTimeWrapper(logger.warnClient);
+  allSpans.forEach(span => {
+    if (isSpanIsFromAnotherInvocation(span)) {
+      logger.debug('Leaked span: ', span);
+      warnClientOnce(LEAK_MESSAGE);
+    }
+  });
+};
+
 export const sendEndTraceSpans = async (functionSpan, handlerReturnValue) => {
   const endFunctionSpan = getEndFunctionSpan(functionSpan, handlerReturnValue);
-
   const spans = [...SpansContainer.getSpans(), endFunctionSpan];
-  const currentTransactionId = getCurrentTransactionId();
-  const spansToSend = [];
-  const filteredSpans = [];
-  spans.forEach(span => {
-    span.transactionId === currentTransactionId ? spansToSend.push(span) : filteredSpans.push(span);
-  });
-  await sendSpans(spansToSend);
-  const hasSpansFromPreviousInvocation = spansToSend.length !== spans.length;
-  if (hasSpansFromPreviousInvocation) {
-    logger.warnClient(LEAK_MESSAGE);
-    filteredSpans.forEach(span => logger.debug('Leaked span: ', span));
-  }
+
+  await sendSpans(spans);
+  logLeakedSpans(spans);
+
   const { transactionId } = endFunctionSpan;
   logger.debug('Tracer ended', { transactionId });
   clearGlobals();
