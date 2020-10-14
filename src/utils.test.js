@@ -208,6 +208,7 @@ describe('utils', () => {
 
   test('getEventEntitySize', () => {
     expect(utils.getEventEntitySize()).toBe(MAX_ENTITY_SIZE);
+    expect(utils.getEventEntitySize(true)).toBe(MAX_ENTITY_SIZE * 2);
     process.env.MAX_EVENT_ENTITY_SIZE = '2048';
     expect(utils.getEventEntitySize()).toBe(2048);
   });
