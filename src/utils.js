@@ -264,8 +264,12 @@ export const isString = x => Object.prototype.toString.call(x) === '[object Stri
 
 export const MAX_ENTITY_SIZE = 2048;
 
-export const getEventEntitySize = () => {
-  return parseInt(process.env['MAX_EVENT_ENTITY_SIZE']) || MAX_ENTITY_SIZE;
+export const getEventEntitySize = (hasError = false) => {
+  const basicSize = parseInt(process.env['MAX_EVENT_ENTITY_SIZE']) || MAX_ENTITY_SIZE;
+  if (hasError) {
+    return basicSize * 2;
+  }
+  return basicSize;
 };
 
 export const parseErrorObject = err => ({
