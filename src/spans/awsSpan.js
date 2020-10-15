@@ -13,6 +13,7 @@ import {
   getInvokedVersion,
   EXECUTION_TAGS_KEY,
   getEventEntitySize,
+  safeGet,
 } from '../utils';
 import {
   dynamodbParser,
@@ -153,7 +154,7 @@ export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
   try {
     return_value = payloadStringify(data);
   } catch (e) {
-    return_value = prune(data.toString());
+    return_value = prune(data.toString(), getEventEntitySize(true));
     error = parseErrorObject({
       name: 'ReturnValueError',
       message: `Could not JSON.stringify the return value. This will probably fail the lambda. Original error: ${e &&
@@ -213,30 +214,39 @@ export const getAwsServiceData = (requestData, responseData) => {
 };
 
 export const getHttpInfo = (requestData, responseData) => {
+  const sizeLimit = getEventEntitySize(isErrorResponse(responseData));
   const { host } = requestData;
+  try {
+    const request = Object.assign({}, requestData);
+    const response = Object.assign({}, responseData);
 
-  const request = Object.assign({}, requestData);
-  const response = Object.assign({}, responseData);
+    if (
+      shouldScrubDomain(host) ||
+      (request.host && shouldScrubDomain(request.host)) ||
+      (response.host && shouldScrubDomain(response.host))
+    ) {
+      request.body = 'The data is not available';
+      response.body = 'The data is not available';
+      delete request.headers;
+      delete response.headers;
+      delete request.uri;
+    } else {
+      request.headers = payloadStringify(request.headers, sizeLimit);
+      request.body = payloadStringify(request.body, sizeLimit);
 
-  if (
-    shouldScrubDomain(host) ||
-    (request.host && shouldScrubDomain(request.host)) ||
-    (response.host && shouldScrubDomain(response.host))
-  ) {
-    request.body = 'The data is not available';
-    response.body = 'The data is not available';
-    delete request.headers;
-    delete response.headers;
-    delete request.uri;
-  } else {
-    request.headers = payloadStringify(request.headers);
-    request.body = payloadStringify(request.body);
+      if (response.headers) response.headers = payloadStringify(response.headers, sizeLimit);
+      if (response.body) response.body = payloadStringify(response.body, sizeLimit);
+    }
 
-    if (response.headers) response.headers = payloadStringify(response.headers);
-    if (response.body) response.body = payloadStringify(response.body);
+    return { host, request, response };
+  } catch (e) {
+    logger.warn('Failed to scrub & stringify http data', e.message);
+    return {
+      host,
+      request: payloadStringify(requestData, sizeLimit),
+      response: payloadStringify(responseData, sizeLimit),
+    };
   }
-
-  return { host, request, response };
 };
 
 export const getBasicChildSpan = (spanId, spanType) => {
@@ -258,6 +268,8 @@ export const getHttpSpanId = (randomRequestId, awsRequestId = null) => {
   return awsRequestId ? awsRequestId : randomRequestId;
 };
 
+const isErrorResponse = response => safeGet(response, ['statusCode'], 200) >= 400;
+
 export const getHttpSpan = (randomRequestId, requestData, responseData = null) => {
   let serviceData = {};
   try {
@@ -270,16 +282,7 @@ export const getHttpSpan = (randomRequestId, requestData, responseData = null) =
   const { awsServiceData, spanId } = serviceData;
 
   const prioritizedSpanId = getHttpSpanId(randomRequestId, spanId);
-  let httpInfo = {
-    host: requestData.host,
-    request: payloadStringify(requestData),
-    response: payloadStringify(responseData),
-  };
-  try {
-    httpInfo = getHttpInfo(requestData, responseData);
-  } catch (e) {
-    logger.warn('Failed to scrub & stringify http data', e.message);
-  }
+  const httpInfo = getHttpInfo(requestData, responseData);
 
   const basicHttpSpan = getBasicChildSpan(prioritizedSpanId, HTTP_SPAN);
 
