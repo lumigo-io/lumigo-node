@@ -6,6 +6,7 @@ import * as awsParsers from '../parsers/aws';
 import * as utils from '../utils';
 import { payloadStringify } from '../utils/payloadStringify';
 import { HTTP_SPAN } from './awsSpan';
+import { HttpSpanBuilder } from '../../testUtils/httpSpanBuilder';
 
 const exampleApiGatewayEvent = require('../testdata/events/apigw-request.json');
 
@@ -693,6 +694,7 @@ describe('awsSpan', () => {
 
   test('getHttpSpan - response with error should double payload size', () => {
     const id = 'not-a-random-id';
+    const transcationId = HttpSpanBuilder.DEFAULT_TRANSACTION_ID;
     const sendTime = 1234;
     const receivedTime = 1256;
     const longString = 'a'.repeat(getEventEntitySize() * 2);
@@ -715,8 +717,14 @@ describe('awsSpan', () => {
       receivedTime,
     };
 
-    const spanSuccess = awsSpan.getHttpSpan(id, requestData, responseDataSuccess);
-    const spanError = awsSpan.getHttpSpan(id, requestData, responseDataFailed);
+    const spanSuccess = awsSpan.getHttpSpan(
+      transcationId,
+      id,
+      id,
+      requestData,
+      responseDataSuccess
+    );
+    const spanError = awsSpan.getHttpSpan(transcationId, id, id, requestData, responseDataFailed);
     expect(spanError.info.httpInfo.request.body.length).toBeGreaterThan(
       spanSuccess.info.httpInfo.request.body.length * 1.8 + 1
     );

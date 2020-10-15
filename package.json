@@ -14,7 +14,7 @@
     "build:babel": "babel --ignore '**/*.test.js' --ignore testdata src -d lib --verbose",
     "build:webpack": "webpack --display-modules ./lib -o dist/lumigo.js",
     "build": "npm run build:babel && npm run build:webpack",
-    "jest": " jest",
+    "jest": "jest",
     "semantic-release": "semantic-release",
     "test": "npm run build && npm run jest",
     "lint": "eslint ./src",

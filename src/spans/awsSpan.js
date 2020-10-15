@@ -274,9 +274,7 @@ export const getHttpSpanId = (randomRequestId, awsRequestId = null) => {
   return awsRequestId ? awsRequestId : randomRequestId;
 };
 
-
 const isErrorResponse = response => safeGet(response, ['statusCode'], 200) >= 400;
-
 
 export const getHttpSpan = (
   transactionId,
@@ -285,7 +283,6 @@ export const getHttpSpan = (
   requestData,
   responseData = null
 ) => {
-
   let serviceData = {};
   try {
     if (isAwsService(requestData.host, responseData)) {
@@ -297,16 +294,7 @@ export const getHttpSpan = (
   const { awsServiceData, spanId } = serviceData;
 
   const prioritizedSpanId = getHttpSpanId(randomRequestId, spanId);
-  let httpInfo = {
-    host: requestData.host,
-    request: payloadStringify(requestData),
-    response: payloadStringify(responseData),
-  };
-  try {
-    httpInfo = getHttpInfo(requestData, responseData);
-  } catch (e) {
-    logger.warn('Failed to scrub & stringify http data', e.message);
-  }
+  const httpInfo = getHttpInfo(requestData, responseData);
 
   const basicHttpSpan = getBasicChildSpan(
     transactionId,

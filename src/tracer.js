@@ -82,7 +82,8 @@ const logLeakedSpans = allSpans => {
   allSpans.forEach(span => {
     if (isSpanIsFromAnotherInvocation(span)) {
       logger.debug('Leaked span: ', span);
-      warnClientOnce(LEAK_MESSAGE);
+      const httpInfo = span.info ? span.info.httpInfo : {};
+      warnClientOnce(LEAK_MESSAGE, httpInfo);
     }
   });
 };
