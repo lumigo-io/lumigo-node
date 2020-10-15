@@ -1,5 +1,5 @@
 import * as awsSpan from './awsSpan.js';
-import { EXECUTION_TAGS_KEY, parseErrorObject } from '../utils';
+import { EXECUTION_TAGS_KEY, getEventEntitySize, parseErrorObject } from '../utils';
 import MockDate from 'mockdate';
 import { TracerGlobals } from '../globals';
 import * as awsParsers from '../parsers/aws';
@@ -243,6 +243,9 @@ describe('awsSpan', () => {
   });
 
   test('getEndFunctionSpan', () => {
+    const event = { a: 'b', c: 'd' };
+    TracerGlobals.setHandlerInputs({ event });
+
     const functionSpan1 = {
       account: '985323015126',
       id: '6d26e3c8-60a6-4cee-8a70-f525f47a4caf_started',
@@ -374,9 +377,9 @@ describe('awsSpan', () => {
       type: 'function',
       vendor: 'AWS',
       version: '$LATEST',
-      envs: null,
+      envs: payloadStringify(process.env),
       error: parseErrorObject(err),
-      event: null,
+      event: payloadStringify(event),
       maxFinishTime: 895093323456,
       return_value: '',
       [EXECUTION_TAGS_KEY]: [],
@@ -385,6 +388,45 @@ describe('awsSpan', () => {
     expect(awsSpan.getEndFunctionSpan(functionSpan1, handlerReturnValue2)).toEqual(
       expectedFunctionSpan2
     );
+  });
+
+  test('getEndFunctionSpan with error and big event and envs should have more data than startSpan', () => {
+    const longString = 'a'.repeat(getEventEntitySize() * 3);
+    let { event, context } = TracerGlobals.getHandlerInputs();
+    event = { ...event, longString };
+    TracerGlobals.setHandlerInputs({ event, context });
+    const envs = { ...process.env, longString };
+    process.env = envs;
+    const err = new Error('new error man');
+    const handlerReturnValue = { err, data: undefined, type: 'async_callbacked' };
+    const startSpan = awsSpan.getFunctionSpan();
+
+    const endSpan = awsSpan.getEndFunctionSpan(startSpan, handlerReturnValue);
+
+    expect(endSpan.event).not.toEqual(payloadStringify(event));
+    expect(endSpan.event).toEqual(payloadStringify(event, getEventEntitySize() * 2));
+    expect(endSpan.event.length).toBeGreaterThan(startSpan.event.length);
+    expect(endSpan.envs).not.toEqual(payloadStringify(envs));
+    expect(endSpan.envs).toEqual(payloadStringify(envs, getEventEntitySize() * 2));
+    expect(endSpan.envs.length).toBeGreaterThan(startSpan.envs.length);
+  });
+
+  test('getEndFunctionSpan without error and big event and envs should have same data than startSpan', () => {
+    const longString = 'a'.repeat(getEventEntitySize() * 3);
+    let { event, context } = TracerGlobals.getHandlerInputs();
+    event = { ...event, longString };
+    TracerGlobals.setHandlerInputs({ event, context });
+    const envs = { ...process.env, longString };
+    process.env = envs;
+    const handlerReturnValue = { err: null, data: undefined, type: 'async_callbacked' };
+    const startSpan = awsSpan.getFunctionSpan();
+
+    const endSpan = awsSpan.getEndFunctionSpan(startSpan, handlerReturnValue);
+
+    expect(endSpan.event).toEqual(payloadStringify(event));
+    expect(endSpan.event).toEqual(startSpan.event);
+    expect(endSpan.envs).toEqual(payloadStringify(envs));
+    expect(endSpan.envs).toEqual(startSpan.envs);
   });
 
   test('getAwsServiceFromHost', () => {
@@ -647,6 +689,46 @@ describe('awsSpan', () => {
       responseData
     );
     expect(result).toEqual(expected);
+  });
+
+  test('getHttpSpan - response with error should double payload size', () => {
+    const id = 'not-a-random-id';
+    const sendTime = 1234;
+    const receivedTime = 1256;
+    const longString = 'a'.repeat(getEventEntitySize() * 2);
+    const requestData = {
+      host: 'your.mind.com',
+      headers: { longString },
+      body: longString,
+      sendTime,
+    };
+    const responseDataSuccess = {
+      headers: { longString },
+      body: longString,
+      statusCode: 200,
+      receivedTime,
+    };
+    const responseDataFailed = {
+      headers: { longString },
+      body: longString,
+      statusCode: 404,
+      receivedTime,
+    };
+
+    const spanSuccess = awsSpan.getHttpSpan(id, requestData, responseDataSuccess);
+    const spanError = awsSpan.getHttpSpan(id, requestData, responseDataFailed);
+    expect(spanError.info.httpInfo.request.body.length).toBeGreaterThan(
+      spanSuccess.info.httpInfo.request.body.length * 1.8 + 1
+    );
+    expect(spanError.info.httpInfo.request.headers.length).toBeGreaterThan(
+      spanSuccess.info.httpInfo.request.headers.length * 1.8 + 1
+    );
+    expect(spanError.info.httpInfo.response.body.length).toBeGreaterThan(
+      spanSuccess.info.httpInfo.response.body.length * 1.8 + 1
+    );
+    expect(spanError.info.httpInfo.response.headers.length).toBeGreaterThan(
+      spanSuccess.info.httpInfo.response.headers.length * 1.8 + 1
+    );
   });
 
   test('getHttpSpan - only for request data', () => {

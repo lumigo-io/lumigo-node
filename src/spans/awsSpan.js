@@ -12,6 +12,8 @@ import {
   getInvokedArn,
   getInvokedVersion,
   EXECUTION_TAGS_KEY,
+  getEventEntitySize,
+  safeGet,
 } from '../utils';
 import {
   dynamodbParser,
@@ -104,6 +106,15 @@ export const getBasicSpan = transactionId => {
   };
 };
 
+const getEventForSpan = (hasError = false) =>
+  payloadStringify(
+    parseEvent(TracerGlobals.getHandlerInputs().event),
+    getEventEntitySize(hasError)
+  );
+
+const getEnvsForSpan = (hasError = false) =>
+  payloadStringify(process.env, getEventEntitySize(hasError));
+
 export const getFunctionSpan = () => {
   const { event: lambdaEvent, context: lambdaContext } = TracerGlobals.getHandlerInputs();
 
@@ -115,8 +126,9 @@ export const getFunctionSpan = () => {
   const started = new Date().getTime();
   const ended = started; // Indicates a StartSpan.
 
-  const event = payloadStringify(parseEvent(lambdaEvent));
-  const envs = payloadStringify(process.env);
+  // We need to keep sending them in the startSpan because we don't always have an endSpan
+  const event = getEventForSpan();
+  const envs = getEnvsForSpan();
 
   const { functionName: name, awsRequestId, remainingTimeInMillis } = getContextInfo(lambdaContext);
 
@@ -148,19 +160,23 @@ export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
   try {
     return_value = payloadStringify(data);
   } catch (e) {
-    return_value = prune(data.toString());
+    return_value = prune(data.toString(), getEventEntitySize(true));
     error = parseErrorObject({
       name: 'ReturnValueError',
       message: `Could not JSON.stringify the return value. This will probably fail the lambda. Original error: ${e &&
         e.message}`,
     });
   }
+  const event = error ? getEventForSpan(true) : functionSpan.event;
+  const envs = error ? getEnvsForSpan(true) : functionSpan.envs;
   const newSpan = Object.assign({}, functionSpan, {
     id,
     ended,
     error,
     return_value,
     [EXECUTION_TAGS_KEY]: ExecutionTags.getTags(),
+    event,
+    envs,
   });
   logger.debug('End span created', newSpan);
   return newSpan;
@@ -204,30 +220,39 @@ export const getAwsServiceData = (requestData, responseData) => {
 };
 
 export const getHttpInfo = (requestData, responseData) => {
+  const sizeLimit = getEventEntitySize(isErrorResponse(responseData));
   const { host } = requestData;
+  try {
+    const request = Object.assign({}, requestData);
+    const response = Object.assign({}, responseData);
 
-  const request = Object.assign({}, requestData);
-  const response = Object.assign({}, responseData);
+    if (
+      shouldScrubDomain(host) ||
+      (request.host && shouldScrubDomain(request.host)) ||
+      (response.host && shouldScrubDomain(response.host))
+    ) {
+      request.body = 'The data is not available';
+      response.body = 'The data is not available';
+      delete request.headers;
+      delete response.headers;
+      delete request.uri;
+    } else {
+      request.headers = payloadStringify(request.headers, sizeLimit);
+      request.body = payloadStringify(request.body, sizeLimit);
 
-  if (
-    shouldScrubDomain(host) ||
-    (request.host && shouldScrubDomain(request.host)) ||
-    (response.host && shouldScrubDomain(response.host))
-  ) {
-    request.body = 'The data is not available';
-    response.body = 'The data is not available';
-    delete request.headers;
-    delete response.headers;
-    delete request.uri;
-  } else {
-    request.headers = payloadStringify(request.headers);
-    request.body = payloadStringify(request.body);
+      if (response.headers) response.headers = payloadStringify(response.headers, sizeLimit);
+      if (response.body) response.body = payloadStringify(response.body, sizeLimit);
+    }
 
-    if (response.headers) response.headers = payloadStringify(response.headers);
-    if (response.body) response.body = payloadStringify(response.body);
+    return { host, request, response };
+  } catch (e) {
+    logger.warn('Failed to scrub & stringify http data', e.message);
+    return {
+      host,
+      request: payloadStringify(requestData, sizeLimit),
+      response: payloadStringify(responseData, sizeLimit),
+    };
   }
-
-  return { host, request, response };
 };
 
 export const getBasicChildSpan = (transactionId, awsRequestId, spanId, spanType) => {
@@ -249,6 +274,10 @@ export const getHttpSpanId = (randomRequestId, awsRequestId = null) => {
   return awsRequestId ? awsRequestId : randomRequestId;
 };
 
+
+const isErrorResponse = response => safeGet(response, ['statusCode'], 200) >= 400;
+
+
 export const getHttpSpan = (
   transactionId,
   awsRequestId,
@@ -256,6 +285,7 @@ export const getHttpSpan = (
   requestData,
   responseData = null
 ) => {
+
   let serviceData = {};
   try {
     if (isAwsService(requestData.host, responseData)) {
