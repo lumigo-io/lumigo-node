@@ -154,7 +154,7 @@ export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
   try {
     returnValue = payloadStringify(data);
   } catch (e) {
-    return_value = prune(data.toString(), getEventEntitySize(true));
+    returnValue = prune(data.toString(), getEventEntitySize(true));
     error = parseErrorObject({
       name: 'ReturnValueError',
       message: `Could not JSON.stringify the return value. This will probably fail the lambda. Original error: ${e &&
