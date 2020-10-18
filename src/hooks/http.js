@@ -1,7 +1,7 @@
 import * as extender from '../extender';
 import http from 'http';
 import https from 'https';
-import { SpansContainer } from '../globals';
+import { SpansContainer, TracerGlobals } from '../globals';
 import {
   lowerCaseObjectKeys,
   getEdgeHost,
@@ -18,7 +18,7 @@ import {
   isKeepHeadersOn,
 } from '../utils';
 import * as logger from '../logger';
-import { getHttpSpan } from '../spans/awsSpan';
+import { getCurrentTransactionId, getHttpSpan } from '../spans/awsSpan';
 import { URL } from 'url';
 import {
   extractBodyFromEmitSocketEvent,
@@ -85,9 +85,14 @@ export const httpRequestWriteBeforeHookWrapper = requestData =>
     }
   };
 
-export const httpRequestEmitBeforeHookWrapper = (requestData, requestRandomId) => {
+export const httpRequestEmitBeforeHookWrapper = (
+  transactionId,
+  awsRequestId,
+  requestData,
+  requestRandomId
+) => {
   const oneTimerEmitResponseHandler = runOneTimeWrapper(
-    createEmitResponseHandler(requestData, requestRandomId)
+    createEmitResponseHandler(transactionId, awsRequestId, requestData, requestRandomId)
   );
   return function(args) {
     if (args[0] === 'response') {
@@ -104,7 +109,13 @@ export const httpRequestEmitBeforeHookWrapper = (requestData, requestRandomId) =
   };
 };
 
-const createEmitResponseOnEmitBeforeHookHandler = (requestData, requestRandomId, response) => {
+const createEmitResponseOnEmitBeforeHookHandler = (
+  transactionId,
+  awsRequestId,
+  requestData,
+  requestRandomId,
+  response
+) => {
   let body = '';
   const payloadSize = getEventEntitySize();
   return function(args) {
@@ -122,7 +133,13 @@ const createEmitResponseOnEmitBeforeHookHandler = (requestData, requestRandomId,
         body,
         headers: lowerCaseObjectKeys(headers),
       };
-      const httpSpan = getHttpSpan(requestRandomId, requestData, responseData);
+      const httpSpan = getHttpSpan(
+        transactionId,
+        awsRequestId,
+        requestRandomId,
+        requestData,
+        responseData
+      );
       if (httpSpan.id !== requestRandomId) {
         // In this case, one of our parser decide to change the spanId for async connection
         SpansContainer.changeSpanId(requestRandomId, httpSpan.id);
@@ -132,8 +149,15 @@ const createEmitResponseOnEmitBeforeHookHandler = (requestData, requestRandomId,
   };
 };
 
-export const createEmitResponseHandler = (requestData, requestRandomId) => response => {
+export const createEmitResponseHandler = (
+  transactionId,
+  awsRequestId,
+  requestData,
+  requestRandomId
+) => response => {
   const onHandler = createEmitResponseOnEmitBeforeHookHandler(
+    transactionId,
+    awsRequestId,
     requestData,
     requestRandomId,
     response
@@ -186,7 +210,11 @@ export const httpRequestArguments = args => {
 };
 
 export const httpBeforeRequestWrapper = (args, extenderContext) => {
+  const { awsRequestId } = TracerGlobals.getHandlerInputs().context;
+  const transactionId = getCurrentTransactionId();
   extenderContext.isTracedDisabled = true;
+  extenderContext.awsRequestId = awsRequestId;
+  extenderContext.transactionId = transactionId;
 
   const { url, options } = httpRequestArguments(args);
   const { headers } = options || {};
@@ -210,7 +238,7 @@ export const httpBeforeRequestWrapper = (args, extenderContext) => {
     extenderContext.requestData = requestData;
 
     if (isTimeoutTimerEnabled()) {
-      const httpSpan = getHttpSpan(requestRandomId, requestData);
+      const httpSpan = getHttpSpan(transactionId, awsRequestId, requestRandomId, requestData);
       SpansContainer.addSpan(httpSpan);
     }
   }
@@ -218,12 +246,23 @@ export const httpBeforeRequestWrapper = (args, extenderContext) => {
 
 export const httpAfterRequestWrapper = (args, originalFnResult, extenderContext) => {
   const clientRequest = originalFnResult;
-  const { requestData, requestRandomId, isTracedDisabled } = extenderContext;
+  const {
+    requestData,
+    requestRandomId,
+    isTracedDisabled,
+    awsRequestId,
+    transactionId,
+  } = extenderContext;
   if (!isTracedDisabled) {
     const endWrapper = httpRequestEndWrapper(requestData, requestRandomId);
     extender.hook(clientRequest, 'end', { beforeHook: endWrapper });
 
-    const emitWrapper = httpRequestEmitBeforeHookWrapper(requestData, requestRandomId);
+    const emitWrapper = httpRequestEmitBeforeHookWrapper(
+      transactionId,
+      awsRequestId,
+      requestData,
+      requestRandomId
+    );
     extender.hook(clientRequest, 'emit', { beforeHook: emitWrapper });
 
     const writeWrapper = httpRequestWriteBeforeHookWrapper(requestData);
@@ -232,7 +271,9 @@ export const httpAfterRequestWrapper = (args, originalFnResult, extenderContext)
 };
 
 export const addStepFunctionEvent = messageId => {
-  const httpSpan = getHttpSpan(messageId, {});
+  const awsRequestId = TracerGlobals.getHandlerInputs().context.awsRequestId;
+  const transactionId = getCurrentTransactionId();
+  const httpSpan = getHttpSpan(transactionId, awsRequestId, messageId, {});
   const stepInfo = Object.assign(httpSpan.info, {
     resourceName: 'StepFunction',
     httpInfo: { host: 'StepFunction' },

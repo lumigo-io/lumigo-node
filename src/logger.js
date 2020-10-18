@@ -72,12 +72,15 @@ const forceLog = (levelname, message, obj) => {
   }
 };
 
-export const warnClient = msg => {
+export const warnClient = (msg, obj) => {
   if (process.env.LUMIGO_WARNINGS === 'off') {
     debug('Does not warn the user about', msg);
     return false;
   }
+  if (obj)
+    // eslint-disable-next-line no-console
+    console.log(`${WARN_CLIENT_PREFIX}: ${msg}`, obj);
   // eslint-disable-next-line no-console
-  console.log(`${WARN_CLIENT_PREFIX}: ${msg}`);
+  else console.log(`${WARN_CLIENT_PREFIX}: ${msg}`);
   return true;
 };

@@ -2,8 +2,15 @@ import { getBasicChildSpan } from './awsSpan';
 import { payloadStringify, prune } from '../utils/payloadStringify';
 import { getEventEntitySize } from '../utils';
 
-export const createSqlSpan = (spanId, requestMetadata, dbFields, spanType) => {
-  const baseSpan = getBasicChildSpan(spanId, spanType);
+export const createSqlSpan = (
+  transactionId,
+  awsRequestId,
+  spanId,
+  requestMetadata,
+  dbFields,
+  spanType
+) => {
+  const baseSpan = getBasicChildSpan(transactionId, awsRequestId, spanId, spanType);
   return {
     ...baseSpan,
     started: requestMetadata.started,

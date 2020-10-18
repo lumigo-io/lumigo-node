@@ -15,6 +15,7 @@ export class MongoSpanBuilder {
       memoryAllocated: '1024',
       messageVersion: 2,
       parentId: HttpSpanBuilder.DEFAULT_PARENT_ID,
+      reporterAwsRequestId: HttpSpanBuilder.DEFAULT_PARENT_ID,
       readiness: 'cold',
       region: HttpSpanBuilder.DEFAULT_REGION,
       invokedArn: HttpSpanBuilder.DEFAULT_ARN,

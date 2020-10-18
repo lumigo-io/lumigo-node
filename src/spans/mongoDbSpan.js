@@ -1,8 +1,14 @@
 import { getBasicChildSpan, MONGO_SPAN } from './awsSpan';
 import { payloadStringify } from '../utils/payloadStringify';
 
-export const createMongoDbSpan = (spanId, requestMetadata, mongoFields) => {
-  const baseSpan = getBasicChildSpan(spanId, MONGO_SPAN);
+export const createMongoDbSpan = (
+  transactionId,
+  awsRequestId,
+  spanId,
+  requestMetadata,
+  mongoFields
+) => {
+  const baseSpan = getBasicChildSpan(transactionId, awsRequestId, spanId, MONGO_SPAN);
   return {
     ...baseSpan,
     started: requestMetadata.started,

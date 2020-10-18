@@ -510,6 +510,7 @@ describe('tracer', () => {
     spies.sendSpans.mockImplementationOnce(() => {});
     spies.getEndFunctionSpan.mockReturnValueOnce({
       x: 'y',
+      id: '1',
       transactionId: '123',
     });
     spies.getCurrentTransactionId.mockReturnValueOnce('123');
@@ -525,7 +526,16 @@ describe('tracer', () => {
 
     TracerGlobals.setTracerInputs({ token: '123' });
     spies.SpansContainer.getSpans.mockReturnValueOnce([
-      { transactionId: '123', id: '1' },
+      { transactionId: '123', id: '1', reporterAwsRequestId: '2', parentId: '2' },
+      { transactionId: '456', id: '2' },
+    ]);
+    await tracer.sendEndTraceSpans({ id: '1_started' }, { err: null, data: null });
+    expect(spies.warnClient).not.toHaveBeenCalled();
+    expect(TracerGlobals.getTracerInputs().token).toEqual('');
+
+    TracerGlobals.setTracerInputs({ token: '123' });
+    spies.SpansContainer.getSpans.mockReturnValueOnce([
+      { transactionId: '123', id: '1', reporterAwsRequestId: '2' },
       { transactionId: '456', id: '2' },
     ]);
     await tracer.sendEndTraceSpans({ id: '1_started' }, { err: null, data: null });
