@@ -3,17 +3,26 @@ import * as logger from '../logger';
 import { hook } from '../extender';
 import { getRandomId, safeExecute } from '../utils';
 import { createSqlSpan, extendSqlSpan } from '../spans/sqlSpan';
-import { SpansContainer } from '../globals';
+import { SpansContainer, TracerGlobals } from '../globals';
 import { payloadStringify } from '../utils/payloadStringify';
-import { PG_SPAN } from '../spans/awsSpan';
+import { getCurrentTransactionId, PG_SPAN } from '../spans/awsSpan';
 
 function queryBeforeHook(args, extenderContext) {
+  const awsRequestId = TracerGlobals.getHandlerInputs().context.awsRequestId;
+  const transactionId = getCurrentTransactionId();
   const started = Date.now();
   const [query] = args;
   const values = Array.isArray(args[1]) ? args[1] : [];
   const { connectionParameters } = this;
   const spanId = getRandomId();
-  const span = createSqlSpan(spanId, { started }, { query, connectionParameters, values }, PG_SPAN);
+  const span = createSqlSpan(
+    transactionId,
+    awsRequestId,
+    spanId,
+    { started },
+    { query, connectionParameters, values },
+    PG_SPAN
+  );
   SpansContainer.addSpan(span);
   extenderContext.currentSpan = span;
 }

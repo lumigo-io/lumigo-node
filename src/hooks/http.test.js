@@ -16,6 +16,7 @@ import * as httpHook from './http';
 import * as utils from '../utils';
 import { SpansContainer, TracerGlobals } from '../globals';
 import { HandlerInputesBuilder } from '../../testUtils/handlerInputesBuilder';
+import { getCurrentTransactionId } from '../spans/awsSpan';
 
 describe('http hook', () => {
   process.env['AWS_REGION'] = 'us-east-x';
@@ -43,7 +44,14 @@ describe('http hook', () => {
       body: '',
     };
     const randomRequstId = 'REQ';
-    const wrapper = httpHook.httpRequestEmitBeforeHookWrapper(requestData, randomRequstId);
+    const awsRequestId = HttpSpanBuilder.DEFAULT_PARENT_ID;
+    const transactionId = HttpSpanBuilder.DEFAULT_TRANSACTION_ID;
+    const wrapper = httpHook.httpRequestEmitBeforeHookWrapper(
+      transactionId,
+      awsRequestId,
+      requestData,
+      randomRequstId
+    );
     const emitEventName = 'socket';
     const emitArg = {
       _httpMessage: {
@@ -60,6 +68,8 @@ describe('http hook', () => {
   });
 
   test('httpRequestEmitBeforeHookWrapper -> output flow', () => {
+    const awsRequestId = HttpSpanBuilder.DEFAULT_PARENT_ID;
+    const transactionId = HttpSpanBuilder.DEFAULT_TRANSACTION_ID;
     const requestData = {
       body: '',
     };
@@ -70,7 +80,11 @@ describe('http hook', () => {
         output: ['HTTP BODY1\nHTTP BODY2'],
       },
     };
-    const wrapper = httpHook.httpRequestEmitBeforeHookWrapper(requestData);
+    const wrapper = httpHook.httpRequestEmitBeforeHookWrapper(
+      transactionId,
+      awsRequestId,
+      requestData
+    );
     wrapper([emitEventName, emitArg]);
 
     expect(requestData).toEqual({
@@ -273,6 +287,7 @@ describe('http hook', () => {
   });
 
   test('createEmitResponseHandler - add span simple flow', () => {
+    const transactionId = HttpSpanBuilder.DEFAULT_TRANSACTION_ID;
     const testData = {
       randomId: 'DummyRandomId',
       requestData: {
@@ -300,14 +315,20 @@ describe('http hook', () => {
 
     MockDate.set(testData.responseData.receivedTime);
 
-    httpHook.createEmitResponseHandler(testData.requestData, testData.randomId)(responseEmitter);
+    httpHook.createEmitResponseHandler(
+      transactionId,
+      'DummyParentId2',
+      testData.requestData,
+      testData.randomId
+    )(responseEmitter);
 
     responseEmitter.emit('data', testData.responseData.body);
     responseEmitter.emit('end');
 
     const expectedHttpSpan = new HttpSpanBuilder()
       .withSpanId(testData.randomId)
-      .withParentId('DummyParentId')
+      .withParentId('DummyParentId2')
+      .withReporterAwsRequestId('DummyParentId')
       .withInvokedArn('arn:aws:l:region:335722316285:function:dummy-func')
       .withEnded(testData.responseData.receivedTime)
       .withStarted(1)
@@ -337,6 +358,7 @@ describe('http hook', () => {
         body: 'SomeResponse',
       },
     };
+    const transactionId = getCurrentTransactionId();
     const handlerInputs = new HandlerInputesBuilder()
       .withAwsRequestId('DummyParentId')
       .withInvokedFunctionArn('arn:aws:l:region:335722316285:function:dummy-func')
@@ -346,6 +368,7 @@ describe('http hook', () => {
     const previousSpan = new HttpSpanBuilder()
       .withSpanId(testData.randomId)
       .withParentId('DummyParentId')
+      .withReporterAwsRequestId('DummyParentId')
       .withInvokedArn('arn:aws:l:region:335722316285:function:dummy-func')
       .withEnded(testData.responseData.receivedTime)
       .withStarted(1)
@@ -362,7 +385,12 @@ describe('http hook', () => {
 
     MockDate.set(testData.responseData.receivedTime);
 
-    httpHook.createEmitResponseHandler(testData.requestData, testData.randomId)(responseEmitter);
+    httpHook.createEmitResponseHandler(
+      transactionId,
+      'DummyParentId',
+      testData.requestData,
+      testData.randomId
+    )(responseEmitter);
 
     responseEmitter.emit('data', testData.responseData.body);
     responseEmitter.emit('end');
@@ -381,6 +409,7 @@ describe('http hook', () => {
   });
 
   test('wrappedHttpResponseCallback -> fail on getHttpSpan', () => {
+    const transactionId = HttpSpanBuilder.DEFAULT_TRANSACTION_ID;
     const testData = {
       randomId: 'DummyRandomId',
       requestData: {
@@ -413,7 +442,12 @@ describe('http hook', () => {
 
     MockDate.set(testData.responseData.receivedTime);
 
-    httpHook.createEmitResponseHandler(testData.requestData, testData.randomId)(responseEmitter);
+    httpHook.createEmitResponseHandler(
+      transactionId,
+      'DummyParentId',
+      testData.requestData,
+      testData.randomId
+    )(responseEmitter);
 
     responseEmitter.emit('data', testData.responseData.body);
     responseEmitter.emit('end');

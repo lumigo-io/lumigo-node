@@ -6,6 +6,7 @@ import * as awsParsers from '../parsers/aws';
 import * as utils from '../utils';
 import { payloadStringify } from '../utils/payloadStringify';
 import { HTTP_SPAN } from './awsSpan';
+import { HttpSpanBuilder } from '../../testUtils/httpSpanBuilder';
 
 const exampleApiGatewayEvent = require('../testdata/events/apigw-request.json');
 
@@ -103,7 +104,7 @@ describe('awsSpan', () => {
     };
     spies.isWarm.mockReturnValueOnce(true);
 
-    expect(awsSpan.getBasicSpan()).toEqual(expectedBasicSpan);
+    expect(awsSpan.getBasicSpan('64a1b06067c2100c52e51ef4')).toEqual(expectedBasicSpan);
   });
 
   test('getBasicSpan turn is warm', () => {
@@ -538,6 +539,9 @@ describe('awsSpan', () => {
 
   test('getBasicChildSpan', () => {
     const id = 'not-a-random-id';
+    const awsRequestId = '6d26e3c8-60a6-4cee-8a70-f525f47a4caf';
+    const transactionId = '64a1b06067c2100c52e51ef4';
+
     const expected = {
       info: {
         traceId: {
@@ -564,9 +568,17 @@ describe('awsSpan', () => {
       invokedVersion: '1',
       id,
       type: 'http',
-      parentId: '6d26e3c8-60a6-4cee-8a70-f525f47a4caf',
+      parentId: awsRequestId,
+      reporterAwsRequestId: awsRequestId,
     };
-    expect(awsSpan.getBasicChildSpan(id, HTTP_SPAN)).toEqual(expected);
+    expect(
+      awsSpan.getBasicChildSpan(
+        '64a1b06067c2100c52e51ef4',
+        '6d26e3c8-60a6-4cee-8a70-f525f47a4caf',
+        id,
+        HTTP_SPAN
+      )
+    ).toEqual(expected);
 
     const spanId = 'abcdefg';
     const expected2 = {
@@ -582,7 +594,7 @@ describe('awsSpan', () => {
         logStreamName: '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',
       },
       vendor: 'AWS',
-      transactionId: '64a1b06067c2100c52e51ef4',
+      transactionId: transactionId,
       account: '985323015126',
       memoryAllocated: '1024',
       version: '$LATEST',
@@ -595,13 +607,17 @@ describe('awsSpan', () => {
       invokedVersion: '1',
       id: spanId,
       type: 'http',
-      parentId: '6d26e3c8-60a6-4cee-8a70-f525f47a4caf',
+      parentId: awsRequestId,
+      reporterAwsRequestId: awsRequestId,
     };
-    expect(awsSpan.getBasicChildSpan(spanId, HTTP_SPAN)).toEqual(expected2);
+    expect(awsSpan.getBasicChildSpan(transactionId, awsRequestId, spanId, HTTP_SPAN)).toEqual(
+      expected2
+    );
   });
 
   test('getHttpSpan ', () => {
     const id = 'not-a-random-id';
+    const awsRequestId = '6d26e3c8-60a6-4cee-8a70-f525f47a4caf';
     const sendTime = 1234;
     const receivedTime = 1256;
 
@@ -652,7 +668,7 @@ describe('awsSpan', () => {
       },
       memoryAllocated: '1024',
       messageVersion: 2,
-      parentId: '6d26e3c8-60a6-4cee-8a70-f525f47a4caf',
+      parentId: awsRequestId,
       readiness: 'cold',
       region: 'us-east-1',
       invokedArn: 'arn:aws:lambda:us-east-1:985323015126:function:aws-nodejs-dev-hello',
@@ -665,14 +681,22 @@ describe('awsSpan', () => {
       type: 'http',
       vendor: 'AWS',
       version: '$LATEST',
+      reporterAwsRequestId: awsRequestId,
     };
 
-    const result = awsSpan.getHttpSpan(id, requestData, responseData);
+    const result = awsSpan.getHttpSpan(
+      '64a1b06067c2100c52e51ef4',
+      awsRequestId,
+      id,
+      requestData,
+      responseData
+    );
     expect(result).toEqual(expected);
   });
 
   test('getHttpSpan - response with error should double payload size', () => {
     const id = 'not-a-random-id';
+    const transcationId = HttpSpanBuilder.DEFAULT_TRANSACTION_ID;
     const sendTime = 1234;
     const receivedTime = 1256;
     const longString = 'a'.repeat(getEventEntitySize() * 2);
@@ -695,8 +719,14 @@ describe('awsSpan', () => {
       receivedTime,
     };
 
-    const spanSuccess = awsSpan.getHttpSpan(id, requestData, responseDataSuccess);
-    const spanError = awsSpan.getHttpSpan(id, requestData, responseDataFailed);
+    const spanSuccess = awsSpan.getHttpSpan(
+      transcationId,
+      id,
+      id,
+      requestData,
+      responseDataSuccess
+    );
+    const spanError = awsSpan.getHttpSpan(transcationId, id, id, requestData, responseDataFailed);
     expect(spanError.info.httpInfo.request.body.length).toBeGreaterThan(
       spanSuccess.info.httpInfo.request.body.length * 1.8 + 1
     );
@@ -714,6 +744,7 @@ describe('awsSpan', () => {
   test('getHttpSpan - only for request data', () => {
     const id = 'not-a-random-id';
     const sendTime = 1234;
+    const awsRequestId = '6d26e3c8-60a6-4cee-8a70-f525f47a4caf';
 
     const requestData = {
       host: 'your.mind.com',
@@ -751,7 +782,7 @@ describe('awsSpan', () => {
       },
       memoryAllocated: '1024',
       messageVersion: 2,
-      parentId: '6d26e3c8-60a6-4cee-8a70-f525f47a4caf',
+      parentId: awsRequestId,
       readiness: 'cold',
       region: 'us-east-1',
       invokedArn: 'arn:aws:lambda:us-east-1:985323015126:function:aws-nodejs-dev-hello',
@@ -764,9 +795,72 @@ describe('awsSpan', () => {
       type: 'http',
       vendor: 'AWS',
       version: '$LATEST',
+      reporterAwsRequestId: awsRequestId,
     };
 
-    const result = awsSpan.getHttpSpan(id, requestData);
+    const result = awsSpan.getHttpSpan('64a1b06067c2100c52e51ef4', awsRequestId, id, requestData);
+    expect(result).toEqual(expected);
+  });
+
+  test('getHttpSpan - different parent id & reporter request id', () => {
+    const id = 'not-a-random-id';
+    const sendTime = 1234;
+    const reporterRequestId = '6d26e3c8-60a6-4cee-8a70-f525f47a4caf';
+    const awsRequestId = 'DummyReq';
+
+    const requestData = {
+      host: 'your.mind.com',
+      headers: { Tyler: 'Durden' },
+      body: 'the first rule of fight club',
+      sendTime,
+    };
+    const expected = {
+      account: '985323015126',
+      ended: undefined,
+      id: 'not-a-random-id',
+      info: {
+        httpInfo: {
+          host: 'your.mind.com',
+          request: {
+            body: '"the first rule of fight club"',
+            headers: '{"Tyler":"Durden"}',
+            host: 'your.mind.com',
+            sendTime: 1234,
+          },
+          response: {},
+        },
+        logGroupName: '/aws/lambda/aws-nodejs-dev-hello',
+        logStreamName: '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',
+        traceId: {
+          Parent: '28effe37598bb622',
+          Root: '1-5cdcf03a-64a1b06067c2100c52e51ef4',
+          Sampled: '0',
+          transactionId: '64a1b06067c2100c52e51ef4',
+        },
+        tracer: {
+          name: '@lumigo/tracerMock',
+          version: '1.2.3',
+        },
+      },
+      memoryAllocated: '1024',
+      messageVersion: 2,
+      parentId: awsRequestId,
+      readiness: 'cold',
+      region: 'us-east-1',
+      invokedArn: 'arn:aws:lambda:us-east-1:985323015126:function:aws-nodejs-dev-hello',
+      invokedVersion: '1',
+      runtime: 'AWS_Lambda_nodejs8.10',
+      service: 'external',
+      started: 1234,
+      token: 'DEADBEEF',
+      transactionId: '64a1b06067c2100c52e51ef4',
+      type: 'http',
+      vendor: 'AWS',
+      version: '$LATEST',
+      reporterAwsRequestId: reporterRequestId,
+    };
+
+    const result = awsSpan.getHttpSpan('64a1b06067c2100c52e51ef4', awsRequestId, id, requestData);
     expect(result).toEqual(expected);
   });
 
@@ -787,7 +881,7 @@ describe('awsSpan', () => {
       sendTime,
     };
 
-    const result = awsSpan.getHttpSpan(id, requestData);
+    const result = awsSpan.getHttpSpan('', '', id, requestData);
     expect(result.service).toEqual('external');
   });
 

@@ -73,7 +73,7 @@ describe('redis', () => {
   });
 
   test('createRedisSpan -> empty', async () => {
-    const result = createRedisSpan('123', { started: 123 }, {});
+    const result = createRedisSpan('123', '123', '123', { started: 123 }, {});
     expect(result.requestCommand).toBe(null);
     expect(result.requestArgs).toBe(null);
   });

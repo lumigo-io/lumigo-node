@@ -15,4 +15,6 @@ module.exports = {
     },
   },
   setupFilesAfterEnv: ['./testUtils/jest.setup.js'],
+  roots: ['<rootDir>/src'],
+  modulePaths: ['<rootDir>/dist'],
 };

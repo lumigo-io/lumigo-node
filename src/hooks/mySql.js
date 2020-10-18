@@ -2,10 +2,10 @@ import { safeRequire } from '../utils/requireUtils';
 import * as logger from '../logger';
 import { hook } from '../extender';
 import { getRandomId } from '../utils';
-import { SpansContainer } from '../globals';
+import { SpansContainer, TracerGlobals } from '../globals';
 import { extendSqlSpan, createSqlSpan } from '../spans/sqlSpan';
 import { payloadStringify } from '../utils/payloadStringify';
-import { MYSQL_SPAN } from '../spans/awsSpan';
+import { getCurrentTransactionId, MYSQL_SPAN } from '../spans/awsSpan';
 
 const createResultHook = currentSpan => args => {
   const ended = Date.now();
@@ -25,6 +25,8 @@ const createResultHook = currentSpan => args => {
 };
 
 function queryBeforeHook(args, extenderContext) {
+  const awsRequestId = TracerGlobals.getHandlerInputs().context.awsRequestId;
+  const transactionId = getCurrentTransactionId();
   const query = args[0];
   const values = Array.isArray(args[1]) ? args[1] : [];
   const connectionParameters = this.config;
@@ -33,6 +35,8 @@ function queryBeforeHook(args, extenderContext) {
   const started = Date.now();
 
   const span = createSqlSpan(
+    transactionId,
+    awsRequestId,
     spanId,
     {
       started,
