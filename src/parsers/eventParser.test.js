@@ -20,7 +20,7 @@ describe('event parser', () => {
   });
 
   test('api gw v1', () => {
-    const not_order_api_gw_event = {
+    const notOrderApiGwEvent = {
       resource: '/add-user',
       path: '/add-user',
       httpMethod: 'POST',
@@ -36,6 +36,7 @@ describe('event parser', () => {
         'CloudFront-Is-Tablet-Viewer': 'false',
         'CloudFront-Viewer-Country': 'IL',
         'content-type': 'application/json;charset=UTF-8',
+        // eslint-disable-next-line camelcase
         customer_id: 'c_1111',
         Host: 'aaaa.execute-api.us-west-2.amazonaws.com',
         origin: 'https://aaa.io',
@@ -64,6 +65,7 @@ describe('event parser', () => {
         'CloudFront-Is-Tablet-Viewer': ['false'],
         'CloudFront-Viewer-Country': ['IL'],
         'content-type': ['application/json;charset=UTF-8'],
+        // eslint-disable-next-line camelcase
         customer_id: ['c_1111'],
         Host: ['a.execute-api.us-west-2.amazonaws.com'],
         origin: ['https://aaa.io'],
@@ -95,8 +97,11 @@ describe('event parser', () => {
             'custom:customer-name': 'a',
             'cognito:username': 'aa',
             aud: '4lidcnek50hi18996gadaop8j0',
+            // eslint-disable-next-line camelcase
             event_id: '9fe80735-f265-41d5-a7ca-04b88c2a4a4c',
+            // eslint-disable-next-line camelcase
             token_use: 'id',
+            // eslint-disable-next-line camelcase
             auth_time: '1587038744',
             exp: 'Sun Apr 19 08:06:14 UTC 2020',
             'custom:role': 'admin',
@@ -137,9 +142,9 @@ describe('event parser', () => {
       isBase64Encoded: false,
     };
 
-    const order_api_gw_event = parseEvent(not_order_api_gw_event);
+    const orderApiGwEvent = parseEvent(notOrderApiGwEvent);
 
-    expect(JSON.stringify(order_api_gw_event)).toEqual(
+    expect(JSON.stringify(orderApiGwEvent)).toEqual(
       JSON.stringify({
         resource: '/add-user',
         path: '/add-user',
@@ -156,8 +161,11 @@ describe('event parser', () => {
               'custom:customer-name': 'a',
               'cognito:username': 'aa',
               aud: '4lidcnek50hi18996gadaop8j0',
+              // eslint-disable-next-line camelcase
               event_id: '9fe80735-f265-41d5-a7ca-04b88c2a4a4c',
+              // eslint-disable-next-line camelcase
               token_use: 'id',
+              // eslint-disable-next-line camelcase
               auth_time: '1587038744',
               exp: 'Sun Apr 19 08:06:14 UTC 2020',
               'custom:role': 'admin',
@@ -169,6 +177,7 @@ describe('event parser', () => {
         headers: {
           Authorization: 'auth',
           'content-type': 'application/json;charset=UTF-8',
+          // eslint-disable-next-line camelcase
           customer_id: 'c_1111',
           Host: 'aaaa.execute-api.us-west-2.amazonaws.com',
           origin: 'https://aaa.io',
@@ -183,7 +192,7 @@ describe('event parser', () => {
   });
 
   test('api gw v2', () => {
-    const not_order_api_gw_event = {
+    const notOrderApiGwEvent = {
       version: '2.0',
       routeKey: 'ANY /nodejs-apig-function-1G3XMPLZXVXYI',
       rawPath: '/default/nodejs-apig-function-1G3XMPLZXVXYI',
@@ -230,9 +239,9 @@ describe('event parser', () => {
       isBase64Encoded: true,
     };
 
-    const order_api_gw_event = parseEvent(not_order_api_gw_event);
+    const orderApiGwEvent = parseEvent(notOrderApiGwEvent);
 
-    expect(JSON.stringify(order_api_gw_event)).toEqual(
+    expect(JSON.stringify(orderApiGwEvent)).toEqual(
       JSON.stringify({
         version: '2.0',
         routeKey: 'ANY /nodejs-apig-function-1G3XMPLZXVXYI',
@@ -262,7 +271,7 @@ describe('event parser', () => {
   });
 
   test('sns parse', () => {
-    const not_order_sns_event = {
+    const notOrderSnsEvent = {
       Records: [
         {
           EventVersion: '1.0',
@@ -315,9 +324,9 @@ describe('event parser', () => {
       ],
     };
 
-    const order_sns_event = parseEvent(not_order_sns_event);
+    const orderSnsEvent = parseEvent(notOrderSnsEvent);
 
-    expect(JSON.stringify(order_sns_event)).toEqual(
+    expect(JSON.stringify(orderSnsEvent)).toEqual(
       JSON.stringify({
         Records: [
           {
@@ -346,7 +355,7 @@ describe('event parser', () => {
   });
 
   test('sqs parse', () => {
-    const not_order_sqs_event = {
+    const notOrderSqsEvent = {
       Records: [
         {
           messageId: '059f36b4-87a3-44ab-83d2-661975830a7d',
@@ -383,9 +392,9 @@ describe('event parser', () => {
       ],
     };
 
-    const order_sqs_event = parseEvent(not_order_sqs_event);
+    const orderSqsEvent = parseEvent(notOrderSqsEvent);
 
-    expect(JSON.stringify(order_sqs_event)).toEqual(
+    expect(JSON.stringify(orderSqsEvent)).toEqual(
       JSON.stringify({
         Records: [
           {
@@ -397,6 +406,146 @@ describe('event parser', () => {
             body: 'Test message2',
             messageAttributes: { b: 2 },
             messageId: '2e1424d4-f796-459a-8184-9c92662be6da',
+          },
+        ],
+      })
+    );
+  });
+
+  test('s3 parse', () => {
+    const notOrderedS3Event = {
+      Records: [
+        {
+          eventVersion: '2.1',
+          eventSource: 'aws:s3',
+          awsRegion: 'us-west-2',
+          eventTime: '2020-09-24T12:00:12.137Z',
+          eventName: 'ObjectCreated:Put',
+          userIdentity: { principalId: 'A2QVTU9T5VMOU3' },
+          requestParameters: { sourceIPAddress: '77.127.93.97' },
+          responseElements: {
+            'x-amz-request-id': '318F33BA8C4CBDC5',
+            'x-amz-id-2':
+              'VyRyYV/2vjikRUkRoH2WPH6M5WcAjNSGXG8Qtd1uEfbklnTusaDEz/jQPdLQgf2tZLjRuq4MgZFcVFpQJgZLJfiGUoh7IBhU',
+          },
+          s3: {
+            s3SchemaVersion: '1.0',
+            configurationId: 'a078ca2d-53a8-45d4-a621-260a439876d8',
+            bucket: {
+              name: 'testingbuckets3testing',
+              ownerIdentity: { principalId: 'A2QVTU9T5VMOU3' },
+              arn: 'arn:aws:s3:::testingbuckets3testing',
+            },
+            object: {
+              key: 'Screen+Shot+2020-05-27+at+12.37.36.png',
+              size: 61211,
+              eTag: '714ee5196a5c0a6e6b9019caa7b6e970',
+              sequencer: '005F6C8A510EE02021',
+            },
+          },
+        },
+      ],
+    };
+
+    const orderedS3Event = parseEvent(notOrderedS3Event);
+
+    expect(JSON.stringify(orderedS3Event)).toEqual(
+      JSON.stringify({
+        Records: [
+          {
+            awsRegion: 'us-west-2',
+            eventTime: '2020-09-24T12:00:12.137Z',
+            eventName: 'ObjectCreated:Put',
+            userIdentity: { principalId: 'A2QVTU9T5VMOU3' },
+            requestParameters: { sourceIPAddress: '77.127.93.97' },
+            s3: {
+              bucket: {
+                arn: 'arn:aws:s3:::testingbuckets3testing',
+              },
+              object: {
+                key: 'Screen+Shot+2020-05-27+at+12.37.36.png',
+                size: 61211,
+              },
+            },
+          },
+        ],
+      })
+    );
+  });
+
+  test('cloudfront parse', () => {
+    const notOrderedCloudfrontEvent = {
+      Records: [
+        {
+          cf: {
+            config: {
+              distributionDomainName: 'd3f1hyel7d5adt.cloudfront.net',
+              distributionId: 'E8PDQHVQH1V0Q',
+              eventType: 'origin-request',
+              requestId: 'hnql0vH8VDvTTLGwmKn337OH08mMiV5sTPsYGyBqCKgCXPZbfNqYlw==',
+            },
+            request: {
+              body: {
+                action: 'read-only',
+                data: '',
+                encoding: 'base64',
+                inputTruncated: false,
+              },
+              clientIp: '176.12.196.206',
+              headers: {
+                'x-forwarded-for': [{ key: 'X-Forwarded-For', value: '176.12.196.206' }],
+                'user-agent': [{ key: 'User-Agent', value: 'Amazon CloudFront' }],
+                via: [
+                  {
+                    key: 'Via',
+                    value: '1.1 67f7ae71b3a190dab6b84c5ceb7fd5e0.cloudfront.net (CloudFront)',
+                  },
+                ],
+                'accept-encoding': [{ key: 'Accept-Encoding', value: 'gzip' }],
+                host: [{ key: 'Host', value: 'my-cloudfront-demo-test.s3.amazonaws.com' }],
+              },
+              method: 'GET',
+              origin: {
+                s3: {
+                  authMethod: 'none',
+                  customHeaders: {},
+                  domainName: 'my-cloudfront-demo-test.s3.amazonaws.com',
+                  path: '',
+                },
+              },
+              querystring: '',
+              uri: '/favicon.ico',
+            },
+          },
+        },
+      ],
+    };
+    const orderedCloudfrontEvent = parseEvent(notOrderedCloudfrontEvent);
+
+    expect(JSON.stringify(orderedCloudfrontEvent)).toEqual(
+      JSON.stringify({
+        Records: [
+          {
+            cf: {
+              config: {
+                distributionDomainName: 'd3f1hyel7d5adt.cloudfront.net',
+                distributionId: 'E8PDQHVQH1V0Q',
+                eventType: 'origin-request',
+                requestId: 'hnql0vH8VDvTTLGwmKn337OH08mMiV5sTPsYGyBqCKgCXPZbfNqYlw==',
+              },
+              request: {
+                body: {
+                  action: 'read-only',
+                  data: '',
+                  encoding: 'base64',
+                  inputTruncated: false,
+                },
+                clientIp: '176.12.196.206',
+                method: 'GET',
+                querystring: '',
+                uri: '/favicon.ico',
+              },
+            },
           },
         ],
       })

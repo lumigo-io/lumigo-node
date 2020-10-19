@@ -757,22 +757,22 @@ describe('utils', () => {
   });
 
   test('shouldScrubDomain', () => {
-    let undefined_url = undefined;
-    let secrets_manager_url = 'secretsmanager-test.amazonaws.com';
-    let google_url = 'http://google.com/';
-    let facebook_url = 'http://test.facebook.io/';
-    let instagram_url = 'http://test.instagram.io/';
+    let undefinedUrl = undefined;
+    let secretsManagerUrl = 'secretsmanager-test.amazonaws.com';
+    let googleUrl = 'http://google.com/';
+    let facebookUrl = 'http://test.facebook.io/';
+    let instagramUrl = 'http://test.instagram.io/';
 
-    expect(shouldScrubDomain(undefined_url)).toEqual(false);
-    expect(shouldScrubDomain(secrets_manager_url)).toEqual(true); // checking default scrubbing configuration
-    expect(shouldScrubDomain(google_url)).toEqual(false);
+    expect(shouldScrubDomain(undefinedUrl)).toEqual(false);
+    expect(shouldScrubDomain(secretsManagerUrl)).toEqual(true); // checking default scrubbing configuration
+    expect(shouldScrubDomain(googleUrl)).toEqual(false);
 
     process.env.LUMIGO_DOMAINS_SCRUBBER = '["google"]';
-    expect(shouldScrubDomain(google_url)).toEqual(true);
+    expect(shouldScrubDomain(googleUrl)).toEqual(true);
 
     process.env.LUMIGO_DOMAINS_SCRUBBER = '["google", "facebook"]';
-    expect(shouldScrubDomain(facebook_url)).toEqual(true);
-    expect(shouldScrubDomain(instagram_url)).toEqual(false);
+    expect(shouldScrubDomain(facebookUrl)).toEqual(true);
+    expect(shouldScrubDomain(instagramUrl)).toEqual(false);
   });
 
   test('safeExecute run function', () => {
