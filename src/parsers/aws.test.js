@@ -314,6 +314,69 @@ describe('aws parser', () => {
     });
   });
 
+  test('eventBridgeParser -> happy flow', () => {
+    const requestData = {
+      host: 'events.us-west-2.amazonaws.com',
+      body: JSON.stringify({
+        Entries: [
+          {
+            Source: 'source_lambda',
+            Resources: [],
+            DetailType: 'string',
+            Detail: '{"a": 1}',
+            EventBusName: 'test',
+          },
+          {
+            Source: 'source_lambda',
+            Resources: [],
+            DetailType: 'string',
+            Detail: '{"a": 2}',
+            EventBusName: 'test',
+          },
+          {
+            Source: 'source_lambda',
+            Resources: [],
+            DetailType: 'string',
+            Detail: '{"a": 3}',
+            EventBusName: 'test2',
+          },
+        ],
+      }),
+    };
+    const responseData = {
+      body: JSON.stringify({
+        Entries: [{ EventId: '1-2-3-4' }, { EventId: '6-7-8-9' }],
+        FailedEntryCount: 0,
+      }),
+    };
+
+    const result = aws.eventBridgeParser(requestData, responseData);
+
+    expect(result).toEqual({
+      awsServiceData: {
+        resourceName: 'test,test2',
+        messageIds: ['1-2-3-4', '6-7-8-9'],
+      },
+    });
+  });
+
+  test('eventBridgeParser -> not success and return default values', () => {
+    const requestData = {
+      path: '/',
+      host: 'events.us-west-2.amazonaws.com',
+      sendTime: 1564474992235,
+    };
+
+    const result = aws.eventBridgeParser(requestData, {});
+
+    expect(result).toEqual({
+      awsServiceData: {
+        messageIds: undefined,
+        resourceName: undefined,
+      },
+    });
+  });
+
   test('kinesisParser -> happy flow single put', () => {
     const streamName = 'RANDOM-STREAM-NAME';
     const requestData = {

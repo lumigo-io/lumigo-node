@@ -1,4 +1,4 @@
-import { md5Hash, parseQueryParams, safeGet } from '../utils';
+import { md5Hash, parseQueryParams, removeDuplicates, safeGet } from '../utils';
 import parseXml from '../tools/xmlToJson';
 import * as logger from '../logger';
 
@@ -85,6 +85,21 @@ export const apigwParser = (requestData, responseData) => {
   }
 
   return baseData;
+};
+
+export const eventBridgeParser = (requestData, responseData) => {
+  const { body: reqBody } = requestData;
+  const { body: resBody } = responseData;
+  const reqBodyJSON = (!!reqBody && JSON.parse(reqBody)) || {};
+  const resBodyJSON = (!!resBody && JSON.parse(resBody)) || {};
+  const resourceName = reqBodyJSON.Entries
+    ? removeDuplicates(reqBodyJSON.Entries.map(entry => entry.EventBusName)).join(',')
+    : undefined;
+  const messageIds = resBodyJSON.Entries
+    ? resBodyJSON.Entries.map(entry => entry.EventId)
+    : undefined;
+  const awsServiceData = { resourceName, messageIds };
+  return { awsServiceData };
 };
 
 export const sqsParser = (requestData, responseData) => {

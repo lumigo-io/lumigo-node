@@ -488,6 +488,11 @@ describe('awsSpan', () => {
     awsSpan.getAwsServiceData(requestData, responseData);
     expect(awsParsers.kinesisParser).toHaveBeenCalledWith(requestData, responseData);
 
+    requestData.host = `events.us-west-2.amazonaws.com`;
+
+    awsSpan.getAwsServiceData(requestData, responseData);
+    expect(awsParsers.eventBridgeParser).toHaveBeenCalledWith(requestData, responseData);
+
     requestData.host = `random.random.execute-api.amazonaws.com`;
     awsSpan.getAwsServiceData(requestData, responseData);
     expect(awsParsers.apigwParser).toHaveBeenCalledWith(requestData, responseData);
