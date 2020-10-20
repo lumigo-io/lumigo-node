@@ -28,7 +28,25 @@ export const getTriggeredBy = event => {
     return 'stepFunction';
   }
 
+  if (isEventBridgeEvent(event)) {
+    return 'eventBridge';
+  }
+
   return 'invocation';
+};
+
+export const isEventBridgeEvent = event => {
+  return (
+    event !== undefined &&
+    event.version !== undefined &&
+    event.id !== undefined &&
+    event['detail-type'] !== undefined &&
+    event.source !== undefined &&
+    event.time !== undefined &&
+    event.region !== undefined &&
+    event.resources !== undefined &&
+    event.detail !== undefined
+  );
 };
 
 const getApiGatewayV1Data = event => {
@@ -111,6 +129,8 @@ export const getRelevantEventData = (triggeredBy, event) => {
       return { arn: event.Records[0].s3.bucket.arn };
     case 'apigw':
       return getApiGatewayData(event);
+    case 'eventBridge':
+      return { messageId: event.id };
     case 'stepFunction':
       return {
         messageId: recursiveGetKey(event, LUMIGO_EVENT_KEY)[STEP_FUNCTION_UID_KEY],
