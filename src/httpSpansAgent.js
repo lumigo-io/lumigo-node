@@ -84,9 +84,15 @@ export const HttpSpansAgent = (() => {
         resolve(1);
       }, CONNECTION_TIMEOUT);
     });
-    const requestPromise = session.post(url, requestBody, { headers }).catch(e => {
-      logger.debug('Edge error (Tracer skipping)', e.message);
-    });
+    const requestPromise = session
+      .post(url, requestBody, { headers })
+      .then(r => {
+        const { status, statusText, data } = r;
+        logger.debug('Edge request completed', { statusText, status, data });
+      })
+      .catch(e => {
+        logger.debug('Edge error (Tracer skipping)', e.message);
+      });
 
     await Promise.race([requestPromise, requestTimeout]).finally(() => {
       clearTimeout(requestTimeoutTimer);
