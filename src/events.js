@@ -37,15 +37,15 @@ export const getTriggeredBy = event => {
 
 export const isEventBridgeEvent = event => {
   return (
-    event !== undefined &&
-    event.version !== undefined &&
-    event.id !== undefined &&
-    event['detail-type'] !== undefined &&
-    event.source !== undefined &&
-    event.time !== undefined &&
-    event.region !== undefined &&
-    event.resources !== undefined &&
-    event.detail !== undefined
+    typeof event !== undefined &&
+    typeof event.version === 'string' &&
+    typeof event.id === 'string' &&
+    typeof event['detail-type'] === 'string' &&
+    typeof event.source === 'string' &&
+    typeof event.time === 'string' &&
+    typeof event.region === 'string' &&
+    Array.isArray(event.resources) &&
+    typeof event.detail === 'object'
   );
 };
 
