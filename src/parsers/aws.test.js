@@ -354,7 +354,7 @@ describe('aws parser', () => {
 
     expect(result).toEqual({
       awsServiceData: {
-        resourceName: 'test,test2',
+        resourceNames: ['test', 'test2'],
         messageIds: ['1-2-3-4', '6-7-8-9'],
       },
     });

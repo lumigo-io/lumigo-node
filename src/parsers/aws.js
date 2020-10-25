@@ -92,13 +92,13 @@ export const eventBridgeParser = (requestData, responseData) => {
   const { body: resBody } = responseData;
   const reqBodyJSON = (!!reqBody && JSON.parse(reqBody)) || {};
   const resBodyJSON = (!!resBody && JSON.parse(resBody)) || {};
-  const resourceName = reqBodyJSON.Entries
-    ? removeDuplicates(reqBodyJSON.Entries.map(entry => entry.EventBusName)).join(',')
+  const resourceNames = reqBodyJSON.Entries
+    ? removeDuplicates(reqBodyJSON.Entries.map(entry => entry.EventBusName))
     : undefined;
   const messageIds = resBodyJSON.Entries
     ? resBodyJSON.Entries.map(entry => entry.EventId)
     : undefined;
-  const awsServiceData = { resourceName, messageIds };
+  const awsServiceData = { resourceNames, messageIds };
   return { awsServiceData };
 };
 
