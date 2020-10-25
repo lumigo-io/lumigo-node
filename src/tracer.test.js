@@ -506,6 +506,25 @@ describe('tracer', () => {
     );
   });
 
+  test('trace; callback -> user raise error of type string', async () => {
+    new EnvironmentBuilder().awsEnvironment().applyEnv();
+    const handlerInputs = new HandlerInputesBuilder().build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
+
+    const lumigoTracer = require('./index')({});
+
+    const userHandler = (event, context, callback) => {
+      callback('ERROR');
+    };
+
+    await lumigoTracer.trace(userHandler)({}, createContext(), jest.fn());
+
+    const spans = AxiosMocker.getSentSpans();
+    expect(spans[1][0].error.type).toEqual('Error');
+    expect(spans[1][0].error.message).toEqual('ERROR');
+    expect(spans[1][0].error.stacktrace.length).toBeGreaterThan(0);
+  });
+
   test('sendEndTraceSpans; dont clear globals in case of a leak', async () => {
     spies.sendSpans.mockImplementationOnce(() => {});
     spies.getEndFunctionSpan.mockReturnValueOnce({

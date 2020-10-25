@@ -147,6 +147,13 @@ const performPromisifyType = (err, data, type, callback) => {
   }
 };
 
+export const normalizeLambdaError = handlerReturnValue => {
+  // Normalizing lambda error according to Lambda normalize process
+  let { err, data, type } = handlerReturnValue;
+  if (!(err instanceof Error)) err = new Error(err);
+  return { err, data, type };
+};
+
 export const performStepFunctionLogic = handlerReturnValue => {
   return (
     safeExecute(() => {
@@ -195,6 +202,8 @@ export const trace = ({
   const pUserHandler = promisifyUserHandler(userHandler, event, context, callback);
 
   let [functionSpan, handlerReturnValue] = await Promise.all([pStartTrace, pUserHandler]);
+
+  handlerReturnValue = normalizeLambdaError(handlerReturnValue);
 
   if (isStepFunction()) {
     handlerReturnValue = performStepFunctionLogic(handlerReturnValue);

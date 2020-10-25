@@ -3,7 +3,7 @@ module.exports = {
   extends: ['eslint:recommended', 'prettier'],
   plugins: ['jest'],
   rules: {
-    camelcase: "error"
+    camelcase: 'error',
   },
   globals: {
     process: true,
