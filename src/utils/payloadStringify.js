@@ -35,6 +35,7 @@ const isSecretKey = (regexes, key) => {
     //optimization for arrays
     return false;
   }
+
   return !!regexes.some(regex => regex.test(key));
 };
 
