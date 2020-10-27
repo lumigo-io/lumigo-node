@@ -150,7 +150,7 @@ const performPromisifyType = (err, data, type, callback) => {
 export const normalizeLambdaError = handlerReturnValue => {
   // Normalizing lambda error according to Lambda normalize process
   let { err, data, type } = handlerReturnValue;
-  if (!(err instanceof Error)) err = new Error(err);
+  if (err && !(err instanceof Error)) err = new Error(err);
   return { err, data, type };
 };
 
