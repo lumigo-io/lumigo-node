@@ -150,7 +150,7 @@ describe('aws parser', () => {
 
   test('lambdaParser with arn', () => {
     const resourceName = 'FunctionName';
-    const arn = `arn:aws:lambda:eu-central-1:876847209798:function:${resourceName}`;
+    const arn = `arn:aws:lambda:eu-central-1:123847209798:function:${resourceName}`;
     const path = encodeURIComponent(
       `lambda.eu-central-1.amazonaws.com/2015-03-31/functions/${arn}/invocations?Qualifier=Qualifier`
     );
