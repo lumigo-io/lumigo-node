@@ -44,10 +44,18 @@ export const dynamodbParser = requestData => {
   return { awsServiceData };
 };
 
+// non-official
+export const isArn = arnToValidate => {
+  return arnToValidate.startsWith('arn:aws:');
+};
+
+export const extractNameFromArn = arn => arn.split(':')[6];
+
 export const lambdaParser = (requestData, responseData) => {
   if (!responseData) return {};
   const { path, headers } = requestData;
-  const resourceName = path.split('/')[3]; // FunctionName
+  let resourceName = decodeURIComponent(path).split('/')[3]; // FunctionName
+  resourceName = isArn(resourceName) ? extractNameFromArn(resourceName) : resourceName;
   const invocationType = headers['x-amz-invocation-type'];
   const { headers: responseHeaders } = responseData;
   const spanId = responseHeaders['x-amzn-requestid'] || responseHeaders['x-amz-requestid'] || '';

@@ -148,6 +148,26 @@ describe('aws parser', () => {
     expect(aws.lambdaParser(requestData, responseData)).toEqual(expected);
   });
 
+  test('lambdaParser with arn', () => {
+    const resourceName = 'FunctionName';
+    const arn = `arn:aws:lambda:eu-central-1:876847209798:function:${resourceName}`;
+    const path = encodeURIComponent(
+      `lambda.eu-central-1.amazonaws.com/2015-03-31/functions/${arn}/invocations?Qualifier=Qualifier`
+    );
+    const invocationType = 'InvocationType';
+    const headers = {
+      'x-amz-invocation-type': invocationType,
+    };
+    const requestData = { path, headers };
+    const spanId = '1234-abcd-efgh';
+    const responseData = { headers: { 'x-amzn-requestid': spanId } };
+    const expected = {
+      awsServiceData: { resourceName, invocationType },
+      spanId,
+    };
+    expect(aws.lambdaParser(requestData, responseData)).toEqual(expected);
+  });
+
   test('snsParser -> happy flow (request)', () => {
     const topicArn = 'SOME-TOPIC-ARN';
     const requestData = {
