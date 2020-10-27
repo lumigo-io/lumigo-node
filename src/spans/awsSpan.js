@@ -23,6 +23,7 @@ import {
   kinesisParser,
   awsParser,
   apigwParser,
+  eventBridgeParser,
 } from '../parsers/aws';
 import { TracerGlobals, ExecutionTags } from '../globals';
 import { getEventInfo } from '../events';
@@ -183,7 +184,7 @@ export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
   return newSpan;
 };
 
-export const AWS_PARSED_SERVICES = ['dynamodb', 'sns', 'lambda', 'sqs', 'kinesis'];
+export const AWS_PARSED_SERVICES = ['dynamodb', 'sns', 'lambda', 'sqs', 'kinesis', 'events'];
 
 export const getAwsServiceFromHost = host => {
   const service = host.split('.')[0];
@@ -215,6 +216,8 @@ export const getAwsServiceData = (requestData, responseData) => {
       return kinesisParser(requestData, responseData);
     case 'apigw':
       return apigwParser(requestData, responseData);
+    case 'events':
+      return eventBridgeParser(requestData, responseData);
     default:
       return awsParser(requestData, responseData);
   }

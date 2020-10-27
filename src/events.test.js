@@ -16,6 +16,7 @@ const exampleApiGatewayEvent = require('./testdata/events/apigw-request.json');
 const exampleApiGatewayV2Event = require('./testdata/events/apigw-v2-event.json');
 const exampleUnsupportedEvent = require('./testdata/events/appsync-invoke.json');
 const exampleApiGatewayEventWithoutHost = require('./testdata/events/apigw-custom-auth-request.json');
+const exampleEventBridgeEvent = require('./testdata/events/event-bridge-event.json');
 
 describe('events', () => {
   test('getTriggeredBy', () => {
@@ -25,6 +26,7 @@ describe('events', () => {
     expect(events.getTriggeredBy(exampleKinesisEvent)).toEqual('kinesis');
     expect(events.getTriggeredBy(exampleApiGatewayEvent)).toEqual('apigw');
     expect(events.getTriggeredBy(exampleDynamoDBInsertEvent)).toEqual('dynamodb');
+    expect(events.getTriggeredBy(exampleEventBridgeEvent)).toEqual('eventBridge');
     expect(events.getTriggeredBy(exampleUnsupportedEvent)).toEqual('invocation');
   });
 
@@ -122,6 +124,9 @@ describe('events', () => {
       messageId: 'deef4878-7910-11e6-8f14-25afc3e9ae33',
       resource: '/{proxy+}',
       stage: 'testStage',
+    });
+    expect(events.getRelevantEventData('eventBridge', exampleEventBridgeEvent)).toEqual({
+      messageId: 'f0f73aaa-e64f-a550-5be2-850898090583',
     });
 
     expect(events.getRelevantEventData('ses', exampleSesEvent)).toEqual({});
