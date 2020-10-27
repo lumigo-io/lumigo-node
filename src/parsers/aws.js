@@ -54,7 +54,7 @@ export const extractNameFromArn = arn => arn.split(':')[6];
 export const lambdaParser = (requestData, responseData) => {
   if (!responseData) return {};
   const { path, headers } = requestData;
-  let resourceName = decodeURIComponent(path).split('/')[3]; // FunctionName
+  let resourceName = decodeURIComponent(path).split('/')[3];
   resourceName = isArn(resourceName) ? extractNameFromArn(resourceName) : resourceName;
   const invocationType = headers['x-amz-invocation-type'];
   const { headers: responseHeaders } = responseData;
