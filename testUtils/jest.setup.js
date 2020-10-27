@@ -8,6 +8,7 @@ import * as globals from '../src/globals';
 import axios from 'axios';
 import { MongoMockerEventEmitter } from './mongoMocker';
 import path from 'path';
+import { TracerGlobals } from '../src/globals';
 
 jest.mock('../package.json');
 jest.mock('https');
@@ -22,6 +23,7 @@ beforeEach(() => {
   HttpsScenarioBuilder.clean();
   ConsoleWritesForTesting.clean();
   globals.clearGlobals();
+  TracerGlobals.clearTracerInputs();
   LogStore.clean();
   HttpSpansAgent.cleanSessionInstance();
   MongoMockerEventEmitter.cleanEventEmitter();
