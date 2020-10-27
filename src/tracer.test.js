@@ -534,29 +534,30 @@ describe('tracer', () => {
     });
     spies.getCurrentTransactionId.mockReturnValueOnce('123');
 
-    TracerGlobals.setTracerInputs({ token: '123' });
+    TracerGlobals.setHandlerInputs({ event: { a: 1 } });
     spies.SpansContainer.getSpans.mockReturnValueOnce([
       { transactionId: '123', id: '1' },
       { transactionId: '123', id: '2' },
     ]);
     await tracer.sendEndTraceSpans({ id: '1_started' }, { err: null, data: null });
     expect(spies.warnClient).not.toHaveBeenCalled();
-    expect(TracerGlobals.getTracerInputs().token).toEqual('');
+    expect(TracerGlobals.getHandlerInputs().event).toEqual({});
 
-    TracerGlobals.setTracerInputs({ token: '123' });
+    TracerGlobals.setHandlerInputs({ event: { a: 1 } });
     spies.SpansContainer.getSpans.mockReturnValueOnce([
       { transactionId: '123', id: '1', reporterAwsRequestId: '2', parentId: '2' },
       { transactionId: '456', id: '2' },
     ]);
     await tracer.sendEndTraceSpans({ id: '1_started' }, { err: null, data: null });
     expect(spies.warnClient).not.toHaveBeenCalled();
-    expect(TracerGlobals.getTracerInputs().token).toEqual('');
+    expect(TracerGlobals.getHandlerInputs().event).toEqual({});
 
-    TracerGlobals.setTracerInputs({ token: '123' });
+    TracerGlobals.setHandlerInputs({ event: { a: 1 } });
     spies.SpansContainer.getSpans.mockReturnValueOnce([
       { transactionId: '123', id: '1', reporterAwsRequestId: '2' },
       { transactionId: '456', id: '2' },
     ]);
+    expect(TracerGlobals.getHandlerInputs().event).toEqual({ a: 1 });
     await tracer.sendEndTraceSpans({ id: '1_started' }, { err: null, data: null });
     expect(spies.warnClient).toHaveBeenCalled();
   });

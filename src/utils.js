@@ -464,3 +464,5 @@ export const runOneTimeWrapper = (func, context) => {
     }
   };
 };
+
+export const removeDuplicates = arr => [...new Set(arr)];

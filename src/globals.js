@@ -154,7 +154,6 @@ export const TracerGlobals = (() => {
 
 export const clearGlobals = () => {
   SpansContainer.clearSpans();
-  TracerGlobals.clearTracerInputs();
   TracerGlobals.clearHandlerInputs();
   GlobalTimer.clearTimer();
   ExecutionTags.clear();

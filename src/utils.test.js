@@ -18,6 +18,7 @@ import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
 import { getEnvVarAsList, isEncodingType, isEmptyString, runOneTimeWrapper } from './utils';
 import { DEFAULT_TIMEOUT_MIN_DURATION } from './utils';
 import * as globals from './globals';
+import { removeDuplicates } from './utils';
 
 describe('utils', () => {
   const spies = {};
@@ -933,5 +934,13 @@ describe('utils', () => {
 
   test('safeGet default flow', () => {
     expect(safeGet({ a: { b: 'c' } }, ['a', 'b', 'arg'], 'dflt')).toEqual('dflt');
+  });
+
+  test('removeDuplicates happy flow', () => {
+    expect(removeDuplicates([1, 2, 3, 3, 2])).toEqual([1, 2, 3]);
+  });
+
+  test('removeDuplicates empty list', () => {
+    expect(removeDuplicates([])).toEqual([]);
   });
 });

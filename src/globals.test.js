@@ -254,10 +254,10 @@ describe('globals', () => {
       context: {},
     });
     expect(globals.TracerGlobals.getTracerInputs()).toEqual({
-      token: '',
-      debug: false,
-      edgeHost: '',
-      switchOff: false,
+      token,
+      debug,
+      edgeHost,
+      switchOff,
       isStepFunction: false,
     });
   });

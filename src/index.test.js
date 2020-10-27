@@ -2,9 +2,16 @@
 import * as tracer from './tracer';
 import * as utils from './utils';
 import { EXECUTION_TAGS_KEY } from './utils';
-import { HttpsRequestsForTesting } from '../testUtils/httpsMocker';
+import {
+  HttpsMocker,
+  HttpsRequestsForTesting,
+  HttpsScenarioBuilder,
+} from '../testUtils/httpsMocker';
 import * as fsExtra from 'fs-extra';
 import { AxiosMocker } from '../testUtils/axiosMocker';
+import { wrapHttp } from './hooks/http';
+import { HttpSpanBuilder } from '../testUtils/httpSpanBuilder';
+import { sleep } from '../testUtils/sleep';
 
 describe('index', () => {
   const spies = {};

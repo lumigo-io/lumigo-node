@@ -14,7 +14,7 @@ import {
 
 import * as httpHook from './http';
 import * as utils from '../utils';
-import { SpansContainer, TracerGlobals } from '../globals';
+import { clearGlobals, SpansContainer, TracerGlobals } from '../globals';
 import { HandlerInputesBuilder } from '../../testUtils/handlerInputesBuilder';
 import { getCurrentTransactionId } from '../spans/awsSpan';
 
@@ -626,6 +626,25 @@ describe('http hook', () => {
       .build();
 
     expect(spans).toEqual([expectedSpan]);
+  });
+
+  test('wrapHttp - adding token after globals cleared', () => {
+    TracerGlobals.setTracerInputs({ token: 'TOKEN' });
+    const handlerInputs = new HandlerInputesBuilder().build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
+
+    wrapHttp(HttpsMocker);
+
+    TracerGlobals.setTracerInputs({ token: 'TOKEN' });
+    clearGlobals();
+
+    const req = HttpsMocker.request({});
+    HttpsScenarioBuilder.appendNextResponse(req, {});
+
+    const spans = SpansContainer.getSpans();
+
+    expect(spans.length).toEqual(1);
+    expect(spans[0].token).toEqual('TOKEN');
   });
 
   test('wrapHttp - black listed url', () => {

@@ -1,0 +1,10 @@
+{
+  "version": "0",
+  "id": "f0f73aaa-e64f-a550-5be2-850898090583",
+  "detail-type": "string",
+  "source": "source_lambda",
+  "time": "2020-10-19T13:34:29Z",
+  "region": "us-west-2",
+  "resources": [],
+  "detail": { "a": 0.024995371455989845 }
+}
