@@ -273,7 +273,7 @@ export const httpAfterRequestWrapper = (args, originalFnResult, extenderContext)
 export const addStepFunctionEvent = messageId => {
   const awsRequestId = TracerGlobals.getHandlerInputs().context.awsRequestId;
   const transactionId = getCurrentTransactionId();
-  const httpSpan = getHttpSpan(transactionId, awsRequestId, messageId, {sendTime: Date.now()});
+  const httpSpan = getHttpSpan(transactionId, awsRequestId, messageId, { sendTime: Date.now() });
   const stepInfo = Object.assign(httpSpan.info, {
     resourceName: 'StepFunction',
     httpInfo: { host: 'StepFunction' },
