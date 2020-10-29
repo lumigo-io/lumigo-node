@@ -849,6 +849,7 @@ describe('http hook', () => {
     expect(spans[0].info.resourceName).toEqual('StepFunction');
     expect(spans[0].info.httpInfo.host).toEqual('StepFunction');
     expect(spans[0].info.messageId).toEqual('123');
+    expect(spans[0].started).toBeDefined();
   });
 
   test('wrapHttp - shimmer all wraps failed', () => {
