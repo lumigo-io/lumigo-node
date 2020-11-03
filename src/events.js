@@ -4,6 +4,7 @@ import {
   STEP_FUNCTION_UID_KEY,
   LUMIGO_EVENT_KEY,
   md5Hash,
+  safeExecute,
 } from './utils';
 
 export const getTriggeredBy = event => {
@@ -24,6 +25,10 @@ export const getTriggeredBy = event => {
     return 'apigw';
   }
 
+  if (isAppSyncEvent(event)) {
+    return 'appsync';
+  }
+
   if (isStepFunction() && event && !!recursiveGetKey(event, LUMIGO_EVENT_KEY)) {
     return 'stepFunction';
   }
@@ -33,6 +38,17 @@ export const getTriggeredBy = event => {
   }
 
   return 'invocation';
+};
+
+export const isAppSyncEvent = event => {
+  return (
+    event &&
+    event['context'] &&
+    event['context']['request'] &&
+    event['context']['request']['headers'] &&
+    event['context']['request']['headers']['host'] &&
+    event['context']['request']['headers']['host'].indexOf('appsync-api')
+  );
 };
 
 export const isEventBridgeEvent = event => {
@@ -74,6 +90,11 @@ export const getApiGatewayData = event => {
     return getApiGatewayV2Data(event);
   }
   return getApiGatewayV1Data(event);
+};
+
+export const getAppSyncData = event => {
+  const { host, 'x-amzn-trace-id': traceId } = event.context.request.headers;
+  return { apiId: host.split('.')[0], messageId: traceId.split('=')[1] };
 };
 
 export const getSnsData = event => {
@@ -131,6 +152,8 @@ export const getRelevantEventData = (triggeredBy, event) => {
       return getApiGatewayData(event);
     case 'eventBridge':
       return { messageId: event.id };
+    case 'appsync':
+      return getAppSyncData(event);
     case 'stepFunction':
       return {
         messageId: recursiveGetKey(event, LUMIGO_EVENT_KEY)[STEP_FUNCTION_UID_KEY],
@@ -143,6 +166,6 @@ export const getRelevantEventData = (triggeredBy, event) => {
 
 export const getEventInfo = event => {
   const triggeredBy = getTriggeredBy(event);
-  const eventData = getRelevantEventData(triggeredBy, event);
+  const eventData = safeExecute(() => getRelevantEventData(triggeredBy, event))() || {};
   return { ...eventData, triggeredBy };
 };
