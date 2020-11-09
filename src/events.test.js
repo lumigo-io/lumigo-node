@@ -133,7 +133,7 @@ describe('events', () => {
 
     expect(events.getRelevantEventData('ses', exampleSesEvent)).toEqual({});
     expect(events.getRelevantEventData('appsync', exampleAppSyncEvent)).toEqual({
-      apiId: 'oookuwqyrfhy7eexeksfovlbem',
+      api: 'oookuwqyrfhy7eexeksfovlbem.appsync-api.eu-west-1.amazonaws.com',
       messageId: '1-5fa161de-275509e254bf71cc48gc66d0',
     });
     expect(events.getRelevantEventData('invocation', exampleUnsupportedEvent)).toEqual({});

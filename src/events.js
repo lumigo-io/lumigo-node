@@ -94,7 +94,7 @@ export const getApiGatewayData = event => {
 
 export const getAppSyncData = event => {
   const { host, 'x-amzn-trace-id': traceId } = event.context.request.headers;
-  return { apiId: host.split('.')[0], messageId: traceId.split('=')[1] };
+  return { api: host, messageId: traceId.split('=')[1] };
 };
 
 export const getSnsData = event => {
