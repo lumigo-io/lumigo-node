@@ -1,0 +1,49 @@
+{
+  "arguments": {
+
+  },
+  "identity": null,
+  "source": null,
+  "request": {
+    "headers": {
+      "x-forwarded-for": "82.81.79.192, 130.176.1.90",
+      "accept-encoding": "gzip, deflate, br",
+      "cloudfront-viewer-country": "IL",
+      "cloudfront-is-tablet-viewer": "false",
+      "postman-token": "05df7645-f297-4347-b89b-41bd933df6a6",
+      "via": "1.1 559504b2d79b041c65c358d3db693428.cloudfront.net (CloudFront)",
+      "cloudfront-forwarded-proto": "https",
+      "content-type": "application/json",
+      "x-api-key": "da2-gjopsawbxjehdnsgfpyul6432q",
+      "x-amzn-trace-id": "Root=1-5fa98965-523cdde90f6d0a5343bd9b4f",
+      "x-amz-cf-id": "RZwVBPitxJrYbJ6Wju6zILqDExoW87s4lXLgtjnQocdaNBjd0Dx3LQ==",
+      "content-length": "87",
+      "cache-control": "no-cache",
+      "x-forwarded-proto": "https",
+      "host": "e6lstibe25cgfnropjv2gjuuc4.appsync-api.us-west-2.amazonaws.com",
+      "user-agent": "PostmanRuntime/7.26.5",
+      "cloudfront-is-desktop-viewer": "true",
+      "cloudfront-is-mobile-viewer": "false",
+      "accept": "*/*",
+      "x-forwarded-port": "443",
+      "cloudfront-is-smarttv-viewer": "false"
+    }
+  },
+  "prev": null,
+  "info": {
+    "selectionSetList": [
+      "id",
+      "name",
+      "location"
+    ],
+    "selectionSetGraphQL": "{\n  id\n  name\n  location\n}",
+    "parentTypeName": "Query",
+    "fieldName": "getSomething",
+    "variables": {
+
+    }
+  },
+  "stash": {
+
+  }
+}

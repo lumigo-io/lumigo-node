@@ -42,12 +42,17 @@ export const getTriggeredBy = event => {
 
 export const isAppSyncEvent = event => {
   return (
-    event &&
-    event['context'] &&
-    event['context']['request'] &&
-    event['context']['request']['headers'] &&
-    event['context']['request']['headers']['host'] &&
-    event['context']['request']['headers']['host'].indexOf('appsync-api')
+    (event &&
+      event['context'] &&
+      event['context']['request'] &&
+      event['context']['request']['headers'] &&
+      event['context']['request']['headers']['host'] &&
+      event['context']['request']['headers']['host'].indexOf('appsync-api')) ||
+    (event &&
+      event['request'] &&
+      event['request']['headers'] &&
+      event['request']['headers']['host'] &&
+      event['request']['headers']['host'].indexOf('appsync-api'))
   );
 };
 
@@ -93,8 +98,13 @@ export const getApiGatewayData = event => {
 };
 
 export const getAppSyncData = event => {
-  const { host, 'x-amzn-trace-id': traceId } = event.context.request.headers;
-  return { api: host, messageId: traceId.split('=')[1] };
+  if (event.context) {
+    const { host, 'x-amzn-trace-id': traceId } = event.context.request.headers;
+    return { api: host, messageId: traceId.split('=')[1] };
+  } else {
+    const { host, 'x-amzn-trace-id': traceId } = event.request.headers;
+    return { api: host, messageId: traceId.split('=')[1] };
+  }
 };
 
 export const getSnsData = event => {
