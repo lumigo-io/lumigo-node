@@ -47,12 +47,12 @@ export const isAppSyncEvent = event => {
       event['context']['request'] &&
       event['context']['request']['headers'] &&
       event['context']['request']['headers']['host'] &&
-      event['context']['request']['headers']['host'].indexOf('appsync-api') !== -1) ||
+      event['context']['request']['headers']['host'].includes('appsync-api')) ||
     (event &&
       event['request'] &&
       event['request']['headers'] &&
       event['request']['headers']['host'] &&
-      event['request']['headers']['host'].indexOf('appsync-api') !== -1)
+      event['request']['headers']['host'].includes('appsync-api'))
   );
 };
 
