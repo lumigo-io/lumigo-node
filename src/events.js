@@ -4,7 +4,7 @@ import {
   STEP_FUNCTION_UID_KEY,
   LUMIGO_EVENT_KEY,
   md5Hash,
-  // safeExecute,
+  safeExecute,
 } from './utils';
 
 export const getTriggeredBy = event => {
@@ -176,7 +176,6 @@ export const getRelevantEventData = (triggeredBy, event) => {
 
 export const getEventInfo = event => {
   const triggeredBy = getTriggeredBy(event);
-  // const eventData = safeExecute(() => getRelevantEventData(triggeredBy, event))() || {};
-  const eventData = getRelevantEventData(triggeredBy, event);
+  const eventData = safeExecute(() => getRelevantEventData(triggeredBy, event))() || {};
   return { ...eventData, triggeredBy };
 };
