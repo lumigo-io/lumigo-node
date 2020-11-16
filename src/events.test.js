@@ -17,6 +17,8 @@ const exampleApiGatewayV2Event = require('./testdata/events/apigw-v2-event.json'
 const exampleUnsupportedEvent = require('./testdata/events/appsync-invoke.json');
 const exampleApiGatewayEventWithoutHost = require('./testdata/events/apigw-custom-auth-request.json');
 const exampleEventBridgeEvent = require('./testdata/events/event-bridge-event.json');
+const exampleAppSyncEvent = require('./testdata/events/appsync-event.json');
+const exampleAppSyncSecondEvent = require('./testdata/events/appsync-second-event.json');
 
 describe('events', () => {
   test('getTriggeredBy', () => {
@@ -27,6 +29,8 @@ describe('events', () => {
     expect(events.getTriggeredBy(exampleApiGatewayEvent)).toEqual('apigw');
     expect(events.getTriggeredBy(exampleDynamoDBInsertEvent)).toEqual('dynamodb');
     expect(events.getTriggeredBy(exampleEventBridgeEvent)).toEqual('eventBridge');
+    expect(events.getTriggeredBy(exampleAppSyncEvent)).toEqual('appsync');
+    expect(events.getTriggeredBy(exampleAppSyncSecondEvent)).toEqual('appsync');
     expect(events.getTriggeredBy(exampleUnsupportedEvent)).toEqual('invocation');
   });
 
@@ -130,6 +134,14 @@ describe('events', () => {
     });
 
     expect(events.getRelevantEventData('ses', exampleSesEvent)).toEqual({});
+    expect(events.getRelevantEventData('appsync', exampleAppSyncEvent)).toEqual({
+      api: 'oookuwqyrfhy7eexeksfovlbem.appsync-api.eu-west-1.amazonaws.com',
+      messageId: '1-5fa161de-275509e254bf71cc48gc66d0',
+    });
+    expect(events.getRelevantEventData('appsync', exampleAppSyncSecondEvent)).toEqual({
+      api: 'e6lstibe25cgfnropjv2gjuuc4.appsync-api.us-west-2.amazonaws.com',
+      messageId: '1-5fa98965-523cdde90f6d0a5343bd9b4f',
+    });
     expect(events.getRelevantEventData('invocation', exampleUnsupportedEvent)).toEqual({});
   });
 
