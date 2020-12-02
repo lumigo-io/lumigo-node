@@ -4,7 +4,7 @@ import { hookMongoDb } from './mongodb';
 import { hookRedis } from './redis';
 import { hookPg } from './pg';
 import { hookMySql } from './mySql';
-import { hookMssql } from './mssql';
+import { hookMssql } from './msSql';
 
 export default () => {
   if (!isSwitchedOff() && isAwsEnvironment()) {
