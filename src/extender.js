@@ -26,3 +26,23 @@ export const hook = (module, funcName, options = {}) => {
     logger.warn(`Wrapping of function ${funcName} failed`, options);
   }
 };
+
+export const hookPromise = (originalPromise, options) => {
+  const { beforeThen = noop, afterThen = noop, beforeCatch = noop, afterCatch = noop } = options;
+  hook(originalPromise, 'then', {
+    beforeHook: args => {
+      hook(args, '0', {
+        beforeHook: beforeThen,
+        afterHook: afterThen,
+      });
+    },
+  });
+  hook(originalPromise, 'catch', {
+    beforeHook: args => {
+      hook(args, '0', {
+        beforeHook: beforeCatch,
+        afterHook: afterCatch,
+      });
+    },
+  });
+};

@@ -1,7 +1,7 @@
 import { safeRequire } from '../utils/requireUtils';
 import * as logger from '../logger';
-import { hook } from '../extender';
-import { getRandomId, isPromise, safeExecute } from '../utils';
+import { hook, hookPromise } from '../extender';
+import { getRandomId, isPromise } from '../utils';
 import { SpansContainer, TracerGlobals } from '../globals';
 import { extendSqlSpan, createSqlSpan } from '../spans/sqlSpan';
 import { payloadStringify } from '../utils/payloadStringify';
@@ -52,7 +52,6 @@ const handleResult = (currentSpan, result, error) => {
 };
 
 function queryBeforeHook(args, extenderContext) {
-  console.log('Got query args', args);
   const awsRequestId = TracerGlobals.getHandlerInputs().context.awsRequestId;
   const transactionId = getCurrentTransactionId();
   const started = Date.now();
@@ -78,7 +77,6 @@ function queryBeforeHook(args, extenderContext) {
     hook(args, '1', {
       beforeHook: function(args) {
         const [error, dbResult] = args;
-        console.log('Got DB RESULT', error, dbResult);
         handleResult(span, dbResult, error);
       },
     });
@@ -87,11 +85,15 @@ function queryBeforeHook(args, extenderContext) {
 
 function queryAfterHook(args, originalFnResult, extenderContext) {
   const { currentSpan } = extenderContext;
-  const safeHandler = safeExecute(result => {
-    handleResult(currentSpan, result);
-  });
   if (isPromise(originalFnResult)) {
-    originalFnResult.then(safeHandler);
+    hookPromise(originalFnResult, {
+      beforeThen: args => {
+        handleResult(currentSpan, args[0]);
+      },
+      beforeCatch: args => {
+        handleResult(currentSpan, null, args[0]);
+      },
+    });
   }
 }
 
