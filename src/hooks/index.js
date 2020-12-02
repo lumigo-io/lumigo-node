@@ -4,6 +4,7 @@ import { hookMongoDb } from './mongodb';
 import { hookRedis } from './redis';
 import { hookPg } from './pg';
 import { hookMySql } from './mySql';
+import { hookMssql } from './mssql';
 
 export default () => {
   if (!isSwitchedOff() && isAwsEnvironment()) {
@@ -13,6 +14,7 @@ export default () => {
       hookRedis();
       hookPg();
       hookMySql();
+      hookMssql();
       setLambdaWrapped();
     }
   }

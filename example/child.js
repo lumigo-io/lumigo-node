@@ -62,4 +62,4 @@ const childFn = async () => {
   return 'ALL GOOD';
 };
 
-exports.handler = lumigo.trace(childFn);
+exports.handler = lumigo.trace(async () => {});

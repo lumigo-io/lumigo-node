@@ -21,7 +21,7 @@ export const createSqlSpan = (
       user: dbFields.connectionParameters.user,
     },
     query: prune(dbFields.query, getEventEntitySize()),
-    values: payloadStringify(dbFields.values),
+    values: dbFields.values ? payloadStringify(dbFields.values) : '',
   };
 };
 
