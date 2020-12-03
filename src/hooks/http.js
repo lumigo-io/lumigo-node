@@ -18,7 +18,7 @@ import {
   isKeepHeadersOn,
 } from '../utils';
 import * as logger from '../logger';
-import { getCurrentTransactionId, getHttpSpan } from '../spans/awsSpan';
+import { getCurrentTransactionId, getHttpInfo, getHttpSpan } from '../spans/awsSpan';
 import { URL } from 'url';
 import {
   extractBodyFromEmitSocketEvent,
@@ -75,12 +75,13 @@ export const parseHttpRequestOptions = (options = {}, url) => {
   };
 };
 
-export const httpRequestWriteBeforeHookWrapper = requestData =>
+export const httpRequestWriteBeforeHookWrapper = (requestData, currentSpan) =>
   function(args) {
     if (isEmptyString(requestData.body)) {
       const body = extractBodyFromWriteFunc(args);
       if (body) {
         requestData.body += body;
+        if (currentSpan) currentSpan.info.httpInfo = getHttpInfo(requestData);
       }
     }
   };
@@ -89,7 +90,8 @@ export const httpRequestEmitBeforeHookWrapper = (
   transactionId,
   awsRequestId,
   requestData,
-  requestRandomId
+  requestRandomId,
+  currentSpan
 ) => {
   const oneTimerEmitResponseHandler = runOneTimeWrapper(
     createEmitResponseHandler(transactionId, awsRequestId, requestData, requestRandomId)
@@ -103,6 +105,7 @@ export const httpRequestEmitBeforeHookWrapper = (
         const body = extractBodyFromEmitSocketEvent(args[1]);
         if (body) {
           requestData.body += body;
+          if (currentSpan) currentSpan.info.httpInfo = getHttpInfo(requestData);
         }
       }
     }
@@ -167,13 +170,14 @@ export const createEmitResponseHandler = (
   });
 };
 
-export const httpRequestEndWrapper = requestData =>
+export const httpRequestEndWrapper = (requestData, currentSpan) =>
   function(args) {
     if (isEmptyString(requestData.body)) {
       const body = extractBodyFromEndFunc(args);
       if (body) {
         requestData.body += body;
       }
+      if (currentSpan) currentSpan.info.httpInfo = getHttpInfo(requestData);
     }
   };
 
@@ -240,6 +244,7 @@ export const httpBeforeRequestWrapper = (args, extenderContext) => {
     if (isTimeoutTimerEnabled()) {
       const httpSpan = getHttpSpan(transactionId, awsRequestId, requestRandomId, requestData);
       SpansContainer.addSpan(httpSpan);
+      extenderContext.currentSpan = httpSpan;
     }
   }
 };
@@ -252,20 +257,22 @@ export const httpAfterRequestWrapper = (args, originalFnResult, extenderContext)
     isTracedDisabled,
     awsRequestId,
     transactionId,
+    currentSpan,
   } = extenderContext;
   if (!isTracedDisabled) {
-    const endWrapper = httpRequestEndWrapper(requestData, requestRandomId);
+    const endWrapper = httpRequestEndWrapper(requestData, currentSpan);
     extender.hook(clientRequest, 'end', { beforeHook: endWrapper });
 
     const emitWrapper = httpRequestEmitBeforeHookWrapper(
       transactionId,
       awsRequestId,
       requestData,
-      requestRandomId
+      requestRandomId,
+      currentSpan
     );
     extender.hook(clientRequest, 'emit', { beforeHook: emitWrapper });
 
-    const writeWrapper = httpRequestWriteBeforeHookWrapper(requestData);
+    const writeWrapper = httpRequestWriteBeforeHookWrapper(requestData, currentSpan);
     extender.hook(clientRequest, 'write', { beforeHook: writeWrapper });
   }
 };
