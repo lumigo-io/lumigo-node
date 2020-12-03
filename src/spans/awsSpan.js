@@ -37,6 +37,7 @@ export const EXTERNAL_SERVICE = 'external';
 export const MONGO_SPAN = 'mongoDb';
 export const REDIS_SPAN = 'redis';
 export const PG_SPAN = 'pg';
+export const MSSQL_SPAN = 'msSql';
 export const MYSQL_SPAN = 'mySql';
 
 export const getSpanInfo = () => {
