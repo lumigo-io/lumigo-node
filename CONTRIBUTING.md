@@ -14,13 +14,13 @@ Start by installing all dependencies:
 npm i
 ```
 
-####Run the tests:
+#### Run the tests:
 
 ```shell
 ./scripts/checks.sh
 ```
 
-####Run the example:
+#### Run the example:
 Setting up your env:
 - In `example/index.js` change `const token = "XXX"` you your lumigo token (can get from https://platform.lumigo.io/onboarding)
 - Run:
