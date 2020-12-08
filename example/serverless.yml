@@ -22,6 +22,8 @@ service: aws-nodejs # NOTE: update this with your service name
 provider:
   name: aws
   runtime: nodejs10.x
+  env:
+    LUMIGO_DEBUG: TRUE
 
   iamRoleStatements:
     - Effect: "Allow"
@@ -49,21 +51,8 @@ provider:
 #    - exclude-me-dir/**
 
 functions:
-  parent:
-    handler: parent.handler
-
-  child:
-    handler: child.handler
-
-  slave-one:
-    handler: slave.handler
-    events:
-      - sns: slave-test-topic
-
-  slave-two:
-    handler: slave.handler
-    events:
-      - sns: slave-test-topic
+  test-function:
+    handler: index.handler
 
 
 #    The following are a few example events you can configure
