@@ -3,6 +3,7 @@ import * as logger from './logger';
 import { HttpSpansAgent } from './httpSpansAgent';
 
 export const MAX_SENT_BYTES = 1000 * 1000;
+export const NUMBER_OF_SPANS_IN_REPORT_OPTIMIZATION = 200;
 
 export const sendSingleSpan = async span => exports.sendSpans([span]);
 
@@ -35,10 +36,16 @@ export const sendSpans = async spans => {
   return { rtt };
 };
 
+export const shouldTrim = (spans, maxSendBytes) => {
+  return (
+    spans.length > NUMBER_OF_SPANS_IN_REPORT_OPTIMIZATION || getJSONBase64Size(spans) > maxSendBytes
+  );
+};
+
 export const forgeRequestBody = (spans, maxSendBytes = MAX_SENT_BYTES) => {
   let resultSpans = [];
 
-  if (isPruneTraceOff() || getJSONBase64Size(spans) <= maxSendBytes) {
+  if (isPruneTraceOff() || !shouldTrim(spans, maxSendBytes)) {
     return spans.length > 0 ? JSON.stringify(spans) : undefined;
   }
 
