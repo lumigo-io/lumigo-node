@@ -11,9 +11,8 @@ export const createMockedResponse = (rowCount = 5) => {
   };
 };
 export const createMockedClient = mockedOptions => {
-  const { error, rowCount } = mockedOptions;
-  return {
-    query: function(...args) {
+  class Request {
+    query(...args) {
       // query (text: string) => Promise
       if (!args[1])
         return new Promise((resolve, reject) => {
@@ -28,7 +27,12 @@ export const createMockedClient = mockedOptions => {
         }, 20);
         return undefined;
       }
-    },
+    }
+  }
+  const { error, rowCount } = mockedOptions;
+  return {
+    query: (...args) => new Request().query(...args),
     connect: () => {},
+    Request,
   };
 };
