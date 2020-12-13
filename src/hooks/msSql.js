@@ -101,7 +101,7 @@ export const hookMssql = (mssqlClient = null) => {
   const mssql = mssqlClient || safeRequire('mssql');
   if (mssql) {
     logger.info('Starting to instrument mssql');
-    hook(mssql, 'query', {
+    hook(mssql.Request.prototype, 'query', {
       beforeHook: queryBeforeHook,
       afterHook: queryAfterHook,
     });
