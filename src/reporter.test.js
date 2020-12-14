@@ -135,6 +135,16 @@ describe('reporter', () => {
     );
   });
 
+  test('forgeRequestBody - cut spans - skip initiate stringify (performance boost)', async () => {
+    const dummy = { dummy: 'dummy' };
+    const spans = new Array(reporter.NUMBER_OF_SPANS_IN_REPORT_OPTIMIZATION + 1).fill({ dummy });
+
+    const spy = jest.spyOn(utils, 'getJSONBase64Size');
+
+    expect(reporter.shouldTrim(spans, 1)).toEqual(true);
+    expect(spy).not.toBeCalled();
+  });
+
   test('forgeRequestBody - prune trace off not cutting spans', async () => {
     utils.setPruneTraceOff();
     const dummy = 'dummy';
