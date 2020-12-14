@@ -152,11 +152,11 @@ describe('reporter', () => {
     const error = 'error';
     const spans = [{ dummy }, { dummy, error }, { dummyEnd }];
 
-    expect(reporter.forgeRequestBody(spans)).toEqual(JSON.stringify(spans));
-    expect(reporter.forgeRequestBody([])).toEqual(undefined);
+    expect(reporter.forgeRequestBody(spans, MAX)).toEqual(JSON.stringify(spans));
+    expect(reporter.forgeRequestBody([], 100)).toEqual(undefined);
   });
 
   test('forgeRequestBody - empty list', async () => {
-    expect(reporter.forgeRequestBody([])).toEqual(undefined);
+    expect(reporter.forgeRequestBody([], 100)).toEqual(undefined);
   });
 });

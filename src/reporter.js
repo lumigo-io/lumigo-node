@@ -7,7 +7,6 @@ import {
 } from './utils';
 import * as logger from './logger';
 import { HttpSpansAgent } from './httpSpansAgent';
-import { DEFAULT_MAX_SIZE_FOR_REQUEST } from './globals';
 export const NUMBER_OF_SPANS_IN_REPORT_OPTIMIZATION = 200;
 
 export const sendSingleSpan = async span => exports.sendSpans([span]);
@@ -47,7 +46,7 @@ export const shouldTrim = (spans, maxSendBytes) => {
   );
 };
 
-export const forgeRequestBody = (spans, maxSendBytes = DEFAULT_MAX_SIZE_FOR_REQUEST) => {
+export const forgeRequestBody = (spans, maxSendBytes) => {
   let resultSpans = [];
 
   if (isPruneTraceOff() || !shouldTrim(spans, maxSendBytes)) {
