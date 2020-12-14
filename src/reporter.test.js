@@ -152,7 +152,7 @@ describe('reporter', () => {
     const error = 'error';
     const spans = [{ dummy }, { dummy, error }, { dummyEnd }];
 
-    expect(reporter.forgeRequestBody(spans, MAX)).toEqual(JSON.stringify(spans));
+    expect(reporter.forgeRequestBody(spans, 100)).toEqual(JSON.stringify(spans));
     expect(reporter.forgeRequestBody([], 100)).toEqual(undefined);
   });
 
