@@ -1,8 +1,13 @@
-import { getJSONBase64Size, isPruneTraceOff, isSendOnlyIfErrors, spanHasErrors } from './utils';
+import {
+  getJSONBase64Size,
+  getMaxRequestSize,
+  isPruneTraceOff,
+  isSendOnlyIfErrors,
+  spanHasErrors,
+} from './utils';
 import * as logger from './logger';
 import { HttpSpansAgent } from './httpSpansAgent';
-
-export const MAX_SENT_BYTES = 1000 * 1000;
+import { DEFAULT_MAX_SIZE_FOR_REQUEST } from './globals';
 
 export const sendSingleSpan = async span => exports.sendSpans([span]);
 
@@ -22,7 +27,7 @@ export const sendSpans = async spans => {
     logger.debug('No Spans was sent, `SEND_ONLY_IF_ERROR` is on and no span has error');
     return { rtt: 0 };
   }
-  const reqBody = forgeRequestBody(spans);
+  const reqBody = forgeRequestBody(spans, getMaxRequestSize());
 
   const roundTripStart = Date.now();
   if (reqBody) {
@@ -35,7 +40,7 @@ export const sendSpans = async spans => {
   return { rtt };
 };
 
-export const forgeRequestBody = (spans, maxSendBytes = MAX_SENT_BYTES) => {
+export const forgeRequestBody = (spans, maxSendBytes = DEFAULT_MAX_SIZE_FOR_REQUEST) => {
   let resultSpans = [];
 
   if (isPruneTraceOff() || getJSONBase64Size(spans) <= maxSendBytes) {

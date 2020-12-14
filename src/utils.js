@@ -225,6 +225,8 @@ export const getValidAliases = () =>
 
 export const getHandlerContext = () => TracerGlobals.getHandlerInputs().context || {};
 
+export const getMaxRequestSize = () => TracerGlobals.getTracerInputs().maxSizeForRequest;
+
 export const getInvokedArn = () => getHandlerContext().invokedFunctionArn || '';
 export const getInvokedVersion = () => getHandlerContext().functionVersion || '';
 

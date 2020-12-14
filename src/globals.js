@@ -4,6 +4,7 @@ const MAX_TAGS = 50;
 const MAX_TAG_KEY_LEN = 50;
 const MAX_TAG_VALUE_LEN = 50;
 const ADD_TAG_ERROR_MSG_PREFIX = 'Skipping addExecutionTag: Unable to add tag';
+export const DEFAULT_MAX_SIZE_FOR_REQUEST = 1000 * 1000;
 
 export const SpansContainer = (() => {
   let spansToSend = {};
@@ -103,6 +104,7 @@ export const TracerGlobals = (() => {
     edgeHost: '',
     switchOff: false,
     isStepFunction: false,
+    maxSizeForRequest: DEFAULT_MAX_SIZE_FOR_REQUEST,
   };
 
   const setHandlerInputs = ({ event, context }) => Object.assign(handlerInputs, { event, context });
@@ -117,6 +119,7 @@ export const TracerGlobals = (() => {
     edgeHost = '',
     switchOff = false,
     stepFunction = false,
+    maxSizeForRequest = null,
   }) =>
     Object.assign(tracerInputs, {
       token: token || process.env.LUMIGO_TRACER_TOKEN,
@@ -129,6 +132,11 @@ export const TracerGlobals = (() => {
           process.env['LUMIGO_STEP_FUNCTION'] &&
           process.env.LUMIGO_STEP_FUNCTION.toUpperCase() === 'TRUE'
         ),
+      maxSizeForRequest:
+        maxSizeForRequest ||
+        (process.env['LUMIGO_MAX_SIZE_FOR_REQUEST']
+          ? parseInt(process.env.LUMIGO_MAX_SIZE_FOR_REQUEST)
+          : DEFAULT_MAX_SIZE_FOR_REQUEST),
     });
 
   const getTracerInputs = () => tracerInputs;
@@ -140,6 +148,7 @@ export const TracerGlobals = (() => {
       edgeHost: '',
       switchOff: false,
       isStepFunction: false,
+      maxSizeForRequest: DEFAULT_MAX_SIZE_FOR_REQUEST,
     });
 
   return {
