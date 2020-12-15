@@ -42,6 +42,18 @@ describe('reporter', () => {
     assertSpans(spansWithoutError, false);
   });
 
+  test('sendSpans - use tracerInputs', async () => {
+    TracerGlobals.setTracerInputs({ maxSizeForRequest: 10 });
+    const spans = [{ a: 'b', c: 'd' }, { e: 'f', g: 'h' }];
+
+    const result = await reporter.sendSpans(spans);
+
+    const sentSpans = AxiosMocker.getSentSpans();
+    expect(sentSpans).toEqual([[{ e: 'f', g: 'h' }]]);
+
+    expect(result.rtt).toBeGreaterThanOrEqual(0);
+  });
+
   test('sendSpans - simple flow', async () => {
     const token = 'DEADBEEF';
     TracerGlobals.setTracerInputs({ token });
@@ -140,11 +152,11 @@ describe('reporter', () => {
     const error = 'error';
     const spans = [{ dummy }, { dummy, error }, { dummyEnd }];
 
-    expect(reporter.forgeRequestBody(spans)).toEqual(JSON.stringify(spans));
-    expect(reporter.forgeRequestBody([])).toEqual(undefined);
+    expect(reporter.forgeRequestBody(spans, 100)).toEqual(JSON.stringify(spans));
+    expect(reporter.forgeRequestBody([], 100)).toEqual(undefined);
   });
 
   test('forgeRequestBody - empty list', async () => {
-    expect(reporter.forgeRequestBody([])).toEqual(undefined);
+    expect(reporter.forgeRequestBody([], 100)).toEqual(undefined);
   });
 });

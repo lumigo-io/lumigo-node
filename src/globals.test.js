@@ -1,5 +1,6 @@
 import * as globals from './globals';
 import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
+import { DEFAULT_MAX_SIZE_FOR_REQUEST } from './globals';
 
 describe('globals', () => {
   test('SpansContainer - simple flow', () => {
@@ -202,12 +203,14 @@ describe('globals', () => {
     const token = 'abcdefg';
     const edgeHost = 'zarathustra.com';
     const isStepFunction = false;
+    const maxSizeForRequest = 1234;
     globals.TracerGlobals.setTracerInputs({
       token,
       debug,
       edgeHost,
       switchOff,
       isStepFunction,
+      maxSizeForRequest,
     });
     expect(globals.TracerGlobals.getTracerInputs()).toEqual({
       token,
@@ -215,6 +218,7 @@ describe('globals', () => {
       edgeHost,
       switchOff,
       isStepFunction,
+      maxSizeForRequest,
     });
     globals.TracerGlobals.clearTracerInputs();
     expect(globals.TracerGlobals.getTracerInputs()).toEqual({
@@ -223,6 +227,7 @@ describe('globals', () => {
       edgeHost: '',
       switchOff: false,
       isStepFunction: false,
+      maxSizeForRequest: DEFAULT_MAX_SIZE_FOR_REQUEST,
     });
   });
 
@@ -259,6 +264,7 @@ describe('globals', () => {
       edgeHost,
       switchOff,
       isStepFunction: false,
+      maxSizeForRequest: DEFAULT_MAX_SIZE_FOR_REQUEST,
     });
   });
 
