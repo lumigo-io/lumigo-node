@@ -68,6 +68,8 @@ export const forgeRequestBody = (spans, maxSendBytes) => {
     if (totalSize + spanSize < maxSendBytes) {
       resultSpans.push(errorSpan);
       totalSize += spanSize;
+    } else {
+      break;
     }
   }
 
