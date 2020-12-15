@@ -53,7 +53,7 @@
     "mongo-mock": "^4.0.0",
     "node-fetch": "^2.6.0",
     "prettier": "^1.17.1",
-    "semantic-release": "^15.13.19",
+    "semantic-release": "^17.2.3",
     "shimmer": "^1.2.1",
     "webpack": "^4.35.0",
     "webpack-cli": "^3.3.4"
