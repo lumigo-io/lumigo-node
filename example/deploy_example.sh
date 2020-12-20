@@ -9,4 +9,4 @@ rm -rf package-lock.json
 rm -rf node_modules
 npm i
 rm -rf dist/
-sls deploy --force
+#sls deploy --force
