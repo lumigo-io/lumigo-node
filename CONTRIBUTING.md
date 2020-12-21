@@ -4,7 +4,7 @@ We would ❤️ for you to contribute and help us add to cool features! 🙏
 
 # Getting Started
 
-- Make sure you have [node](https://nodejs.org/en/) installed.
+- Make sure you have [node](https://nodejs.org/en/) `>=12.x` installed.
 
 # Developing
 
@@ -22,7 +22,7 @@ npm i
 
 #### Run the example:
 Setting up your env:
-- In `example/index.js` change `const token = "XXX"` you your lumigo token (can get from https://platform.lumigo.io/onboarding)
+- In `example/index.js` change `const token = "XXX"` your Lumigo token (can get from https://platform.lumigo.io/onboarding)
 - Run:
 ```shell
 cd example
@@ -54,7 +54,7 @@ format that includes a **type**, a **scope** and a **subject**:
 ```
 
 ```
-fix(release): need to depend on latest rxjs and zone.js
+fix(release): need to depend on the latest shimmer
 
 The version in our package.json gets copied to the one we publish, and users need the latest of these.
 ```
