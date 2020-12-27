@@ -189,7 +189,10 @@ export const getTimeoutMinDuration = () => {
 
 export const isVerboseMode = () => validateEnvVar(VERBOSE_FLAG);
 
-export const isWarm = () => validateEnvVar(WARM_FLAG);
+export const isProvisionConcurrencyInitialization = () =>
+  process.env.AWS_LAMBDA_INITIALIZATION_TYPE === 'provisioned-concurrency';
+
+export const isWarm = () => validateEnvVar(WARM_FLAG) || isProvisionConcurrencyInitialization();
 
 export const isDebug = () => validateEnvVar(DEBUG_FLAG) || TracerGlobals.getTracerInputs().debug;
 

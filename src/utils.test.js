@@ -225,6 +225,14 @@ describe('utils', () => {
     expect(utils.isWarm()).toBe(true);
   });
 
+  test('isWarm in provisioned concurrency', () => {
+    process.env.AWS_LAMBDA_INITIALIZATION_TYPE = 'provisioned-concurrency';
+    expect(utils.isWarm()).toBe(true);
+    utils.setWarm();
+    expect(utils.isWarm()).toBe(true);
+    process.env.AWS_LAMBDA_INITIALIZATION_TYPE = undefined;
+  });
+
   test('setStoreLogsOn', () => {
     expect(utils.isStoreLogs()).toBe(false);
     utils.setStoreLogsOn();
