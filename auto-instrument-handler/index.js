@@ -11,9 +11,13 @@ const parseOriginalHandler = originalHandler => {
     throw Error('Could not parse the original handler - invalid format');
   }
   const handlerParts = originalHandler.split('.');
-  const moduleName = `/var/task/${handlerParts.slice(0, -1).join('.')}`;
-  const functionName = handlerParts.slice(-1);
-  return [moduleName, functionName];
+  const moduleName = handlerParts.slice(0, -1).join('.');
+  let moduleFullName = moduleName;
+  if (!moduleName.startsWith("/opt/")) {
+    moduleFullName = `/var/task/${moduleName}`;
+  }
+  const functionName = handlerParts.slice(-1)[0];
+  return [moduleFullName, functionName];
 };
 
 const removeLumigoFromStacktrace = err => {
@@ -53,7 +57,7 @@ const handler = (event, context, callback) => {
   return lumigo.trace(module[functionName])(event, context, callback);
 };
 
-module.exports = { ORIGINAL_HANDLER_KEY, handler };
+module.exports = { ORIGINAL_HANDLER_KEY, _utils: {parseOriginalHandler}, handler };
 try {
   // require the user's handler during initialization time, just as without Lumigo
   const [moduleName] = parseOriginalHandler(process.env[ORIGINAL_HANDLER_KEY]);
