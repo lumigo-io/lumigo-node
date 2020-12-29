@@ -1,5 +1,5 @@
 import * as logger from '../logger';
-import { getEnvVarAsList } from '../utils';
+import { getEnvVarAsList, isScrubKnownServicesOn } from '../utils';
 
 const API_GW_KEYS_ORDER = getEnvVarAsList('LUMIGO_API_GW_KEYS_ORDER', [
   'version',
@@ -257,7 +257,7 @@ export const parseEvent = event => {
 };
 
 export const getSkipScrubPath = event => {
-  if (process.env.LUMIGO_SCRUB_KNOWN_SERVICES === 'true') {
+  if (isScrubKnownServicesOn()) {
     return null;
   }
   if (isS3Event(event)) {

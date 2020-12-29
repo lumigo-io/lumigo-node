@@ -223,4 +223,9 @@ describe('payloadStringify', () => {
     const result = payloadStringify({ a: { key: 'c' } }, 1024, skipPathWithError);
     expect(result).toEqual(JSON.stringify({ a: { key: '****' } }));
   });
+
+  test('payloadStringify -> skipScrubPath empty array -> Do nothing', () => {
+    const result = payloadStringify({ a: { key: 'c' } }, 1024, []);
+    expect(result).toEqual(JSON.stringify({ a: { key: '****' } }));
+  });
 });

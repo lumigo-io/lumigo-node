@@ -5,6 +5,7 @@ import {
   OMITTING_KEYS_REGEXES,
   parseJsonFromEnvVar,
 } from '../utils';
+import { safeExecute } from '../utils';
 import * as logger from '../logger';
 
 const nativeTypes = ['string', 'bigint', 'number', 'undefined', 'boolean'];
@@ -42,8 +43,8 @@ const isSecretKey = (regexes, key) => {
 //Base64 calculation taken from : https://stackoverflow.com/questions/13378815/base64-length-calculation
 const getNativeVarSize = obj => (obj ? (obj.toString().length * 4) / 3 : 0);
 
-const getItemsInPath = (payload, path) => {
-  try {
+const getItemsInPath = safeExecute(
+  (payload, path) => {
     if (!payload || !path) {
       return [];
     }
@@ -56,11 +57,12 @@ const getItemsInPath = (payload, path) => {
       }
       return getItemsInPath(payload[path[0]], path.slice(1));
     }
-  } catch (e) {
-    logger.warn('Failed to find items to skip scrubbing', e.message);
-  }
-  return [];
-};
+    return [];
+  },
+  'Failed to find items to skip scrubbing',
+  logger.LOG_LEVELS.WARNING,
+  []
+);
 
 export const payloadStringify = (
   payload,
