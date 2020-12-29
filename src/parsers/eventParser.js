@@ -255,3 +255,13 @@ export const parseEvent = event => {
   }
   return event;
 };
+
+export const getSkipScrubPath = event => {
+  if (process.env.LUMIGO_SCRUB_KNOWN_SERVICES === 'true') {
+    return null;
+  }
+  if (isS3Event(event)) {
+    return ['Records', [], 's3', 'object', 'key'];
+  }
+  return null;
+};

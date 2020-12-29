@@ -27,7 +27,7 @@ import {
 } from '../parsers/aws';
 import { TracerGlobals, ExecutionTags } from '../globals';
 import { getEventInfo } from '../events';
-import { parseEvent } from '../parsers/eventParser';
+import { getSkipScrubPath, parseEvent } from '../parsers/eventParser';
 import * as logger from '../logger';
 import { payloadStringify, prune } from '../utils/payloadStringify';
 
@@ -108,11 +108,10 @@ export const getBasicSpan = transactionId => {
   };
 };
 
-const getEventForSpan = (hasError = false) =>
-  payloadStringify(
-    parseEvent(TracerGlobals.getHandlerInputs().event),
-    getEventEntitySize(hasError)
-  );
+const getEventForSpan = (hasError = false) => {
+  const event = TracerGlobals.getHandlerInputs().event;
+  return payloadStringify(parseEvent(event), getEventEntitySize(hasError), getSkipScrubPath(event));
+};
 
 const getEnvsForSpan = (hasError = false) =>
   payloadStringify(process.env, getEventEntitySize(hasError));

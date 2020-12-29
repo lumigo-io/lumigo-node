@@ -5,6 +5,7 @@ import {
   OMITTING_KEYS_REGEXES,
   parseJsonFromEnvVar,
 } from '../utils';
+import * as logger from '../logger';
 
 const nativeTypes = ['string', 'bigint', 'number', 'undefined', 'boolean'];
 const SCRUBBED_TEXT = '****';
@@ -41,19 +42,48 @@ const isSecretKey = (regexes, key) => {
 //Base64 calculation taken from : https://stackoverflow.com/questions/13378815/base64-length-calculation
 const getNativeVarSize = obj => (obj ? (obj.toString().length * 4) / 3 : 0);
 
-export const payloadStringify = (payload, maxPayloadSize = getEventEntitySize()) => {
+const getItemsInPath = (payload, path) => {
+  try {
+    if (!payload || !path) {
+      return [];
+    }
+    if (Array.isArray(path[0]) && Array.isArray(payload)) {
+      const newPath = path.slice(1);
+      return [].concat(...payload.map(i => getItemsInPath(i, newPath)));
+    } else if (payload[path[0]]) {
+      if (path.length === 1) {
+        return [payload];
+      }
+      return getItemsInPath(payload[path[0]], path.slice(1));
+    }
+  } catch (e) {
+    logger.warn('Failed to find items to skip scrubbing', e.message);
+  }
+  return [];
+};
+
+export const payloadStringify = (
+  payload,
+  maxPayloadSize = getEventEntitySize(),
+  skipScrubPath = null
+) => {
   let totalSize = 0;
   let refsFound = [];
   const regexes = keyToOmitRegexes();
+  const secretItemsToSkipScrubbing = new Set(getItemsInPath(payload, skipScrubPath));
 
   let isPruned = false;
-  let result = JSON.stringify(payload, (key, value) => {
+  let result = JSON.stringify(payload, function(key, value) {
     const type = typeof value;
     const isObj = type === 'object';
     const isStr = type === 'string';
+    const shouldSkipSecretScrub =
+      skipScrubPath &&
+      skipScrubPath[skipScrubPath.length - 1] === key &&
+      secretItemsToSkipScrubbing.has(this);
     if (!(isObj && refsFound.includes(value))) {
       if (totalSize < maxPayloadSize) {
-        if (isSecretKey(regexes, key)) return SCRUBBED_TEXT;
+        if (!shouldSkipSecretScrub && isSecretKey(regexes, key)) return SCRUBBED_TEXT;
         if (isNativeType(value)) {
           totalSize += getNativeVarSize(value);
         }

@@ -182,4 +182,45 @@ describe('payloadStringify', () => {
     expect(keyToOmitRegexes().map(p => String(p))).toEqual(['/.*evilPlan2.*/i']);
     process.env[LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP] = undefined;
   });
+
+  test('payloadStringify -> skipScrubPath -> Not nested', () => {
+    const payload = { Key: 'value' };
+    const result = payloadStringify(payload, 1024, ['Key']);
+    expect(result).toEqual(JSON.stringify(payload));
+  });
+
+  test('payloadStringify -> skipScrubPath -> Nested with array', () => {
+    const payload = { Records: [{ object: { key: 'value' } }, { object: { key: 'value' } }] };
+    const result = payloadStringify(payload, 1024, ['Records', [], 'object', 'key']);
+    expect(result).toEqual(JSON.stringify(payload));
+  });
+
+  test('payloadStringify -> skipScrubPath -> Doesnt affect other paths', () => {
+    const result = payloadStringify({ o: { key: 'value', password: 'value' } }, 1024, ['o', 'key']);
+    expect(result).toEqual(JSON.stringify({ o: { key: 'value', password: '****' } }));
+  });
+
+  test('payloadStringify -> skipScrubPath -> Nested items arent affected', () => {
+    const result = payloadStringify({ o: { key: { password: 'value' } } }, 1024, ['o', 'key']);
+    expect(result).toEqual(JSON.stringify({ o: { key: { password: '****' } } }));
+  });
+
+  test('payloadStringify -> skipScrubPath -> Affect only the full path', () => {
+    const result = payloadStringify({ a: { key: 'c' } }, 1024, ['key']);
+    expect(result).toEqual(JSON.stringify({ a: { key: '****' } }));
+  });
+
+  test('payloadStringify -> skipScrubPath -> Path doesnt exist', () => {
+    const result = payloadStringify({ a: { key: 'c' } }, 1024, ['b', 'key']);
+    expect(result).toEqual(JSON.stringify({ a: { key: '****' } }));
+  });
+
+  test('payloadStringify -> skipScrubPath -> Catch exception', () => {
+    const skipPathWithError = ['a', 'key'];
+    skipPathWithError.slice = () => {
+      throw Error('ERROR');
+    };
+    const result = payloadStringify({ a: { key: 'c' } }, 1024, skipPathWithError);
+    expect(result).toEqual(JSON.stringify({ a: { key: '****' } }));
+  });
 });
