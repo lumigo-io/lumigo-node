@@ -414,6 +414,29 @@ describe('awsSpan', () => {
     expect(endSpan.envs.length).toBeGreaterThan(startSpan.envs.length);
   });
 
+  test('Lambda invoked by S3 -> shouldnt scrub known S3 fields', () => {
+    const { context } = TracerGlobals.getHandlerInputs();
+    const event = {
+      Records: [
+        {
+          eventSource: 'aws:s3',
+          awsRegion: 'us-west-2',
+          eventTime: '2020-12-23T08:22:34.629Z',
+          eventName: 'ObjectCreated:Put',
+          userIdentity: { principalId: 'AMLG687EH3ZOI' },
+          requestParameters: { sourceIPAddress: '185.3.145.127' },
+          s3: {
+            bucket: { arn: 'arn:aws:s3:::tracer-test-nirhod-s3-bucket' },
+            object: { key: 'value', size: 2148 },
+          },
+        },
+      ],
+    };
+    TracerGlobals.setHandlerInputs({ event, context });
+    const startSpan = awsSpan.getFunctionSpan();
+    expect(JSON.parse(startSpan.event).Records[0].s3.object.key).toEqual('value');
+  });
+
   test('getEndFunctionSpan without error and big event and envs should have same data than startSpan', () => {
     const longString = 'a'.repeat(getEventEntitySize() * 3);
     let { event, context } = TracerGlobals.getHandlerInputs();

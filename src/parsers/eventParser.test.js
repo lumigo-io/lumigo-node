@@ -1,6 +1,23 @@
-import { parseEvent } from './eventParser';
+import { getSkipScrubPath, parseEvent } from './eventParser';
 
 describe('event parser', () => {
+  const S3_EVENT = {
+    Records: [
+      {
+        eventSource: 'aws:s3',
+        awsRegion: 'us-west-2',
+        eventTime: '2020-12-23T08:22:34.629Z',
+        eventName: 'ObjectCreated:Put',
+        userIdentity: { principalId: 'AMLG687EH3ZOI' },
+        requestParameters: { sourceIPAddress: '185.3.145.127' },
+        s3: {
+          bucket: { arn: 'arn:aws:s3:::tracer-test-nirhod-s3-bucket' },
+          object: { key: 'value', size: 2148 },
+        },
+      },
+    ],
+  };
+
   test('check null value', () => {
     expect(parseEvent(null)).toEqual(null);
   });
@@ -17,6 +34,19 @@ describe('event parser', () => {
       a: 1,
     };
     expect(parseEvent(event)).toEqual(event);
+  });
+
+  test('getSkipScrubPath S3', () => {
+    expect(getSkipScrubPath(S3_EVENT)).toEqual(['Records', [], 's3', 'object', 'key']);
+  });
+
+  test('getSkipScrubPath service without skipping', () => {
+    expect(getSkipScrubPath({})).toEqual(null);
+  });
+
+  test('getSkipScrubPath - skipping disabled by env var', () => {
+    process.env.LUMIGO_SCRUB_KNOWN_SERVICES = 'true';
+    expect(getSkipScrubPath(S3_EVENT)).toEqual(null);
   });
 
   test('api gw v1', () => {
