@@ -19,6 +19,7 @@ import { getEnvVarAsList, isEncodingType, isEmptyString, runOneTimeWrapper } fro
 import { DEFAULT_TIMEOUT_MIN_DURATION } from './utils';
 import * as globals from './globals';
 import { removeDuplicates } from './utils';
+import * as logger from './logger';
 
 describe('utils', () => {
   const spies = {};
@@ -140,6 +141,12 @@ describe('utils', () => {
     expect(utils.isAwsEnvironment()).toBe(false);
     process.env.LAMBDA_RUNTIME_DIR = 'BLA BLA';
     expect(utils.isAwsEnvironment()).toBe(true);
+  });
+
+  test('isScrubKnownServicesOn', () => {
+    expect(utils.isScrubKnownServicesOn()).toBe(false);
+    process.env.LUMIGO_SCRUB_KNOWN_SERVICES = 'true';
+    expect(utils.isScrubKnownServicesOn()).toBe(true);
   });
 
   test('isVerboseMode', () => {
@@ -797,6 +804,17 @@ describe('utils', () => {
       throw new Error('Mocked error');
     })();
     // No exception.
+  });
+  test('safeExecute catch exception with default value', () => {
+    const result = safeExecute(
+      () => {
+        throw new Error('Mocked error');
+      },
+      'm',
+      logger.LOG_LEVELS.WARNING,
+      'defaultValue'
+    )();
+    expect(result).toEqual('defaultValue');
   });
 
   test('recursiveGetKey', () => {
