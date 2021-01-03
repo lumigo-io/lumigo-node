@@ -5,6 +5,7 @@ import { hookRedis } from './redis';
 import { hookPg } from './pg';
 import { hookMySql } from './mySql';
 import { hookMssql } from './msSql';
+import { hookNeo4j } from './neo4j';
 
 export default () => {
   if (!isSwitchedOff() && isAwsEnvironment()) {
@@ -15,6 +16,7 @@ export default () => {
       hookPg();
       hookMySql();
       hookMssql();
+      hookNeo4j();
       setLambdaWrapped();
     }
   }

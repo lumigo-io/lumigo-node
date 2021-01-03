@@ -39,6 +39,7 @@ export const REDIS_SPAN = 'redis';
 export const PG_SPAN = 'pg';
 export const MSSQL_SPAN = 'msSql';
 export const MYSQL_SPAN = 'mySql';
+export const NEO4J_SPAN = 'neo4j';
 
 export const getSpanInfo = () => {
   const tracer = getTracerInfo();
