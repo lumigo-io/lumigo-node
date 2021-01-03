@@ -21,4 +21,4 @@ echo "Creating layer file"
 ./scripts/prepare_layer_files.sh
 
 echo "Creating lumigo-node layer to us-east-1"
-~/source/utils/common_bash/create_layer.sh --layer-name lumigo-node-tracer --region us-west-2 --package-folder "nodejs lumigo_wrapper" --version $(git describe --abbrev=0 --tags) --runtimes "nodejs10.x nodejs12.x"
+~/source/utils/common_bash/create_layer.sh --layer-name lumigo-node-tracer --region us-east-1 --package-folder "nodejs lumigo_wrapper" --version $(git describe --abbrev=0 --tags) --runtimes "nodejs10.x nodejs12.x"
