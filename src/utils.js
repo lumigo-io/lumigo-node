@@ -143,6 +143,7 @@ const KEEP_HEADERS = 'LUMIGO_KEEP_HTTP_HEADERS';
 const DEBUG_FLAG = 'LUMIGO_DEBUG';
 const SWITCH_OFF_FLAG = 'LUMIGO_SWITCH_OFF';
 const IS_STEP_FUNCTION_FLAG = 'LUMIGO_STEP_FUNCTION';
+const SCRUB_KNOWN_SERVICES_FLAG = 'LUMIGO_SCRUB_KNOWN_SERVICES';
 
 const validateEnvVar = (envVar, value = 'TRUE') =>
   !!(process.env[envVar] && process.env[envVar].toUpperCase() === value.toUpperCase());
@@ -186,6 +187,8 @@ export const getTimeoutMinDuration = () => {
   if (process.env[TIMEOUT_MIN_DURATION]) return parseFloat(process.env[TIMEOUT_MIN_DURATION]);
   return DEFAULT_TIMEOUT_MIN_DURATION;
 };
+
+export const isScrubKnownServicesOn = () => validateEnvVar(SCRUB_KNOWN_SERVICES_FLAG);
 
 export const isVerboseMode = () => validateEnvVar(VERBOSE_FLAG);
 
@@ -402,13 +405,15 @@ export const parseJsonFromEnvVar = (envVar, warnClient = false) => {
 export const safeExecute = (
   callback,
   message = 'Error in Lumigo tracer',
-  logLevel = logger.LOG_LEVELS.WARNING
+  logLevel = logger.LOG_LEVELS.WARNING,
+  defaultReturn = undefined
 ) =>
   function(...args) {
     try {
       return callback.apply(this, args);
     } catch (err) {
       logger.log(logLevel, message, err.message);
+      return defaultReturn;
     }
   };
 
