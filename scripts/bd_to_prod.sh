@@ -36,7 +36,7 @@ echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
 npm run semantic-release
 
 echo "Creating lumigo-node layer"
-../utils/common_bash/create_layer.sh --layer-name lumigo-node-tracer --region ALL --package-folder nodejs --version $(git describe --abbrev=0 --tags) --runtimes "nodejs10.x nodejs12.x"
+../utils/common_bash/create_layer.sh --layer-name lumigo-node-tracer --region ALL --package-folder "nodejs lumigo_wrapper" --version $(git describe --abbrev=0 --tags) --runtimes "nodejs10.x nodejs12.x"
 
 echo "Creating layer latest version arn table md file (LAYERS.md)"
 cd ../larn && npm i -g

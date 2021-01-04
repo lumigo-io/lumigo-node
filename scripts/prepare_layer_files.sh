@@ -9,3 +9,4 @@ npm init --yes
 npm install --save "./../${tracer}"
 npm install --save "./../auto-instrument-handler/${auto_inst}"
 popd
+cp auto-instrument-handler/lumigo_wrapper .
