@@ -1,0 +1,5 @@
+#!/bin/bash
+
+export LUMIGO_ORIGINAL_HANDLER=$_HANDLER
+export _HANDLER="lumigo-auto-instrument.handler"
+exec "$@"
