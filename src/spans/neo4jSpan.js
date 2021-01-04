@@ -28,6 +28,9 @@ export const extendNeo4jSpan = (currentSpan, extendData) => {
   if (extendData.summary) {
     currentSpan.summary = extendData.summary;
   }
+  if (extendData.database) {
+    currentSpan.connectionParameters.database = extendData.database;
+  }
   if (extendData.error) {
     currentSpan.error = extendData.error;
   }
