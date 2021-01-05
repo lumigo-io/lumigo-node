@@ -41,7 +41,8 @@ const createResultHook = currentSpan => originalResult => {
   const ended = Date.now();
   const extendedSpan = extendNeo4jSpan(currentSpan, {
     ended,
-    response: payloadStringify(originalResult.records),
+    database: originalResult.summary.database.name,
+    response: payloadStringify(originalResult.records, undefined, [[], 'keys']),
     summary: payloadStringify(originalResult.summary),
   });
   SpansContainer.addSpan(extendedSpan);

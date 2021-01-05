@@ -60,7 +60,7 @@ describe('neo4j', () => {
         .withConnectionParameters(DUMMY_OPTIONS)
         .withQuery(query)
         .withParams(payloadStringify(params))
-        .withResponse(payloadStringify(response.records))
+        .withResponse(payloadStringify(response.records, undefined, [[], 'keys']))
         .withSummary(payloadStringify(response.summary))
         .build(),
     ]);
