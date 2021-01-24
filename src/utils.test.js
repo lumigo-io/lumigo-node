@@ -91,11 +91,20 @@ describe('utils', () => {
   });
 
   test('getPatchedTraceId', () => {
-    spies.randomBytes.mockReturnValueOnce(Buffer.from('aa'));
     const awsXAmznTraceId =
       'Root=1-5b1d2450-6ac46730d346cad0e53f89d0;Parent=59fa1aeb03c2ec1f;Sampled=1';
-    const expected = 'Root=1-00006161-6ac46730d346cad0e53f89d0;Parent=59fa1aeb03c2ec1f;Sampled=1';
-    expect(utils.getPatchedTraceId(awsXAmznTraceId)).toEqual(expected);
+    const expectedRoot = 'Root=1';
+    const expectedSuffix = '6ac46730d346cad0e53f89d0;Parent=59fa1aeb03c2ec1f;Sampled=1';
+
+    const result = utils.getPatchedTraceId(awsXAmznTraceId);
+
+    const [resultRoot, resultTime, resultSuffix] = result.split('-');
+    expect(resultRoot).toEqual(expectedRoot);
+    expect(resultSuffix).toEqual(expectedSuffix);
+
+    const timeDiff = Date.now() - 1000 * parseInt(resultTime, 16);
+    expect(timeDiff).toBeGreaterThan(0);
+    expect(timeDiff).toBeLessThan(1000);
   });
 
   test('getAWSEnvironment', () => {

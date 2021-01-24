@@ -93,8 +93,8 @@ export const getTraceId = awsXAmznTraceId => {
 export const getPatchedTraceId = awsXAmznTraceId => {
   const { Root, Parent, Sampled, transactionId } = getTraceId(awsXAmznTraceId);
   const rootArr = Root.split('-');
-  const shortId = getRandomString(4);
-  return `Root=${rootArr[0]}-0000${shortId}-${transactionId};Parent=${Parent};Sampled=${Sampled}`;
+  const currentTime = Math.floor(Date.now() / 1000).toString(16);
+  return `Root=${rootArr[0]}-${currentTime}-${transactionId};Parent=${Parent};Sampled=${Sampled}`;
 };
 
 export const isPromise = obj => obj && obj.then && typeof obj.then === 'function';
