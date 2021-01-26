@@ -43,7 +43,7 @@ describe('tracer', () => {
 
   beforeEach(() => {
     httpHook.mockClear();
-    Object.keys(spies).map(x => typeof x === 'function' && spies[x].mockClear());
+    jest.clearAllMocks();
   });
   test('startTrace - not failed on error', async () => {
     //TODO: Rewrite this test without mocks
@@ -342,6 +342,20 @@ describe('tracer', () => {
       data: 'non async callbacked?',
       type: tracer.HANDLER_CALLBACKED,
     });
+  });
+
+  test('trace; no context', async () => {
+    const token = 'DEADBEEF';
+    const lumigoTracer = require('./index')({ token });
+
+    const userHandler1 = async event => {
+      return 'ok';
+    };
+    const event = { a: 'b', c: 'd' };
+
+    await lumigoTracer.trace(userHandler1)(event);
+
+    expect(spies.warnClient).toHaveBeenCalledTimes(1);
   });
 
   test('trace; non async callbacked', async done => {

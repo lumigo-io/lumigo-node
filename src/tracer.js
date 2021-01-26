@@ -192,6 +192,15 @@ export const trace = ({
   } catch (err) {
     logger.warn('Failed to start tracer', err);
   }
+
+  if (!context) {
+    logger.warnClient(
+      'missing context parameter - learn more at https://docs.lumigo.io/docs/nodejs'
+    );
+    const { err, data, type } = await promisifyUserHandler(userHandler, event, context, callback);
+    return performPromisifyType(err, data, type, callback);
+  }
+
   if (context.__wrappedByLumigo) {
     const { err, data, type } = await promisifyUserHandler(userHandler, event, context, callback);
     return performPromisifyType(err, data, type, callback);
