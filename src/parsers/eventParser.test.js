@@ -40,6 +40,31 @@ describe('event parser', () => {
     expect(getSkipScrubPath(S3_EVENT)).toEqual(['Records', [], 's3', 'object', 'key']);
   });
 
+  test('getSkipScrubPath DDB', () => {
+    const ddbEvent = {
+      Records: [
+        {
+          eventID: '22222222222222222222222222222222',
+          eventName: 'INSERT',
+          eventVersion: '1.1',
+          eventSource: 'aws:dynamodb',
+          awsRegion: 'us-west-2',
+          dynamodb: {
+            ApproximateCreationDateTime: 1613303796,
+            Keys: { k: { S: 'k1' } },
+            NewImage: { v: { S: 'v1' }, k: { S: 'k1' } },
+            SequenceNumber: '111111111111111111111111111',
+            SizeBytes: 9,
+            StreamViewType: 'NEW_AND_OLD_IMAGES',
+          },
+          eventSourceARN:
+            'arn:aws:dynamodb:us-west-2:111111111111:table/table-with-stream/stream/2020-08-25T09:03:34.483',
+        },
+      ],
+    };
+    expect(getSkipScrubPath(ddbEvent)).toEqual(['Records', [], 'dynamodb', 'Keys']);
+  });
+
   test('getSkipScrubPath service without skipping', () => {
     expect(getSkipScrubPath({})).toEqual(null);
   });

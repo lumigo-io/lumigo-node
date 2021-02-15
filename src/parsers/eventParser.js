@@ -97,6 +97,15 @@ export const isS3Event = event => {
   );
 };
 
+const isDDBEvent = event => {
+  return (
+    event != null &&
+    event.Records != null &&
+    event.Records[0] != null &&
+    event.Records[0].eventSource === 'aws:dynamodb'
+  );
+};
+
 export const isCloudfrontEvent = event => {
   return (
     event != null &&
@@ -262,6 +271,9 @@ export const getSkipScrubPath = event => {
   }
   if (isS3Event(event)) {
     return ['Records', [], 's3', 'object', 'key'];
+  }
+  if (isDDBEvent(event)) {
+    return ['Records', [], 'dynamodb', 'Keys'];
   }
   return null;
 };

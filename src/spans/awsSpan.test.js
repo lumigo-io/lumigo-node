@@ -437,6 +437,52 @@ describe('awsSpan', () => {
     expect(JSON.parse(startSpan.event).Records[0].s3.object.key).toEqual('value');
   });
 
+  test('Lambda invoked by DDB stream -> shouldnt scrub known fields', () => {
+    const { context } = TracerGlobals.getHandlerInputs();
+    const event = {
+      Records: [
+        {
+          eventID: '22222222222222222222222222222222',
+          eventName: 'INSERT',
+          eventVersion: '1.1',
+          eventSource: 'aws:dynamodb',
+          awsRegion: 'us-west-2',
+          dynamodb: {
+            ApproximateCreationDateTime: 1613303796,
+            Keys: { k: { S: 'k1' } },
+            NewImage: { v: { S: 'v1' }, k: { S: 'k1' } },
+            SequenceNumber: '111111111111111111111111111',
+            SizeBytes: 9,
+            StreamViewType: 'NEW_AND_OLD_IMAGES',
+          },
+          eventSourceARN:
+            'arn:aws:dynamodb:us-west-2:111111111111:table/table-with-stream/stream/2020-08-25T09:03:34.483',
+        },
+        {
+          eventID: '22222222222222222222222222222223',
+          eventName: 'INSERT',
+          eventVersion: '1.1',
+          eventSource: 'aws:dynamodb',
+          awsRegion: 'us-west-2',
+          dynamodb: {
+            ApproximateCreationDateTime: 1613303796,
+            Keys: { k: { S: 'k2' } },
+            NewImage: { v: { S: 'v2' }, k: { S: 'k2' } },
+            SequenceNumber: '111111111111111111111111112',
+            SizeBytes: 9,
+            StreamViewType: 'NEW_AND_OLD_IMAGES',
+          },
+          eventSourceARN:
+            'arn:aws:dynamodb:us-west-2:111111111111:table/table-with-stream/stream/2020-08-25T09:03:34.483',
+        },
+      ],
+    };
+    TracerGlobals.setHandlerInputs({ event, context });
+    const startSpan = awsSpan.getFunctionSpan();
+    expect(JSON.parse(startSpan.event).Records[0].dynamodb.Keys).toEqual({ k: { S: 'k1' } });
+    expect(JSON.parse(startSpan.event).Records[1].dynamodb.Keys).toEqual({ k: { S: 'k2' } });
+  });
+
   test('getEndFunctionSpan without error and big event and envs should have same data than startSpan', () => {
     const longString = 'a'.repeat(getEventEntitySize() * 3);
     let { event, context } = TracerGlobals.getHandlerInputs();
