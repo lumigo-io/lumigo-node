@@ -29,10 +29,22 @@ export const createMockedClient = mockedOptions => {
       }
     }
   }
+  class ConnectionPool {
+    constructor(config) {
+      this.config = config;
+    }
+    connect(config) {
+      return this;
+    }
+    query(...args) {
+      return new Request().query(...args)
+    }
+  }
   const { error, rowCount } = mockedOptions;
   return {
     query: (...args) => new Request().query(...args),
     connect: () => {},
     Request,
+    ConnectionPool
   };
 };
