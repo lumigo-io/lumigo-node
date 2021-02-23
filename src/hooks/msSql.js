@@ -12,7 +12,7 @@ const ActiveConnectionDetails = (() => {
 
   const getActiveConnection = () => _activeConnection;
 
-  const updateActiveConnection = mssqlConnectionString => {
+  const updateFromConnectionString = mssqlConnectionString => {
     const uri = new URL(mssqlConnectionString);
     const database = uri.pathname.replace('/', '');
     _activeConnection = {
@@ -23,14 +23,30 @@ const ActiveConnectionDetails = (() => {
     };
   };
 
+  const updateFromConfig = config => {
+    const database = config.database || config.host.split('.')[0];
+    _activeConnection = {
+      user: config.user,
+      host: config.host,
+      port: config.port,
+      database: database,
+    };
+  };
+
   return {
     getActiveConnection,
-    updateActiveConnection,
+    updateFromConnectionString,
+    updateFromConfig,
   };
 })();
 
 function connectBeforeHook(args) {
-  if (typeof args[0] === 'string') ActiveConnectionDetails.updateActiveConnection(args[0]);
+  if (typeof args[0] === 'string') {
+    ActiveConnectionDetails.updateFromConnectionString(args[0]);
+  }
+  if (this.config) {
+    ActiveConnectionDetails.updateFromConfig(this.config);
+  }
 }
 
 const handleResult = (currentSpan, result, error) => {
@@ -106,6 +122,9 @@ export const hookMssql = (mssqlClient = null) => {
       afterHook: queryAfterHook,
     });
     hook(mssql, 'connect', {
+      beforeHook: connectBeforeHook,
+    });
+    hook(mssql.ConnectionPool.prototype, 'connect', {
       beforeHook: connectBeforeHook,
     });
   }

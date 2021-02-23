@@ -96,6 +96,32 @@ describe('msSql', () => {
     ]);
   });
 
+  test('hook -> ConnectionPool -> query (text: string): Promise -> success', async () => {
+    const connectionConfig = {
+      user: 'testUser',
+      password: 'passwordPassword',
+      host: 'TestDB.mssql-16055-0.cloudclusters.net',
+      server: 'TestDB.mssql-16055-0.cloudclusters.net',
+      port: '16055',
+    };
+    const msClient = createHookedClient();
+
+    const client = await new msClient.ConnectionPool(connectionConfig).connect();
+
+    await client.query('SELECT * from users').then(() => {});
+    const spans = SpansContainer.getSpans();
+    expect(spans).toEqual([
+      createBaseBuilderFromSpan(spans[0])
+        .withQuery('SELECT * from users')
+        .withConnectionParameters({
+          ...EXPECTED_OPTIONS,
+          host: 'TestDB.mssql-16055-0.cloudclusters.net',
+        })
+        .withResponse(createExpectedResponse())
+        .build(),
+    ]);
+  });
+
   test('hook -> query (text: string[]): Promise -> success', async () => {
     const client = createHookedClient();
 
