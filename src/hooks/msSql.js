@@ -24,10 +24,10 @@ const ActiveConnectionDetails = (() => {
   };
 
   const updateFromConfig = config => {
-    const database = config.database || config.host.split('.')[0];
+    const database = config.database || config.server.split('.')[0];
     _activeConnection = {
       user: config.user,
-      host: config.host,
+      host: config.host || config.server,
       port: config.port,
       database: database,
     };
