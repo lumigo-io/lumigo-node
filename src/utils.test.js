@@ -10,6 +10,7 @@ import {
   md5Hash,
   safeGet,
   isDebug,
+  DEFAULT_CONNECTION_TIMEOUT,
 } from './utils';
 import { TracerGlobals } from './globals';
 import crypto from 'crypto';
@@ -233,6 +234,20 @@ describe('utils', () => {
   test('getEventEntitySize NaN', () => {
     process.env.MAX_EVENT_ENTITY_SIZE = 'A 2048';
     expect(utils.getEventEntitySize()).toBe(MAX_ENTITY_SIZE);
+  });
+
+  test('getConnectionTimeout => simple flow', () => {
+    process.env.LUMIGO_CONNECTION_TIMEOUT = '600';
+    expect(utils.getConnectionTimeout()).toBe(600);
+  });
+
+  test('getConnectionTimeout => default value', () => {
+    expect(utils.getConnectionTimeout()).toBe(DEFAULT_CONNECTION_TIMEOUT);
+  });
+
+  test('getConnectionTimeout => NaN', () => {
+    process.env.LUMIGO_CONNECTION_TIMEOUT = 'A 20,,48 A';
+    expect(utils.getConnectionTimeout()).toBe(DEFAULT_CONNECTION_TIMEOUT);
   });
 
   test('setWarm', () => {

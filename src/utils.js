@@ -27,6 +27,7 @@ export const GET_KEY_DEPTH_ENV_KEY = 'LUMIGO_KEY_DEPTH';
 export const DEFAULT_GET_KEY_DEPTH = 3;
 export const EXECUTION_TAGS_KEY = 'lumigo_execution_tags_no_scrub';
 export const DEFAULT_TIMEOUT_MIN_DURATION = 2000;
+export const DEFAULT_CONNECTION_TIMEOUT = 300;
 
 export const getContextInfo = context => {
   const remainingTimeInMillis = context.getRemainingTimeInMillis();
@@ -278,6 +279,10 @@ export const getEventEntitySize = (hasError = false) => {
     return basicSize * 2;
   }
   return basicSize;
+};
+
+export const getConnectionTimeout = () => {
+  return parseInt(process.env['LUMIGO_CONNECTION_TIMEOUT']) || DEFAULT_CONNECTION_TIMEOUT;
 };
 
 export const parseErrorObject = err => ({

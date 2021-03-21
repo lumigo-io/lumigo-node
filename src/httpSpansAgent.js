@@ -7,11 +7,11 @@ import {
   getJSONBase64Size,
   getTracerInfo,
   isReuseHttpConnection,
+  getConnectionTimeout,
 } from './utils';
 import axios from 'axios';
 
 const REQUEST_TIMEOUT = 250;
-const CONNECTION_TIMEOUT = 300;
 
 export const HttpSpansAgent = (() => {
   let sessionInstance;
@@ -73,16 +73,17 @@ export const HttpSpansAgent = (() => {
   };
 
   const sendHttpRequest = async (url, headers, requestBody) => {
+    const connectionTimeout = getConnectionTimeout();
     const session = getSessionInstance();
     let requestTimeoutTimer;
     const requestTimeout = new Promise(resolve => {
       requestTimeoutTimer = setTimeout(() => {
         clearTimeout(requestTimeoutTimer);
         logger.debug(
-          `Edge connection timeout [${CONNECTION_TIMEOUT}ms] from setTimeout (Tracer skipping)`
+          `Edge connection timeout [${connectionTimeout}ms] from setTimeout (Tracer skipping)`
         );
         resolve(1);
-      }, CONNECTION_TIMEOUT);
+      }, connectionTimeout);
     });
     const requestPromise = session
       .post(url, requestBody, { headers })
