@@ -49,7 +49,7 @@
     "jest-junit": "^6.4.0",
     "json.sortify": "^2.2.2",
     "lambda-local": "^1.6.2",
-    "mockdate": "^2.0.2",
+    "mockdate": "^3.0.5",
     "mongo-mock": "^4.0.0",
     "node-fetch": "^2.6.0",
     "prettier": "^1.17.1",
