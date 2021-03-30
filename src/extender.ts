@@ -6,9 +6,13 @@ const noop = (): void => {};
 
 const isFunctionAlreadyWrapped = (fn): boolean => fn && fn.__wrapped;
 
+export interface ExtenderContext {
+  [key: string]: any;
+}
+
 export interface ExtenderOptions {
-  beforeHook?: (args: any[]) => void;
-  afterHook?: (args: any[], functionResult: any) => void;
+  beforeHook?: (args: any[], extenderContext: ExtenderContext) => void;
+  afterHook?: (args: any[], functionResult: any, extenderContext: ExtenderContext) => void;
 }
 
 export const hook = (module, funcName: string, options: ExtenderOptions = {}) => {
