@@ -27,7 +27,7 @@ import {
 } from './httpUtils';
 
 export const hostBlaclist = new Set(['127.0.0.1']);
-export const isBlacklisted = host => host === getEdgeHost() || hostBlaclist.has(host);
+export const isBlacklisted = (host) => host === getEdgeHost() || hostBlaclist.has(host);
 
 export const getHostFromOptionsOrUrl = (options, url) => {
   if (url) {
@@ -76,7 +76,7 @@ export const parseHttpRequestOptions = (options = {}, url) => {
 };
 
 export const httpRequestWriteBeforeHookWrapper = (requestData, currentSpan) =>
-  function(args) {
+  function (args) {
     if (isEmptyString(requestData.body)) {
       const body = extractBodyFromWriteFunc(args);
       if (body) {
@@ -96,7 +96,7 @@ export const httpRequestEmitBeforeHookWrapper = (
   const oneTimerEmitResponseHandler = runOneTimeWrapper(
     createEmitResponseHandler(transactionId, awsRequestId, requestData, requestRandomId)
   );
-  return function(args) {
+  return function (args) {
     if (args[0] === 'response') {
       oneTimerEmitResponseHandler(args[1]);
     }
@@ -121,7 +121,7 @@ const createEmitResponseOnEmitBeforeHookHandler = (
 ) => {
   let body = '';
   const payloadSize = getEventEntitySize();
-  return function(args) {
+  return function (args) {
     const receivedTime = new Date().getTime();
     const { headers, statusCode } = response;
     if (args[0] === 'data') {
@@ -157,7 +157,7 @@ export const createEmitResponseHandler = (
   awsRequestId,
   requestData,
   requestRandomId
-) => response => {
+) => (response) => {
   const onHandler = createEmitResponseOnEmitBeforeHookHandler(
     transactionId,
     awsRequestId,
@@ -171,7 +171,7 @@ export const createEmitResponseHandler = (
 };
 
 export const httpRequestEndWrapper = (requestData, currentSpan) =>
-  function(args) {
+  function (args) {
     if (isEmptyString(requestData.body)) {
       const body = extractBodyFromEndFunc(args);
       if (body) {
@@ -183,7 +183,7 @@ export const httpRequestEndWrapper = (requestData, currentSpan) =>
 
 // http/s.request can be called with either (options, callback) or (url, options, callback)
 // See: https://github.com/nodejs/node/blob/01b404f629d91af8a720c51e90895bf0c07b0d6d/lib/_http_client.js#L76
-export const httpRequestArguments = args => {
+export const httpRequestArguments = (args) => {
   if (args.length === 0) {
     throw new Error('http/s.request(...) was called without any arguments.');
   }
@@ -277,7 +277,7 @@ export const httpAfterRequestWrapper = (args, originalFnResult, extenderContext)
   }
 };
 
-export const addStepFunctionEvent = messageId => {
+export const addStepFunctionEvent = (messageId) => {
   const awsRequestId = TracerGlobals.getHandlerInputs().context.awsRequestId;
   const transactionId = getCurrentTransactionId();
   const httpSpan = getHttpSpan(transactionId, awsRequestId, messageId, { sendTime: Date.now() });
@@ -290,7 +290,7 @@ export const addStepFunctionEvent = messageId => {
   SpansContainer.addSpan(stepSpan);
 };
 
-export const wrapHttp = httpLib => {
+export const wrapHttp = (httpLib) => {
   extender.hook(httpLib, 'get', {
     beforeHook: httpBeforeRequestWrapper,
     afterHook: httpAfterRequestWrapper,

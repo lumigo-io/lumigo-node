@@ -151,7 +151,7 @@ describe('payloadStringify', () => {
     expect(result).toEqual('{"a":[{"dummy":{}},2]}...[too long]');
   });
 
-  test('payloadStringify -> circular -> inherited property', function() {
+  test('payloadStringify -> circular -> inherited property', function () {
     function Base() {
       this.base = true;
     }
@@ -165,7 +165,7 @@ describe('payloadStringify', () => {
     expect(result).toEqual('{"child":true}');
   });
 
-  test('payloadStringify -> exception', function() {
+  test('payloadStringify -> exception', function () {
     const error = new Error('SomeRandomError');
     const result = payloadStringify(error);
 
@@ -176,10 +176,10 @@ describe('payloadStringify', () => {
 
   test('keyToOmitRegexes', () => {
     process.env[LUMIGO_SECRET_MASKING_REGEX] = ['[".*evilPlan.*"]'];
-    expect(keyToOmitRegexes().map(p => String(p))).toEqual(['/.*evilPlan.*/i']);
+    expect(keyToOmitRegexes().map((p) => String(p))).toEqual(['/.*evilPlan.*/i']);
     process.env[LUMIGO_SECRET_MASKING_REGEX] = undefined;
     process.env[LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP] = ['[".*evilPlan2.*"]'];
-    expect(keyToOmitRegexes().map(p => String(p))).toEqual(['/.*evilPlan2.*/i']);
+    expect(keyToOmitRegexes().map((p) => String(p))).toEqual(['/.*evilPlan2.*/i']);
     process.env[LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP] = undefined;
   });
 

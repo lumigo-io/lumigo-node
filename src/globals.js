@@ -9,12 +9,12 @@ export const DEFAULT_MAX_SIZE_FOR_REQUEST = 1000 * 1000;
 export const SpansContainer = (() => {
   let spansToSend = {};
 
-  const addSpan = span => {
+  const addSpan = (span) => {
     spansToSend[span.id] = span;
     logger.debug('Span created', span);
   };
   const getSpans = () => Object.values(spansToSend);
-  const getSpanById = spanId => spansToSend[spanId];
+  const getSpanById = (spanId) => spansToSend[spanId];
   const changeSpanId = (oldId, newId) => {
     const oldSpan = spansToSend[oldId];
     if (oldSpan) {
@@ -74,7 +74,7 @@ export const ExecutionTags = (() => {
     return true;
   };
 
-  const normalizeTag = val => (val === undefined || val === null ? null : String(val));
+  const normalizeTag = (val) => (val === undefined || val === null ? null : String(val));
 
   const addTag = (key, value, shouldLogErrors = true) => {
     try {

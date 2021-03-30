@@ -4,6 +4,8 @@ const WARN_CLIENT_PREFIX = 'Lumigo Warning';
 
 const MAX_DUPLICATE_LOGS = 50;
 
+export type LogLevel = 'INFO' | 'WARNING' | 'FATAL' | 'DEBUG';
+
 export const LOG_LEVELS = {
   INFO: 'INFO',
   WARNING: 'WARNING',
@@ -25,15 +27,15 @@ export const LogStore = (() => {
     isEmergencyMode() && printLogs();
   };
 
-  const printLogs = ():void => {
-    logSet.forEach(logObj => {
+  const printLogs = (): void => {
+    logSet.forEach((logObj) => {
       const { message, obj } = JSON.parse(logObj);
       forceLog('FATAL', message, obj);
     });
     logSet.clear();
   };
 
-  const isEmergencyMode = ():boolean => duplicateLogsCount >= MAX_DUPLICATE_LOGS;
+  const isEmergencyMode = (): boolean => duplicateLogsCount >= MAX_DUPLICATE_LOGS;
 
   const clean = (): void => {
     logSet = new Set([]);
@@ -42,7 +44,8 @@ export const LogStore = (() => {
   return { addLog, clean };
 })();
 
-const invokeLog = (type: string) => (msg: string, obj: object | undefined = undefined) => log(type, msg, obj);
+const invokeLog = (type: string) => (msg: string, obj: object | undefined = undefined) =>
+  log(type, msg, obj);
 
 export const info = invokeLog('INFO');
 

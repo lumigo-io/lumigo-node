@@ -29,7 +29,7 @@ describe('Typescript versions tests', () => {
 
   beforeEach(() => {
     process.env = { ...oldEnv };
-    Object.keys(spies).map(x => spies[x].mockClear());
+    Object.keys(spies).map((x) => spies[x].mockClear());
     reporter.sendSpans.mockImplementation(() => ({
       rtt: 1,
     }));

@@ -31,7 +31,7 @@ const extractDynamodbTableName = (reqBody, method) => {
   return tableName;
 };
 
-export const dynamodbParser = requestData => {
+export const dynamodbParser = (requestData) => {
   const { headers: reqHeaders, body: reqBody } = requestData;
   const dynamodbMethod =
     (reqHeaders['x-amz-target'] && reqHeaders['x-amz-target'].split('.')[1]) || '';
@@ -45,11 +45,11 @@ export const dynamodbParser = requestData => {
 };
 
 // non-official
-export const isArn = arnToValidate => {
+export const isArn = (arnToValidate) => {
   return arnToValidate.startsWith('arn:aws:');
 };
 
-export const extractLambdaNameFromArn = arn => arn.split(':')[6];
+export const extractLambdaNameFromArn = (arn) => arn.split(':')[6];
 
 export const lambdaParser = (requestData, responseData) => {
   if (!responseData) return {};
@@ -101,10 +101,10 @@ export const eventBridgeParser = (requestData, responseData) => {
   const reqBodyJSON = (!!reqBody && JSON.parse(reqBody)) || {};
   const resBodyJSON = (!!resBody && JSON.parse(resBody)) || {};
   const resourceNames = reqBodyJSON.Entries
-    ? removeDuplicates(reqBodyJSON.Entries.map(entry => entry.EventBusName))
+    ? removeDuplicates(reqBodyJSON.Entries.map((entry) => entry.EventBusName))
     : undefined;
   const messageIds = resBodyJSON.Entries
-    ? resBodyJSON.Entries.map(entry => entry.EventId)
+    ? resBodyJSON.Entries.map((entry) => entry.EventId)
     : undefined;
   const awsServiceData = { resourceNames, messageIds };
   return { awsServiceData };
@@ -151,8 +151,8 @@ export const kinesisParser = (requestData, responseData) => {
   }
   if (Array.isArray(resBodyJSON['Records'])) {
     awsServiceData.messageIds = resBodyJSON['Records']
-      .map(r => r['SequenceNumber'])
-      .filter(x => !!x);
+      .map((r) => r['SequenceNumber'])
+      .filter((x) => !!x);
   }
   return { awsServiceData };
 };

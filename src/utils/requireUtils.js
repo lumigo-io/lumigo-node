@@ -3,7 +3,7 @@ const customReq =
   // eslint-disable-next-line no-undef,camelcase
   typeof __non_webpack_require__ !== 'undefined' ? __non_webpack_require__ : require;
 
-export const safeRequire = libId => {
+export const safeRequire = (libId) => {
   try {
     return customReq(libId);
   } catch (e) {

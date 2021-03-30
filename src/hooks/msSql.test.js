@@ -21,7 +21,7 @@ const createHookedClient = (mockOptions = {}) => {
   return msSql;
 };
 
-const createBaseBuilderFromSpan = span =>
+const createBaseBuilderFromSpan = (span) =>
   new SqlSpanBuilder()
     .withId(span.id)
     .withType(MSSQL_SPAN)
@@ -40,7 +40,7 @@ describe('msSql', () => {
     TracerGlobals.setHandlerInputs(handlerInputs);
   });
 
-  test('hook -> query (text: string, callback: Function) -> success', async done => {
+  test('hook -> query (text: string, callback: Function) -> success', async (done) => {
     const client = createHookedClient();
 
     await client.connect(DUMMY_CONNECTION_STRING);
@@ -58,7 +58,7 @@ describe('msSql', () => {
     });
   });
 
-  test('hook -> query (text: string, callback: Function) -> failed', async done => {
+  test('hook -> query (text: string, callback: Function) -> failed', async (done) => {
     const client = createHookedClient({
       error: {
         errorMessage: 'BAD_ERROR',

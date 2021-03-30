@@ -137,15 +137,24 @@ describe('TRAVERSE: With Attributes', () => {
       employee: [
         {
           id: '12345',
-          name: [{ type: 'first', textNode: 'Alex' }, { type: 'last', textNode: 'La Bianca' }],
+          name: [
+            { type: 'first', textNode: 'Alex' },
+            { type: 'last', textNode: 'La Bianca' },
+          ],
         },
         {
           id: '98765',
-          name: [{ type: 'first', textNode: 'Ash' }, { type: 'last', textNode: 'Thrasher' }],
+          name: [
+            { type: 'first', textNode: 'Ash' },
+            { type: 'last', textNode: 'Thrasher' },
+          ],
         },
         {
           id: '12332',
-          name: [{ type: 'first', textNode: 'Jon' }, { type: 'last', textNode: 'Andrews' }],
+          name: [
+            { type: 'first', textNode: 'Jon' },
+            { type: 'last', textNode: 'Andrews' },
+          ],
         },
       ],
     };

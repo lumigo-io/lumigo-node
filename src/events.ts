@@ -1,4 +1,13 @@
 import {
+  APIGatewayProxyEvent,
+  APIGatewayProxyEventV2,
+  DynamoDBStreamEvent,
+  KinesisStreamEvent,
+  SNSEvent,
+  SQSEvent,
+} from 'aws-lambda';
+
+import {
   isStepFunction,
   recursiveGetKey,
   STEP_FUNCTION_UID_KEY,
@@ -6,8 +15,10 @@ import {
   md5Hash,
   safeExecute,
 } from './utils';
+import { AppSyncResolverEvent } from 'aws-lambda/trigger/appsync-resolver';
+import { EventBridgeEvent } from 'aws-lambda/trigger/eventbridge';
 
-export const getTriggeredBy = event => {
+export const getTriggeredBy = (event) => {
   if (event && event['Records']) {
     // XXX Parses s3, sns, ses, kinesis, dynamodb event sources.
     const { eventSource, EventSource } = event.Records[0];
@@ -40,7 +51,7 @@ export const getTriggeredBy = event => {
   return 'invocation';
 };
 
-export const isAppSyncEvent = event => {
+export const isAppSyncEvent = (event) => {
   return (
     (event &&
       event['context'] &&
@@ -56,7 +67,7 @@ export const isAppSyncEvent = event => {
   );
 };
 
-export const isEventBridgeEvent = event => {
+export const isEventBridgeEvent = (event) => {
   return (
     typeof event !== undefined &&
     typeof event.version === 'string' &&
@@ -70,34 +81,35 @@ export const isEventBridgeEvent = event => {
   );
 };
 
-const getApiGatewayV1Data = event => {
+const getApiGatewayV1Data = (event) => {
   const { headers = {}, resource, httpMethod, requestContext = {} } = event;
   const { stage = null } = requestContext;
 
   const api = headers['Host'] || null;
-  const messageId = requestContext['requestId'];
+  const messageId = requestContext.requestId;
   return { messageId, httpMethod, resource, stage, api };
 };
 
-const getApiGatewayV2Data = event => {
-  const httpMethod = ((event['requestContext'] || {})['http'] || {})['method'];
-  const resource = ((event['requestContext'] || {})['http'] || {})['path'];
-  const messageId = (event['requestContext'] || {})['requestId'];
-  const api = (event['requestContext'] || {})['domainName'];
-  const stage = (event['requestContext'] || {})['stage'] || 'unknown';
+const getApiGatewayV2Data = (event: APIGatewayProxyEventV2) => {
+  const httpMethod = event.requestContext.http.method;
+  const resource = event.requestContext.http.path;
+  const messageId = event.requestContext.requestId;
+  const api = event.requestContext.domainName;
+  const stage = event.requestContext.stage;
 
   return { httpMethod, resource, messageId, api, stage };
 };
 
-export const getApiGatewayData = event => {
+export const getApiGatewayData = (event: APIGatewayProxyEvent | APIGatewayProxyEventV2) => {
   const version = event['version'];
   if (version && version === '2.0') {
-    return getApiGatewayV2Data(event);
+    return getApiGatewayV2Data(<APIGatewayProxyEventV2>event);
   }
   return getApiGatewayV1Data(event);
 };
 
-export const getAppSyncData = event => {
+export const getAppSyncData = (event: any) => {
+  //TODO: Fix this function
   if (event.context) {
     const { host, 'x-amzn-trace-id': traceId } = event.context.request.headers;
     return { api: host, messageId: traceId.split('=')[1] };
@@ -107,46 +119,40 @@ export const getAppSyncData = event => {
   }
 };
 
-export const getSnsData = event => {
+export const getSnsData = (event: SNSEvent) => {
   const { TopicArn: arn, MessageId: messageId } = event.Records[0].Sns;
   return { arn, messageId };
 };
 
-export const getKinesisData = event => {
+export const getKinesisData = (event: KinesisStreamEvent) => {
   const arn = event.Records[0].eventSourceARN;
-  const messageIds = (event.Records || [])
-    .map(r => (r['kinesis'] || {})['sequenceNumber'])
-    .filter(x => !!x);
+  const messageIds = event.Records.map((r) => r.kinesis.sequenceNumber);
   return { arn, messageIds };
 };
 
-export const getSqsData = event => {
+export const getSqsData = (event: SQSEvent) => {
   const arn = event.Records[0].eventSourceARN;
-  const messageIds = (event.Records || []).map(r => r['messageId']).filter(x => !!x);
+  const messageIds = event.Records.map((r) => r.messageId);
   if (messageIds.length === 1) return { arn, messageId: messageIds[0] };
   return { arn, messageIds };
 };
 
-export const getDynamodbData = event => {
+export const getDynamodbData = (event: DynamoDBStreamEvent) => {
   const arn = event.Records[0].eventSourceARN;
   const approxEventCreationTime = event.Records[0].dynamodb.ApproximateCreationDateTime * 1000;
   const messageIds = (event.Records || [])
-    .map(record => {
-      if (
-        ['MODIFY', 'REMOVE'].includes(record.eventName) &&
-        record.dynamodb &&
-        record.dynamodb.Keys
-      ) {
+    .map((record) => {
+      if (['MODIFY', 'REMOVE'].includes(record.eventName) && record.dynamodb?.Keys) {
         return md5Hash(record.dynamodb.Keys);
-      } else if (record.eventName === 'INSERT' && record.dynamodb && record.dynamodb.NewImage) {
+      } else if (record.eventName === 'INSERT' && record.dynamodb?.NewImage) {
         return md5Hash(record.dynamodb.NewImage);
       }
     })
-    .filter(x => !!x);
+    .filter((x) => !!x);
   return { arn, messageIds, approxEventCreationTime };
 };
 
-export const getRelevantEventData = (triggeredBy, event) => {
+export const getRelevantEventData = (triggeredBy: string, event) => {
   switch (triggeredBy) {
     case 'sqs':
       return getSqsData(event);
@@ -174,7 +180,7 @@ export const getRelevantEventData = (triggeredBy, event) => {
   }
 };
 
-export const getEventInfo = event => {
+export const getEventInfo = (event: {}) => {
   const triggeredBy = getTriggeredBy(event);
   const eventData = safeExecute(() => getRelevantEventData(triggeredBy, event))() || {};
   return { ...eventData, triggeredBy };

@@ -35,7 +35,7 @@ const createHookedMySqlV1Client = (mockOptions = {}) => {
   return new mySql(DUMMY_OPTIONS);
 };
 
-const createBaseBuilderFromSpan = span =>
+const createBaseBuilderFromSpan = (span) =>
   new SqlSpanBuilder()
     .withId(span.id)
     .withType(MYSQL_SPAN)
@@ -52,7 +52,7 @@ describe('mySql', () => {
     TracerGlobals.setHandlerInputs(handlerInputs);
   });
 
-  test('v2 -> hook -> query (text: string, callback: Function) -> success', done => {
+  test('v2 -> hook -> query (text: string, callback: Function) -> success', (done) => {
     const client = createHookedMySqlV2Client();
 
     client.query('SELECT * from users', () => {
@@ -68,7 +68,7 @@ describe('mySql', () => {
     });
   });
 
-  test('v2 -> hook -> query (text: string, values: List, callback: Function) -> success', done => {
+  test('v2 -> hook -> query (text: string, values: List, callback: Function) -> success', (done) => {
     const client = createHookedMySqlV2Client();
 
     client.query('SELECT * from users', ['123'], () => {
@@ -85,7 +85,7 @@ describe('mySql', () => {
     });
   });
 
-  test('v2 -> hook -> query (text: string, callback: Function) -> fail', done => {
+  test('v2 -> hook -> query (text: string, callback: Function) -> fail', (done) => {
     const error = new Error('DuumyError');
     const client = createHookedMySqlV2Client({ error });
 
@@ -102,7 +102,7 @@ describe('mySql', () => {
     });
   });
 
-  test('v2 -> hook -> query (text: string, values: List, callback: Function) -> fail', done => {
+  test('v2 -> hook -> query (text: string, values: List, callback: Function) -> fail', (done) => {
     const error = new Error('DuumyError');
     const client = createHookedMySqlV2Client({ error });
 
@@ -120,7 +120,7 @@ describe('mySql', () => {
     });
   });
 
-  test('v2 -> hook -> execute(text: string, callback: Function) -> success', done => {
+  test('v2 -> hook -> execute(text: string, callback: Function) -> success', (done) => {
     const client = createHookedMySqlV2Client();
 
     client.execute('SELECT * from users', () => {
@@ -136,7 +136,7 @@ describe('mySql', () => {
     });
   });
 
-  test('v2 -> hook -> execute (text: string, values: List, callback: Function) -> success', done => {
+  test('v2 -> hook -> execute (text: string, values: List, callback: Function) -> success', (done) => {
     const client = createHookedMySqlV2Client();
 
     client.execute('SELECT * from users', ['123'], () => {
@@ -153,7 +153,7 @@ describe('mySql', () => {
     });
   });
 
-  test('v2 -> hook -> execute (text: string, callback: Function) -> fail', done => {
+  test('v2 -> hook -> execute (text: string, callback: Function) -> fail', (done) => {
     const error = new Error('DuumyError');
     const client = createHookedMySqlV2Client({ error });
 
@@ -170,7 +170,7 @@ describe('mySql', () => {
     });
   });
 
-  test('v2 -> hook -> execute (text: string, values: List, callback: Function) -> fail', done => {
+  test('v2 -> hook -> execute (text: string, values: List, callback: Function) -> fail', (done) => {
     const error = new Error('DuumyError');
     const client = createHookedMySqlV2Client({ error });
 
@@ -188,7 +188,7 @@ describe('mySql', () => {
     });
   });
 
-  test('v1 -> hook -> query (text: string, callback: Function) -> success', done => {
+  test('v1 -> hook -> query (text: string, callback: Function) -> success', (done) => {
     const client = createHookedMySqlV1Client();
 
     client.query('SELECT * from users', () => {
@@ -204,7 +204,7 @@ describe('mySql', () => {
     });
   });
 
-  test('v1 -> hook -> query (text: string, values: List, callback: Function) -> success', done => {
+  test('v1 -> hook -> query (text: string, values: List, callback: Function) -> success', (done) => {
     const client = createHookedMySqlV1Client();
 
     client.query('SELECT * from users', ['123'], () => {
@@ -221,7 +221,7 @@ describe('mySql', () => {
     });
   });
 
-  test('v1 -> hook -> query (text: string, callback: Function) -> fail', done => {
+  test('v1 -> hook -> query (text: string, callback: Function) -> fail', (done) => {
     const error = new Error('DuumyError');
     const client = createHookedMySqlV1Client({ error });
 
@@ -238,7 +238,7 @@ describe('mySql', () => {
     });
   });
 
-  test('v1 -> hook -> query (text: string, values: List, callback: Function) -> fail', done => {
+  test('v1 -> hook -> query (text: string, values: List, callback: Function) -> fail', (done) => {
     const error = new Error('DuumyError');
     const client = createHookedMySqlV1Client({ error });
 

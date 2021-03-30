@@ -202,8 +202,8 @@ function validate(currentTag) {
   if (
     currentTag.charAt(0) === '<' &&
     currentTag.charAt(1) === '?' &&
-    (currentTag.charAt(currentTag.length - 1) === '>' &&
-      currentTag.charAt(currentTag.length - 2) === '?')
+    currentTag.charAt(currentTag.length - 1) === '>' &&
+    currentTag.charAt(currentTag.length - 2) === '?'
   ) {
     return true;
   }

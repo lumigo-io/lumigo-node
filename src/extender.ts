@@ -2,19 +2,24 @@ import shimmer from 'shimmer';
 import * as logger from './logger';
 import { safeExecute } from './utils';
 
-const noop = () => {};
+const noop = (): void => {};
 
-const isFunctionAlreadyWrapped = fn => fn && fn.__wrapped;
+const isFunctionAlreadyWrapped = (fn): boolean => fn && fn.__wrapped;
 
-export const hook = (module, funcName, options = {}) => {
+export interface ExtenderOptions {
+  beforeHook?: (args: any[]) => void;
+  afterHook?: (args: any[], functionResult: any) => void;
+}
+
+export const hook = (module, funcName: string, options: ExtenderOptions = {}) => {
   const { beforeHook = noop, afterHook = noop } = options;
   const safeBeforeHook = safeExecute(beforeHook, `before hook of ${funcName} fail`);
   const safeAfterHook = safeExecute(afterHook, `after hook of ${funcName} fail`);
   const extenderContext = {};
   try {
-    const wrapper = originalFn => {
+    const wrapper = (originalFn) => {
       if (isFunctionAlreadyWrapped(originalFn)) return originalFn;
-      return function(...args) {
+      return function (...args) {
         safeBeforeHook.call(this, args, extenderContext);
         const originalFnResult = originalFn.apply(this, args);
         safeAfterHook.call(this, args, originalFnResult, extenderContext);
@@ -30,7 +35,7 @@ export const hook = (module, funcName, options = {}) => {
 export const hookPromise = (originalPromise, options) => {
   const { beforeThen = noop, afterThen = noop, beforeCatch = noop, afterCatch = noop } = options;
   hook(originalPromise, 'then', {
-    beforeHook: args => {
+    beforeHook: (args) => {
       hook(args, '0', {
         beforeHook: beforeThen,
         afterHook: afterThen,
@@ -38,7 +43,7 @@ export const hookPromise = (originalPromise, options) => {
     },
   });
   hook(originalPromise, 'catch', {
-    beforeHook: args => {
+    beforeHook: (args) => {
       hook(args, '0', {
         beforeHook: beforeCatch,
         afterHook: afterCatch,

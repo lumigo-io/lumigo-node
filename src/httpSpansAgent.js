@@ -49,7 +49,7 @@ export const HttpSpansAgent = (() => {
     });
   };
 
-  const createSessionInstance = httpAgent => {
+  const createSessionInstance = (httpAgent) => {
     const baseConfiguration = { timeout: REQUEST_TIMEOUT, maxRedirects: 0, validateStatus };
     if (isReuseHttpConnection()) {
       return axios.create({
@@ -76,7 +76,7 @@ export const HttpSpansAgent = (() => {
     const connectionTimeout = getConnectionTimeout();
     const session = getSessionInstance();
     let requestTimeoutTimer;
-    const requestTimeout = new Promise(resolve => {
+    const requestTimeout = new Promise((resolve) => {
       requestTimeoutTimer = setTimeout(() => {
         clearTimeout(requestTimeoutTimer);
         logger.debug(
@@ -87,11 +87,11 @@ export const HttpSpansAgent = (() => {
     });
     const requestPromise = session
       .post(url, requestBody, { headers })
-      .then(r => {
+      .then((r) => {
         const { status, statusText, data } = r;
         logger.debug('Edge request completed', { statusText, status, data });
       })
-      .catch(e => {
+      .catch((e) => {
         logger.debug('Edge error (Tracer skipping)', e.message);
       });
 
@@ -100,7 +100,7 @@ export const HttpSpansAgent = (() => {
     });
   };
 
-  const postSpans = async requestBody => {
+  const postSpans = async (requestBody) => {
     const { url } = getEdgeUrl();
     const headers = getHeaders();
     const bodySize = getJSONBase64Size(requestBody);

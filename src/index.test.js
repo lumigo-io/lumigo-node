@@ -20,7 +20,7 @@ describe('index', () => {
   spies.setVerboseMode = jest.spyOn(utils, 'setVerboseMode');
 
   beforeEach(() => {
-    Object.keys(spies).map(x => spies[x].mockClear());
+    Object.keys(spies).map((x) => spies[x].mockClear());
   });
 
   test('execution tags - 2 versions of tracer - layer and manual', async () => {
@@ -46,7 +46,7 @@ describe('index', () => {
 
       expect(result).toEqual(retVal);
       const sentSpans = AxiosMocker.getSentSpans()[1];
-      const actualTags = sentSpans.filter(span => !span.id.endsWith('_started'))[0][
+      const actualTags = sentSpans.filter((span) => !span.id.endsWith('_started'))[0][
         EXECUTION_TAGS_KEY
       ];
       expect(actualTags).toEqual([{ key: 'k0', value: 'v0' }]);
@@ -73,10 +73,13 @@ describe('index', () => {
 
     expect(result).toEqual(retVal);
     const sentSpans = AxiosMocker.getSentSpans()[1];
-    const actualTags = sentSpans.filter(span => !span.id.endsWith('_started'))[0][
+    const actualTags = sentSpans.filter((span) => !span.id.endsWith('_started'))[0][
       EXECUTION_TAGS_KEY
     ];
-    expect(actualTags).toEqual([{ key: 'k0', value: 'v0' }, { key: 'k1', value: 'v1' }]);
+    expect(actualTags).toEqual([
+      { key: 'k0', value: 'v0' },
+      { key: 'k1', value: 'v1' },
+    ]);
   });
 
   test('execution tags - with undefined', async () => {
@@ -92,7 +95,7 @@ describe('index', () => {
 
     expect(result).toEqual('retVal');
     const sentSpans = AxiosMocker.getSentSpans()[1];
-    const actualTags = sentSpans.filter(span => !span.id.endsWith('_started'))[0][
+    const actualTags = sentSpans.filter((span) => !span.id.endsWith('_started'))[0][
       EXECUTION_TAGS_KEY
     ];
     expect(actualTags).toEqual([{ key: 'k', value: null }]);
@@ -113,10 +116,13 @@ describe('index', () => {
     await lumigo.trace(userHandler)({}, context, jest.fn());
 
     const sentSpans = AxiosMocker.getSentSpans()[1];
-    const actualTags = sentSpans.filter(span => !span.id.endsWith('_started'))[0][
+    const actualTags = sentSpans.filter((span) => !span.id.endsWith('_started'))[0][
       EXECUTION_TAGS_KEY
     ];
-    expect(actualTags).toEqual([{ key: 'k0', value: 'v0' }, { key: 'k1', value: 'v1' }]);
+    expect(actualTags).toEqual([
+      { key: 'k0', value: 'v0' },
+      { key: 'k1', value: 'v1' },
+    ]);
   });
 
   test('addExecutionTag without tracer not throw exception', async () => {

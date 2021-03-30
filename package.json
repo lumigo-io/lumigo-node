@@ -17,14 +17,14 @@
     "test": "npm run build && npm run jest",
     "lint": "eslint ./src",
     "prepublishOnly": "npm run prettier:fix && npm run lint && npm run test",
-    "prettier:ci": "prettier --list-different \"src/**/*.js\"",
-    "prettier:fix": "prettier --write \"./src/**/*.js\""
+    "prettier:ci": "prettier --list-different \"src/**/*.[jt]s\" --parser typescript",
+    "prettier:fix": "prettier --write \"./src/**/*.[jt]s\" --parser typescript"
   },
   "dependencies": {
-    "shimmer": "^1.2.1",
-    "json.sortify": "^2.2.2",
+    "agentkeepalive": "^4.1.3",
     "axios": "0.21.1",
-    "agentkeepalive": "^4.1.3"
+    "json.sortify": "^2.2.2",
+    "shimmer": "^1.2.1"
   },
   "devDependencies": {
     "@babel/cli": "^7.4.4",
@@ -39,6 +39,7 @@
     "@semantic-release/changelog": "^3.0.4",
     "@semantic-release/git": "^7.0.16",
     "@types/jest": "^26.0.22",
+    "@types/aws-lambda": "^8.10.73",
     "aws-sdk": "^2.465.0",
     "axios-mock-adapter": "^1.18.1",
     "babel-eslint": "^10.0.1",
@@ -53,7 +54,7 @@
     "jest-junit": "^6.4.0",
     "mockdate": "^2.0.2",
     "mongo-mock": "^4.0.0",
-    "prettier": "^1.17.1",
+    "prettier": "^2.2.1",
     "semantic-release": "^17.2.3",
     "typescript": "^4.2.3"
   },
