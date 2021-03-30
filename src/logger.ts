@@ -15,7 +15,7 @@ export const LogStore = (() => {
   let logSet = new Set([]);
   let duplicateLogsCount = 0;
 
-  const addLog = (type, message, object) => {
+  const addLog = (type: string, message: string, object: object | undefined): void => {
     const logObj = JSON.stringify({ type, message, object });
     if (!logSet.has(logObj)) {
       logSet.add(logObj);
@@ -25,7 +25,7 @@ export const LogStore = (() => {
     isEmergencyMode() && printLogs();
   };
 
-  const printLogs = () => {
+  const printLogs = ():void => {
     logSet.forEach(logObj => {
       const { message, obj } = JSON.parse(logObj);
       forceLog('FATAL', message, obj);
@@ -33,15 +33,16 @@ export const LogStore = (() => {
     logSet.clear();
   };
 
-  const isEmergencyMode = () => duplicateLogsCount >= MAX_DUPLICATE_LOGS;
-  const clean = () => {
+  const isEmergencyMode = ():boolean => duplicateLogsCount >= MAX_DUPLICATE_LOGS;
+
+  const clean = (): void => {
     logSet = new Set([]);
     duplicateLogsCount = 0;
   };
   return { addLog, clean };
 })();
 
-const invokeLog = type => (msg, obj = undefined) => log(type, msg, obj);
+const invokeLog = (type: string) => (msg: string, obj: object | undefined = undefined) => log(type, msg, obj);
 
 export const info = invokeLog('INFO');
 
@@ -51,7 +52,7 @@ export const fatal = invokeLog('FATAL');
 
 export const debug = invokeLog('DEBUG');
 
-export const log = (levelname, message, obj) => {
+export const log = (levelname: string, message: string, obj: object | undefined): void => {
   const storeLogsIsOn = isStoreLogs();
   storeLogsIsOn && LogStore.addLog(levelname, message, obj);
   if (isDebug() && !storeLogsIsOn) {
@@ -59,7 +60,7 @@ export const log = (levelname, message, obj) => {
   }
 };
 
-const forceLog = (levelname, message, obj) => {
+const forceLog = (levelname: string, message: string, obj: object | undefined): void => {
   const escapedMessage = JSON.stringify(message, null, 0);
   const logMsg = `${LOG_PREFIX} - ${levelname} - ${escapedMessage}`;
   if (obj) {
@@ -72,9 +73,9 @@ const forceLog = (levelname, message, obj) => {
   }
 };
 
-export const warnClient = (msg, obj) => {
+export const warnClient = (msg: string, obj: object | undefined = undefined): boolean => {
   if (process.env.LUMIGO_WARNINGS === 'off') {
-    debug('Does not warn the user about', msg);
+    debug(`Does not warn the user about - ${msg}`);
     return false;
   }
   if (obj)
