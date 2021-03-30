@@ -3,7 +3,7 @@ import * as utils from './utils';
 import { HttpSpansAgent } from './httpSpansAgent';
 import * as globals from './globals';
 
-import axios from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import { sleep } from '../testUtils/sleep';
 
 describe('HttpSpansAgent', () => {
@@ -90,14 +90,17 @@ describe('HttpSpansAgent', () => {
       const reqBody = 'abcdefg';
       globals.TracerGlobals.setTracerInputs({ token: 't_xxx' });
 
-      jest.spyOn(axios, 'create').mockImplementationOnce(() => {
-        return {
-          post: async () => {
-            called = true;
-            await sleep(60000);
-          },
-        };
-      });
+      jest.spyOn(axios, 'create').mockImplementationOnce(
+        (config?: AxiosRequestConfig): AxiosInstance => {
+          return {
+            // @ts-ignore
+            post: async () => {
+              called = true;
+              await sleep(60000);
+            },
+          };
+        }
+      );
 
       await HttpSpansAgent.postSpans(reqBody);
       expect(called).toBe(true);

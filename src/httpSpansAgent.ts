@@ -33,7 +33,7 @@ export const HttpSpansAgent = (() => {
     return headersCache;
   };
 
-  const initAgent = () => {
+  const initAgent = (): void => {
     sessionAgent = createHttpAgent();
     sessionInstance = createSessionInstance(sessionAgent);
     logger.debug('Http session created to');
@@ -63,16 +63,24 @@ export const HttpSpansAgent = (() => {
 
   const getSessionInstance = () => {
     if (!sessionInstance) {
-      sessionInstance = createSessionInstance();
+      if (!sessionAgent) {
+        sessionAgent = createHttpAgent();
+      }
+      sessionInstance = createSessionInstance(sessionAgent);
     }
     return sessionInstance;
   };
 
   const cleanSessionInstance = () => {
     sessionInstance = undefined;
+    sessionAgent = undefined;
   };
 
-  const sendHttpRequest = async (url, headers, requestBody) => {
+  const sendHttpRequest = async (
+    url: string,
+    headers: object,
+    requestBody: string
+  ): Promise<void> => {
     const connectionTimeout = getConnectionTimeout();
     const session = getSessionInstance();
     let requestTimeoutTimer;
@@ -100,7 +108,7 @@ export const HttpSpansAgent = (() => {
     });
   };
 
-  const postSpans = async (requestBody) => {
+  const postSpans = async (requestBody: string): Promise<void> => {
     const { url } = getEdgeUrl();
     const headers = getHeaders();
     const bodySize = getJSONBase64Size(requestBody);

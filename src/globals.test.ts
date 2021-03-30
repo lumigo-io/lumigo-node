@@ -88,7 +88,7 @@ describe('globals', () => {
       new Promise((resolve) =>
         setTimeout(() => {
           array.push(1);
-          resolve();
+          resolve(1);
         }, ms)
       );
 
@@ -209,7 +209,6 @@ describe('globals', () => {
       debug,
       edgeHost,
       switchOff,
-      isStepFunction,
       maxSizeForRequest,
     });
     expect(globals.TracerGlobals.getTracerInputs()).toEqual({
