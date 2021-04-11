@@ -32,7 +32,7 @@ export const hook = (module, funcName: string, options: ExtenderOptions = {}) =>
     };
     shimmer.wrap(module, funcName, wrapper);
   } catch (e) {
-    logger.warn(`Wrapping of function ${funcName} failed`, options);
+    logger.warn(`Wrapping of function ${funcName} failed - ${e.toString()}`, options);
   }
 };
 
