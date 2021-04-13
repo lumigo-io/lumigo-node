@@ -201,4 +201,45 @@ describe('extender', () => {
       done();
     }
   });
+
+  test('hookPromise -> thenHandler', done => {
+    let resolveRef;
+
+    const p = new Promise(function(resolve) {
+      resolveRef = resolve;
+    });
+
+    const thenHandler = value => {
+      expect(value).toEqual('Value');
+      done();
+    };
+    extender.hookPromise(p, { thenHandler: thenHandler });
+    resolveRef('Value');
+  });
+
+  test('hookPromise -> thenHandler -> safe from errors', async () => {
+    let resolveRef;
+
+    const p = new Promise(function(resolve) {
+      resolveRef = resolve;
+    });
+
+    const thenHandler = value => {
+      expect(value).toEqual('Value');
+      throw new Error('Bla bla');
+    };
+    extender.hookPromise(p, { thenHandler: thenHandler });
+    resolveRef('Value');
+    await p;
+  });
+
+  test('hookPromise -> catchHandler', async () => {
+    const p = Promise.reject(new Error('octopus'));
+
+    const catchHandler = value => {
+      expect(value).toEqual('octopus');
+    };
+    extender.hookPromise(p, { catchHandler: catchHandler });
+    await expect(p).rejects.toThrow();
+  });
 });
