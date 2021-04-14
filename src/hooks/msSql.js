@@ -103,11 +103,11 @@ function queryAfterHook(args, originalFnResult, extenderContext) {
   const { currentSpan } = extenderContext;
   if (isPromise(originalFnResult)) {
     hookPromise(originalFnResult, {
-      beforeThen: args => {
-        handleResult(currentSpan, args[0]);
+      thenHandler: args => {
+        handleResult(currentSpan, args);
       },
-      beforeCatch: args => {
-        handleResult(currentSpan, null, args[0]);
+      catchHandler: args => {
+        handleResult(currentSpan, null, args);
       },
     });
   }
