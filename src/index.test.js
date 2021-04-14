@@ -2,16 +2,10 @@
 import * as tracer from './tracer';
 import * as utils from './utils';
 import { EXECUTION_TAGS_KEY } from './utils';
-import {
-  HttpsMocker,
-  HttpsRequestsForTesting,
-  HttpsScenarioBuilder,
-} from '../testUtils/httpsMocker';
 import * as fsExtra from 'fs-extra';
 import { AxiosMocker } from '../testUtils/axiosMocker';
-import { wrapHttp } from './hooks/http';
-import { HttpSpanBuilder } from '../testUtils/httpSpanBuilder';
-import { sleep } from '../testUtils/sleep';
+
+const TOKEN = 't_10faa5e13e7844aaa1234';
 
 describe('index', () => {
   const spies = {};
@@ -36,7 +30,7 @@ describe('index', () => {
     try {
       await fsExtra.copy(originDirPath, dupDirPath);
 
-      const lumigoLayer = require(layerPath)({ token: 'T' });
+      const lumigoLayer = require(layerPath)({ token: TOKEN });
       const userHandler = async (event, context, callback) => {
         const lumigoManual = require('./index');
         lumigoManual.addExecutionTag('k0', 'v0');
@@ -61,7 +55,7 @@ describe('index', () => {
     const retVal = 'The Tracer Wars';
 
     const lumigoImport = require('./index');
-    const lumigo = lumigoImport({ token: 'T' });
+    const lumigo = lumigoImport({ token: TOKEN });
     const userHandler = async (event, context, callback) => {
       // First way to run `addExecutionTag`, for manual tracing.
       lumigoImport.addExecutionTag('k0', 'v0');
@@ -83,7 +77,7 @@ describe('index', () => {
     const context = { getRemainingTimeInMillis: () => 30000 };
 
     const lumigoImport = require('./index');
-    const lumigo = lumigoImport({ token: 'T' });
+    const lumigo = lumigoImport({ token: TOKEN });
     const userHandler = async (event, context, callback) => {
       lumigoImport.addExecutionTag('k', undefined);
       return 'retVal';
@@ -102,7 +96,7 @@ describe('index', () => {
     const context = { getRemainingTimeInMillis: () => 30000 };
 
     const lumigoImport = require('./index');
-    const lumigo = lumigoImport({ token: 'T' });
+    const lumigo = lumigoImport({ token: TOKEN });
     const userHandler = (event, context, callback) => {
       // First way to run `addExecutionTag`, for manual tracing.
       lumigoImport.addExecutionTag('k0', 'v0');
@@ -123,7 +117,7 @@ describe('index', () => {
     const lumigoImport = require('./index');
     lumigoImport.addExecutionTag('k0', 'v0');
     // No exception.
-    const lumigo = lumigoImport({ token: 't' });
+    const lumigo = lumigoImport({ token: TOKEN });
     lumigo.addExecutionTag('k0', 'v0');
     // No exception.
   });
@@ -171,7 +165,7 @@ describe('index', () => {
     spies.trace.mockReturnValueOnce(retVal);
 
     const LumigoTracer = require('./index');
-    const token = 'DEADBEEF';
+    const token = TOKEN;
     const debug = false;
     const edgeHost = 'zarathustra.com';
 

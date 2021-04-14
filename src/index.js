@@ -4,8 +4,15 @@ import { debug } from './logger';
 import { ExecutionTags } from './globals';
 import startHooks from './hooks';
 import { HttpSpansAgent } from './httpSpansAgent';
+import * as logger from './logger';
 
 debug('Tracer imported');
+
+const isValidToken = token => {
+  const regex = /[t][_][a-z0-9]{15,100}/gm;
+  const match = (token || '').match(regex);
+  return match && token === match[0];
+};
 
 module.exports = function({
   token,
@@ -18,6 +25,11 @@ module.exports = function({
 }) {
   verbose && setVerboseMode();
   switchOff && setSwitchOff();
+
+  if (!isValidToken(token)) {
+    logger.warn('Invalid Token. Go to Lumigo Settings to get a valid token.');
+    setSwitchOff();
+  }
 
   safeExecute(startHooks)();
   HttpSpansAgent.initAgent();

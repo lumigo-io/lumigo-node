@@ -16,6 +16,8 @@ import { SpansContainer } from './globals';
 import { AxiosMocker } from '../testUtils/axiosMocker';
 import { createContext } from '../testUtils/awsTestUtils';
 
+const TOKEN = 't_10faa5e13e7844aaa1234';
+
 jest.mock('./hooks/http');
 describe('tracer', () => {
   const spies = {};
@@ -345,7 +347,7 @@ describe('tracer', () => {
   });
 
   test('trace; no context', async () => {
-    const token = 'DEADBEEF';
+    const token = TOKEN;
     const lumigoTracer = require('./index')({ token });
 
     const userHandler1 = async event => {
@@ -359,7 +361,7 @@ describe('tracer', () => {
   });
 
   test('trace; non async callbacked', async done => {
-    const token = 'DEADBEEF';
+    const token = TOKEN;
     const lumigoTracer = require('./index')({ token });
 
     const retVal = 'The Tracer Wars';
@@ -378,7 +380,7 @@ describe('tracer', () => {
   });
 
   test('trace; imported twice', async done => {
-    const token = 'DEADBEEF';
+    const token = TOKEN;
     const lumigoTracer1 = require('./index')({ token });
     const lumigoTracer2 = require('./index')({ token });
 
@@ -399,7 +401,7 @@ describe('tracer', () => {
   });
 
   test('trace; non async throw error', async () => {
-    const token = 'DEADBEEF';
+    const token = TOKEN;
     const lumigoTracer = require('./index')({ token });
 
     const event = { a: 'b', c: 'd' };
@@ -419,7 +421,7 @@ describe('tracer', () => {
   test('trace; async callbacked ', async done => {
     const event = { a: 'b', c: 'd' };
     const context = { e: 'f', g: 'h' };
-    const token = 'DEADBEEF';
+    const token = TOKEN;
 
     const retVal = 'The Tracer Wars';
     const callback3 = (err, data) => {
@@ -436,7 +438,7 @@ describe('tracer', () => {
   });
 
   test('trace; async resolved ', async () => {
-    const token = 'DEADBEEF';
+    const token = TOKEN;
     const lumigoTracer = require('./index')({ token });
 
     const event = { a: 'b', c: 'd' };
@@ -456,7 +458,7 @@ describe('tracer', () => {
   });
 
   test('trace; async rejected', async () => {
-    const token = 'DEADBEEF';
+    const token = TOKEN;
     const lumigoTracer = require('./index')({ token });
 
     const event = { a: 'b', c: 'd' };
@@ -481,7 +483,9 @@ describe('tracer', () => {
     const handlerInputs = new HandlerInputesBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
 
-    const lumigoTracer = require('./index')({});
+    const lumigoTracer = require('./index')({
+      token: TOKEN,
+    });
 
     const userHandler = async () => {
       // define object with specialized toJSON (like ddb items)
@@ -500,7 +504,9 @@ describe('tracer', () => {
     const handlerInputs = new HandlerInputesBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
 
-    const lumigoTracer = require('./index')({});
+    const lumigoTracer = require('./index')({
+      token: TOKEN,
+    });
 
     const userHandler = async () => {
       return {
@@ -525,7 +531,9 @@ describe('tracer', () => {
     const handlerInputs = new HandlerInputesBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
 
-    const lumigoTracer = require('./index')({});
+    const lumigoTracer = require('./index')({
+      token: TOKEN,
+    });
 
     const userHandler = (event, context, callback) => {
       callback('ERROR');
@@ -577,7 +585,7 @@ describe('tracer', () => {
   });
 
   test('can not wrap twice', async () => {
-    const token = 'DEADBEEF';
+    const token = TOKEN;
     const lumigoTracer = require('./index')({ token });
 
     const event = { a: 'b', c: 'd' };
