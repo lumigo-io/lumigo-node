@@ -1,4 +1,5 @@
 /* eslint-disable */
+import each from 'jest-each';
 import * as tracer from './tracer';
 import * as utils from './utils';
 import * as globals from './globals';
@@ -344,6 +345,16 @@ describe('tracer', () => {
       data: 'non async callbacked?',
       type: tracer.HANDLER_CALLBACKED,
     });
+  });
+  each([
+    ["t_"],
+    [""],
+    ["10faa5e13e7844aaa1234"],
+  ]).test('trace; invalid token [%s]', (token) => {
+    require('./index')({ token });
+    expect(spies.warnClient).toBeCalledWith('Invalid Token. Go to Lumigo Settings to get a valid token.');
+    expect(spies.warnClient).toHaveBeenCalledTimes(1);
+    expect(spies.isSwitchedOff).toHaveBeenCalled();
   });
 
   test('trace; no context', async () => {

@@ -46,6 +46,7 @@
     "fs-extra": "^8.1.0",
     "husky": "^2.4.1",
     "jest": "^24.8.0",
+    "jest-each": "^26.6.2",
     "jest-junit": "^6.4.0",
     "json.sortify": "^2.2.2",
     "lambda-local": "^1.6.2",

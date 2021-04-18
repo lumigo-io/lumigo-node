@@ -27,7 +27,7 @@ module.exports = function({
   switchOff && setSwitchOff();
 
   if (!isValidToken(token)) {
-    logger.warn('Invalid Token. Go to Lumigo Settings to get a valid token.');
+    logger.warnClient('Invalid Token. Go to Lumigo Settings to get a valid token.');
     setSwitchOff();
   }
 
