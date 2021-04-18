@@ -9,7 +9,7 @@ import * as http from './hooks/http';
 import httpHook from './hooks/http';
 import * as logger from './logger';
 import { TracerGlobals } from './globals';
-import { STEP_FUNCTION_UID_KEY } from './utils';
+import { setSwitchOff, STEP_FUNCTION_UID_KEY } from './utils';
 import { LUMIGO_EVENT_KEY } from './utils';
 import { HandlerInputesBuilder } from '../testUtils/handlerInputesBuilder';
 import { EnvironmentBuilder } from '../testUtils/environmentBuilder';
@@ -23,6 +23,7 @@ jest.mock('./hooks/http');
 describe('tracer', () => {
   const spies = {};
   spies.isSwitchedOff = jest.spyOn(utils, 'isSwitchedOff');
+  spies.setSwitchOff = jest.spyOn(utils, 'setSwitchOff');
   spies.isAwsEnvironment = jest.spyOn(utils, 'isAwsEnvironment');
   spies.isSendOnlyIfErrors = jest.spyOn(utils, 'isSendOnlyIfErrors');
   spies.getContextInfo = jest.spyOn(utils, 'getContextInfo');
@@ -451,7 +452,8 @@ describe('tracer', () => {
   test('trace; async resolved ', async () => {
     const token = TOKEN;
     const lumigoTracer = require('./index')({ token });
-
+    expect(spies.warnClient).toHaveBeenCalledTimes(0);
+    expect(spies.setSwitchOff).not.toHaveBeenCalled();
     const event = { a: 'b', c: 'd' };
     const context = { e: 'f', g: 'h' };
 
