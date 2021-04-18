@@ -347,13 +347,11 @@ describe('tracer', () => {
       type: tracer.HANDLER_CALLBACKED,
     });
   });
-  each([
-    ["t_"],
-    [""],
-    ["10faa5e13e7844aaa1234"],
-  ]).test('trace; invalid token [%s]', (token) => {
+  each([['t_'], [''], ['10faa5e13e7844aaa1234']]).test('trace; invalid token [%s]', token => {
     require('./index')({ token });
-    expect(spies.warnClient).toBeCalledWith('Invalid Token. Go to Lumigo Settings to get a valid token.');
+    expect(spies.warnClient).toBeCalledWith(
+      'Invalid Token. Go to Lumigo Settings to get a valid token.'
+    );
     expect(spies.warnClient).toHaveBeenCalledTimes(1);
     expect(spies.isSwitchedOff).toHaveBeenCalled();
   });
