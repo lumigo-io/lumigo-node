@@ -101,7 +101,7 @@ describe('index', () => {
       a7: '7',
     });
     expect(consoleLog).toBeCalledWith(
-      '[LUMIGO_LOG] {"message":"This is error message","type":"ClientError","a":"3","b":"true","c":"aaa","d":"[object Object]","aa":"a","a1":"1","a2":"2","a3":"3","a4":"4","a5":"5"}'
+      '[LUMIGO_LOG] {"message":"This is error message","type":"ClientError","level":20,"a":"3","b":"true","c":"aaa","d":"[object Object]","aa":"a","a1":"1","a2":"2","a3":"3","a4":"4","a5":"5"}'
     );
   });
 
@@ -111,15 +111,15 @@ describe('index', () => {
     const lumigo = lumigoImport({ token: 'T' });
     lumigo.info('This is error message');
     expect(consoleLog).toBeCalledWith(
-      '[LUMIGO_LOG] {"message":"This is error message","type":"ProgrammaticInfo"}'
+      "[LUMIGO_LOG] {\"message\":\"This is error message\",\"type\":\"ProgrammaticInfo\",\"level\":20}"
     );
     lumigo.warn('This is error message');
     expect(consoleLog).toBeCalledWith(
-      '[LUMIGO_LOG] {"message":"This is error message","type":"ProgrammaticWarn"}'
+      "[LUMIGO_LOG] {\"message\":\"This is error message\",\"type\":\"ProgrammaticWarn\",\"level\":30}"
     );
     lumigo.error('This is error message');
     expect(consoleLog).toBeCalledWith(
-      '[LUMIGO_LOG] {"message":"This is error message","type":"ProgrammaticError"}'
+      "[LUMIGO_LOG] {\"message\":\"This is error message\",\"type\":\"ProgrammaticError\",\"level\":40}"
     );
   });
 

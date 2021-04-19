@@ -21,7 +21,7 @@ const log = (level, message, type, extra) => {
       return acc;
     }, {});
 
-  const text = JSON.stringify({ message, type, ...actual });
+  const text = JSON.stringify({ message, type, level, ...actual });
   // eslint-disable-next-line no-console
   console.log(`[LUMIGO_LOG] ${text}`);
 };
