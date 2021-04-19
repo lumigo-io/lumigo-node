@@ -13,11 +13,11 @@ module.exports = {
 };
 
 const log = (level, message, type, extra) => {
-  const actual = Object.keys(extra)
-    .filter(key => validateTag(key, extra[key]))
+  const actual = Object.entries(extra)
+    .filter(([key, value]) => validateTag(key, value))
     .slice(0, 10)
-    .reduce((acc, key) => {
-      acc[key] = String(extra[key]);
+    .reduce((acc, [key, value]) => {
+      acc[key] = String(value);
       return acc;
     }, {});
 
