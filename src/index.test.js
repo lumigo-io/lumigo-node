@@ -111,15 +111,15 @@ describe('index', () => {
     const lumigo = lumigoImport({ token: 'T' });
     lumigo.info('This is error message');
     expect(consoleLog).toBeCalledWith(
-      "[LUMIGO_LOG] {\"message\":\"This is error message\",\"type\":\"ProgrammaticInfo\",\"level\":20}"
+      '[LUMIGO_LOG] {"message":"This is error message","type":"ProgrammaticInfo","level":20}'
     );
     lumigo.warn('This is error message');
     expect(consoleLog).toBeCalledWith(
-      "[LUMIGO_LOG] {\"message\":\"This is error message\",\"type\":\"ProgrammaticWarn\",\"level\":30}"
+      '[LUMIGO_LOG] {"message":"This is error message","type":"ProgrammaticWarn","level":30}'
     );
     lumigo.error('This is error message');
     expect(consoleLog).toBeCalledWith(
-      "[LUMIGO_LOG] {\"message\":\"This is error message\",\"type\":\"ProgrammaticError\",\"level\":40}"
+      '[LUMIGO_LOG] {"message":"This is error message","type":"ProgrammaticError","level":40}'
     );
   });
 
