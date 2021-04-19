@@ -80,10 +80,10 @@ describe('index', () => {
     expect(actualTags).toEqual([{ key: 'k0', value: 'v0' }, { key: 'k1', value: 'v1' }]);
   });
 
-  test('logs - warn', async () => {
+  test('logs - info (should filter long entries and cut after the 10s element)', async () => {
     const consoleLog = jest.spyOn(console, 'log');
     const lumigoImport = require('./index');
-    const lumigo = lumigoImport({ token: TOKEN });
+    const lumigo = lumigoImport({ token: 'T' });
     const name = '1'.repeat(1000);
     lumigo.info('This is error message', 'ClientError', {
       a: 3,
@@ -102,6 +102,24 @@ describe('index', () => {
     });
     expect(consoleLog).toBeCalledWith(
       '[LUMIGO_LOG] {"message":"This is error message","type":"ClientError","a":"3","b":"true","c":"aaa","d":"[object Object]","aa":"a","a1":"1","a2":"2","a3":"3","a4":"4","a5":"5"}'
+    );
+  });
+
+  test('logs - (info,warn,error) (should use default type)', async () => {
+    const consoleLog = jest.spyOn(console, 'log');
+    const lumigoImport = require('./index');
+    const lumigo = lumigoImport({ token: 'T' });
+    lumigo.info('This is error message');
+    expect(consoleLog).toBeCalledWith(
+      '[LUMIGO_LOG] {"message":"This is error message","type":"ProgrammaticInfo"}'
+    );
+    lumigo.warn('This is error message');
+    expect(consoleLog).toBeCalledWith(
+      '[LUMIGO_LOG] {"message":"This is error message","type":"ProgrammaticWarn"}'
+    );
+    lumigo.error('This is error message');
+    expect(consoleLog).toBeCalledWith(
+      '[LUMIGO_LOG] {"message":"This is error message","type":"ProgrammaticError"}'
     );
   });
 
