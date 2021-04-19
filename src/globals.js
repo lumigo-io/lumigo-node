@@ -44,9 +44,6 @@ export const GlobalTimer = (() => {
   return { setGlobalTimeout, clearTimer };
 })();
 
-const isPrimitive = (test) => {
-  return test !== Object(test);
-}
 
 export const validateTag = (key, value, shouldLogErrors = true) => {
   key = String(key);
