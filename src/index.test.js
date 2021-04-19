@@ -1,5 +1,6 @@
 /* eslint-disable */
 import * as tracer from './tracer';
+import * as LumigoLogger from './lumigoLogger';
 import * as utils from './utils';
 import { EXECUTION_TAGS_KEY } from './utils';
 import {
@@ -77,6 +78,31 @@ describe('index', () => {
       EXECUTION_TAGS_KEY
     ];
     expect(actualTags).toEqual([{ key: 'k0', value: 'v0' }, { key: 'k1', value: 'v1' }]);
+  });
+
+  test('logs - warn', async () => {
+    const consoleLog = jest.spyOn(console, 'log');
+    const lumigoImport = require('./index');
+    const lumigo = lumigoImport({ token: TOKEN });
+    const name = '1'.repeat(1000);
+    lumigo.info('This is error message', 'ClientError', {
+      a: 3,
+      b: true,
+      c: 'aaa',
+      d: {},
+      aa: 'a',
+      [name]: name,
+      a1: '1',
+      a2: '2',
+      a3: '3',
+      a4: '4',
+      a5: '5',
+      a6: '6',
+      a7: '7',
+    });
+    expect(consoleLog).toBeCalledWith(
+      '[LUMIGO_LOG] {"message":"This is error message","type":"ClientError","a":"3","b":"true","c":"aaa","d":"[object Object]","aa":"a","a1":"1","a2":"2","a3":"3","a4":"4","a5":"5"}'
+    );
   });
 
   test('execution tags - with undefined', async () => {
