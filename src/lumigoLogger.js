@@ -8,7 +8,7 @@ module.exports = {
   warn: (message, { type = 'ProgrammaticWarn', extra = {} } = {}) => {
     log(30, message, type, extra);
   },
-  error: (message, { extra= {}, err= null, type = null } = {}) => {
+  error: (message, { extra = {}, err = null, type = null } = {}) => {
     extra = extra || {};
     if (err) {
       extra.rawException = err.message || err.msg || err.toString();
