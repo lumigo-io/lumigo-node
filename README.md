@@ -88,17 +88,15 @@ Below is an example configuration for a Lambda function that is part of a step f
 With the tracer configured, simply call `console.log("[LUMIGO_LOG] <YOUR_MESSAGE>");` to cerate custom errors that are visible throughout the platform. This can be used anywhere in your Lambda code, and is included with the `@lumigo/tracer` package.
 
 ## Logging detailed alerts
-Add const lumigo = require('@lumigo/tracer')({ token: 'YOUR-TOKEN-HERE' }) to your code.
-
-* `lumigo.info('this is an info message', { type = 'ProgrammaticInfo', extra = {customerId: "123"} })`
-* `lumigo.warn('this is a warning message', { type = 'ProgrammaticWarn', extra = {customerId: "123"} })`
-* `lumigo.error('this is an error message', { type = 'ProgrammaticError', extra = {customerId: "123"}, err = new Error("oops") })`
+* `lumigo.info('this is an info message', { type = 'ProgrammaticInfo', extra = {unicornId: "123"} })`
+* `lumigo.warn('this is a warning message', { type = 'ProgrammaticWarn', extra = {unicornId: "123"} })`
+* `lumigo.error('this is an error message', { type = 'ProgrammaticError', extra = {unicornId: "123"}, err = new Error("oops") })`
 
 Parameters:
-* message: a free text to log
-* type: Should be considered as a grouping parameter. This indicates the type of this message. Default: take the given exception type or ProgrammaticError if its None
-* extra: a key-value dict. Limited to 10 keys and 50 characters per value. By default we're taking the excpetion raw message
-* err: the actual error object.
+* `message`: a free text to log.
+* `type`: Should be considered as a grouping parameter. This indicates the type of this message. Default: take the given exception type or ProgrammaticError if it`s None.
+* `extra`: a key-value dict. Limited to 10 keys and 50 characters per value. By default we're taking the excpetion raw message.
+* `err`: the actual error object.
 
 ## Adding Execution Tags
 You can add execution tags to a function with dynamic values using the parameter `addExecutionTag`.
