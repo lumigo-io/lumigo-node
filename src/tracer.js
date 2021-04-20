@@ -30,6 +30,7 @@ export const HANDLER_CALLBACKED = 'handler_callbacked';
 export const ASYNC_HANDLER_RESOLVED = 'async_handler_resolved';
 export const ASYNC_HANDLER_REJECTED = 'async_handler_rejected';
 export const NON_ASYNC_HANDLER_ERRORED = 'non_async_errored';
+export const MAX_ELEMENTS_IN_EXTRA = 10;
 export const LEAK_MESSAGE =
   'Execution leak detected. More information is available in: https://docs.lumigo.io/docs/execution-leak-detected';
 

@@ -1,6 +1,5 @@
 import { validateTag } from './globals';
-
-export const MAX_ELEMENTS_IN_EXTRA = 10;
+import { MAX_ELEMENTS_IN_EXTRA } from './tracer';
 
 module.exports = {
   info: (message, { type = 'ProgrammaticInfo', extra = {} } = {}) => {

@@ -5,7 +5,7 @@ import { EXECUTION_TAGS_KEY } from './utils';
 
 import * as fsExtra from 'fs-extra';
 import { AxiosMocker } from '../testUtils/axiosMocker';
-import * as LumigoLogger from './lumigoLogger';
+import { MAX_ELEMENTS_IN_EXTRA } from './tracer';
 
 describe('index', () => {
   const spies = {};
@@ -80,6 +80,7 @@ describe('index', () => {
     const name = '1'.repeat(1000);
     let msg =
       '{"message":"This is error message","type":"ClientError","level":40,"extra":{"a":"3","b":"true","c":"aaa","d":"[object Object]","aa":"a","a0":"a0","a1":"a1","a2":"a2","a3":"a3","a4":"a4"}}';
+    const maxelementsinextra = MAX_ELEMENTS_IN_EXTRA;
     let extra = {
       a: 3,
       b: true,
@@ -87,7 +88,7 @@ describe('index', () => {
       d: {},
       aa: 'a',
       [name]: name,
-      ...Object.fromEntries([...Array(10).keys()].map(k => [`a${k}`, `a${k}`])),
+      ...Object.fromEntries([...Array(maxelementsinextra).keys()].map(k => [`a${k}`, `a${k}`])),
     };
     lumigo.error('This is error message', {
       type: 'ClientError',
