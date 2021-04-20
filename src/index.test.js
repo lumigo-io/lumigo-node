@@ -78,7 +78,8 @@ describe('index', () => {
     const lumigoImport = require('./index');
     const lumigo = lumigoImport({ token: 'T' });
     const name = '1'.repeat(1000);
-    let msg = "{\"message\":\"This is error message\",\"type\":\"TypeError\",\"level\":40,\"extra\":{\"a\":\"3\",\"b\":\"true\",\"c\":\"aaa\",\"d\":\"[object Object]\",\"aa\":\"a\",\"a0\":\"a0\",\"a1\":\"a1\",\"a2\":\"a2\",\"a3\":\"a3\",\"a4\":\"a4\"}}";
+    let msg =
+      '{"message":"This is error message","type":"ClientError","level":40,"extra":{"a":"3","b":"true","c":"aaa","d":"[object Object]","aa":"a","a0":"a0","a1":"a1","a2":"a2","a3":"a3","a4":"a4"}}';
     let extra = {
       a: 3,
       b: true,
@@ -86,43 +87,47 @@ describe('index', () => {
       d: {},
       aa: 'a',
       [name]: name,
-      ...Object.fromEntries([ ...Array(10).keys() ].map((k )=>[`a${k}`,`a${k}`]))
+      ...Object.fromEntries([...Array(10).keys()].map(k => [`a${k}`, `a${k}`])),
     };
-    lumigo.error('This is error message', 'ClientError', extra, new TypeError("This is type error"));
-    expect(consoleLog).toBeCalledWith(
-      `[LUMIGO_LOG] ${msg}`
-    );
+    lumigo.error('This is error message', {
+      type: 'ClientError',
+      extra,
+      err: new TypeError('This is type error'),
+    });
+    expect(consoleLog).toBeCalledWith(`[LUMIGO_LOG] ${msg}`);
   });
 
-  test("err with type and exception",async ()=>{
+  test('err with type and exception', async () => {
     const consoleLog = jest.spyOn(console, 'log');
     const lumigoImport = require('./index');
     const lumigo = lumigoImport({ token: 'T' });
-    const msg = "{\"message\":\"This is error message\",\"type\":\"TypeError\",\"level\":40,\"extra\":{\"rawException\":\"This is type error\",\"raw_exception\":\"TypeError: This is type error\"}}"
-    lumigo.error(
-      "This is error message",
-      "DBError",
-      {}
-      ,new TypeError("This is type error")
-    )
-    expect(consoleLog).toBeCalledWith(
-      `[LUMIGO_LOG] ${msg}`
-    );
+    const msg =
+      '{"message":"This is error message","type":"DBError","level":40,"extra":{"rawException":"This is type error"}}';
+    lumigo.error('This is error message', {
+      type: 'DBError',
+      err: new TypeError('This is type error'),
+    });
+    expect(consoleLog).toBeCalledWith(`[LUMIGO_LOG] ${msg}`);
   });
 
-  test("err with no type and no exception",async ()=>{
+  test('err with no type and exception', async () => {
     const consoleLog = jest.spyOn(console, 'log');
     const lumigoImport = require('./index');
     const lumigo = lumigoImport({ token: 'T' });
-    const msg = "{\"message\":\"This is error message\",\"type\":\"ProgrammaticError\",\"level\":40}"
-    lumigo.error(
-      "This is error message",
-    )
-    expect(consoleLog).toBeCalledWith(
-      `[LUMIGO_LOG] ${msg}`
-    );
+    const msg =
+      '{"message":"This is error message","type":"TypeError","level":40,"extra":{"rawException":"This is type error"}}';
+    lumigo.error('This is error message', { err: new TypeError('This is type error') });
+    expect(consoleLog).toBeCalledWith(`[LUMIGO_LOG] ${msg}`);
   });
 
+  test('err with no type and no exception', async () => {
+    const consoleLog = jest.spyOn(console, 'log');
+    const lumigoImport = require('./index');
+    const lumigo = lumigoImport({ token: 'T' });
+    const msg = '{"message":"This is error message","type":"ProgrammaticError","level":40}';
+    lumigo.error('This is error message');
+    expect(consoleLog).toBeCalledWith(`[LUMIGO_LOG] ${msg}`);
+  });
 
   test('logs - (info,warn,error) (should use default type)', async () => {
     const consoleLog = jest.spyOn(console, 'log');

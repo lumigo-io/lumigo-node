@@ -3,23 +3,22 @@ import { validateTag } from './globals';
 export const MAX_ELEMENTS_IN_EXTRA = 10;
 
 module.exports = {
-  info: (message, type = 'ProgrammaticInfo', extra = {}) => {
+  info: (message, { type = 'ProgrammaticInfo', extra = {} } = {}) => {
     log(20, message, type, extra);
   },
-  warn: (message, type = 'ProgrammaticWarn', extra = {}) => {
+  warn: (message, { type = 'ProgrammaticWarn', extra = {} } = {}) => {
     log(30, message, type, extra);
   },
-  error: (message, type = 'ProgrammaticError', extra = {}, err) => {
-    if (err){
-      extra.rawException = err.message || err.msg || err.toString()
-      type = err.constructor.name
-      extra["raw_exception"] = err.toString()
+  error: (message, { extra, err, type = null } = {}) => {
+    extra = extra || {};
+    if (err) {
+      extra.rawException = err.message || err.msg || err.toString();
+      type = type || err.constructor.name;
     }
-    type = type || "ProgrammaticError"
+    type = type || 'ProgrammaticError';
     log(40, message, type, extra, err);
   },
 };
-
 
 const log = (level, message, type, extra) => {
   const filteredExtra = Object.entries(extra)
@@ -30,9 +29,9 @@ const log = (level, message, type, extra) => {
       return acc;
     }, {});
 
-  let actual = { message, type, level};
-  if(Object.keys(extra).length > 0){
-    actual.extra =  filteredExtra
+  let actual = { message, type, level };
+  if (Object.keys(extra).length > 0) {
+    actual.extra = filteredExtra;
   }
   const text = JSON.stringify(actual);
   // eslint-disable-next-line no-console
