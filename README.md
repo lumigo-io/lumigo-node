@@ -90,8 +90,8 @@ With the tracer configured, simply call `console.log("[LUMIGO_LOG] <YOUR_MESSAGE
 ## Logging detailed alerts
 Add const lumigo = require('@lumigo/tracer')({ token: 'YOUR-TOKEN-HERE' }) to your code.
 
-* `lumigo.info('this is an info message', { type = 'ProgrammaticInfo', extra = {customerId: "123"} } = {})`
-* `lumigo.warn('this is a warning message', { type = 'ProgrammaticWarn', extra = {customerId: "123"} } = {})`
+* `lumigo.info('this is an info message', { type = 'ProgrammaticInfo', extra = {customerId: "123"} })`
+* `lumigo.warn('this is a warning message', { type = 'ProgrammaticWarn', extra = {customerId: "123"} })`
 * `lumigo.error('this is an error message', { type = 'ProgrammaticError', extra = {customerId: "123"}, err = new Error("oops") })`
 
 Parameters:
