@@ -44,57 +44,56 @@ export const GlobalTimer = (() => {
   return { setGlobalTimeout, clearTimer };
 })();
 
-export const validateTag = (key, value, shouldLogErrors = true) => {
-  key = String(key);
-  value = String(value);
-  if (key.length < 1 || key.length > MAX_TAG_KEY_LEN) {
-    shouldLogErrors &&
-      logger.warnClient(
-        `${ADD_TAG_ERROR_MSG_PREFIX}: key length should be between 1 and ${MAX_TAG_KEY_LEN}: ${key} - ${value}`
-      );
-    return false;
-  }
-
-  if (value.length < 1 || value.length > MAX_TAG_VALUE_LEN) {
-    shouldLogErrors &&
-      logger.warnClient(
-        `${ADD_TAG_ERROR_MSG_PREFIX}: value length should be between 1 and ${MAX_TAG_VALUE_LEN}: ${key} - ${value}`
-      );
-    return false;
-  }
-  if (global.tags.length >= MAX_TAGS) {
-    shouldLogErrors &&
-      logger.warnClient(
-        `${ADD_TAG_ERROR_MSG_PREFIX}: maximum number of tags is ${MAX_TAGS}: ${key} - ${value}`
-      );
-    return false;
-  }
-  return true;
-};
-
-const normalizeTag = val => (val === undefined || val === null ? null : String(val));
-
-const addTag = (key, value, shouldLogErrors = true) => {
-  try {
-    logger.debug(`Adding tag: ${key} - ${value}`);
-    if (!validateTag(key, value, shouldLogErrors)) return false;
-    global.tags.push({ key: normalizeTag(key), value: normalizeTag(value) });
-  } catch (err) {
-    shouldLogErrors && logger.warnClient(ADD_TAG_ERROR_MSG_PREFIX);
-    logger.warn(ADD_TAG_ERROR_MSG_PREFIX, err);
-    return false;
-  }
-  return true;
-};
-
 export const ExecutionTags = (() => {
   global.tags = [];
+
+  const validateTag = (key, value, shouldLogErrors = true) => {
+    key = String(key);
+    value = String(value);
+    if (key.length < 1 || key.length > MAX_TAG_KEY_LEN) {
+      shouldLogErrors &&
+        logger.warnClient(
+          `${ADD_TAG_ERROR_MSG_PREFIX}: key length should be between 1 and ${MAX_TAG_KEY_LEN}: ${key} - ${value}`
+        );
+      return false;
+    }
+    if (value.length < 1 || value.length > MAX_TAG_VALUE_LEN) {
+      shouldLogErrors &&
+        logger.warnClient(
+          `${ADD_TAG_ERROR_MSG_PREFIX}: value length should be between 1 and ${MAX_TAG_VALUE_LEN}: ${key} - ${value}`
+        );
+      return false;
+    }
+    if (global.tags.length >= MAX_TAGS) {
+      shouldLogErrors &&
+        logger.warnClient(
+          `${ADD_TAG_ERROR_MSG_PREFIX}: maximum number of tags is ${MAX_TAGS}: ${key} - ${value}`
+        );
+      return false;
+    }
+    return true;
+  };
+
+  const normalizeTag = val => (val === undefined || val === null ? null : String(val));
+
+  const addTag = (key, value, shouldLogErrors = true) => {
+    try {
+      logger.debug(`Adding tag: ${key} - ${value}`);
+      if (!validateTag(key, value, shouldLogErrors)) return false;
+      global.tags.push({ key: normalizeTag(key), value: normalizeTag(value) });
+    } catch (err) {
+      shouldLogErrors && logger.warnClient(ADD_TAG_ERROR_MSG_PREFIX);
+      logger.warn(ADD_TAG_ERROR_MSG_PREFIX, err);
+      return false;
+    }
+    return true;
+  };
 
   const getTags = () => [...global.tags];
 
   const clear = () => (global.tags = []);
 
-  return { addTag, getTags, clear };
+  return { addTag, getTags, clear, validateTag };
 })();
 
 export const TracerGlobals = (() => {
