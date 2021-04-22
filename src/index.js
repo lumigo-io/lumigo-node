@@ -25,7 +25,7 @@ module.exports = function({
 }) {
   verbose && setVerboseMode();
   switchOff && setSwitchOff();
-
+  logger.debug('init tracer');
   if (!isValidToken(token)) {
     logger.warnClient('Invalid Token. Go to Lumigo Settings to get a valid token.');
     setSwitchOff();
