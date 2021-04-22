@@ -1,6 +1,6 @@
 import { MAX_ELEMENTS_IN_EXTRA } from './tracer';
 import { ExecutionTags } from './globals';
-import { LUMIGO_LOG_PREFIX_FLAG } from './utils';
+import { getLogPrefix } from './utils';
 
 export const info = (message, { type = 'ProgrammaticInfo', extra = {} } = {}) => {
   log(20, message, type, extra);
@@ -19,6 +19,7 @@ export const error = (message, { extra = {}, err = null, type = null } = {}) => 
 };
 
 const log = (level, message, type, extra) => {
+  const prefix = getLogPrefix()
   const filteredExtra = Object.entries(extra)
     .filter(([key, value]) => ExecutionTags.validateTag(key, value))
     .slice(0, MAX_ELEMENTS_IN_EXTRA)
@@ -33,5 +34,5 @@ const log = (level, message, type, extra) => {
   }
   const text = JSON.stringify(actual);
   // eslint-disable-next-line no-console
-  console.log(`${process.env[LUMIGO_LOG_PREFIX_FLAG]} ${text}`);
+  console.log(`${prefix || '[LUMIGO_LOG]'} ${text}`);
 };
