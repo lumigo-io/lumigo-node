@@ -88,11 +88,13 @@ describe('index', () => {
       [longName]: longName,
       ...Object.fromEntries([...Array(MAX_ELEMENTS_IN_EXTRA).keys()].map(k => [`a${k}`, `a${k}`])),
     };
+
     lumigo.error('This is error message', {
       type: 'ClientError',
       extra,
       err: new TypeError('This is type error'),
     });
+
     let logs = ConsoleWritesForTesting.getLogs();
     expect(logs.pop()).toEqual({
       msg: `[LUMIGO_LOG] ${expected}`,
@@ -105,10 +107,12 @@ describe('index', () => {
     const lumigo = lumigoImport({ token: 'T' });
     const expected =
       '{"message":"This is error message","type":"DBError","level":40,"extra":{"rawException":"This is type error"}}';
+
     lumigo.error('This is error message', {
       type: 'DBError',
       err: new TypeError('This is type error'),
     });
+
     let logs = ConsoleWritesForTesting.getLogs();
     expect(logs.pop()).toEqual({
       msg: `[LUMIGO_LOG] ${expected}`,
@@ -121,7 +125,9 @@ describe('index', () => {
     const lumigo = lumigoImport({ token: 'T' });
     const expected =
       '{"message":"This is error message","type":"TypeError","level":40,"extra":{"rawException":"This is type error"}}';
+
     lumigo.error('This is error message', { err: new TypeError('This is type error') });
+
     let logs = ConsoleWritesForTesting.getLogs();
     expect(logs.pop()).toEqual({
       msg: `[LUMIGO_LOG] ${expected}`,
@@ -133,7 +139,9 @@ describe('index', () => {
     const lumigoImport = require('./index');
     const lumigo = lumigoImport({ token: 'T' });
     const expected = '{"message":"This is error message","type":"ProgrammaticError","level":40}';
+
     lumigo.error('This is error message');
+
     let logs = ConsoleWritesForTesting.getLogs();
     expect(logs.pop()).toEqual({
       msg: `[LUMIGO_LOG] ${expected}`,
@@ -144,18 +152,20 @@ describe('index', () => {
   test('logs - (info,warn,error) (should use default type)', async () => {
     const lumigoImport = require('./index');
     const lumigo = lumigoImport({ token: 'T' });
+
+    lumigo.error('This is error message');
+    lumigo.warn('This is error message');
     lumigo.info('This is error message');
+
     let logs = ConsoleWritesForTesting.getLogs();
     expect(logs.pop()).toEqual({
       msg: '[LUMIGO_LOG] {"message":"This is error message","type":"ProgrammaticInfo","level":20}',
       obj: undefined,
     });
-    lumigo.warn('This is error message');
     expect(logs.pop()).toEqual({
       msg: '[LUMIGO_LOG] {"message":"This is error message","type":"ProgrammaticWarn","level":30}',
       obj: undefined,
     });
-    lumigo.error('This is error message');
     expect(logs.pop()).toEqual({
       msg: '[LUMIGO_LOG] {"message":"This is error message","type":"ProgrammaticError","level":40}',
       obj: undefined,
