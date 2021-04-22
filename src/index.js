@@ -1,5 +1,5 @@
 import { trace } from './tracer';
-import { safeExecute, setSwitchOff, setVerboseMode } from './utils';
+import { safeExecute, setSwitchOff, setSwitchOn, setVerboseMode } from './utils';
 import { debug } from './logger';
 import { ExecutionTags } from './globals';
 import startHooks from './hooks';
@@ -29,6 +29,8 @@ module.exports = function({
   if (!isValidToken(token)) {
     logger.warnClient('Invalid Token. Go to Lumigo Settings to get a valid token.');
     setSwitchOff();
+  } else if(!switchOff){
+    setSwitchOn();
   }
 
   safeExecute(startHooks)();
