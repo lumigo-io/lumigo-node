@@ -1,5 +1,6 @@
 import { MAX_ELEMENTS_IN_EXTRA } from './tracer';
 import { ExecutionTags } from './globals';
+import { LUMIGO_LOG_PREFIX_FLAG } from './utils';
 
 export const info = (message, { type = 'ProgrammaticInfo', extra = {} } = {}) => {
   log(20, message, type, extra);
@@ -32,5 +33,5 @@ const log = (level, message, type, extra) => {
   }
   const text = JSON.stringify(actual);
   // eslint-disable-next-line no-console
-  console.log(`[LUMIGO_LOG] ${text}`);
+  console.log(`${process.env[LUMIGO_LOG_PREFIX_FLAG]} ${text}`);
 };

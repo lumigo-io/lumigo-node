@@ -28,6 +28,7 @@ export const DEFAULT_GET_KEY_DEPTH = 3;
 export const EXECUTION_TAGS_KEY = 'lumigo_execution_tags_no_scrub';
 export const DEFAULT_TIMEOUT_MIN_DURATION = 2000;
 export const DEFAULT_CONNECTION_TIMEOUT = 300;
+export const LUMIGO_LOG_PREFIX = '[LUMIGO_LOG]';
 
 export const getContextInfo = context => {
   const remainingTimeInMillis = context.getRemainingTimeInMillis();
@@ -145,6 +146,7 @@ const DEBUG_FLAG = 'LUMIGO_DEBUG';
 const SWITCH_OFF_FLAG = 'LUMIGO_SWITCH_OFF';
 const IS_STEP_FUNCTION_FLAG = 'LUMIGO_STEP_FUNCTION';
 const SCRUB_KNOWN_SERVICES_FLAG = 'LUMIGO_SCRUB_KNOWN_SERVICES';
+export const LUMIGO_LOG_PREFIX_FLAG = 'LUMIGO_LOG_PREFIX';
 
 const validateEnvVar = (envVar, value = 'TRUE') =>
   !!(process.env[envVar] && process.env[envVar].toUpperCase() === value.toUpperCase());
@@ -268,6 +270,8 @@ export const setSwitchOff = () => (process.env['LUMIGO_SWITCH_OFF'] = 'TRUE');
 export const setDebug = () => (process.env['LUMIGO_DEBUG'] = 'TRUE');
 
 export const setTimeoutTimerDisabled = () => (process.env[TIMEOUT_ENABLE_FLAG] = 'FALSE');
+
+export const setLogPrefix = () => (process.env[LUMIGO_LOG_PREFIX_FLAG] = process.env[LUMIGO_LOG_PREFIX_FLAG] || LUMIGO_LOG_PREFIX);
 
 export const isString = x => Object.prototype.toString.call(x) === '[object String]';
 
@@ -428,6 +432,10 @@ export const recursiveGetKey = (event, keyToSearch) => {
 
 const recursiveGetKeyDepth = () => {
   return parseInt(process.env[GET_KEY_DEPTH_ENV_KEY]) || DEFAULT_GET_KEY_DEPTH;
+};
+
+const lumigoLogPrefix = () => {
+  return process.env[GET_KEY_DEPTH_ENV_KEY] || DEFAULT_GET_KEY_DEPTH;
 };
 
 const recursiveGetKeyByDepth = (event, keyToSearch, maxDepth) => {

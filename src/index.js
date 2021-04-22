@@ -1,5 +1,5 @@
 import { trace } from './tracer';
-import { safeExecute, setSwitchOff, setVerboseMode } from './utils';
+import { safeExecute, setLogPrefix, setSwitchOff, setVerboseMode } from './utils';
 import * as LumigoLogger from './lumigoLogger';
 import { debug } from './logger';
 import { ExecutionTags } from './globals';
@@ -19,7 +19,7 @@ module.exports = function({
 }) {
   verbose && setVerboseMode();
   switchOff && setSwitchOff();
-
+  setLogPrefix();
   safeExecute(startHooks)();
   HttpSpansAgent.initAgent();
 
