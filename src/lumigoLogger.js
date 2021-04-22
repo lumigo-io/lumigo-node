@@ -19,7 +19,7 @@ export const error = (message, { extra = {}, err = null, type = null } = {}) => 
 };
 
 const log = (level, message, type, extra) => {
-  const prefix = getLogPrefix()
+  const prefix = getLogPrefix();
   const filteredExtra = Object.entries(extra)
     .filter(([key, value]) => ExecutionTags.validateTag(key, value))
     .slice(0, MAX_ELEMENTS_IN_EXTRA)
