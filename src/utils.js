@@ -265,8 +265,6 @@ export const setVerboseMode = () => (process.env[VERBOSE_FLAG] = 'TRUE');
 
 export const setSwitchOff = () => (process.env['LUMIGO_SWITCH_OFF'] = 'TRUE');
 
-export const setSwitchOn = () => (process.env['LUMIGO_SWITCH_OFF'] = 'FALSE');
-
 export const setDebug = () => (process.env['LUMIGO_DEBUG'] = 'TRUE');
 
 export const setTimeoutTimerDisabled = () => (process.env[TIMEOUT_ENABLE_FLAG] = 'FALSE');
