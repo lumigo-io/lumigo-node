@@ -34,5 +34,5 @@ const log = (level, message, type, extra) => {
   }
   const text = JSON.stringify(actual);
   // eslint-disable-next-line no-console
-  console.log(`${prefix || '[LUMIGO_LOG]'} ${text}`);
+  console.log(`${prefix} ${text}`);
 };

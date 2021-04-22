@@ -146,6 +146,7 @@ const SWITCH_OFF_FLAG = 'LUMIGO_SWITCH_OFF';
 const IS_STEP_FUNCTION_FLAG = 'LUMIGO_STEP_FUNCTION';
 const SCRUB_KNOWN_SERVICES_FLAG = 'LUMIGO_SCRUB_KNOWN_SERVICES';
 const LUMIGO_LOG_PREFIX = '[LUMIGO_LOG]';
+const LUMIGO_LOG_PREFIX_FLAG = 'LUMIGO_LOG_PREFIX';
 
 const validateEnvVar = (envVar, value = 'TRUE') =>
   !!(process.env[envVar] && process.env[envVar].toUpperCase() === value.toUpperCase());
@@ -287,7 +288,7 @@ export const getConnectionTimeout = () => {
 };
 
 export const getLogPrefix = () => {
-  return process.env['LUMIGO_CONNECTION_TIMEOUT'] || LUMIGO_LOG_PREFIX;
+  return process.env[LUMIGO_LOG_PREFIX_FLAG] || LUMIGO_LOG_PREFIX;
 };
 
 export const parseErrorObject = err => ({
