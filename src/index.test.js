@@ -2,16 +2,10 @@
 import * as tracer from './tracer';
 import * as utils from './utils';
 import { EXECUTION_TAGS_KEY } from './utils';
-import {
-  HttpsMocker,
-  HttpsRequestsForTesting,
-  HttpsScenarioBuilder,
-} from '../testUtils/httpsMocker';
+import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
 import * as fsExtra from 'fs-extra';
 import { AxiosMocker } from '../testUtils/axiosMocker';
-import { wrapHttp } from './hooks/http';
-import { HttpSpanBuilder } from '../testUtils/httpSpanBuilder';
-import { sleep } from '../testUtils/sleep';
+import { MAX_ELEMENTS_IN_EXTRA } from './tracer';
 
 describe('index', () => {
   const spies = {};
@@ -77,6 +71,105 @@ describe('index', () => {
       EXECUTION_TAGS_KEY
     ];
     expect(actualTags).toEqual([{ key: 'k0', value: 'v0' }, { key: 'k1', value: 'v1' }]);
+  });
+
+  test('logs - error (should filter long entries and cut after the 10s element)', async () => {
+    const lumigoImport = require('./index');
+    const lumigo = lumigoImport({ token: 'T' });
+    const longName = '1'.repeat(1000);
+    let expected =
+      '{"message":"This is error message","type":"ClientError","level":40,"extra":{"a":"3","b":"true","c":"aaa","d":"[object Object]","aa":"a","a0":"a0","a1":"a1","a2":"a2","a3":"a3","a4":"a4"}}';
+    let extra = {
+      a: 3,
+      b: true,
+      c: 'aaa',
+      d: {},
+      aa: 'a',
+      [longName]: longName,
+      ...Object.fromEntries([...Array(MAX_ELEMENTS_IN_EXTRA).keys()].map(k => [`a${k}`, `a${k}`])),
+    };
+
+    lumigo.error('This is error message', {
+      type: 'ClientError',
+      extra,
+      err: new TypeError('This is type error'),
+    });
+
+    let logs = ConsoleWritesForTesting.getLogs();
+    expect(logs.pop()).toEqual({
+      msg: `[LUMIGO_LOG] ${expected}`,
+      obj: undefined,
+    });
+  });
+
+  test('err with type and exception', async () => {
+    const lumigoImport = require('./index');
+    const lumigo = lumigoImport({ token: 'T' });
+    const expected =
+      '{"message":"This is error message","type":"DBError","level":40,"extra":{"rawException":"This is type error"}}';
+
+    lumigo.error('This is error message', {
+      type: 'DBError',
+      err: new TypeError('This is type error'),
+    });
+
+    let logs = ConsoleWritesForTesting.getLogs();
+    expect(logs.pop()).toEqual({
+      msg: `[LUMIGO_LOG] ${expected}`,
+      obj: undefined,
+    });
+  });
+
+  test('err with no type and exception', async () => {
+    const lumigoImport = require('./index');
+    const lumigo = lumigoImport({ token: 'T' });
+    const expected =
+      '{"message":"This is error message","type":"TypeError","level":40,"extra":{"rawException":"This is type error"}}';
+
+    lumigo.error('This is error message', { err: new TypeError('This is type error') });
+
+    let logs = ConsoleWritesForTesting.getLogs();
+    expect(logs.pop()).toEqual({
+      msg: `[LUMIGO_LOG] ${expected}`,
+      obj: undefined,
+    });
+  });
+
+  test('err with no type and no exception', async () => {
+    const lumigoImport = require('./index');
+    const lumigo = lumigoImport({ token: 'T' });
+    const expected = '{"message":"This is error message","type":"ProgrammaticError","level":40}';
+
+    lumigo.error('This is error message');
+
+    let logs = ConsoleWritesForTesting.getLogs();
+    expect(logs.pop()).toEqual({
+      msg: `[LUMIGO_LOG] ${expected}`,
+      obj: undefined,
+    });
+  });
+
+  test('logs - (info,warn,error) (should use default type)', async () => {
+    const lumigoImport = require('./index');
+    const lumigo = lumigoImport({ token: 'T' });
+
+    lumigo.error('This is error message');
+    lumigo.warn('This is error message');
+    lumigo.info('This is error message');
+
+    let logs = ConsoleWritesForTesting.getLogs();
+    expect(logs.pop()).toEqual({
+      msg: '[LUMIGO_LOG] {"message":"This is error message","type":"ProgrammaticInfo","level":20}',
+      obj: undefined,
+    });
+    expect(logs.pop()).toEqual({
+      msg: '[LUMIGO_LOG] {"message":"This is error message","type":"ProgrammaticWarn","level":30}',
+      obj: undefined,
+    });
+    expect(logs.pop()).toEqual({
+      msg: '[LUMIGO_LOG] {"message":"This is error message","type":"ProgrammaticError","level":40}',
+      obj: undefined,
+    });
   });
 
   test('execution tags - with undefined', async () => {

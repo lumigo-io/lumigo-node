@@ -93,7 +93,7 @@ export const ExecutionTags = (() => {
 
   const clear = () => (global.tags = []);
 
-  return { addTag, getTags, clear };
+  return { addTag, getTags, clear, validateTag };
 })();
 
 export const TracerGlobals = (() => {
