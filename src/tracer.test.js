@@ -89,7 +89,7 @@ describe('tracer', () => {
     expect(requests.length).toEqual(0);
   });
 
-  test('startTrace - timeout timer - simple flow', async done => {
+  test('startTrace - timeout timer - simple flow', async (done) => {
     const timeout = 2000;
     const testBuffer = 50;
 
@@ -108,7 +108,7 @@ describe('tracer', () => {
     }, timeout + testBuffer);
   });
 
-  test('startTrace - timeout timer - too short timeout', async done => {
+  test('startTrace - timeout timer - too short timeout', async (done) => {
     const timeout = 500;
     const testBuffer = 50;
 
@@ -127,7 +127,7 @@ describe('tracer', () => {
     }, timeout + testBuffer);
   });
 
-  test('startTrace - timeout timer - called twice', async done => {
+  test('startTrace - timeout timer - called twice', async (done) => {
     const timeout = 2000;
     const testBuffer = 50;
 
@@ -147,7 +147,7 @@ describe('tracer', () => {
     }, timeout + testBuffer);
   });
 
-  test('startTrace - timeout timer - too short timeout (timer not effects)', async done => {
+  test('startTrace - timeout timer - too short timeout (timer not effects)', async (done) => {
     const timeout = 10;
     const testBuffer = 50;
 
@@ -166,7 +166,7 @@ describe('tracer', () => {
     }, timeout + testBuffer);
   });
 
-  test('startTrace - timeout timer - SEND_ONLY_ON_ERROR - not sending spans', async done => {
+  test('startTrace - timeout timer - SEND_ONLY_ON_ERROR - not sending spans', async (done) => {
     const timeout = 1000;
     const testBuffer = 50;
 
@@ -348,7 +348,7 @@ describe('tracer', () => {
     const token = 'DEADBEEF';
     const lumigoTracer = require('./index')({ token });
 
-    const userHandler1 = async event => {
+    const userHandler1 = async (event) => {
       return 'ok';
     };
     const event = { a: 'b', c: 'd' };
@@ -358,7 +358,7 @@ describe('tracer', () => {
     expect(spies.warnClient).toHaveBeenCalledTimes(1);
   });
 
-  test('trace; non async callbacked', async done => {
+  test('trace; non async callbacked', async (done) => {
     const token = 'DEADBEEF';
     const lumigoTracer = require('./index')({ token });
 
@@ -377,7 +377,7 @@ describe('tracer', () => {
     expect(httpHook).toHaveBeenCalledTimes(1);
   });
 
-  test('trace; imported twice', async done => {
+  test('trace; imported twice', async (done) => {
     const token = 'DEADBEEF';
     const lumigoTracer1 = require('./index')({ token });
     const lumigoTracer2 = require('./index')({ token });
@@ -416,7 +416,7 @@ describe('tracer', () => {
     expect(httpHook).toHaveBeenCalledTimes(1);
   });
 
-  test('trace; async callbacked ', async done => {
+  test('trace; async callbacked ', async (done) => {
     const event = { a: 'b', c: 'd' };
     const context = { e: 'f', g: 'h' };
     const token = 'DEADBEEF';
@@ -607,7 +607,7 @@ describe('tracer', () => {
     expect(callBackCalled).toEqual(true);
   });
 
-  test('No exception at startHooks', async done => {
+  test('No exception at startHooks', async (done) => {
     httpHook.mockImplementationOnce(() => {
       throw new Error('Mocked error');
     });
@@ -618,7 +618,7 @@ describe('tracer', () => {
     expect(handler).toHaveBeenCalledOnce();
   });
 
-  test('No exception at initialization', async done => {
+  test('No exception at initialization', async (done) => {
     const mockedTracerGlobals = jest.spyOn(TracerGlobals, 'setHandlerInputs');
     mockedTracerGlobals.mockImplementationOnce(() => {
       throw new Error('Mocked error');

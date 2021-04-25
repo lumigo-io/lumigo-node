@@ -37,7 +37,7 @@ function queryBeforeHook(args, extenderContext) {
   extenderContext.currentSpan = span;
 }
 
-const createResultHook = currentSpan => originalResult => {
+const createResultHook = (currentSpan) => (originalResult) => {
   const ended = Date.now();
   const extendedSpan = extendNeo4jSpan(currentSpan, {
     ended,
@@ -48,7 +48,7 @@ const createResultHook = currentSpan => originalResult => {
   SpansContainer.addSpan(extendedSpan);
 };
 
-const createErrorHook = currentSpan => error => {
+const createErrorHook = (currentSpan) => (error) => {
   const ended = Date.now();
   const extendedSpan = extendNeo4jSpan(currentSpan, {
     ended,

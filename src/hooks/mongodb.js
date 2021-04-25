@@ -12,7 +12,7 @@ const PendingRequests = (() => {
     pendingRequests[requestId] = spanId;
   };
 
-  const popPendingRequestSpanId = requestId => {
+  const popPendingRequestSpanId = (requestId) => {
     const spanId = pendingRequests[requestId];
     delete pendingRequests[requestId];
     return spanId;
@@ -24,7 +24,7 @@ const PendingRequests = (() => {
   };
 })();
 
-const onStartedHook = event => {
+const onStartedHook = (event) => {
   const awsRequestId = TracerGlobals.getHandlerInputs().context.awsRequestId;
   const transactionId = getCurrentTransactionId();
   const { command, databaseName, commandName, requestId, operationId, connectionId } = event;
@@ -50,7 +50,7 @@ const onStartedHook = event => {
   SpansContainer.addSpan(mongoSpan);
 };
 
-const onSucceededHook = event => {
+const onSucceededHook = (event) => {
   const { duration, reply, requestId } = event;
   const currentSpanId = PendingRequests.popPendingRequestSpanId(requestId);
   const currentSpan = SpansContainer.getSpanById(currentSpanId);
@@ -61,7 +61,7 @@ const onSucceededHook = event => {
   SpansContainer.addSpan(extendedMondoDbSpan);
 };
 
-const onFailedHook = event => {
+const onFailedHook = (event) => {
   const { duration, failure, requestId } = event;
   const currentSpanId = PendingRequests.popPendingRequestSpanId(requestId);
   const currentSpan = SpansContainer.getSpanById(currentSpanId);
@@ -72,11 +72,11 @@ const onFailedHook = event => {
   SpansContainer.addSpan(extendedMondoDbSpan);
 };
 
-export const hookMongoDb = mongoLib => {
+export const hookMongoDb = (mongoLib) => {
   const mongoClient = mongoLib || safeRequire('mongodb');
   if (mongoClient) {
     logger.info('Starting to instrument MongoDB');
-    const listener = mongoClient.instrument({}, err => {
+    const listener = mongoClient.instrument({}, (err) => {
       if (err) logger.warn('MongoDB instrumentation failed ', err);
     });
     const safeStartedHook = safeExecute(onStartedHook);

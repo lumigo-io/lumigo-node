@@ -1,8 +1,8 @@
 /* eslint-disable */
-const exmapleEvent = require('./testdata/events/alb-lambda-target-request-headers-only');
-const node10xEnv = require('./testdata/env/node10x');
-import { handler as es2016handler } from './testdata/functions/typescript/ES2016';
-import { handler as es2015handler } from './testdata/functions/typescript/ES2015';
+const exmapleEvent = require('../testUtils/testdata/events/alb-lambda-target-request-headers-only');
+const node10xEnv = require('../testUtils/testdata/env/node10x');
+import { handler as es2016handler } from '../testUtils/testdata/functions/typescript/ES2016';
+import { handler as es2015handler } from '../testUtils/testdata/functions/typescript/ES2015';
 import * as reporter from './reporter';
 
 describe('Typescript versions tests', () => {
@@ -29,7 +29,7 @@ describe('Typescript versions tests', () => {
 
   beforeEach(() => {
     process.env = { ...oldEnv };
-    Object.keys(spies).map(x => spies[x].mockClear());
+    Object.keys(spies).map((x) => spies[x].mockClear());
     reporter.sendSpans.mockImplementation(() => ({
       rtt: 1,
     }));

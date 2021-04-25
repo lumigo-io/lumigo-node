@@ -61,7 +61,7 @@ const CLOUDFRONT_REQUEST_KEYS_ORDER = getEnvVarAsList('LUMIGO_CLOUDFRONT_REQUEST
   'uri',
 ]);
 
-export const isApiGwEvent = event => {
+export const isApiGwEvent = (event) => {
   return (
     event != null &&
     event.requestContext != null &&
@@ -70,7 +70,7 @@ export const isApiGwEvent = event => {
   );
 };
 
-export const isSnsEvent = event => {
+export const isSnsEvent = (event) => {
   return (
     event != null &&
     event.Records != null &&
@@ -79,7 +79,7 @@ export const isSnsEvent = event => {
   );
 };
 
-export const isSqsEvent = event => {
+export const isSqsEvent = (event) => {
   return (
     event != null &&
     event.Records != null &&
@@ -88,7 +88,7 @@ export const isSqsEvent = event => {
   );
 };
 
-export const isS3Event = event => {
+export const isS3Event = (event) => {
   return (
     event != null &&
     event.Records != null &&
@@ -97,7 +97,7 @@ export const isS3Event = event => {
   );
 };
 
-const isDDBEvent = event => {
+const isDDBEvent = (event) => {
   return (
     event != null &&
     event.Records != null &&
@@ -106,7 +106,7 @@ const isDDBEvent = event => {
   );
 };
 
-export const isCloudfrontEvent = event => {
+export const isCloudfrontEvent = (event) => {
   return (
     event != null &&
     event.Records != null &&
@@ -117,7 +117,7 @@ export const isCloudfrontEvent = event => {
   );
 };
 
-export const parseApiGwEvent = event => {
+export const parseApiGwEvent = (event) => {
   const parsedEvent = {};
   // Add order keys
   for (const orderKey of API_GW_KEYS_ORDER) {
@@ -139,7 +139,7 @@ export const parseApiGwEvent = event => {
     parsedEvent['headers'] = {};
     for (const hKey of Object.keys(event.headers)) {
       if (
-        API_GW_PREFIX_KEYS_HEADERS_DELETE_KEYS.find(v => hKey.toLowerCase().startsWith(v)) == null
+        API_GW_PREFIX_KEYS_HEADERS_DELETE_KEYS.find((v) => hKey.toLowerCase().startsWith(v)) == null
       ) {
         parsedEvent['headers'][hKey] = event['headers'][hKey];
       }
@@ -154,7 +154,7 @@ export const parseApiGwEvent = event => {
   return parsedEvent;
 };
 
-export const parseSnsEvent = event => {
+export const parseSnsEvent = (event) => {
   const newSnsEvent = {};
   newSnsEvent['Records'] = [];
   // Add order keys
@@ -170,7 +170,7 @@ export const parseSnsEvent = event => {
   return newSnsEvent;
 };
 
-export const parseSqsEvent = event => {
+export const parseSqsEvent = (event) => {
   const newSqsEvent = {};
   newSqsEvent['Records'] = [];
   // Add order keys
@@ -186,7 +186,7 @@ export const parseSqsEvent = event => {
   return newSqsEvent;
 };
 
-export const parseS3Event = event => {
+export const parseS3Event = (event) => {
   const newS3Event = {};
   newS3Event['Records'] = [];
   // Add order keys
@@ -217,7 +217,7 @@ export const parseS3Event = event => {
   return newS3Event;
 };
 
-export const parseCloudfrontEvent = event => {
+export const parseCloudfrontEvent = (event) => {
   const newCloudfrontEvent = {};
   newCloudfrontEvent['Records'] = [];
   // Add order keys
@@ -242,7 +242,7 @@ export const parseCloudfrontEvent = event => {
   return newCloudfrontEvent;
 };
 
-export const parseEvent = event => {
+export const parseEvent = (event) => {
   try {
     if (isApiGwEvent(event)) {
       return parseApiGwEvent(event);
@@ -265,7 +265,7 @@ export const parseEvent = event => {
   return event;
 };
 
-export const getSkipScrubPath = event => {
+export const getSkipScrubPath = (event) => {
   if (isScrubKnownServicesOn()) {
     return null;
   }

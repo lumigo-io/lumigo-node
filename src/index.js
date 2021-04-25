@@ -8,7 +8,7 @@ import { HttpSpansAgent } from './httpSpansAgent';
 
 debug('Tracer imported');
 
-module.exports = function({
+module.exports = function ({
   token,
   debug = false,
   edgeHost,

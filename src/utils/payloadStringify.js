@@ -12,7 +12,7 @@ const nativeTypes = ['string', 'bigint', 'number', 'undefined', 'boolean'];
 const SCRUBBED_TEXT = '****';
 const TRUNCATED_TEXT = '...[too long]';
 
-const isNativeType = obj => nativeTypes.includes(typeof obj);
+const isNativeType = (obj) => nativeTypes.includes(typeof obj);
 
 export const keyToOmitRegexes = () => {
   let regexesList = OMITTING_KEYS_REGEXES;
@@ -27,7 +27,7 @@ export const keyToOmitRegexes = () => {
       regexesList = parseResponse;
     }
   }
-  return regexesList.map(x => new RegExp(x, 'i'));
+  return regexesList.map((x) => new RegExp(x, 'i'));
 };
 
 export const prune = (str, maxLength) => (str || '').substr(0, maxLength);
@@ -37,11 +37,11 @@ const isSecretKey = (regexes, key) => {
     //optimization for arrays
     return false;
   }
-  return !!regexes.some(regex => regex.test(key));
+  return !!regexes.some((regex) => regex.test(key));
 };
 
 //Base64 calculation taken from : https://stackoverflow.com/questions/13378815/base64-length-calculation
-const getNativeVarSize = obj => (obj ? (obj.toString().length * 4) / 3 : 0);
+const getNativeVarSize = (obj) => (obj ? (obj.toString().length * 4) / 3 : 0);
 
 const getItemsInPath = safeExecute(
   (payload, path) => {
@@ -50,7 +50,7 @@ const getItemsInPath = safeExecute(
     }
     if (Array.isArray(path[0]) && Array.isArray(payload)) {
       const newPath = path.slice(1);
-      return [].concat(...payload.map(i => getItemsInPath(i, newPath)));
+      return [].concat(...payload.map((i) => getItemsInPath(i, newPath)));
     } else if (payload[path[0]]) {
       if (path.length === 1) {
         return [payload];
@@ -75,7 +75,7 @@ export const payloadStringify = (
   const secretItemsToSkipScrubbing = new Set(getItemsInPath(payload, skipScrubPath));
 
   let isPruned = false;
-  let result = JSON.stringify(payload, function(key, value) {
+  let result = JSON.stringify(payload, function (key, value) {
     const type = typeof value;
     const isObj = type === 'object';
     const isStr = type === 'string';

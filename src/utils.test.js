@@ -547,7 +547,7 @@ describe('utils', () => {
   });
 
   test('getRandomId', () => {
-    spies.randomBytes.mockImplementation(nr => Buffer.from(`l`.repeat(nr)));
+    spies.randomBytes.mockImplementation((nr) => Buffer.from(`l`.repeat(nr)));
     expect(utils.getRandomId()).toEqual('6c6c6c6c-6c6c-6c6c-6c6c-6c6c6c6c6c6c');
   });
 
@@ -820,7 +820,7 @@ describe('utils', () => {
   });
 
   test('safeExecute - parameters', () => {
-    expect(safeExecute(param => param)(5)).toEqual(5);
+    expect(safeExecute((param) => param)(5)).toEqual(5);
   });
 
   test('safeExecute catch exception', () => {
@@ -953,7 +953,7 @@ describe('utils', () => {
 
   test('runOneTime -> use params', () => {
     let i = 0;
-    const addToI = count => {
+    const addToI = (count) => {
       i += count;
       return 'OK';
     };

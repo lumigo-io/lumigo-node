@@ -7,7 +7,7 @@ import {
   safeExecute,
 } from './utils';
 
-export const getTriggeredBy = event => {
+export const getTriggeredBy = (event) => {
   if (event && event['Records']) {
     // XXX Parses s3, sns, ses, kinesis, dynamodb event sources.
     const { eventSource, EventSource } = event.Records[0];
@@ -40,7 +40,7 @@ export const getTriggeredBy = event => {
   return 'invocation';
 };
 
-export const isAppSyncEvent = event => {
+export const isAppSyncEvent = (event) => {
   return (
     (event &&
       event['context'] &&
@@ -56,7 +56,7 @@ export const isAppSyncEvent = event => {
   );
 };
 
-export const isEventBridgeEvent = event => {
+export const isEventBridgeEvent = (event) => {
   return (
     typeof event !== undefined &&
     typeof event.version === 'string' &&
@@ -70,7 +70,7 @@ export const isEventBridgeEvent = event => {
   );
 };
 
-const getApiGatewayV1Data = event => {
+const getApiGatewayV1Data = (event) => {
   const { headers = {}, resource, httpMethod, requestContext = {} } = event;
   const { stage = null } = requestContext;
 
@@ -79,7 +79,7 @@ const getApiGatewayV1Data = event => {
   return { messageId, httpMethod, resource, stage, api };
 };
 
-const getApiGatewayV2Data = event => {
+const getApiGatewayV2Data = (event) => {
   const httpMethod = ((event['requestContext'] || {})['http'] || {})['method'];
   const resource = ((event['requestContext'] || {})['http'] || {})['path'];
   const messageId = (event['requestContext'] || {})['requestId'];
@@ -89,7 +89,7 @@ const getApiGatewayV2Data = event => {
   return { httpMethod, resource, messageId, api, stage };
 };
 
-export const getApiGatewayData = event => {
+export const getApiGatewayData = (event) => {
   const version = event['version'];
   if (version && version === '2.0') {
     return getApiGatewayV2Data(event);
@@ -97,7 +97,7 @@ export const getApiGatewayData = event => {
   return getApiGatewayV1Data(event);
 };
 
-export const getAppSyncData = event => {
+export const getAppSyncData = (event) => {
   if (event.context) {
     const { host, 'x-amzn-trace-id': traceId } = event.context.request.headers;
     return { api: host, messageId: traceId.split('=')[1] };
@@ -107,31 +107,31 @@ export const getAppSyncData = event => {
   }
 };
 
-export const getSnsData = event => {
+export const getSnsData = (event) => {
   const { TopicArn: arn, MessageId: messageId } = event.Records[0].Sns;
   return { arn, messageId };
 };
 
-export const getKinesisData = event => {
+export const getKinesisData = (event) => {
   const arn = event.Records[0].eventSourceARN;
   const messageIds = (event.Records || [])
-    .map(r => (r['kinesis'] || {})['sequenceNumber'])
-    .filter(x => !!x);
+    .map((r) => (r['kinesis'] || {})['sequenceNumber'])
+    .filter((x) => !!x);
   return { arn, messageIds };
 };
 
-export const getSqsData = event => {
+export const getSqsData = (event) => {
   const arn = event.Records[0].eventSourceARN;
-  const messageIds = (event.Records || []).map(r => r['messageId']).filter(x => !!x);
+  const messageIds = (event.Records || []).map((r) => r['messageId']).filter((x) => !!x);
   if (messageIds.length === 1) return { arn, messageId: messageIds[0] };
   return { arn, messageIds };
 };
 
-export const getDynamodbData = event => {
+export const getDynamodbData = (event) => {
   const arn = event.Records[0].eventSourceARN;
   const approxEventCreationTime = event.Records[0].dynamodb.ApproximateCreationDateTime * 1000;
   const messageIds = (event.Records || [])
-    .map(record => {
+    .map((record) => {
       if (
         ['MODIFY', 'REMOVE'].includes(record.eventName) &&
         record.dynamodb &&
@@ -142,7 +142,7 @@ export const getDynamodbData = event => {
         return md5Hash(record.dynamodb.NewImage);
       }
     })
-    .filter(x => !!x);
+    .filter((x) => !!x);
   return { arn, messageIds, approxEventCreationTime };
 };
 
@@ -174,7 +174,7 @@ export const getRelevantEventData = (triggeredBy, event) => {
   }
 };
 
-export const getEventInfo = event => {
+export const getEventInfo = (event) => {
   const triggeredBy = getTriggeredBy(event);
   const eventData = safeExecute(() => getRelevantEventData(triggeredBy, event))() || {};
   return { ...eventData, triggeredBy };

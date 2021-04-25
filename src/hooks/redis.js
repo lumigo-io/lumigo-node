@@ -6,7 +6,7 @@ import { SpansContainer, TracerGlobals } from '../globals';
 import * as logger from '../logger';
 import { getCurrentTransactionId } from '../spans/awsSpan';
 
-const createCallbackHandler = redisSpan => args => {
+const createCallbackHandler = (redisSpan) => (args) => {
   const ended = Date.now();
   const [error, result] = args;
   const span = extendRedisSpan(redisSpan, {
@@ -49,7 +49,7 @@ function sendCommandBeforeHook(args) {
   });
 }
 
-export const hookRedis = redisLib => {
+export const hookRedis = (redisLib) => {
   const redis = redisLib || safeRequire('redis');
   if (redis) {
     logger.info('Starting to instrument Redis');

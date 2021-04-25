@@ -12,7 +12,7 @@ const ActiveConnectionDetails = (() => {
 
   const getActiveConnection = () => _activeConnection;
 
-  const updateFromConnectionString = mssqlConnectionString => {
+  const updateFromConnectionString = (mssqlConnectionString) => {
     const uri = new URL(mssqlConnectionString);
     const database = uri.pathname.replace('/', '');
     _activeConnection = {
@@ -23,7 +23,7 @@ const ActiveConnectionDetails = (() => {
     };
   };
 
-  const updateFromConfig = config => {
+  const updateFromConfig = (config) => {
     const database = config.database || config.server.split('.')[0];
     _activeConnection = {
       user: config.user,
@@ -91,7 +91,7 @@ function queryBeforeHook(args, extenderContext) {
 
   if (typeof args[1] === 'function') {
     hook(args, '1', {
-      beforeHook: function(args) {
+      beforeHook: function (args) {
         const [error, dbResult] = args;
         handleResult(span, dbResult, error);
       },
@@ -103,10 +103,10 @@ function queryAfterHook(args, originalFnResult, extenderContext) {
   const { currentSpan } = extenderContext;
   if (isPromise(originalFnResult)) {
     hookPromise(originalFnResult, {
-      thenHandler: args => {
+      thenHandler: (args) => {
         handleResult(currentSpan, args);
       },
-      catchHandler: args => {
+      catchHandler: (args) => {
         handleResult(currentSpan, null, args);
       },
     });

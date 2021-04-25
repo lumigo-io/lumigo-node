@@ -34,7 +34,7 @@ const createHookedNeo4jSession = (mockOptions = {}) => {
   return session;
 };
 
-const createBaseBuilderFromSpan = span =>
+const createBaseBuilderFromSpan = (span) =>
   new Neo4jSpanBuilder()
     .withId(span.id)
     .withType(NEO4J_SPAN)

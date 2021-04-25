@@ -26,7 +26,7 @@ export const LogStore = (() => {
   };
 
   const printLogs = () => {
-    logSet.forEach(logObj => {
+    logSet.forEach((logObj) => {
       const { message, obj } = JSON.parse(logObj);
       forceLog('FATAL', message, obj);
     });
@@ -41,7 +41,7 @@ export const LogStore = (() => {
   return { addLog, clean };
 })();
 
-const invokeLog = type => (msg, obj = undefined) => log(type, msg, obj);
+const invokeLog = (type) => (msg, obj = undefined) => log(type, msg, obj);
 
 export const info = invokeLog('INFO');
 

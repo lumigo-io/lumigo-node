@@ -1,5 +1,5 @@
 *
-!/dist/main.js
+!dist/**/**.js
 !package.json
 !README.md
 !LICENSE
