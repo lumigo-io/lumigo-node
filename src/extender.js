@@ -1,4 +1,4 @@
-import shimmer from 'shimmer';
+import { wrap } from 'shimmer';
 import * as logger from './logger';
 import { safeExecute } from './utils';
 
@@ -21,7 +21,7 @@ export const hook = (module, funcName, options = {}) => {
         return originalFnResult;
       };
     };
-    shimmer.wrap(module, funcName, wrapper);
+    wrap(module, funcName, wrapper);
   } catch (e) {
     logger.warn(`Wrapping of function ${funcName} failed`, options);
   }
