@@ -253,6 +253,12 @@ export const isValidAlias = () => {
   return validAlias;
 };
 
+export const isValidToken = token => {
+  const regex = /[t][_][a-z0-9]{15,100}/gm;
+  const match = (token || '').match(regex);
+  return match && token === match[0];
+};
+
 export const setWarm = () => (process.env[WARM_FLAG] = 'TRUE');
 
 export const setSendOnlyIfErrors = () => (process.env[SEND_ONLY_IF_ERROR_FLAG] = 'TRUE');

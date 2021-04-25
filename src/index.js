@@ -1,5 +1,5 @@
 import { trace } from './tracer';
-import { safeExecute, setSwitchOff, setVerboseMode } from './utils';
+import { safeExecute, setSwitchOff, setVerboseMode, isValidToken } from './utils';
 import { debug } from './logger';
 import { ExecutionTags } from './globals';
 import startHooks from './hooks';
@@ -8,11 +8,6 @@ import * as logger from './logger';
 
 debug('Tracer imported');
 
-const isValidToken = token => {
-  const regex = /[t][_][a-z0-9]{15,100}/gm;
-  const match = (token || '').match(regex);
-  return match && token === match[0];
-};
 
 module.exports = function({
   token,
