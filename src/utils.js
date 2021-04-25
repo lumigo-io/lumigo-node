@@ -255,7 +255,7 @@ export const isValidAlias = () => {
   return validAlias;
 };
 
-export const isValidToken = token => {
+export const isValidToken = (token) => {
   const regex = /[t][_][a-z0-9]{15,100}/gm;
   const match = (token || '').match(regex);
   return match && token === match[0];
