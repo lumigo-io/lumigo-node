@@ -1,5 +1,7 @@
 import { trace } from './tracer';
 import { safeExecute, setSwitchOff, setVerboseMode, isValidToken } from './utils';
+import { safeExecute, setSwitchOff, setVerboseMode } from './utils';
+import * as LumigoLogger from './lumigoLogger';
 import { debug } from './logger';
 import { ExecutionTags } from './globals';
 import startHooks from './hooks';
@@ -38,6 +40,9 @@ module.exports = function({
       stepFunction,
     }),
     addExecutionTag: ExecutionTags.addTag,
+    info: LumigoLogger.info,
+    warn: LumigoLogger.warn,
+    error: LumigoLogger.error,
   };
 };
 
