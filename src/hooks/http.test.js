@@ -1,10 +1,8 @@
 import { lowerCaseObjectKeys } from '../utils';
 import EventEmitter from 'events';
-import defaultHttp, { wrapHttp } from './http';
+import { wrapHttpLib } from './http';
 import MockDate from 'mockdate';
-import shimmer from 'shimmer';
-import https from 'https';
-import http from 'http';
+import * as shimmer from 'shimmer';
 import { HttpSpanBuilder } from '../../testUtils/httpSpanBuilder';
 import {
   HttpsMocker,
@@ -564,7 +562,7 @@ describe('http hook', () => {
     expect(httpHook.httpRequestArguments([url, callback])).toEqual(expected1);
   });
 
-  test('wrapHttp - simple flow', () => {
+  test('wrapHttpLib - simple flow', () => {
     utils.setTimeoutTimerDisabled();
     const handlerInputs = new HandlerInputesBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
@@ -574,7 +572,7 @@ describe('http hook', () => {
       body: 'OK',
     };
 
-    wrapHttp(HttpsMocker);
+    wrapHttpLib(HttpsMocker);
 
     const req = HttpsMocker.request(requestData, () => {});
     HttpsScenarioBuilder.appendNextResponse(req, responseData.body);
@@ -596,7 +594,7 @@ describe('http hook', () => {
     expect(spans).toEqual([expectedSpan]);
   });
 
-  test('wrapHttp - no callback provided', () => {
+  test('wrapHttpLib - no callback provided', () => {
     utils.setTimeoutTimerDisabled();
     const handlerInputs = new HandlerInputesBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
@@ -606,7 +604,7 @@ describe('http hook', () => {
       body: 'OK',
     };
 
-    wrapHttp(HttpsMocker);
+    wrapHttpLib(HttpsMocker);
 
     const req = HttpsMocker.request(requestData);
     HttpsScenarioBuilder.appendNextResponse(req, responseData.body);
@@ -628,12 +626,12 @@ describe('http hook', () => {
     expect(spans).toEqual([expectedSpan]);
   });
 
-  test('wrapHttp - adding token after globals cleared', () => {
+  test('wrapHttpLib - adding token after globals cleared', () => {
     TracerGlobals.setTracerInputs({ token: 'TOKEN' });
     const handlerInputs = new HandlerInputesBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
 
-    wrapHttp(HttpsMocker);
+    wrapHttpLib(HttpsMocker);
 
     TracerGlobals.setTracerInputs({ token: 'TOKEN' });
     clearGlobals();
@@ -647,7 +645,7 @@ describe('http hook', () => {
     expect(spans[0].token).toEqual('TOKEN');
   });
 
-  test('wrapHttp - black listed url', () => {
+  test('wrapHttpLib - black listed url', () => {
     const edgeHost = 'http://a.com';
     const handlerInputs = new HandlerInputesBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
@@ -659,7 +657,7 @@ describe('http hook', () => {
       body: 'OK',
     };
 
-    wrapHttp(HttpsMocker);
+    wrapHttpLib(HttpsMocker);
 
     const req = HttpsMocker.request(requestData);
     HttpsScenarioBuilder.appendNextResponse(req, responseData.body);
@@ -669,14 +667,14 @@ describe('http hook', () => {
     expect(spans).toEqual([]);
   });
 
-  test('wrapHttp - added span before request finish', () => {
+  test('wrapHttpLib - added span before request finish', () => {
     const handlerInputs = new HandlerInputesBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
     const requestData = HttpSpanBuilder.getDefaultData(HttpSpanBuilder.DEFAULT_REQUEST_DATA);
 
     HttpsScenarioBuilder.dontFinishNextRequest();
 
-    wrapHttp(HttpsMocker);
+    wrapHttpLib(HttpsMocker);
     HttpsMocker.request(requestData, () => {});
 
     const spans = SpansContainer.getSpans();
@@ -696,7 +694,7 @@ describe('http hook', () => {
     expect(spans).toEqual([expectedSpan]);
   });
 
-  test('wrapHttp - added span before request finish for aws service', () => {
+  test('wrapHttpLib - added span before request finish for aws service', () => {
     const host = 'random.amazonaws.com';
 
     const handlerInputs = new HandlerInputesBuilder().build();
@@ -708,7 +706,7 @@ describe('http hook', () => {
 
     HttpsScenarioBuilder.dontFinishNextRequest();
 
-    wrapHttp(HttpsMocker);
+    wrapHttpLib(HttpsMocker);
     HttpsMocker.request(requestData, () => {});
 
     const spans = SpansContainer.getSpans();
@@ -728,7 +726,7 @@ describe('http hook', () => {
     expect(spans).toEqual([expectedSpan]);
   });
 
-  test('wrapHttp - wrapping twice not effecting', () => {
+  test('wrapHttpLib - wrapping twice not effecting', () => {
     utils.setTimeoutTimerDisabled();
     const handlerInputs = new HandlerInputesBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
@@ -738,8 +736,8 @@ describe('http hook', () => {
       body: 'OK',
     };
 
-    wrapHttp(HttpsMocker);
-    wrapHttp(HttpsMocker);
+    wrapHttpLib(HttpsMocker);
+    wrapHttpLib(HttpsMocker);
 
     const reqContext = HttpsMocker.request(requestData, () => {});
     HttpsScenarioBuilder.appendNextResponse(reqContext, responseData.body);
@@ -762,7 +760,7 @@ describe('http hook', () => {
     expect(spans).toEqual([expectedSpan]);
   });
 
-  test('wrapHttp - invalid alias dont save spans', () => {
+  test('wrapHttpLib - invalid alias dont save spans', () => {
     utils.setTimeoutTimerDisabled();
     const handlerInputs = new HandlerInputesBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
@@ -785,7 +783,7 @@ describe('http hook', () => {
     });
     process.env['LUMIGO_VALID_ALIASES'] = '["wrong"]';
 
-    wrapHttp(HttpsMocker);
+    wrapHttpLib(HttpsMocker);
 
     const requestContext = HttpsMocker.request(requestData, () => {});
     HttpsScenarioBuilder.appendNextResponse(requestContext, responseData.body);
@@ -795,7 +793,7 @@ describe('http hook', () => {
     expect(spans).toEqual([]);
   });
 
-  test('wrapHttp - circular object wrapper cutting object', () => {
+  test('wrapHttpLib - circular object wrapper cutting object', () => {
     utils.setTimeoutTimerDisabled();
     const handlerInputs = new HandlerInputesBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
@@ -810,7 +808,7 @@ describe('http hook', () => {
       body: 'OK',
     };
 
-    wrapHttp(HttpsMocker);
+    wrapHttpLib(HttpsMocker);
 
     const requstContext = HttpsMocker.request(requestData, () => {});
     HttpsScenarioBuilder.appendNextResponse(requstContext, responseData.body);
@@ -832,14 +830,6 @@ describe('http hook', () => {
     expect(spans).toEqual([expectedSpan]);
   });
 
-  test('export default', () => {
-    defaultHttp();
-    expect(spies.shimmer).toHaveBeenCalledWith(http, 'request', expect.any(Function));
-    expect(spies.shimmer).toHaveBeenCalledWith(https, 'request', expect.any(Function));
-    expect(spies.shimmer).toHaveBeenCalledWith(https, 'get', expect.any(Function));
-    expect(spies.shimmer).toHaveBeenCalledWith(https, 'get', expect.any(Function));
-  });
-
   test('addStepFunctionEvent', () => {
     httpHook.addStepFunctionEvent('123');
 
@@ -852,7 +842,7 @@ describe('http hook', () => {
     expect(spans[0].started).toBeDefined();
   });
 
-  test('wrapHttp - shimmer all wraps failed', () => {
+  test('wrapHttpLib - shimmer all wraps failed', () => {
     utils.setWarm();
     const handlerInputs = new HandlerInputesBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
@@ -863,7 +853,7 @@ describe('http hook', () => {
         throw Error(funcName);
       }
     });
-    wrapHttp(HttpsMocker.request);
+    wrapHttpLib(HttpsMocker.request);
 
     HttpsMocker.request(requestData, () => {});
 

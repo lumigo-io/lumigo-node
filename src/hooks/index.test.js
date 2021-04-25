@@ -1,29 +1,29 @@
 import * as utils from '../utils';
-import httpHook from './http';
+import { hookHttp } from './http';
 import hooksIndex from './index';
 import { TracerGlobals } from '../globals';
 
 jest.mock('./http');
 describe('hooks index', () => {
   beforeEach(() => {
-    httpHook.mockClear();
+    hookHttp.mockClear();
   });
 
   test('index -> simple flow', () => {
     hooksIndex();
-    expect(httpHook).toHaveBeenCalled();
+    expect(hookHttp).toHaveBeenCalled();
   });
 
   test('index -> switch off', () => {
     utils.setSwitchOff();
     TracerGlobals.setTracerInputs({});
     hooksIndex();
-    expect(httpHook).not.toHaveBeenCalled();
+    expect(hookHttp).not.toHaveBeenCalled();
   });
 
   test('index -> wrapping only once', () => {
     hooksIndex();
     hooksIndex();
-    expect(httpHook).toHaveBeenCalledTimes(1);
+    expect(hookHttp).toHaveBeenCalledTimes(1);
   });
 });

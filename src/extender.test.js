@@ -1,5 +1,5 @@
 import * as extender from './extender';
-import shimmer from 'shimmer';
+import * as shimmer from 'shimmer';
 
 export const DummyCounterService = (() => {
   let dummyCounter = 0;
@@ -183,11 +183,13 @@ describe('extender', () => {
   });
 
   test('hook -> safe mode - shimmer', () => {
-    jest.spyOn(shimmer, 'wrap').mockImplementationOnce(() => {
-      throw new Error();
-    });
+    const shimmerLib = {
+      wrap: () => {
+        throw new Error();
+      },
+    };
 
-    extender.hook(DummyCounterService, 'incrementToDummyCounter');
+    extender.hook(DummyCounterService, 'incrementToDummyCounter', {}, shimmerLib);
     DummyCounterService.incrementToDummyCounter();
     expect(DummyCounterService.getDummyCounter()).toEqual(1);
   });

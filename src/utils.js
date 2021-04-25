@@ -1,5 +1,5 @@
 import { TracerGlobals } from './globals';
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 import * as logger from './logger';
 import jsonSortify from 'json.sortify';
 

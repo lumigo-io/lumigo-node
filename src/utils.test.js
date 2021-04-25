@@ -542,13 +542,12 @@ describe('utils', () => {
   });
 
   test('getRandomString', () => {
-    spies.randomBytes.mockReturnValueOnce(Buffer.from('lmno'));
-    expect(utils.getRandomString(10)).toEqual('6c6d6e6f');
+    expect(utils.getRandomString(10) === utils.getRandomString(10)).toBeFalsy();
   });
 
   test('getRandomId', () => {
-    spies.randomBytes.mockImplementation((nr) => Buffer.from(`l`.repeat(nr)));
-    expect(utils.getRandomId()).toEqual('6c6c6c6c-6c6c-6c6c-6c6c-6c6c6c6c6c6c');
+    expect(utils.getRandomId() === utils.getRandomId()).toBeFalsy();
+    expect(utils.getRandomId().length).toEqual(36);
   });
 
   test('isAwsService', () => {

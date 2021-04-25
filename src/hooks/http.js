@@ -1,6 +1,6 @@
 import * as extender from '../extender';
-import http from 'http';
-import https from 'https';
+import * as http from 'http';
+import * as https from 'https';
 import { SpansContainer, TracerGlobals } from '../globals';
 import {
   lowerCaseObjectKeys,
@@ -290,7 +290,7 @@ export const addStepFunctionEvent = (messageId) => {
   SpansContainer.addSpan(stepSpan);
 };
 
-export const wrapHttp = (httpLib) => {
+export const wrapHttpLib = (httpLib) => {
   extender.hook(httpLib, 'get', {
     beforeHook: httpBeforeRequestWrapper,
     afterHook: httpAfterRequestWrapper,
@@ -301,7 +301,7 @@ export const wrapHttp = (httpLib) => {
   });
 };
 
-export default () => {
-  wrapHttp(http);
-  wrapHttp(https);
+export const hookHttp = () => {
+  wrapHttpLib(http);
+  wrapHttpLib(https);
 };

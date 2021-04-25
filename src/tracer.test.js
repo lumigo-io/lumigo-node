@@ -6,7 +6,7 @@ import * as globals from './globals';
 import * as reporter from './reporter';
 import * as awsSpan from './spans/awsSpan';
 import * as http from './hooks/http';
-import httpHook from './hooks/http';
+import { hookHttp } from './hooks/http';
 import * as logger from './logger';
 import { TracerGlobals } from './globals';
 import { setSwitchOff, STEP_FUNCTION_UID_KEY } from './utils';
@@ -46,7 +46,7 @@ describe('tracer', () => {
   spies.log.mockImplementation(() => {});
 
   beforeEach(() => {
-    httpHook.mockClear();
+    hookHttp.mockClear();
     jest.clearAllMocks();
   });
   test('startTrace - not failed on error', async () => {
@@ -386,7 +386,7 @@ describe('tracer', () => {
 
     await lumigoTracer.trace(userHandler1)(event, context, callback1);
 
-    expect(httpHook).toHaveBeenCalledTimes(1);
+    expect(hookHttp).toHaveBeenCalledTimes(1);
   });
 
   test('trace; imported twice', async (done) => {
@@ -407,7 +407,7 @@ describe('tracer', () => {
     await lumigoTracer1.trace(userHandler1)(event, context, callback1);
     await lumigoTracer2.trace(userHandler1)(event, context, callback1);
 
-    expect(httpHook).toHaveBeenCalledTimes(1);
+    expect(hookHttp).toHaveBeenCalledTimes(1);
   });
 
   test('trace; non async throw error', async () => {
@@ -425,7 +425,7 @@ describe('tracer', () => {
       new Error('bla')
     );
 
-    expect(httpHook).toHaveBeenCalledTimes(1);
+    expect(hookHttp).toHaveBeenCalledTimes(1);
   });
 
   test('trace; async callbacked ', async (done) => {
@@ -465,7 +465,7 @@ describe('tracer', () => {
       retVal
     );
 
-    expect(httpHook).toHaveBeenCalledTimes(1);
+    expect(hookHttp).toHaveBeenCalledTimes(1);
   });
 
   test('trace; async rejected', async () => {
@@ -485,7 +485,7 @@ describe('tracer', () => {
       new Error(retVal)
     );
 
-    expect(httpHook).toHaveBeenCalledTimes(1);
+    expect(hookHttp).toHaveBeenCalledTimes(1);
   });
 
   test('trace; follow AWS stringify on the return value - happy flow', async () => {
@@ -604,7 +604,7 @@ describe('tracer', () => {
     const userHandlerAsync = async (event, context, callback) => 1;
     const result = lumigoTracer.trace(lumigoTracer.trace(userHandlerAsync))(event, {});
     await expect(result).resolves.toEqual(1);
-    expect(httpHook).toHaveBeenCalledTimes(1);
+    expect(hookHttp).toHaveBeenCalledTimes(1);
 
     let callBackCalled = false;
     const callback = (err, val) => {
@@ -627,7 +627,7 @@ describe('tracer', () => {
   });
 
   test('No exception at startHooks', async (done) => {
-    httpHook.mockImplementationOnce(() => {
+    hookHttp.mockImplementationOnce(() => {
       throw new Error('Mocked error');
     });
     const handler = jest.fn(() => done());

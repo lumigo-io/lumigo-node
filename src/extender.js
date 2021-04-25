@@ -1,4 +1,4 @@
-import { wrap } from 'shimmer';
+import * as shimmer from 'shimmer';
 import * as logger from './logger';
 import { safeExecute } from './utils';
 
@@ -6,7 +6,7 @@ const noop = () => {};
 
 const isFunctionAlreadyWrapped = (fn) => fn && fn.__wrapped;
 
-export const hook = (module, funcName, options = {}) => {
+export const hook = (module, funcName, options = {}, shimmerLib = shimmer) => {
   const { beforeHook = noop, afterHook = noop } = options;
   const safeBeforeHook = safeExecute(beforeHook, `before hook of ${funcName} fail`);
   const safeAfterHook = safeExecute(afterHook, `after hook of ${funcName} fail`);
@@ -21,7 +21,7 @@ export const hook = (module, funcName, options = {}) => {
         return originalFnResult;
       };
     };
-    wrap(module, funcName, wrapper);
+    shimmerLib.wrap(module, funcName, wrapper);
   } catch (e) {
     logger.warn(`Wrapping of function ${funcName} failed`, options);
   }
