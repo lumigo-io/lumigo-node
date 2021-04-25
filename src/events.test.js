@@ -13,6 +13,7 @@ const exampleDynamoDBInsertEvent = require('./testdata/events/dynamodb-insert-ev
 const exampleDynamoDBModifyEvent = require('./testdata/events/dynamodb-modify-event.json');
 const exampleDynamoDBRemoveEvent = require('./testdata/events/dynamodb-remove-event.json');
 const exampleApiGatewayEvent = require('./testdata/events/apigw-request.json');
+const exampleFalseApiGatewayEvent = require('./testdata/events/false-apigw-request.json');
 const exampleApiGatewayV2Event = require('./testdata/events/apigw-v2-event.json');
 const exampleUnsupportedEvent = require('./testdata/events/appsync-invoke.json');
 const exampleApiGatewayEventWithoutHost = require('./testdata/events/apigw-custom-auth-request.json');
@@ -27,6 +28,7 @@ describe('events', () => {
     expect(events.getTriggeredBy(exampleSesEvent)).toEqual('ses');
     expect(events.getTriggeredBy(exampleKinesisEvent)).toEqual('kinesis');
     expect(events.getTriggeredBy(exampleApiGatewayEvent)).toEqual('apigw');
+    expect(events.getTriggeredBy(exampleFalseApiGatewayEvent)).toEqual('invocation');
     expect(events.getTriggeredBy(exampleDynamoDBInsertEvent)).toEqual('dynamodb');
     expect(events.getTriggeredBy(exampleEventBridgeEvent)).toEqual('eventBridge');
     expect(events.getTriggeredBy(exampleAppSyncEvent)).toEqual('appsync');
