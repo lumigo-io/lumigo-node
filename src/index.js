@@ -8,7 +8,6 @@ import * as logger from './logger';
 
 debug('Tracer imported');
 
-
 module.exports = function({
   token,
   debug = false,
