@@ -196,6 +196,24 @@ describe('logger', () => {
     ]);
   });
 
+  test('warn -> with error', () => {
+    utils.setDebug();
+    TracerGlobals.setTracerInputs({});
+
+    const myError = new Error('foo');
+    logger.warn('Test', myError);
+
+    expect(ConsoleWritesForTesting.getLogs()).toEqual([
+      {
+        msg: '#LUMIGO# - WARNING - "Test"',
+        obj: JSON.stringify({
+          message: myError.message,
+          stack: myError.stack,
+        }),
+      },
+    ]);
+  });
+
   test('fatal -> simple flow', () => {
     utils.setDebug();
     TracerGlobals.setTracerInputs({});

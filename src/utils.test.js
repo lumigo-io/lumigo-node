@@ -965,6 +965,7 @@ describe('utils', () => {
 
   test('md5Hash should yield the same result for the same items', () => {
     expect(md5Hash({ a: 1, b: { c: 2, d: 3 } })).toEqual(md5Hash({ b: { d: 3, c: 2 }, a: 1 }));
+    expect(md5Hash({ a: 1, b: { c: 2, d: 3 } })).toBeTruthy();
   });
 
   test('md5Hash recursive items', () => {

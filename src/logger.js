@@ -63,7 +63,13 @@ const forceLog = (levelname, message, obj) => {
   const escapedMessage = JSON.stringify(message, null, 0);
   const logMsg = `${LOG_PREFIX} - ${levelname} - ${escapedMessage}`;
   if (obj) {
-    const escapedObject = JSON.stringify(obj, null, 0);
+    let escapedObject = JSON.stringify(obj, null, 0);
+    if (obj.stack && obj.message) {
+      escapedObject = JSON.stringify({
+        message: obj.message,
+        stack: obj.stack,
+      });
+    }
     // eslint-disable-next-line
     console.log(logMsg, escapedObject);
   } else {
