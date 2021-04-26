@@ -228,6 +228,7 @@ describe('event parser', () => {
               email: 'a@a.com',
             },
           },
+          requestId: '78542821-ca17-4e83-94ec-96993a9d451d',
         },
         headers: {
           Authorization: 'auth',
@@ -311,6 +312,7 @@ describe('event parser', () => {
             userAgent:
               'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36',
           },
+          requestId: 'JKJaXmPLvHcESHA=',
         },
         headers: {
           'content-length': '0',
