@@ -1,0 +1,17 @@
+{
+	"resource": "/graphql",
+	"path": "/graphql",
+	"httpMethod": "POST",
+	"body": "{,query,:,query {\\n getSessionTemplatesForPlan: getSessionTemplatesForPlan(planId: \\,asggfds\\,) {\\n sessionTemplateId: sessionTemplateId\\n name: name\\n }\\n},}",
+	"requestContext": {},
+	"headers": {
+		"Authorization": "****",
+		"content-type": "application/json",
+		"Host": "aaaaaaaa.appsync-api.eu-west-1.amazonaws.com",
+		"origin": "https://app.sport.de",
+		"Referer": "https://app.sport.de/sessions/start/12345",
+		"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0.2 Safari/605.1.15"
+	},
+	"stageVariables": "null",
+	"isBase64Encoded": "false"
+}

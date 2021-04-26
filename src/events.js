@@ -21,7 +21,14 @@ export const getTriggeredBy = event => {
     }
   }
 
-  if ((event && event['httpMethod']) || (event && event['headers'] && event['version'] === '2.0')) {
+  if (
+    (event && event['httpMethod'] && event['requestContext']['stage']) ||
+    (event &&
+      event['headers'] &&
+      event['version'] === '2.0' &&
+      event['requestContext'] &&
+      event['requestContext']['stage'])
+  ) {
     return 'apigw';
   }
 
