@@ -21,7 +21,7 @@ const API_GW_PREFIX_KEYS_HEADERS_DELETE_KEYS = getEnvVarAsList(
 );
 const API_GW_REQUEST_CONTEXT_FILTER_KEYS = getEnvVarAsList(
   'LUMIGO_API_GW_REQUEST_CONTEXT_FILTER_KEYS',
-  ['authorizer', 'http']
+  ['authorizer', 'http', 'requestid']
 );
 const API_GW_KEYS_DELETE_KEYS = getEnvVarAsList('LUMIGO_API_GW_KEYS_DELETE_KEYS', [
   'multiValueHeaders',
