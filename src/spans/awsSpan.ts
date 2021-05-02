@@ -30,6 +30,8 @@ import { getEventInfo } from '../events';
 import { getSkipScrubPath, parseEvent } from '../parsers/eventParser';
 import * as logger from '../logger';
 import { payloadStringify, prune } from '../utils/payloadStringify';
+import { HttpInfo } from '../types/spans/httpSpan';
+import { BasicSpan, SpanInfo } from '../types/spans/basicSpan';
 
 export const HTTP_SPAN = 'http';
 export const FUNCTION_SPAN = 'function';
@@ -41,7 +43,7 @@ export const MSSQL_SPAN = 'msSql';
 export const MYSQL_SPAN = 'mySql';
 export const NEO4J_SPAN = 'neo4j';
 
-export const getSpanInfo = () => {
+export const getSpanInfo = (): SpanInfo => {
   const tracer = getTracerInfo();
 
   const {
@@ -55,22 +57,21 @@ export const getSpanInfo = () => {
   return { traceId, tracer, logGroupName, logStreamName };
 };
 
-export const getCurrentTransactionId = () => {
-  const { event: lambdaEvent } = TracerGlobals.getHandlerInputs();
-  return getSpanInfo(lambdaEvent).traceId.transactionId;
+export const getCurrentTransactionId = (): string => {
+  return getSpanInfo().traceId.transactionId;
 };
 
-export const isSpanIsFromAnotherInvocation = (span) => {
+export const isSpanIsFromAnotherInvocation = (span): boolean => {
   return (
     !span.id.includes(span.reporterAwsRequestId) && span.parentId !== span.reporterAwsRequestId
   );
 };
 
-export const getBasicSpan = (transactionId) => {
-  const { event: lambdaEvent, context: lambdaContext } = TracerGlobals.getHandlerInputs();
+export const getBasicSpan = (transactionId: string): BasicSpan => {
+  const { context: lambdaContext } = TracerGlobals.getHandlerInputs();
   const { token } = TracerGlobals.getTracerInputs();
 
-  const info = getSpanInfo(lambdaEvent);
+  const info = getSpanInfo();
 
   const awsAccountId = getAccountId(lambdaContext);
   const invokedArn = getInvokedArn();
@@ -109,12 +110,12 @@ export const getBasicSpan = (transactionId) => {
   };
 };
 
-const getEventForSpan = (hasError = false) => {
+const getEventForSpan = (hasError: boolean = false): string => {
   const event = TracerGlobals.getHandlerInputs().event;
   return payloadStringify(parseEvent(event), getEventEntitySize(hasError), getSkipScrubPath(event));
 };
 
-const getEnvsForSpan = (hasError = false) =>
+const getEnvsForSpan = (hasError: boolean = false): string =>
   payloadStringify(process.env, getEventEntitySize(hasError));
 
 export const getFunctionSpan = () => {
@@ -207,7 +208,7 @@ export const getAwsServiceData = (requestData, responseData) => {
 
   switch (awsService) {
     case 'dynamodb':
-      return dynamodbParser(requestData, responseData);
+      return dynamodbParser(requestData);
     case 'sns':
       return snsParser(requestData, responseData);
     case 'lambda':
@@ -225,7 +226,7 @@ export const getAwsServiceData = (requestData, responseData) => {
   }
 };
 
-export const getHttpInfo = (requestData, responseData) => {
+export const getHttpInfo = (requestData, responseData): HttpInfo => {
   const sizeLimit = getEventEntitySize(isErrorResponse(responseData));
   const { host } = requestData;
   try {
@@ -297,6 +298,7 @@ export const getHttpSpan = (
   } catch (e) {
     logger.warn('Failed to parse aws service data', e.message);
   }
+  // @ts-ignore
   const { awsServiceData, spanId } = serviceData;
 
   const prioritizedSpanId = getHttpSpanId(randomRequestId, spanId);
@@ -326,6 +328,7 @@ export const getHttpSpan = (
   return { ...basicHttpSpan, info, service, started, ended };
 };
 
-export const addRttToFunctionSpan = (functionSpan, rtt) =>
+export const addRttToFunctionSpan = (functionSpan: any, rtt: number): any => {
   // eslint-disable-next-line camelcase
-  Object.assign({}, functionSpan, { reporter_rtt: rtt });
+  return Object.assign({}, functionSpan, { reporter_rtt: rtt });
+};

@@ -11,18 +11,18 @@ export const NUMBER_OF_SPANS_IN_REPORT_OPTIMIZATION = 200;
 
 export const sendSingleSpan = async (span) => exports.sendSpans([span]);
 
-export const logSpans = (rtt, spans) => {
+export const logSpans = (rtt: number, spans): void => {
   const spanIds = spans.map((span) => span.id);
   logger.debug(`Spans sent [${rtt}ms]`, spanIds);
 };
 
-export const isSpansContainsErrors = (spans) => {
+export const isSpansContainsErrors = (spans): boolean => {
   const safeGetStatusCode = (s) => (s['returnValue'] || {})['statusCode'] || 0;
   const spanHasError = (s) => s.error !== undefined || safeGetStatusCode(s) > 400;
   return spans.filter(spanHasError).length > 0;
 };
 
-export const sendSpans = async (spans) => {
+export const sendSpans = async (spans): Promise<{ rtt: number }> => {
   if (isSendOnlyIfErrors() && !isSpansContainsErrors(spans)) {
     logger.debug('No Spans was sent, `SEND_ONLY_IF_ERROR` is on and no span has error');
     return { rtt: 0 };
@@ -40,13 +40,13 @@ export const sendSpans = async (spans) => {
   return { rtt };
 };
 
-export const shouldTrim = (spans, maxSendBytes) => {
+export const shouldTrim = (spans, maxSendBytes: number): boolean => {
   return (
     spans.length > NUMBER_OF_SPANS_IN_REPORT_OPTIMIZATION || getJSONBase64Size(spans) > maxSendBytes
   );
 };
 
-export const forgeRequestBody = (spans, maxSendBytes) => {
+export const forgeRequestBody = (spans, maxSendBytes): string | undefined => {
   let resultSpans = [];
 
   if (isPruneTraceOff() || !shouldTrim(spans, maxSendBytes)) {
