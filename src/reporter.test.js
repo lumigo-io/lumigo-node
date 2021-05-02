@@ -21,7 +21,7 @@ describe('reporter', () => {
   });
 
   test('isSpansContainsErrors', async () => {
-    const genReturnValue = statusCode => ({
+    const genReturnValue = (statusCode) => ({
       returnValue: {
         statusCode,
       },
@@ -44,7 +44,10 @@ describe('reporter', () => {
 
   test('sendSpans - use tracerInputs', async () => {
     TracerGlobals.setTracerInputs({ maxSizeForRequest: 10 });
-    const spans = [{ a: 'b', c: 'd' }, { e: 'f', g: 'h' }];
+    const spans = [
+      { a: 'b', c: 'd' },
+      { e: 'f', g: 'h' },
+    ];
 
     const result = await reporter.sendSpans(spans);
 
@@ -57,7 +60,10 @@ describe('reporter', () => {
   test('sendSpans - simple flow', async () => {
     const token = 'DEADBEEF';
     TracerGlobals.setTracerInputs({ token });
-    const spans = [{ a: 'b', c: 'd' }, { e: 'f', g: 'h' }];
+    const spans = [
+      { a: 'b', c: 'd' },
+      { e: 'f', g: 'h' },
+    ];
 
     const result = await reporter.sendSpans(spans);
 
@@ -71,7 +77,10 @@ describe('reporter', () => {
     const token = 'DEADBEEF';
     TracerGlobals.setTracerInputs({ token });
     utils.setSendOnlyIfErrors();
-    const spans = [{ a: 'b', c: 'd' }, { e: 'f', g: 'h' }];
+    const spans = [
+      { a: 'b', c: 'd' },
+      { e: 'f', g: 'h' },
+    ];
 
     const result = await reporter.sendSpans(spans);
 
@@ -85,7 +94,10 @@ describe('reporter', () => {
     const token = 'DEADBEEF';
     TracerGlobals.setTracerInputs({ token });
     utils.setSendOnlyIfErrors();
-    const spans = [{ a: 'b', c: 'd' }, { e: 'f', g: 'h', error: 'error' }];
+    const spans = [
+      { a: 'b', c: 'd' },
+      { e: 'f', g: 'h', error: 'error' },
+    ];
 
     const result = await reporter.sendSpans(spans);
 
@@ -99,7 +111,10 @@ describe('reporter', () => {
     process.env.LUMIGO_SECRET_MASKING_REGEX = 'NON-VALID-JSON';
     TracerGlobals.setTracerInputs({ token });
 
-    const spans = [{ a: 'b', c: 'd' }, { e: 'f', g: 'h', error: 'error' }];
+    const spans = [
+      { a: 'b', c: 'd' },
+      { e: 'f', g: 'h', error: 'error' },
+    ];
 
     const result = await reporter.sendSpans(spans);
 

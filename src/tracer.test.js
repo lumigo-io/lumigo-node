@@ -6,7 +6,7 @@ import * as globals from './globals';
 import * as reporter from './reporter';
 import * as awsSpan from './spans/awsSpan';
 import * as http from './hooks/http';
-import httpHook from './hooks/http';
+import { hookHttp } from './hooks/http';
 import * as logger from './logger';
 import { TracerGlobals } from './globals';
 import { setSwitchOff, STEP_FUNCTION_UID_KEY } from './utils';
@@ -46,7 +46,7 @@ describe('tracer', () => {
   spies.log.mockImplementation(() => {});
 
   beforeEach(() => {
-    httpHook.mockClear();
+    hookHttp.mockClear();
     jest.clearAllMocks();
   });
   test('startTrace - not failed on error', async () => {
@@ -93,7 +93,7 @@ describe('tracer', () => {
     expect(requests.length).toEqual(0);
   });
 
-  test('startTrace - timeout timer - simple flow', async done => {
+  test('startTrace - timeout timer - simple flow', async (done) => {
     const timeout = 2000;
     const testBuffer = 50;
 
@@ -112,7 +112,7 @@ describe('tracer', () => {
     }, timeout + testBuffer);
   });
 
-  test('startTrace - timeout timer - too short timeout', async done => {
+  test('startTrace - timeout timer - too short timeout', async (done) => {
     const timeout = 500;
     const testBuffer = 50;
 
@@ -131,7 +131,7 @@ describe('tracer', () => {
     }, timeout + testBuffer);
   });
 
-  test('startTrace - timeout timer - called twice', async done => {
+  test('startTrace - timeout timer - called twice', async (done) => {
     const timeout = 2000;
     const testBuffer = 50;
 
@@ -151,7 +151,7 @@ describe('tracer', () => {
     }, timeout + testBuffer);
   });
 
-  test('startTrace - timeout timer - too short timeout (timer not effects)', async done => {
+  test('startTrace - timeout timer - too short timeout (timer not effects)', async (done) => {
     const timeout = 10;
     const testBuffer = 50;
 
@@ -170,7 +170,7 @@ describe('tracer', () => {
     }, timeout + testBuffer);
   });
 
-  test('startTrace - timeout timer - SEND_ONLY_ON_ERROR - not sending spans', async done => {
+  test('startTrace - timeout timer - SEND_ONLY_ON_ERROR - not sending spans', async (done) => {
     const timeout = 1000;
     const testBuffer = 50;
 
@@ -347,7 +347,7 @@ describe('tracer', () => {
       type: tracer.HANDLER_CALLBACKED,
     });
   });
-  each([['t_'], [''], ['10faa5e13e7844aaa1234']]).test('trace; invalid token [%s]', token => {
+  each([['t_'], [''], ['10faa5e13e7844aaa1234']]).test('trace; invalid token [%s]', (token) => {
     require('./index')({ token });
     expect(spies.warnClient).toBeCalledWith(
       'Invalid Token. Go to Lumigo Settings to get a valid token.'
@@ -360,7 +360,7 @@ describe('tracer', () => {
     const token = TOKEN;
     const lumigoTracer = require('./index')({ token });
 
-    const userHandler1 = async event => {
+    const userHandler1 = async (event) => {
       return 'ok';
     };
     const event = { a: 'b', c: 'd' };
@@ -370,7 +370,7 @@ describe('tracer', () => {
     expect(spies.warnClient).toHaveBeenCalledTimes(1);
   });
 
-  test('trace; non async callbacked', async done => {
+  test('trace; non async callbacked', async (done) => {
     const token = TOKEN;
     const lumigoTracer = require('./index')({ token });
 
@@ -386,10 +386,10 @@ describe('tracer', () => {
 
     await lumigoTracer.trace(userHandler1)(event, context, callback1);
 
-    expect(httpHook).toHaveBeenCalledTimes(1);
+    expect(hookHttp).toHaveBeenCalledTimes(1);
   });
 
-  test('trace; imported twice', async done => {
+  test('trace; imported twice', async (done) => {
     const token = TOKEN;
     const lumigoTracer1 = require('./index')({ token });
     const lumigoTracer2 = require('./index')({ token });
@@ -407,7 +407,7 @@ describe('tracer', () => {
     await lumigoTracer1.trace(userHandler1)(event, context, callback1);
     await lumigoTracer2.trace(userHandler1)(event, context, callback1);
 
-    expect(httpHook).toHaveBeenCalledTimes(1);
+    expect(hookHttp).toHaveBeenCalledTimes(1);
   });
 
   test('trace; non async throw error', async () => {
@@ -425,10 +425,10 @@ describe('tracer', () => {
       new Error('bla')
     );
 
-    expect(httpHook).toHaveBeenCalledTimes(1);
+    expect(hookHttp).toHaveBeenCalledTimes(1);
   });
 
-  test('trace; async callbacked ', async done => {
+  test('trace; async callbacked ', async (done) => {
     const event = { a: 'b', c: 'd' };
     const context = { e: 'f', g: 'h' };
     const token = TOKEN;
@@ -465,7 +465,7 @@ describe('tracer', () => {
       retVal
     );
 
-    expect(httpHook).toHaveBeenCalledTimes(1);
+    expect(hookHttp).toHaveBeenCalledTimes(1);
   });
 
   test('trace; async rejected', async () => {
@@ -485,7 +485,7 @@ describe('tracer', () => {
       new Error(retVal)
     );
 
-    expect(httpHook).toHaveBeenCalledTimes(1);
+    expect(hookHttp).toHaveBeenCalledTimes(1);
   });
 
   test('trace; follow AWS stringify on the return value - happy flow', async () => {
@@ -604,7 +604,7 @@ describe('tracer', () => {
     const userHandlerAsync = async (event, context, callback) => 1;
     const result = lumigoTracer.trace(lumigoTracer.trace(userHandlerAsync))(event, {});
     await expect(result).resolves.toEqual(1);
-    expect(httpHook).toHaveBeenCalledTimes(1);
+    expect(hookHttp).toHaveBeenCalledTimes(1);
 
     let callBackCalled = false;
     const callback = (err, val) => {
@@ -626,8 +626,8 @@ describe('tracer', () => {
     expect(callBackCalled).toEqual(true);
   });
 
-  test('No exception at startHooks', async done => {
-    httpHook.mockImplementationOnce(() => {
+  test('No exception at startHooks', async (done) => {
+    hookHttp.mockImplementationOnce(() => {
       throw new Error('Mocked error');
     });
     const handler = jest.fn(() => done());
@@ -637,7 +637,7 @@ describe('tracer', () => {
     expect(handler).toHaveBeenCalledOnce();
   });
 
-  test('No exception at initialization', async done => {
+  test('No exception at initialization', async (done) => {
     const mockedTracerGlobals = jest.spyOn(TracerGlobals, 'setHandlerInputs');
     mockedTracerGlobals.mockImplementationOnce(() => {
       throw new Error('Mocked error');

@@ -1,4 +1,4 @@
-import httpHook from './http';
+import { hookHttp } from './http';
 import { isSwitchedOff, isAwsEnvironment, isLambdaWrapped, setLambdaWrapped } from '../utils';
 import { hookMongoDb } from './mongodb';
 import { hookRedis } from './redis';
@@ -10,7 +10,7 @@ import { hookNeo4j } from './neo4j';
 export default () => {
   if (!isSwitchedOff() && isAwsEnvironment()) {
     if (!isLambdaWrapped()) {
-      httpHook();
+      hookHttp();
       hookMongoDb();
       hookRedis();
       hookPg();

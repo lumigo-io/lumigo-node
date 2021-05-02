@@ -49,7 +49,7 @@ function queryAfterHook(args, originalFnResult, extenderContext) {
   const { currentSpan } = extenderContext;
   if (args[1] instanceof Function || args[2] instanceof Function) {
     hook(this.activeQuery, 'callback', {
-      beforeHook: args => {
+      beforeHook: (args) => {
         const [error, result] = args;
         createSpanFromPgResponse(currentSpan, error, result);
       },
@@ -57,10 +57,10 @@ function queryAfterHook(args, originalFnResult, extenderContext) {
   } else {
     if (originalFnResult instanceof Promise) {
       originalFnResult.then(
-        safeExecute(result => {
+        safeExecute((result) => {
           createSpanFromPgResponse(currentSpan, null, result);
         }),
-        safeExecute(error => {
+        safeExecute((error) => {
           createSpanFromPgResponse(currentSpan, error, null);
         })
       );

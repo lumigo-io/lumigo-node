@@ -60,13 +60,13 @@ export const getCurrentTransactionId = () => {
   return getSpanInfo(lambdaEvent).traceId.transactionId;
 };
 
-export const isSpanIsFromAnotherInvocation = span => {
+export const isSpanIsFromAnotherInvocation = (span) => {
   return (
     !span.id.includes(span.reporterAwsRequestId) && span.parentId !== span.reporterAwsRequestId
   );
 };
 
-export const getBasicSpan = transactionId => {
+export const getBasicSpan = (transactionId) => {
   const { event: lambdaEvent, context: lambdaContext } = TracerGlobals.getHandlerInputs();
   const { token } = TracerGlobals.getTracerInputs();
 
@@ -151,7 +151,7 @@ export const getFunctionSpan = () => {
   };
 };
 
-export const removeStartedFromId = id => id.split('_')[0];
+export const removeStartedFromId = (id) => id.split('_')[0];
 
 export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
   const { err, data } = handlerReturnValue;
@@ -165,8 +165,9 @@ export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
     returnValue = prune(data.toString(), getEventEntitySize(true));
     error = parseErrorObject({
       name: 'ReturnValueError',
-      message: `Could not JSON.stringify the return value. This will probably fail the lambda. Original error: ${e &&
-        e.message}`,
+      message: `Could not JSON.stringify the return value. This will probably fail the lambda. Original error: ${
+        e && e.message
+      }`,
     });
   }
   const event = error ? getEventForSpan(true) : functionSpan.event;
@@ -187,7 +188,7 @@ export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
 
 export const AWS_PARSED_SERVICES = ['dynamodb', 'sns', 'lambda', 'sqs', 'kinesis', 'events'];
 
-export const getAwsServiceFromHost = host => {
+export const getAwsServiceFromHost = (host) => {
   const service = host.split('.')[0];
   if (AWS_PARSED_SERVICES.includes(service)) {
     return service;
@@ -197,7 +198,7 @@ export const getAwsServiceFromHost = host => {
 
   return EXTERNAL_SERVICE;
 };
-export const getServiceType = host =>
+export const getServiceType = (host) =>
   isAwsService(host) ? getAwsServiceFromHost(host) : EXTERNAL_SERVICE;
 
 export const getAwsServiceData = (requestData, responseData) => {
@@ -279,7 +280,7 @@ export const getHttpSpanId = (randomRequestId, awsRequestId = null) => {
   return awsRequestId ? awsRequestId : randomRequestId;
 };
 
-const isErrorResponse = response => safeGet(response, ['statusCode'], 200) >= 400;
+const isErrorResponse = (response) => safeGet(response, ['statusCode'], 200) >= 400;
 
 export const getHttpSpan = (
   transactionId,

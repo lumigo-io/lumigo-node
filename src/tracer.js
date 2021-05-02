@@ -78,9 +78,9 @@ export const startTrace = async () => {
   }
 };
 
-const logLeakedSpans = allSpans => {
+const logLeakedSpans = (allSpans) => {
   const warnClientOnce = runOneTimeWrapper(logger.warnClient);
-  allSpans.forEach(span => {
+  allSpans.forEach((span) => {
     if (isSpanIsFromAnotherInvocation(span)) {
       logger.debug('Leaked span: ', span);
       const httpInfo = span.info ? span.info.httpInfo : {};
@@ -101,7 +101,7 @@ export const sendEndTraceSpans = async (functionSpan, handlerReturnValue) => {
   clearGlobals();
 };
 
-export const isCallbacked = handlerReturnValue => {
+export const isCallbacked = (handlerReturnValue) => {
   const { type } = handlerReturnValue;
   return type === HANDLER_CALLBACKED;
 };
@@ -117,18 +117,18 @@ export const endTrace = async (functionSpan, handlerReturnValue) => {
   }
 };
 
-export const callbackResolver = resolve => (err, data) =>
+export const callbackResolver = (resolve) => (err, data) =>
   resolve({ err, data, type: HANDLER_CALLBACKED });
 
 // See https://docs.aws.amazon.com/lambda/latest/dg/nodejs-prog-model-handler.html
 export const promisifyUserHandler = (userHandler, event, context) =>
-  new Promise(resolve => {
+  new Promise((resolve) => {
     try {
       const result = userHandler(event, context, callbackResolver(resolve));
       if (isPromise(result)) {
         result
-          .then(data => resolve({ err: null, data, type: ASYNC_HANDLER_RESOLVED }))
-          .catch(err => resolve({ err, data: null, type: ASYNC_HANDLER_REJECTED }));
+          .then((data) => resolve({ err: null, data, type: ASYNC_HANDLER_RESOLVED }))
+          .catch((err) => resolve({ err, data: null, type: ASYNC_HANDLER_REJECTED }));
       }
     } catch (err) {
       resolve({ err, data: null, type: NON_ASYNC_HANDLER_ERRORED });
@@ -148,14 +148,14 @@ const performPromisifyType = (err, data, type, callback) => {
   }
 };
 
-export const normalizeLambdaError = handlerReturnValue => {
+export const normalizeLambdaError = (handlerReturnValue) => {
   // Normalizing lambda error according to Lambda normalize process
   let { err, data, type } = handlerReturnValue;
   if (err && !(err instanceof Error)) err = new Error(err);
   return { err, data, type };
 };
 
-export const performStepFunctionLogic = handlerReturnValue => {
+export const performStepFunctionLogic = (handlerReturnValue) => {
   return (
     safeExecute(() => {
       const { err, data, type } = handlerReturnValue;
@@ -172,14 +172,9 @@ export const performStepFunctionLogic = handlerReturnValue => {
   );
 };
 
-export const trace = ({
-  token,
-  debug,
-  edgeHost,
-  switchOff,
-  eventFilter,
-  stepFunction,
-}) => userHandler => async (event, context, callback) => {
+export const trace = ({ token, debug, edgeHost, switchOff, eventFilter, stepFunction }) => (
+  userHandler
+) => async (event, context, callback) => {
   try {
     TracerGlobals.setHandlerInputs({ event, context });
     TracerGlobals.setTracerInputs({

@@ -8,7 +8,7 @@ import { payloadStringify } from '../utils/payloadStringify';
 import { HTTP_SPAN } from './awsSpan';
 import { HttpSpanBuilder } from '../../testUtils/httpSpanBuilder';
 
-const exampleApiGatewayEvent = require('../testdata/events/apigw-request.json');
+const exampleApiGatewayEvent = require('../../testUtils/testdata/events/apigw-request.json');
 
 jest.mock('../parsers/aws');
 describe('awsSpan', () => {

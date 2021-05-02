@@ -1,7 +1,7 @@
 import { TracerGlobals } from './globals';
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 import * as logger from './logger';
-import jsonSortify from 'json.sortify';
+import { sortify } from './tools/jsonSortify';
 
 export const SPAN_PATH = '/api/spans';
 export const LUMIGO_TRACER_EDGE = 'lumigo-tracer-edge.golumigo.com';
@@ -29,7 +29,7 @@ export const EXECUTION_TAGS_KEY = 'lumigo_execution_tags_no_scrub';
 export const DEFAULT_TIMEOUT_MIN_DURATION = 2000;
 export const DEFAULT_CONNECTION_TIMEOUT = 300;
 
-export const getContextInfo = context => {
+export const getContextInfo = (context) => {
   const remainingTimeInMillis = context.getRemainingTimeInMillis();
   const {
     functionName,
@@ -48,10 +48,10 @@ export const getContextInfo = context => {
   };
 };
 
-export const getAccountIdFromInvokedFunctinArn = invokedFunctionArn =>
+export const getAccountIdFromInvokedFunctinArn = (invokedFunctionArn) =>
   invokedFunctionArn ? invokedFunctionArn.split(':')[4] : '';
 
-export const getAccountId = context => {
+export const getAccountId = (context) => {
   const { invokedFunctionArn } = context;
   const awsAccountId = getAccountIdFromInvokedFunctinArn(invokedFunctionArn);
   return awsAccountId;
@@ -63,7 +63,7 @@ export const getTracerInfo = () => {
   return { name, version };
 };
 
-export const getTraceId = awsXAmznTraceId => {
+export const getTraceId = (awsXAmznTraceId) => {
   if (!awsXAmznTraceId) {
     throw new Error('Missing _X_AMZN_TRACE_ID in Lambda Env Vars.');
   }
@@ -75,7 +75,7 @@ export const getTraceId = awsXAmznTraceId => {
 
   const traceId = {};
   // XXX Populates Root, Parent and Sampled keys.
-  traceIdArr.forEach(item => {
+  traceIdArr.forEach((item) => {
     const [key, value] = item.split('=');
     traceId[key] = value;
   });
@@ -91,14 +91,14 @@ export const getTraceId = awsXAmznTraceId => {
   return traceId;
 };
 
-export const getPatchedTraceId = awsXAmznTraceId => {
+export const getPatchedTraceId = (awsXAmznTraceId) => {
   const { Root, Parent, Sampled, transactionId } = getTraceId(awsXAmznTraceId);
   const rootArr = Root.split('-');
   const currentTime = Math.floor(Date.now() / 1000).toString(16);
   return `Root=${rootArr[0]}-${currentTime}-${transactionId};Parent=${Parent};Sampled=${Sampled}`;
 };
 
-export const isPromise = obj => obj && obj.then && typeof obj.then === 'function';
+export const isPromise = (obj) => obj && obj.then && typeof obj.then === 'function';
 
 export const getAWSEnvironment = () => {
   const {
@@ -255,7 +255,7 @@ export const isValidAlias = () => {
   return validAlias;
 };
 
-export const isValidToken = token => {
+export const isValidToken = (token) => {
   const regex = /[t][_][a-z0-9]{15,100}/gm;
   const match = (token || '').match(regex);
   return match && token === match[0];
@@ -277,7 +277,7 @@ export const setDebug = () => (process.env['LUMIGO_DEBUG'] = 'TRUE');
 
 export const setTimeoutTimerDisabled = () => (process.env[TIMEOUT_ENABLE_FLAG] = 'FALSE');
 
-export const isString = x => Object.prototype.toString.call(x) === '[object String]';
+export const isString = (x) => Object.prototype.toString.call(x) === '[object String]';
 
 export const MAX_ENTITY_SIZE = 2048;
 
@@ -297,16 +297,16 @@ export const getLogPrefix = () => {
   return process.env[LUMIGO_LOG_PREFIX_FLAG] || LUMIGO_LOG_PREFIX;
 };
 
-export const parseErrorObject = err => ({
+export const parseErrorObject = (err) => ({
   type: err && err.name,
   message: err && err.message,
   stacktrace: err && err.stack,
 });
 
-export const lowerCaseObjectKeys = o =>
+export const lowerCaseObjectKeys = (o) =>
   o ? Object.keys(o).reduce((c, k) => ((c[k.toLowerCase()] = o[k]), c), {}) : {};
 
-export const getRandomString = evenNrChars =>
+export const getRandomString = (evenNrChars) =>
   crypto
     .randomBytes(evenNrChars / 2)
     .toString('hex')
@@ -332,7 +332,7 @@ export const isAwsService = (host, responseData) => {
   );
 };
 
-export const removeLumigoFromStacktrace = handleReturnValue => {
+export const removeLumigoFromStacktrace = (handleReturnValue) => {
   // Note: this function was copied to the auto-instrument-handler. Keep them both up to date.
   try {
     const { err, data, type } = handleReturnValue;
@@ -343,7 +343,7 @@ export const removeLumigoFromStacktrace = handleReturnValue => {
     const stackArr = stack.split('\n');
 
     const pattern = '/dist/lumigo.js:';
-    const cleanedStack = stackArr.filter(v => !v.includes(pattern));
+    const cleanedStack = stackArr.filter((v) => !v.includes(pattern));
 
     err.stack = cleanedStack.join('\n');
 
@@ -370,7 +370,7 @@ export const getEdgeHost = () => {
   return getAwsEdgeHost();
 };
 
-export const spanHasErrors = span =>
+export const spanHasErrors = (span) =>
   !!(
     span.error ||
     (span.info &&
@@ -388,14 +388,14 @@ export const getEdgeUrl = () => {
 };
 
 //Base64 calculation taken from : https://stackoverflow.com/questions/13378815/base64-length-calculation
-export const getJSONBase64Size = obj => {
+export const getJSONBase64Size = (obj) => {
   return Math.ceil((Buffer.byteLength(JSON.stringify(obj), 'utf8') / 3) * 4);
 };
 
-export const parseQueryParams = queryParams => {
+export const parseQueryParams = (queryParams) => {
   if (typeof queryParams !== 'string') return {};
   let obj = {};
-  queryParams.replace(/([^=&]+)=([^&]*)/g, function(m, key, value) {
+  queryParams.replace(/([^=&]+)=([^&]*)/g, function (m, key, value) {
     obj[decodeURIComponent(key)] = decodeURIComponent(value);
   });
   return obj;
@@ -403,11 +403,11 @@ export const parseQueryParams = queryParams => {
 
 const domainScrubbers = () =>
   JSON.parse(process.env.LUMIGO_DOMAINS_SCRUBBER || LUMIGO_DEFAULT_DOMAIN_SCRUBBERS).map(
-    x => new RegExp(x, 'i')
+    (x) => new RegExp(x, 'i')
   );
 
 export const shouldScrubDomain = (url, domains = domainScrubbers()) => {
-  return !!url && domains.some(regex => url.match(regex));
+  return !!url && domains.some((regex) => url.match(regex));
 };
 
 export const parseJsonFromEnvVar = (envVar, warnClient = false) => {
@@ -425,7 +425,7 @@ export const safeExecute = (
   logLevel = logger.LOG_LEVELS.WARNING,
   defaultReturn = undefined
 ) =>
-  function(...args) {
+  function (...args) {
     try {
       return callback.apply(this, args);
     } catch (err) {
@@ -447,7 +447,7 @@ const recursiveGetKeyByDepth = (event, keyToSearch, maxDepth) => {
     return undefined;
   }
   let foundValue = undefined;
-  const examineKey = k => {
+  const examineKey = (k) => {
     if (k === keyToSearch) {
       foundValue = event[k];
       return true;
@@ -461,10 +461,10 @@ const recursiveGetKeyByDepth = (event, keyToSearch, maxDepth) => {
   return foundValue;
 };
 
-export const md5Hash = item => {
+export const md5Hash = (item) => {
   try {
     const md5sum = crypto.createHash('md5');
-    md5sum.update(jsonSortify(item));
+    md5sum.update(sortify(item));
     return md5sum.digest('hex');
   } catch (err) {
     logger.warn('Failed to hash item', err);
@@ -472,14 +472,14 @@ export const md5Hash = item => {
   }
 };
 
-export const isEncodingType = encodingType =>
+export const isEncodingType = (encodingType) =>
   !!(
     encodingType &&
     typeof encodingType === 'string' &&
     ['ascii', 'utf8', 'utf16le', 'ucs2', 'base64', 'binary', 'hex'].includes(encodingType)
   );
 
-export const isEmptyString = str => !!(!str || (typeof str === 'string' && str.length === 0));
+export const isEmptyString = (str) => !!(!str || (typeof str === 'string' && str.length === 0));
 
 export const runOneTimeWrapper = (func, context) => {
   let done = false;
@@ -492,4 +492,4 @@ export const runOneTimeWrapper = (func, context) => {
   };
 };
 
-export const removeDuplicates = arr => [...new Set(arr)];
+export const removeDuplicates = (arr) => [...new Set(arr)];

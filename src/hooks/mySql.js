@@ -7,7 +7,7 @@ import { extendSqlSpan, createSqlSpan } from '../spans/sqlSpan';
 import { payloadStringify } from '../utils/payloadStringify';
 import { getCurrentTransactionId, MYSQL_SPAN } from '../spans/awsSpan';
 
-const createResultHook = currentSpan => args => {
+const createResultHook = (currentSpan) => (args) => {
   const ended = Date.now();
   let extendData = { ended };
   const [error, result] = args;

@@ -4,8 +4,6 @@
   Be aware, this code is not 100% covered by tests
 */
 
-module.exports = traverse;
-
 const clean = function cleanXML(xml) {
   return xml
     .replace(/>\s*</g, '><') //remove white spaces between elements
@@ -15,7 +13,7 @@ const clean = function cleanXML(xml) {
     .replace(/\s*</g, '<'); // remove any white spaces that are left at the beginning of the xml string
 };
 
-function traverse(xml, attributeMode) {
+export const traverse = (xml, attributeMode) => {
   xml = clean(xml);
   const tagFinder = new RegExp('<(.*?)[>|\\s|/]', 'g'); //find the current tag we are working on
 
@@ -170,7 +168,7 @@ function traverse(xml, attributeMode) {
   }
 
   return json;
-}
+};
 
 //Helper methods
 
@@ -202,8 +200,8 @@ function validate(currentTag) {
   if (
     currentTag.charAt(0) === '<' &&
     currentTag.charAt(1) === '?' &&
-    (currentTag.charAt(currentTag.length - 1) === '>' &&
-      currentTag.charAt(currentTag.length - 2) === '?')
+    currentTag.charAt(currentTag.length - 1) === '>' &&
+    currentTag.charAt(currentTag.length - 2) === '?'
   ) {
     return true;
   }

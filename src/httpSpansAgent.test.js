@@ -53,9 +53,7 @@ describe('HttpSpansAgent', () => {
     const reqBody = 'abcdefg';
     globals.TracerGlobals.setTracerInputs({ token: 't_xxx' });
 
-    AxiosMocker.getAxiosMocker()
-      .onPost()
-      .reply(500);
+    AxiosMocker.getAxiosMocker().onPost().reply(500);
 
     await HttpSpansAgent.postSpans(reqBody);
 
@@ -66,9 +64,7 @@ describe('HttpSpansAgent', () => {
     const reqBody = 'abcdefg';
     globals.TracerGlobals.setTracerInputs({ token: 't_xxx' });
 
-    AxiosMocker.getAxiosMocker()
-      .onPost()
-      .networkError();
+    AxiosMocker.getAxiosMocker().onPost().networkError();
 
     await HttpSpansAgent.postSpans(reqBody);
 
@@ -79,9 +75,7 @@ describe('HttpSpansAgent', () => {
     const reqBody = 'abcdefg';
     globals.TracerGlobals.setTracerInputs({ token: 't_xxx' });
 
-    AxiosMocker.getAxiosMocker()
-      .onPost()
-      .timeout();
+    AxiosMocker.getAxiosMocker().onPost().timeout();
 
     await HttpSpansAgent.postSpans(reqBody);
 

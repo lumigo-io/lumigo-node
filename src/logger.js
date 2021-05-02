@@ -26,7 +26,7 @@ export const LogStore = (() => {
   };
 
   const printLogs = () => {
-    logSet.forEach(logObj => {
+    logSet.forEach((logObj) => {
       const { message, obj } = JSON.parse(logObj);
       forceLog('FATAL', message, obj);
     });
@@ -41,7 +41,7 @@ export const LogStore = (() => {
   return { addLog, clean };
 })();
 
-const invokeLog = type => (msg, obj = undefined) => log(type, msg, obj);
+const invokeLog = (type) => (msg, obj = undefined) => log(type, msg, obj);
 
 export const info = invokeLog('INFO');
 
@@ -63,7 +63,13 @@ const forceLog = (levelname, message, obj) => {
   const escapedMessage = JSON.stringify(message, null, 0);
   const logMsg = `${LOG_PREFIX} - ${levelname} - ${escapedMessage}`;
   if (obj) {
-    const escapedObject = JSON.stringify(obj, null, 0);
+    let escapedObject = JSON.stringify(obj, null, 0);
+    if (obj.stack && obj.message) {
+      escapedObject = JSON.stringify({
+        message: obj.message,
+        stack: obj.stack,
+      });
+    }
     // eslint-disable-next-line
     console.log(logMsg, escapedObject);
   } else {

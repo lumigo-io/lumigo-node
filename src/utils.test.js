@@ -542,13 +542,12 @@ describe('utils', () => {
   });
 
   test('getRandomString', () => {
-    spies.randomBytes.mockReturnValueOnce(Buffer.from('lmno'));
-    expect(utils.getRandomString(10)).toEqual('6c6d6e6f');
+    expect(utils.getRandomString(10) === utils.getRandomString(10)).toBeFalsy();
   });
 
   test('getRandomId', () => {
-    spies.randomBytes.mockImplementation(nr => Buffer.from(`l`.repeat(nr)));
-    expect(utils.getRandomId()).toEqual('6c6c6c6c-6c6c-6c6c-6c6c-6c6c6c6c6c6c');
+    expect(utils.getRandomId() === utils.getRandomId()).toBeFalsy();
+    expect(utils.getRandomId().length).toEqual(36);
   });
 
   test('isAwsService', () => {
@@ -820,7 +819,7 @@ describe('utils', () => {
   });
 
   test('safeExecute - parameters', () => {
-    expect(safeExecute(param => param)(5)).toEqual(5);
+    expect(safeExecute((param) => param)(5)).toEqual(5);
   });
 
   test('safeExecute catch exception', () => {
@@ -953,7 +952,7 @@ describe('utils', () => {
 
   test('runOneTime -> use params', () => {
     let i = 0;
-    const addToI = count => {
+    const addToI = (count) => {
       i += count;
       return 'OK';
     };
@@ -966,6 +965,7 @@ describe('utils', () => {
 
   test('md5Hash should yield the same result for the same items', () => {
     expect(md5Hash({ a: 1, b: { c: 2, d: 3 } })).toEqual(md5Hash({ b: { d: 3, c: 2 }, a: 1 }));
+    expect(md5Hash({ a: 1, b: { c: 2, d: 3 } })).toBeTruthy();
   });
 
   test('md5Hash recursive items', () => {

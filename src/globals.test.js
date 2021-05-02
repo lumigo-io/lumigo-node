@@ -50,13 +50,13 @@ describe('globals', () => {
     expect(spans).toEqual([span1]);
   });
 
-  test('GlobalTimer - simple flow', done => {
+  test('GlobalTimer - simple flow', (done) => {
     globals.GlobalTimer.setGlobalTimeout(() => {
       done();
     }, 1);
   });
 
-  test('GlobalTimer - override timers', done => {
+  test('GlobalTimer - override timers', (done) => {
     const arr = [];
     globals.GlobalTimer.setGlobalTimeout(() => {
       arr.push(1);
@@ -68,7 +68,7 @@ describe('globals', () => {
     }, 100);
   });
 
-  test('GlobalTimer - clear', done => {
+  test('GlobalTimer - clear', (done) => {
     const arr = [];
     globals.GlobalTimer.setGlobalTimeout(() => {
       arr.push(1);
@@ -81,11 +81,11 @@ describe('globals', () => {
     }, 50);
   });
 
-  test('GlobalTimer - async func flow', done => {
+  test('GlobalTimer - async func flow', (done) => {
     const array = [];
 
-    const addToArrayAsync = ms =>
-      new Promise(resolve =>
+    const addToArrayAsync = (ms) =>
+      new Promise((resolve) =>
         setTimeout(() => {
           array.push(1);
           resolve();
@@ -99,7 +99,7 @@ describe('globals', () => {
     }, 1);
   });
 
-  test('GlobalTimer - clears with clearGlobals', done => {
+  test('GlobalTimer - clears with clearGlobals', (done) => {
     const arr = [];
     globals.GlobalTimer.setGlobalTimeout(() => {
       //This should run after the globals.clearGlobals()
@@ -120,7 +120,7 @@ describe('globals', () => {
     //Expect no error will up
   });
 
-  test('GlobalTimer - clears with clearGlobals - async', done => {
+  test('GlobalTimer - clears with clearGlobals - async', (done) => {
     const arr = [];
     globals.GlobalTimer.setGlobalTimeout(async () => {
       arr.push(1);
@@ -341,7 +341,7 @@ describe('globals', () => {
   test('ExecutionTags.addTag too many tags', () => {
     for (let i = 0; i < 51; i++) globals.ExecutionTags.addTag(`k${i}`, `v${i}`);
     expect(globals.ExecutionTags.getTags().length).toEqual(50);
-    expect(globals.ExecutionTags.getTags().filter(tag => tag.key === 'k50')).toEqual([]);
+    expect(globals.ExecutionTags.getTags().filter((tag) => tag.key === 'k50')).toEqual([]);
   });
 
   test('ExecutionTags.addTag catch exception', () => {

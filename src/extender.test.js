@@ -1,5 +1,5 @@
 import * as extender from './extender';
-import shimmer from 'shimmer';
+import * as shimmer from 'shimmer';
 
 export const DummyCounterService = (() => {
   let dummyCounter = 0;
@@ -58,7 +58,7 @@ describe('extender', () => {
   test('hook -> before Hook - multiple param', () => {
     let beforeCounter = 0;
     extender.hook(DummyCounterService, 'incrementToDummyCounterMultipleParam', {
-      beforeHook: args => {
+      beforeHook: (args) => {
         expect(DummyCounterService.getDummyCounter()).toEqual(0);
         beforeCounter += args[0];
         beforeCounter += args[1];
@@ -183,16 +183,18 @@ describe('extender', () => {
   });
 
   test('hook -> safe mode - shimmer', () => {
-    jest.spyOn(shimmer, 'wrap').mockImplementationOnce(() => {
-      throw new Error();
-    });
+    const shimmerLib = {
+      wrap: () => {
+        throw new Error();
+      },
+    };
 
-    extender.hook(DummyCounterService, 'incrementToDummyCounter');
+    extender.hook(DummyCounterService, 'incrementToDummyCounter', {}, shimmerLib);
     DummyCounterService.incrementToDummyCounter();
     expect(DummyCounterService.getDummyCounter()).toEqual(1);
   });
 
-  test('hook -> client exception', done => {
+  test('hook -> client exception', (done) => {
     extender.hook(DummyCounterService, 'raiseError');
     try {
       DummyCounterService.raiseError();
@@ -202,14 +204,14 @@ describe('extender', () => {
     }
   });
 
-  test('hookPromise -> thenHandler', done => {
+  test('hookPromise -> thenHandler', (done) => {
     let resolveRef;
 
-    const p = new Promise(function(resolve) {
+    const p = new Promise(function (resolve) {
       resolveRef = resolve;
     });
 
-    const thenHandler = value => {
+    const thenHandler = (value) => {
       expect(value).toEqual('Value');
       done();
     };
@@ -220,11 +222,11 @@ describe('extender', () => {
   test('hookPromise -> thenHandler -> safe from errors', async () => {
     let resolveRef;
 
-    const p = new Promise(function(resolve) {
+    const p = new Promise(function (resolve) {
       resolveRef = resolve;
     });
 
-    const thenHandler = value => {
+    const thenHandler = (value) => {
       expect(value).toEqual('Value');
       throw new Error('Bla bla');
     };
@@ -236,7 +238,7 @@ describe('extender', () => {
   test('hookPromise -> catchHandler', async () => {
     const p = Promise.reject(new Error('octopus'));
 
-    const catchHandler = value => {
+    const catchHandler = (value) => {
       expect(value).toEqual('octopus');
     };
     extender.hookPromise(p, { catchHandler: catchHandler });

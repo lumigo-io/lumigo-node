@@ -9,7 +9,7 @@ import * as logger from './logger';
 
 debug('Tracer imported');
 
-module.exports = function({
+module.exports = function ({
   token,
   debug = false,
   edgeHost,

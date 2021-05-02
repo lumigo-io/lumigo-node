@@ -21,11 +21,8 @@ const createHookedPgClient = (mockOptions = {}) => {
   return client;
 };
 
-const createBaseBuilderFromSpan = span =>
-  new SqlSpanBuilder()
-    .withId(span.id)
-    .withStarted(span.started)
-    .withEnded(span.ended);
+const createBaseBuilderFromSpan = (span) =>
+  new SqlSpanBuilder().withId(span.id).withStarted(span.started).withEnded(span.ended);
 
 const createExpectedResponse = () => {
   const response = createMockedResponse();
@@ -85,7 +82,7 @@ describe('pg', () => {
     const client = createHookedPgClient({ error });
     let errorIsRaised = false;
 
-    await client.query('SELECT * from users').catch(e => {
+    await client.query('SELECT * from users').catch((e) => {
       expect(e.name).toEqual('Error');
       expect(e.message).toEqual('RandomError');
       errorIsRaised = true;
@@ -118,7 +115,7 @@ describe('pg', () => {
     ]);
   });
 
-  test('hookPg -> query (text: string, callback: Function) => void -> success', done => {
+  test('hookPg -> query (text: string, callback: Function) => void -> success', (done) => {
     const client = createHookedPgClient();
 
     const testFunc = () => {
@@ -136,11 +133,11 @@ describe('pg', () => {
     client.query('SELECT * from users', testFunc);
   });
 
-  test('hookPg -> query (text: string, callback: Function) => void -> error', done => {
+  test('hookPg -> query (text: string, callback: Function) => void -> error', (done) => {
     const error = new Error('RandomError');
     const client = createHookedPgClient({ error });
 
-    const testFunc = err => {
+    const testFunc = (err) => {
       const spans = SpansContainer.getSpans();
       expect(spans).toEqual([
         createBaseBuilderFromSpan(spans[0])
@@ -156,7 +153,7 @@ describe('pg', () => {
     client.query('SELECT * from users', testFunc);
   });
 
-  test('hookPg -> query (text: string, values: Array, callback: Function) => void -> success', done => {
+  test('hookPg -> query (text: string, values: Array, callback: Function) => void -> success', (done) => {
     const client = createHookedPgClient();
 
     const testFunc = () => {

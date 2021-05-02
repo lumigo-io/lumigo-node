@@ -1,9 +1,9 @@
 import { isEncodingType, safeExecute } from '../utils';
 
-export const isValidHttpRequestBody = reqBody =>
+export const isValidHttpRequestBody = (reqBody) =>
   !!(reqBody && (typeof reqBody === 'string' || reqBody instanceof Buffer));
 
-export const extractBodyFromEmitSocketEvent = socketEventArgs => {
+export const extractBodyFromEmitSocketEvent = (socketEventArgs) => {
   return safeExecute(() => {
     if (socketEventArgs && socketEventArgs._httpMessage && socketEventArgs._httpMessage._hasBody) {
       const httpMessage = socketEventArgs._httpMessage;
@@ -20,7 +20,7 @@ export const extractBodyFromEmitSocketEvent = socketEventArgs => {
   })();
 };
 
-export const extractBodyFromWriteFunc = writeEventArgs => {
+export const extractBodyFromWriteFunc = (writeEventArgs) => {
   return safeExecute(() => {
     if (isValidHttpRequestBody(writeEventArgs[0])) {
       const encoding = isEncodingType(writeEventArgs[1]) ? writeEventArgs[1] : 'utf8';
@@ -31,7 +31,7 @@ export const extractBodyFromWriteFunc = writeEventArgs => {
   })();
 };
 
-export const extractBodyFromEndFunc = endFuncArgs => {
+export const extractBodyFromEndFunc = (endFuncArgs) => {
   return safeExecute(() => {
     if (isValidHttpRequestBody(endFuncArgs[0])) {
       return endFuncArgs[0];

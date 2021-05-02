@@ -9,20 +9,20 @@ import * as logger from './logger';
 import { HttpSpansAgent } from './httpSpansAgent';
 export const NUMBER_OF_SPANS_IN_REPORT_OPTIMIZATION = 200;
 
-export const sendSingleSpan = async span => exports.sendSpans([span]);
+export const sendSingleSpan = async (span) => exports.sendSpans([span]);
 
 export const logSpans = (rtt, spans) => {
-  const spanIds = spans.map(span => span.id);
+  const spanIds = spans.map((span) => span.id);
   logger.debug(`Spans sent [${rtt}ms]`, spanIds);
 };
 
-export const isSpansContainsErrors = spans => {
-  const safeGetStatusCode = s => (s['returnValue'] || {})['statusCode'] || 0;
-  const spanHasError = s => s.error !== undefined || safeGetStatusCode(s) > 400;
+export const isSpansContainsErrors = (spans) => {
+  const safeGetStatusCode = (s) => (s['returnValue'] || {})['statusCode'] || 0;
+  const spanHasError = (s) => s.error !== undefined || safeGetStatusCode(s) > 400;
   return spans.filter(spanHasError).length > 0;
 };
 
-export const sendSpans = async spans => {
+export const sendSpans = async (spans) => {
   if (isSendOnlyIfErrors() && !isSpansContainsErrors(spans)) {
     logger.debug('No Spans was sent, `SEND_ONLY_IF_ERROR` is on and no span has error');
     return { rtt: 0 };
@@ -56,8 +56,8 @@ export const forgeRequestBody = (spans, maxSendBytes) => {
   logger.debug('Starting trim spans before send');
 
   const functionEndSpan = spans[spans.length - 1];
-  const errorSpans = spans.filter(span => spanHasErrors(span) && span !== functionEndSpan);
-  const normalSpans = spans.filter(span => !spanHasErrors(span) && span !== functionEndSpan);
+  const errorSpans = spans.filter((span) => spanHasErrors(span) && span !== functionEndSpan);
+  const normalSpans = spans.filter((span) => !spanHasErrors(span) && span !== functionEndSpan);
 
   const orderedSpans = [...errorSpans, ...normalSpans];
 
