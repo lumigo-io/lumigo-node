@@ -1,7 +1,7 @@
 import { TracerGlobals } from './globals';
 import * as crypto from 'crypto';
 import * as logger from './logger';
-import jsonSortify from 'json.sortify';
+import { sortify } from './tools/jsonSortify';
 
 export const SPAN_PATH = '/api/spans';
 export const LUMIGO_TRACER_EDGE = 'lumigo-tracer-edge.golumigo.com';
@@ -464,7 +464,7 @@ const recursiveGetKeyByDepth = (event, keyToSearch, maxDepth) => {
 export const md5Hash = (item) => {
   try {
     const md5sum = crypto.createHash('md5');
-    md5sum.update(jsonSortify(item));
+    md5sum.update(sortify(item));
     return md5sum.digest('hex');
   } catch (err) {
     logger.warn('Failed to hash item', err);
