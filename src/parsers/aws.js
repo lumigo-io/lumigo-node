@@ -1,5 +1,5 @@
 import { md5Hash, parseQueryParams, removeDuplicates, safeGet } from '../utils';
-import parseXml from '../tools/xmlToJson';
+import { traverse } from '../tools/xmlToJson';
 import * as logger from '../logger';
 
 const extractDynamodbMessageId = (reqBody, method) => {
@@ -68,7 +68,7 @@ export const snsParser = (requestData, responseData) => {
   const { body: reqBody } = requestData;
   const { body: resBody } = responseData;
   const parsedRequestBody = reqBody ? parseQueryParams(reqBody) : undefined;
-  const parsedResponseBody = resBody ? parseXml(resBody) : undefined;
+  const parsedResponseBody = resBody ? traverse(resBody) : undefined;
   const resourceName = parsedRequestBody ? parsedRequestBody['TopicArn'] : undefined;
   const messageId = parsedResponseBody
     ? ((parsedResponseBody['PublishResponse'] || {})['PublishResult'] || {})['MessageId']
@@ -114,7 +114,7 @@ export const sqsParser = (requestData, responseData) => {
   const { body: reqBody } = requestData;
   const { body: resBody } = responseData;
   const parsedReqBody = reqBody ? parseQueryParams(reqBody) : undefined;
-  const parsedResBody = resBody ? parseXml(resBody) : undefined;
+  const parsedResBody = resBody ? traverse(resBody) : undefined;
   const resourceName = parsedReqBody ? parsedReqBody['QueueUrl'] : undefined;
   const awsServiceData = { resourceName };
   awsServiceData.messageId =

@@ -1,4 +1,5 @@
-const traverse = require('./xmlToJson');
+import { traverse } from './xmlToJson';
+
 const clean = function cleanXML(xml) {
   return xml
     .replace(/>\s*</g, '><') //remove white spaces between elements
