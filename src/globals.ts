@@ -1,4 +1,5 @@
 import * as logger from './logger';
+import { Context } from 'aws-lambda';
 
 const MAX_TAGS = 50;
 const MAX_TAG_KEY_LEN = 50;
@@ -45,6 +46,7 @@ export const GlobalTimer = (() => {
 })();
 
 export const ExecutionTags = (() => {
+  // @ts-ignore
   global.tags = [];
 
   const validateTag = (key, value, shouldLogErrors = true) => {
@@ -64,6 +66,7 @@ export const ExecutionTags = (() => {
         );
       return false;
     }
+    // @ts-ignore
     if (global.tags.length >= MAX_TAGS) {
       shouldLogErrors &&
         logger.warnClient(
@@ -80,6 +83,7 @@ export const ExecutionTags = (() => {
     try {
       logger.debug(`Adding tag: ${key} - ${value}`);
       if (!validateTag(key, value, shouldLogErrors)) return false;
+      // @ts-ignore
       global.tags.push({ key: normalizeTag(key), value: normalizeTag(value) });
     } catch (err) {
       shouldLogErrors && logger.warnClient(ADD_TAG_ERROR_MSG_PREFIX);
@@ -89,15 +93,20 @@ export const ExecutionTags = (() => {
     return true;
   };
 
+  // @ts-ignore
   const getTags = () => [...global.tags];
 
+  // @ts-ignore
   const clear = () => (global.tags = []);
 
   return { addTag, getTags, clear, validateTag };
 })();
 
 export const TracerGlobals = (() => {
-  const handlerInputs = { event: {}, context: {} };
+  const handlerInputs: { event: {}; context: Context | {} } = {
+    event: {},
+    context: {},
+  };
   const tracerInputs = {
     token: '',
     debug: false,
@@ -109,7 +118,7 @@ export const TracerGlobals = (() => {
 
   const setHandlerInputs = ({ event, context }) => Object.assign(handlerInputs, { event, context });
 
-  const getHandlerInputs = () => handlerInputs;
+  const getHandlerInputs = (): { event: {}; context: Context | {} } => handlerInputs;
 
   const clearHandlerInputs = () => Object.assign(handlerInputs, { event: {}, context: {} });
 

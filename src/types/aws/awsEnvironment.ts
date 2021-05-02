@@ -10,3 +10,11 @@ export interface AwsEnvironment {
   awsLambdaFunctionVersion: string;
   awsLambdaFunctionMemorySize: string;
 }
+
+export interface ContextInfo {
+  functionName: string;
+  awsRequestId: string;
+  awsAccountId: string;
+  remainingTimeInMillis: number;
+  callbackWaitsForEmptyEventLoop: boolean;
+}

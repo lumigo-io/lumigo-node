@@ -73,6 +73,7 @@ export const getBasicSpan = (transactionId: string): BasicSpan => {
 
   const info = getSpanInfo();
 
+  // @ts-ignore
   const awsAccountId = getAccountId(lambdaContext);
   const invokedArn = getInvokedArn();
   const invokedVersion = getInvokedVersion();
@@ -133,6 +134,7 @@ export const getFunctionSpan = () => {
   const event = getEventForSpan();
   const envs = getEnvsForSpan();
 
+  // @ts-ignore
   const { functionName: name, awsRequestId, remainingTimeInMillis } = getContextInfo(lambdaContext);
 
   const id = `${awsRequestId}_started`;
@@ -264,6 +266,7 @@ export const getHttpInfo = (requestData, responseData): HttpInfo => {
 
 export const getBasicChildSpan = (transactionId, awsRequestId, spanId, spanType) => {
   const { context } = TracerGlobals.getHandlerInputs();
+  // @ts-ignore
   const { awsRequestId: reporterAwsRequestId } = context;
   const id = spanId;
   const type = spanType;
