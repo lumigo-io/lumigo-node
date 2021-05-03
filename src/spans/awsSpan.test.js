@@ -1,4 +1,4 @@
-import * as awsSpan from './awsSpan.js';
+import * as awsSpan from './awsSpan';
 import { EXECUTION_TAGS_KEY, getEventEntitySize, parseErrorObject } from '../utils';
 import MockDate from 'mockdate';
 import { TracerGlobals } from '../globals';
@@ -535,7 +535,7 @@ describe('awsSpan', () => {
     requestData.host = `dynamodb.amazonaws.com`;
 
     awsSpan.getAwsServiceData(requestData, responseData);
-    expect(awsParsers.dynamodbParser).toHaveBeenCalledWith(requestData, responseData);
+    expect(awsParsers.dynamodbParser).toHaveBeenCalledWith(requestData);
 
     requestData.host = `sns.amazonaws.com`;
 

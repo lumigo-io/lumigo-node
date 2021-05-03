@@ -2,6 +2,12 @@ import { TracerGlobals } from './globals';
 import * as crypto from 'crypto';
 import * as logger from './logger';
 import { sortify } from './tools/jsonSortify';
+import { Context } from 'aws-lambda';
+import { int } from 'aws-sdk/clients/datapipeline';
+import { EdgeUrl } from './types/common/edgeTypes';
+import { AwsEnvironment, ContextInfo } from './types/aws/awsEnvironment';
+import { thumbprintListType } from 'aws-sdk/clients/iam';
+import { isAwsContext } from './guards/awsGuards';
 
 export const SPAN_PATH = '/api/spans';
 export const LUMIGO_TRACER_EDGE = 'lumigo-tracer-edge.golumigo.com';
@@ -29,7 +35,7 @@ export const EXECUTION_TAGS_KEY = 'lumigo_execution_tags_no_scrub';
 export const DEFAULT_TIMEOUT_MIN_DURATION = 2000;
 export const DEFAULT_CONNECTION_TIMEOUT = 300;
 
-export const getContextInfo = (context) => {
+export const getContextInfo = (context: Context): ContextInfo => {
   const remainingTimeInMillis = context.getRemainingTimeInMillis();
   const {
     functionName,
@@ -37,7 +43,7 @@ export const getContextInfo = (context) => {
     invokedFunctionArn,
     callbackWaitsForEmptyEventLoop,
   } = context;
-  const awsAccountId = invokedFunctionArn ? invokedFunctionArn.split(':')[4] : '';
+  const awsAccountId = getAccountIdFromInvokedFunctinArn(invokedFunctionArn);
 
   return {
     functionName,
@@ -48,16 +54,15 @@ export const getContextInfo = (context) => {
   };
 };
 
-export const getAccountIdFromInvokedFunctinArn = (invokedFunctionArn) =>
+export const getAccountIdFromInvokedFunctinArn = (invokedFunctionArn: string): string =>
   invokedFunctionArn ? invokedFunctionArn.split(':')[4] : '';
 
-export const getAccountId = (context) => {
+export const getAccountId = (context: Context): string => {
   const { invokedFunctionArn } = context;
-  const awsAccountId = getAccountIdFromInvokedFunctinArn(invokedFunctionArn);
-  return awsAccountId;
+  return getAccountIdFromInvokedFunctinArn(invokedFunctionArn);
 };
 
-export const getTracerInfo = () => {
+export const getTracerInfo = (): { name: string; version: string } => {
   const pkg = require('../package.json');
   const { name, version } = pkg;
   return { name, version };
@@ -84,23 +89,26 @@ export const getTraceId = (awsXAmznTraceId) => {
     throw new Error(`Either Root, Parent or Sampled weren't found in traceId.`);
   }
 
+  // @ts-ignore
   const transactionId = traceId.Root.split('-')[2];
 
+  // @ts-ignore
   traceId.transactionId = transactionId;
 
   return traceId;
 };
 
-export const getPatchedTraceId = (awsXAmznTraceId) => {
+export const getPatchedTraceId = (awsXAmznTraceId): string => {
+  // @ts-ignore
   const { Root, Parent, Sampled, transactionId } = getTraceId(awsXAmznTraceId);
   const rootArr = Root.split('-');
   const currentTime = Math.floor(Date.now() / 1000).toString(16);
   return `Root=${rootArr[0]}-${currentTime}-${transactionId};Parent=${Parent};Sampled=${Sampled}`;
 };
 
-export const isPromise = (obj) => obj && obj.then && typeof obj.then === 'function';
+export const isPromise = (obj: any): boolean => typeof obj?.then === 'function';
 
-export const getAWSEnvironment = () => {
+export const getAWSEnvironment = (): AwsEnvironment => {
   const {
     AWS_REGION: awsRegion,
     _X_AMZN_TRACE_ID: awsXAmznTraceId,
@@ -148,12 +156,12 @@ const SCRUB_KNOWN_SERVICES_FLAG = 'LUMIGO_SCRUB_KNOWN_SERVICES';
 const LUMIGO_LOG_PREFIX = '[LUMIGO_LOG]';
 const LUMIGO_LOG_PREFIX_FLAG = 'LUMIGO_LOG_PREFIX';
 
-const validateEnvVar = (envVar, value = 'TRUE') =>
+const validateEnvVar = (envVar: string, value: string = 'TRUE'): boolean =>
   !!(process.env[envVar] && process.env[envVar].toUpperCase() === value.toUpperCase());
 
 export const isAwsEnvironment = () => !!process.env['LAMBDA_RUNTIME_DIR'];
 
-export const getEnvVarAsList = (key, def) => {
+export const getEnvVarAsList = (key: string, def: string[]): string[] => {
   if (process.env[key] != null) {
     return process.env[key].split(',');
   }
@@ -171,12 +179,13 @@ export const safeGet = (obj, arr, dflt = null) => {
   return current || dflt;
 };
 
-export const isTimeoutTimerEnabled = () => !validateEnvVar(TIMEOUT_ENABLE_FLAG, 'FALSE');
+export const isTimeoutTimerEnabled = (): boolean => !validateEnvVar(TIMEOUT_ENABLE_FLAG, 'FALSE');
 
-export const getTimeoutTimerBuffer = () => {
+export const getTimeoutTimerBuffer = (): number => {
   if (process.env[TIMEOUT_BUFFER_FLAG_MS]) return parseFloat(process.env[TIMEOUT_BUFFER_FLAG_MS]);
   if (process.env[TIMEOUT_BUFFER_FLAG]) return parseFloat(process.env[TIMEOUT_BUFFER_FLAG]) * 1000;
   const { context } = TracerGlobals.getHandlerInputs();
+  // @ts-ignore
   const { remainingTimeInMillis } = getContextInfo(context);
   return Math.max(500, Math.min(remainingTimeInMillis / 10, 3000));
 };
@@ -198,25 +207,29 @@ export const isVerboseMode = () => validateEnvVar(VERBOSE_FLAG);
 export const isProvisionConcurrencyInitialization = () =>
   process.env.AWS_LAMBDA_INITIALIZATION_TYPE === 'provisioned-concurrency';
 
-export const isWarm = () => validateEnvVar(WARM_FLAG) || isProvisionConcurrencyInitialization();
+export const isWarm = (): boolean =>
+  validateEnvVar(WARM_FLAG) || isProvisionConcurrencyInitialization();
 
-export const isDebug = () => validateEnvVar(DEBUG_FLAG) || TracerGlobals.getTracerInputs().debug;
+export const isDebug = (): boolean =>
+  validateEnvVar(DEBUG_FLAG) || TracerGlobals.getTracerInputs().debug;
 
-export const isLambdaWrapped = () => validateEnvVar(WRAPPED_FLAG);
+export const isLambdaWrapped = (): boolean => validateEnvVar(WRAPPED_FLAG);
 
-export const setLambdaWrapped = () => (process.env[WRAPPED_FLAG] = 'TRUE');
+export const setLambdaWrapped = (): void => {
+  process.env[WRAPPED_FLAG] = 'TRUE';
+};
 
-export const isStoreLogs = () => validateEnvVar(STORE_LOGS_FLAG);
+export const isStoreLogs = (): boolean => validateEnvVar(STORE_LOGS_FLAG);
 
-export const isReuseHttpConnection = () => validateEnvVar(REUSE_CONNECTION);
+export const isReuseHttpConnection = (): boolean => validateEnvVar(REUSE_CONNECTION);
 
-export const isSendOnlyIfErrors = () => validateEnvVar(SEND_ONLY_IF_ERROR_FLAG);
+export const isSendOnlyIfErrors = (): boolean => validateEnvVar(SEND_ONLY_IF_ERROR_FLAG);
 
-export const isPruneTraceOff = () => validateEnvVar(PRUNE_TRACE_OFF_FLAG);
+export const isPruneTraceOff = (): boolean => validateEnvVar(PRUNE_TRACE_OFF_FLAG);
 
-export const isKeepHeadersOn = () => validateEnvVar(KEEP_HEADERS);
+export const isKeepHeadersOn = (): boolean => validateEnvVar(KEEP_HEADERS);
 
-export const isSwitchedOff = () =>
+export const isSwitchedOff = (): boolean =>
   safeExecute(
     () =>
       validateEnvVar(SWITCH_OFF_FLAG) ||
@@ -224,7 +237,7 @@ export const isSwitchedOff = () =>
       !isValidAlias()
   )();
 
-export const isStepFunction = () =>
+export const isStepFunction = (): boolean =>
   validateEnvVar(IS_STEP_FUNCTION_FLAG) || TracerGlobals.getTracerInputs().isStepFunction;
 
 export const getValidAliases = () =>
@@ -232,12 +245,17 @@ export const getValidAliases = () =>
     return JSON.parse(process.env['LUMIGO_VALID_ALIASES'] || '[]');
   })() || [];
 
-export const getHandlerContext = () => TracerGlobals.getHandlerInputs().context || {};
-
 export const getMaxRequestSize = () => TracerGlobals.getTracerInputs().maxSizeForRequest;
 
-export const getInvokedArn = () => getHandlerContext().invokedFunctionArn || '';
-export const getInvokedVersion = () => getHandlerContext().functionVersion || '';
+export const getInvokedArn = () => {
+  // @ts-ignore
+  return TracerGlobals.getHandlerInputs().context.invokedFunctionArn || '';
+};
+
+export const getInvokedVersion = () => {
+  // @ts-ignore
+  return TracerGlobals.getHandlerInputs().context.functionVersion || '';
+};
 
 export const getInvokedAliasOrNull = () =>
   safeExecute(() => {
@@ -321,7 +339,7 @@ export const getRandomId = () => {
   return `${p1}-${p2}-${p3}-${p4}-${p5}`;
 };
 
-export const isAwsService = (host, responseData) => {
+export const isAwsService = (host, responseData = undefined): boolean => {
   if (host && host.includes('amazonaws.com')) {
     return true;
   }
@@ -354,7 +372,7 @@ export const removeLumigoFromStacktrace = (handleReturnValue) => {
   }
 };
 
-export const getAwsEdgeHost = () => {
+export const getAwsEdgeHost = (): string => {
   const { awsRegion } = getAWSEnvironment();
   return `${awsRegion}.${LUMIGO_TRACER_EDGE}`;
 };
@@ -380,7 +398,7 @@ export const spanHasErrors = (span) =>
       span.info.httpInfo.response.statusCode > 400)
   );
 
-export const getEdgeUrl = () => {
+export const getEdgeUrl = (): EdgeUrl => {
   const host = getEdgeHost();
   const path = SPAN_PATH;
   const url = `https://${host}${path}`;
@@ -395,7 +413,8 @@ export const getJSONBase64Size = (obj) => {
 export const parseQueryParams = (queryParams) => {
   if (typeof queryParams !== 'string') return {};
   let obj = {};
-  queryParams.replace(/([^=&]+)=([^&]*)/g, function (m, key, value) {
+  // @ts-ignore
+  queryParams.replace(/([^=&]+)=([^&]*)/g, (m, key, value) => {
     obj[decodeURIComponent(key)] = decodeURIComponent(value);
   });
   return obj;
@@ -406,11 +425,11 @@ const domainScrubbers = () =>
     (x) => new RegExp(x, 'i')
   );
 
-export const shouldScrubDomain = (url, domains = domainScrubbers()) => {
+export const shouldScrubDomain = (url, domains = domainScrubbers()): boolean => {
   return !!url && domains.some((regex) => url.match(regex));
 };
 
-export const parseJsonFromEnvVar = (envVar, warnClient = false) => {
+export const parseJsonFromEnvVar = (envVar, warnClient = false): {} | undefined => {
   try {
     return JSON.parse(process.env[envVar]);
   } catch (e) {
@@ -420,11 +439,11 @@ export const parseJsonFromEnvVar = (envVar, warnClient = false) => {
 };
 
 export const safeExecute = (
-  callback,
-  message = 'Error in Lumigo tracer',
-  logLevel = logger.LOG_LEVELS.WARNING,
-  defaultReturn = undefined
-) =>
+  callback: Function,
+  message: string = 'Error in Lumigo tracer',
+  logLevel: string = logger.LOG_LEVELS.WARNING,
+  defaultReturn: any = undefined
+): Function =>
   function (...args) {
     try {
       return callback.apply(this, args);
@@ -438,7 +457,7 @@ export const recursiveGetKey = (event, keyToSearch) => {
   return recursiveGetKeyByDepth(event, keyToSearch, recursiveGetKeyDepth());
 };
 
-const recursiveGetKeyDepth = () => {
+const recursiveGetKeyDepth = (): number => {
   return parseInt(process.env[GET_KEY_DEPTH_ENV_KEY]) || DEFAULT_GET_KEY_DEPTH;
 };
 
@@ -461,7 +480,7 @@ const recursiveGetKeyByDepth = (event, keyToSearch, maxDepth) => {
   return foundValue;
 };
 
-export const md5Hash = (item) => {
+export const md5Hash = (item: {}): string | undefined => {
   try {
     const md5sum = crypto.createHash('md5');
     md5sum.update(sortify(item));
@@ -472,16 +491,17 @@ export const md5Hash = (item) => {
   }
 };
 
-export const isEncodingType = (encodingType) =>
+export const isEncodingType = (encodingType): boolean =>
   !!(
     encodingType &&
     typeof encodingType === 'string' &&
     ['ascii', 'utf8', 'utf16le', 'ucs2', 'base64', 'binary', 'hex'].includes(encodingType)
   );
 
-export const isEmptyString = (str) => !!(!str || (typeof str === 'string' && str.length === 0));
+export const isEmptyString = (str): boolean =>
+  !!(!str || (typeof str === 'string' && str.length === 0));
 
-export const runOneTimeWrapper = (func, context) => {
+export const runOneTimeWrapper = (func: Function, context: any): Function => {
   let done = false;
   return (...args) => {
     if (!done) {
@@ -492,4 +512,5 @@ export const runOneTimeWrapper = (func, context) => {
   };
 };
 
+// @ts-ignore
 export const removeDuplicates = (arr) => [...new Set(arr)];
