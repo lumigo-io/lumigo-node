@@ -296,6 +296,9 @@ describe('tracer', () => {
   });
 
   test('promisifyUserHandler async ', async () => {
+    spies.getContextInfo.mockReturnValueOnce({
+      remainingTimeInMillis: 1000,
+    });
     const event = { a: 'b', c: 'd' };
     const context = { e: 'f', g: 'h' };
     const data = 'Satoshi was here';
@@ -327,6 +330,13 @@ describe('tracer', () => {
   });
 
   test('promisifyUserHandler non async', async () => {
+    spies.getContextInfo
+      .mockReturnValueOnce({
+        remainingTimeInMillis: 1000,
+      })
+      .mockReturnValueOnce({
+        remainingTimeInMillis: 1000,
+      });
     const event = { a: 'b', c: 'd' };
     const context = { e: 'f', g: 'h' };
     const err = new Error('w00t');
@@ -361,6 +371,9 @@ describe('tracer', () => {
   });
 
   test('trace; no context', async () => {
+    spies.getContextInfo.mockReturnValueOnce({
+      remainingTimeInMillis: 1000,
+    });
     const token = TOKEN;
     const lumigoTracer = require('./index')({ token });
 
@@ -375,6 +388,13 @@ describe('tracer', () => {
   });
 
   test('trace; non async callbacked', async (done) => {
+    spies.getContextInfo
+      .mockReturnValueOnce({
+        remainingTimeInMillis: 1000,
+      })
+      .mockReturnValueOnce({
+        remainingTimeInMillis: 1000,
+      });
     const token = TOKEN;
     const lumigoTracer = require('./index')({ token });
 
@@ -394,6 +414,16 @@ describe('tracer', () => {
   });
 
   test('trace; imported twice', async (done) => {
+    spies.getContextInfo
+      .mockReturnValueOnce({
+        remainingTimeInMillis: 1000,
+      })
+      .mockReturnValueOnce({
+        remainingTimeInMillis: 1000,
+      })
+      .mockReturnValueOnce({
+        remainingTimeInMillis: 1000,
+      });
     const token = TOKEN;
     const lumigoTracer1 = require('./index')({ token });
     const lumigoTracer2 = require('./index')({ token });
@@ -415,6 +445,13 @@ describe('tracer', () => {
   });
 
   test('trace; non async throw error', async () => {
+    spies.getContextInfo
+      .mockReturnValueOnce({
+        remainingTimeInMillis: 1000,
+      })
+      .mockReturnValueOnce({
+        remainingTimeInMillis: 1000,
+      });
     const token = TOKEN;
     const lumigoTracer = require('./index')({ token });
 
@@ -433,6 +470,9 @@ describe('tracer', () => {
   });
 
   test('trace; async callbacked ', async (done) => {
+    spies.getContextInfo.mockReturnValueOnce({
+      remainingTimeInMillis: 1000,
+    });
     const event = { a: 'b', c: 'd' };
     const context = { e: 'f', g: 'h' };
     const token = TOKEN;
@@ -452,6 +492,13 @@ describe('tracer', () => {
   });
 
   test('trace; async resolved ', async () => {
+    spies.getContextInfo
+      .mockReturnValueOnce({
+        remainingTimeInMillis: 1000,
+      })
+      .mockReturnValueOnce({
+        remainingTimeInMillis: 1000,
+      });
     const token = TOKEN;
     const lumigoTracer = require('./index')({ token });
     expect(spies.warnClient).toHaveBeenCalledTimes(0);
@@ -473,6 +520,13 @@ describe('tracer', () => {
   });
 
   test('trace; async rejected', async () => {
+    spies.getContextInfo
+      .mockReturnValueOnce({
+        remainingTimeInMillis: 1000,
+      })
+      .mockReturnValueOnce({
+        remainingTimeInMillis: 1000,
+      });
     const token = TOKEN;
     const lumigoTracer = require('./index')({ token });
 
@@ -600,6 +654,25 @@ describe('tracer', () => {
   });
 
   test('can not wrap twice', async () => {
+    spies.getContextInfo
+      .mockReturnValueOnce({
+        remainingTimeInMillis: 1000,
+      })
+      .mockReturnValueOnce({
+        remainingTimeInMillis: 1000,
+      })
+      .mockReturnValueOnce({
+        remainingTimeInMillis: 1000,
+      })
+      .mockReturnValueOnce({
+        remainingTimeInMillis: 1000,
+      })
+      .mockReturnValueOnce({
+        remainingTimeInMillis: 1000,
+      })
+      .mockReturnValueOnce({
+        remainingTimeInMillis: 1000,
+      });
     const token = TOKEN;
     const lumigoTracer = require('./index')({ token });
 
@@ -631,6 +704,13 @@ describe('tracer', () => {
   });
 
   test('No exception at startHooks', async (done) => {
+    spies.getContextInfo
+      .mockReturnValueOnce({
+        remainingTimeInMillis: 1000,
+      })
+      .mockReturnValueOnce({
+        remainingTimeInMillis: 1000,
+      });
     Http.hookHttp.mockImplementationOnce(() => {
       throw new Error('Mocked error');
     });
@@ -642,6 +722,13 @@ describe('tracer', () => {
   });
 
   test('No exception at initialization', async (done) => {
+    spies.getContextInfo
+      .mockReturnValueOnce({
+        remainingTimeInMillis: 1000,
+      })
+      .mockReturnValueOnce({
+        remainingTimeInMillis: 1000,
+      });
     const mockedTracerGlobals = jest.spyOn(TracerGlobals, 'setHandlerInputs');
     mockedTracerGlobals.mockImplementationOnce(() => {
       throw new Error('Mocked error');
@@ -656,6 +743,13 @@ describe('tracer', () => {
   });
 
   test('performStepFunctionLogic - performStepFunctionLogic doesnt call if not step function', async () => {
+    spies.getContextInfo
+      .mockReturnValueOnce({
+        remainingTimeInMillis: 1000,
+      })
+      .mockReturnValueOnce({
+        remainingTimeInMillis: 1000,
+      });
     const handler = jest.fn(async () => {});
 
     await tracer.trace({ stepFunction: false })(handler)({}, {});
@@ -664,6 +758,13 @@ describe('tracer', () => {
   });
 
   test('performStepFunctionLogic - Happy flow', async () => {
+    spies.getContextInfo
+      .mockReturnValueOnce({
+        remainingTimeInMillis: 1000,
+      })
+      .mockReturnValueOnce({
+        remainingTimeInMillis: 1000,
+      });
     const handler = jest.fn(async () => ({ hello: 'world' }));
     spies.getRandomId.mockReturnValueOnce('123');
 
@@ -678,6 +779,13 @@ describe('tracer', () => {
   });
 
   test('performStepFunctionLogic - Error should be contained', async () => {
+    spies.getContextInfo
+      .mockReturnValueOnce({
+        remainingTimeInMillis: 1000,
+      })
+      .mockReturnValueOnce({
+        remainingTimeInMillis: 1000,
+      });
     const handler = jest.fn(async () => ({ hello: 'world' }));
     spies.getRandomId.mockReturnValueOnce('123');
     Http.addStepFunctionEvent.mockImplementationOnce(() => {

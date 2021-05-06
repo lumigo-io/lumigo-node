@@ -90,7 +90,7 @@ export class Http {
     }
     return { url, options, callback };
   }
-
+  @Timer.timedSync()
   static getHostFromOptionsOrUrl(options, url) {
     if (url) {
       return new URL(url).hostname;
@@ -102,6 +102,7 @@ export class Http {
     return host === getEdgeHost() || hostBlaclist.has(host);
   }
 
+  @Timer.timedSync()
   static parseHttpRequestOptions(options: ParseHttpRequestOptions = {}, url) {
     const host = Http.getHostFromOptionsOrUrl(options, url);
     const agent = options.agent || options._defaultAgent;
@@ -210,7 +211,7 @@ export class Http {
 
   static httpRequestWriteBeforeHookWrapper(requestData, currentSpan) {
     return function (args) {
-      //Here
+      Timer.start();
       if (isEmptyString(requestData.body)) {
         const body = extractBodyFromWriteFunc(args);
         if (body) {
@@ -218,9 +219,11 @@ export class Http {
           if (currentSpan) currentSpan.info.httpInfo = getHttpInfo(requestData, {});
         }
       }
+      Timer.pause();
     };
   }
 
+  @Timer.timedSync()
   static addStepFunctionEvent(messageId) {
     // @ts-ignore
     const awsRequestId = TracerGlobals.getHandlerInputs().context.awsRequestId;
@@ -262,6 +265,7 @@ export class Http {
     const payloadSize = getEventEntitySize();
     return function (args) {
       //Here
+      Timer.start();
       const receivedTime = new Date().getTime();
       const { headers, statusCode } = response;
       if (args[0] === 'data') {
@@ -289,6 +293,7 @@ export class Http {
         }
         SpansContainer.addSpan(httpSpan);
       }
+      Timer.pause();
     };
   }
 

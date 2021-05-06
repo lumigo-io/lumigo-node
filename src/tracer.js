@@ -22,7 +22,14 @@ import {
   isSpanIsFromAnotherInvocation,
 } from './spans/awsSpan';
 import { sendSingleSpan, sendSpans } from './reporter';
-import { TracerGlobals, SpansContainer, GlobalTimer, clearGlobals, Timer } from './globals';
+import {
+  TracerGlobals,
+  SpansContainer,
+  GlobalTimer,
+  clearGlobals,
+  Timer,
+  DEFAULT_TRACER_TIMEOUT,
+} from './globals';
 import * as logger from './logger';
 import { Http } from './hooks/Http';
 
@@ -33,8 +40,6 @@ export const NON_ASYNC_HANDLER_ERRORED = 'non_async_errored';
 export const MAX_ELEMENTS_IN_EXTRA = 10;
 export const LEAK_MESSAGE =
   'Execution leak detected. More information is available in: https://docs.lumigo.io/docs/execution-leak-detected';
-
-Timer.init(process.env.LUMIGO_TRACER_TIMEOUT || 500);
 
 const setupTimeoutTimer = () => {
   logger.debug('Timeout timer set-up started');
@@ -54,7 +59,6 @@ const setupTimeoutTimer = () => {
 
 export const startTrace = async () => {
   try {
-    Timer.start();
     if (!isSwitchedOff() && isAwsEnvironment()) {
       const tracerInputs = TracerGlobals.getTracerInputs();
       const handlerInputs = TracerGlobals.getHandlerInputs();
@@ -127,6 +131,9 @@ export const callbackResolver = (resolve) => (err, data) =>
 export const promisifyUserHandler = (userHandler, event, context) =>
   new Promise((resolve) => {
     try {
+      const { remainingTimeInMillis } = getContextInfo(context);
+      const tracerDuration = Math.min(DEFAULT_TRACER_TIMEOUT, remainingTimeInMillis / 5);
+      Timer.init(process.env.LUMIGO_TRACER_TIMEOUT || tracerDuration);
       const result = userHandler(event, context, callbackResolver(resolve));
       if (isPromise(result)) {
         result

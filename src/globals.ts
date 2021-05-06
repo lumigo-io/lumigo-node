@@ -1,10 +1,12 @@
 import * as logger from './logger';
 import { Context } from 'aws-lambda';
+import { getContextInfo } from './utils';
 const MAX_TAGS = 50;
 const MAX_TAG_KEY_LEN = 50;
 const MAX_TAG_VALUE_LEN = 50;
 const ADD_TAG_ERROR_MSG_PREFIX = 'Skipping addExecutionTag: Unable to add tag';
 export const DEFAULT_MAX_SIZE_FOR_REQUEST = 1000 * 1000;
+export const DEFAULT_TRACER_TIMEOUT = 500;
 
 export const Timer = (() => {
   let time = 0;
@@ -31,16 +33,27 @@ export const Timer = (() => {
     logger.warnClient('Lumigo tracer reached its timeout and will no longer collect data');
   }, {});
 
-  const init = (duration) => {
+  const init = (duration: number) => {
     time = 0;
     startTime = 0;
     state = 'idle';
     _duration = duration;
   };
 
+  function isContext(context: Context | {}): context is Context {
+    return (context as Context).getRemainingTimeInMillis !== undefined;
+  }
+
   const start = () => {
     if (state === 'stopped') {
-      init(process.env.LUMIGO_TRACER_TIMEOUT || 500);
+      const { context } = TracerGlobals.getHandlerInputs();
+      if (isContext(context)) {
+        const { remainingTimeInMillis } = getContextInfo(context);
+        const tracerDuration = Math.min(500, remainingTimeInMillis / 5);
+        Timer.init(parseInt(process.env.LUMIGO_TRACER_TIMEOUT) || tracerDuration);
+      } else {
+        Timer.init(parseInt(process.env.LUMIGO_TRACER_TIMEOUT) || DEFAULT_TRACER_TIMEOUT);
+      }
     }
     if (state === 'idle') {
       startTime = new Date().getTime();
@@ -67,10 +80,6 @@ export const Timer = (() => {
       warnTimeout();
     }
     return res;
-  };
-
-  const getState = () => {
-    return state;
   };
 
   const getTime = () => {
@@ -115,7 +124,7 @@ export const Timer = (() => {
       return descriptor;
     };
   };
-  return { timedSync, timedAsync, stop, getTime, getState, isTimePassed, pause, start, init };
+  return { timedSync, timedAsync, stop, getTime, isTimePassed, pause, start, init };
 })();
 
 export const SpansContainer = (() => {

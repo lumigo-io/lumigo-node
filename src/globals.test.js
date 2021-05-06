@@ -1,8 +1,12 @@
 import * as globals from './globals';
 import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
 import { DEFAULT_MAX_SIZE_FOR_REQUEST, Timer } from './globals';
+import * as logger from './logger';
 
 describe('globals', () => {
+  const spies = {};
+  spies.logger = jest.spyOn(logger, 'warnClient');
+
   describe('Timer - tests', () => {
     function timeout(ms) {
       return new Promise((resolve) => setTimeout(resolve, ms));
@@ -35,6 +39,9 @@ describe('globals', () => {
       Timer.start();
       await timeout(10);
       expect(Timer.isTimePassed()).toEqual(true);
+      expect(spies.logger).toBeCalledWith(
+        'Lumigo tracer reached its timeout and will no longer collect data'
+      );
     });
 
     test('test timer decorator for class methods', async () => {
