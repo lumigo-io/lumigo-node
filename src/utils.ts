@@ -3,11 +3,8 @@ import * as crypto from 'crypto';
 import * as logger from './logger';
 import { sortify } from './tools/jsonSortify';
 import { Context } from 'aws-lambda';
-import { int } from 'aws-sdk/clients/datapipeline';
 import { EdgeUrl } from './types/common/edgeTypes';
 import { AwsEnvironment, ContextInfo } from './types/aws/awsEnvironment';
-import { thumbprintListType } from 'aws-sdk/clients/iam';
-import { isAwsContext } from './guards/awsGuards';
 
 export const SPAN_PATH = '/api/spans';
 export const LUMIGO_TRACER_EDGE = 'lumigo-tracer-edge.golumigo.com';

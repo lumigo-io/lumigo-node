@@ -22,9 +22,9 @@ import {
   isSpanIsFromAnotherInvocation,
 } from './spans/awsSpan';
 import { sendSingleSpan, sendSpans } from './reporter';
-import { TracerGlobals, SpansContainer, GlobalTimer, clearGlobals } from './globals';
+import { TracerGlobals, SpansContainer, GlobalTimer, clearGlobals, Timer } from './globals';
 import * as logger from './logger';
-import { addStepFunctionEvent } from './hooks/http';
+import { Http } from './hooks/Http';
 
 export const HANDLER_CALLBACKED = 'handler_callbacked';
 export const ASYNC_HANDLER_RESOLVED = 'async_handler_resolved';
@@ -33,6 +33,8 @@ export const NON_ASYNC_HANDLER_ERRORED = 'non_async_errored';
 export const MAX_ELEMENTS_IN_EXTRA = 10;
 export const LEAK_MESSAGE =
   'Execution leak detected. More information is available in: https://docs.lumigo.io/docs/execution-leak-detected';
+
+Timer.init(process.env.LUMIGO_TRACER_TIMEOUT || 500);
 
 const setupTimeoutTimer = () => {
   logger.debug('Timeout timer set-up started');
@@ -52,6 +54,7 @@ const setupTimeoutTimer = () => {
 
 export const startTrace = async () => {
   try {
+    Timer.start();
     if (!isSwitchedOff() && isAwsEnvironment()) {
       const tracerInputs = TracerGlobals.getTracerInputs();
       const handlerInputs = TracerGlobals.getHandlerInputs();
@@ -161,7 +164,7 @@ export const performStepFunctionLogic = (handlerReturnValue) => {
       const { err, data, type } = handlerReturnValue;
       const messageId = getRandomId();
 
-      addStepFunctionEvent(messageId);
+      Http.addStepFunctionEvent(messageId);
 
       const modifiedData = Object.assign(data, {
         [LUMIGO_EVENT_KEY]: { [STEP_FUNCTION_UID_KEY]: messageId },
@@ -176,6 +179,7 @@ export const trace = ({ token, debug, edgeHost, switchOff, eventFilter, stepFunc
   userHandler
 ) => async (event, context, callback) => {
   try {
+    Timer.start();
     TracerGlobals.setHandlerInputs({ event, context });
     TracerGlobals.setTracerInputs({
       token,

@@ -5,6 +5,7 @@ module.exports = {
   collectCoverage: true,
   collectCoverageFrom: [
     '**/src/**/**/**/**.js',
+    '**/src/**/**/**/**.ts',
     '!./src/tools/xmlToJson.js',
     '!./src/testdata/functions/**/**.js',
     '!./d_example/**/**',

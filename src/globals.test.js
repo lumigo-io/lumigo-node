@@ -1,8 +1,63 @@
 import * as globals from './globals';
 import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
-import { DEFAULT_MAX_SIZE_FOR_REQUEST } from './globals';
+import { DEFAULT_MAX_SIZE_FOR_REQUEST, Timer } from './globals';
 
 describe('globals', () => {
+  describe('Timer - tests', () => {
+    function timeout(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+    test('test timer time is increased and paused as expected', async () => {
+      Timer.init(1000);
+      // start
+      Timer.start();
+      await timeout(10);
+      // pause
+      Timer.pause();
+      await timeout(10);
+      // start
+      Timer.start();
+      await timeout(10);
+      // pause
+      Timer.pause();
+      await timeout(10);
+      // start
+      Timer.start();
+      await timeout(5);
+      Timer.pause();
+      const time = Timer.getTime();
+      expect(time).toBeGreaterThanOrEqual(25);
+      expect(time).toBeLessThanOrEqual(35);
+      expect(Timer.isTimePassed()).toBe(false);
+    });
+    test('test timer event is called after duration', async () => {
+      Timer.init(5);
+      Timer.start();
+      await timeout(10);
+      expect(Timer.isTimePassed()).toEqual(true);
+    });
+
+    test('test timer decorator for class methods', async () => {
+      Timer.init(110);
+      class A {
+        @Timer.timedAsync()
+        async a() {
+          await timeout(100);
+        }
+      }
+      const a = new A();
+      await a.a();
+      await timeout(20);
+      expect(Timer.getTime()).toBeLessThanOrEqual(110);
+      expect(Timer.getTime()).toBeGreaterThanOrEqual(100);
+      await a.a();
+      await timeout(10);
+      expect(Timer.isTimePassed()).toBe(true);
+      expect(Timer.getTime()).toBeLessThanOrEqual(220);
+      expect(Timer.getTime()).toBeGreaterThanOrEqual(200);
+    });
+  });
+
   test('SpansContainer - simple flow', () => {
     const span1 = { a: 'b', c: 'd', id: '1' };
     const span2 = { e: 'f', g: 'h', id: '2' };

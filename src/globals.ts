@@ -1,11 +1,122 @@
 import * as logger from './logger';
 import { Context } from 'aws-lambda';
-
 const MAX_TAGS = 50;
 const MAX_TAG_KEY_LEN = 50;
 const MAX_TAG_VALUE_LEN = 50;
 const ADD_TAG_ERROR_MSG_PREFIX = 'Skipping addExecutionTag: Unable to add tag';
 export const DEFAULT_MAX_SIZE_FOR_REQUEST = 1000 * 1000;
+
+export const Timer = (() => {
+  let time = 0;
+
+  type CockState = 'stopped' | 'idle' | 'counting';
+
+  let state: CockState = 'stopped';
+  let startTime = 0;
+  let _duration = 0;
+
+  // since utils uses globals had to duplicate function
+  const runOneTimeWrapper = (func: Function, context: any): Function => {
+    let done = false;
+    return (...args) => {
+      if (!done) {
+        const result = func.apply(context || this, args);
+        done = true;
+        return result;
+      }
+    };
+  };
+
+  const warnTimeout = runOneTimeWrapper(() => {
+    logger.warnClient('Lumigo tracer reached its timeout and will no longer collect data');
+  }, {});
+
+  const init = (duration) => {
+    time = 0;
+    startTime = 0;
+    state = 'idle';
+    _duration = duration;
+  };
+
+  const start = () => {
+    if (state === 'stopped') {
+      init(process.env.LUMIGO_TRACER_TIMEOUT || 500);
+    }
+    if (state === 'idle') {
+      startTime = new Date().getTime();
+      state = 'counting';
+    }
+  };
+
+  const pause = () => {
+    if (state === 'counting') {
+      time += new Date().getTime() - startTime;
+      state = 'idle';
+    }
+  };
+
+  const isTimePassed = () => {
+    let res: boolean;
+    if (state === 'counting') {
+      let now = new Date().getTime();
+      res = time + (now - startTime) > _duration;
+    } else {
+      res = time > _duration;
+    }
+    if (res) {
+      warnTimeout();
+    }
+    return res;
+  };
+
+  const getState = () => {
+    return state;
+  };
+
+  const getTime = () => {
+    if (state === 'counting') return time + new Date().getTime() - startTime;
+    else return time;
+  };
+
+  const stop = () => {
+    time = 0;
+    startTime = 0;
+    state = 'stopped';
+  };
+
+  const timedAsync = () => {
+    // eslint-disable-next-line no-undef
+    return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+      const originalMethod = descriptor.value;
+
+      descriptor.value = async function (...args: any[]) {
+        start();
+        const result = await originalMethod.apply(this, args);
+        pause();
+        return result;
+      };
+
+      return descriptor;
+    };
+  };
+
+  const timedSync = () => {
+    // eslint-disable-next-line no-undef
+    return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+      const originalMethod = descriptor.value;
+
+      descriptor.value = function (...args: any[]) {
+        start();
+        const result = originalMethod.apply(this, args);
+        pause();
+        return result;
+      };
+
+      return descriptor;
+    };
+  };
+  return { timedSync, timedAsync, stop, getTime, getState, isTimePassed, pause, start, init };
+})();
 
 export const SpansContainer = (() => {
   let spansToSend = {};
@@ -171,6 +282,7 @@ export const TracerGlobals = (() => {
 })();
 
 export const clearGlobals = () => {
+  Timer.stop();
   SpansContainer.clearSpans();
   TracerGlobals.clearHandlerInputs();
   GlobalTimer.clearTimer();

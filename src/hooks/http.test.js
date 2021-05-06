@@ -1,6 +1,5 @@
 import { lowerCaseObjectKeys } from '../utils';
 import EventEmitter from 'events';
-import { wrapHttpLib } from './http';
 import MockDate from 'mockdate';
 import * as shimmer from 'shimmer';
 import { HttpSpanBuilder } from '../../testUtils/httpSpanBuilder';
@@ -10,11 +9,11 @@ import {
   HttpsRequestsForTesting,
 } from '../../testUtils/httpsMocker';
 
-import * as httpHook from './http';
 import * as utils from '../utils';
 import { clearGlobals, SpansContainer, TracerGlobals } from '../globals';
 import { HandlerInputesBuilder } from '../../testUtils/handlerInputesBuilder';
 import { getCurrentTransactionId } from '../spans/awsSpan';
+import { Http } from './Http';
 
 describe('http hook', () => {
   process.env['AWS_REGION'] = 'us-east-x';
@@ -33,8 +32,8 @@ describe('http hook', () => {
     const host = 'asdf';
     const edgeHost = 'us-east-x.lumigo-tracer-edge.golumigo.com';
     TracerGlobals.setTracerInputs({ ...TracerGlobals.getTracerInputs(), edgeHost });
-    expect(httpHook.isBlacklisted(host)).toBe(false);
-    expect(httpHook.isBlacklisted(edgeHost)).toBe(true);
+    expect(Http.isBlacklisted(host)).toBe(false);
+    expect(Http.isBlacklisted(edgeHost)).toBe(true);
   });
 
   test('httpRequestEmitBeforeHookWrapper -> outputData flow', () => {
@@ -44,7 +43,7 @@ describe('http hook', () => {
     const randomRequstId = 'REQ';
     const awsRequestId = HttpSpanBuilder.DEFAULT_PARENT_ID;
     const transactionId = HttpSpanBuilder.DEFAULT_TRANSACTION_ID;
-    const wrapper = httpHook.httpRequestEmitBeforeHookWrapper(
+    const wrapper = Http.httpRequestEmitBeforeHookWrapper(
       transactionId,
       awsRequestId,
       requestData,
@@ -78,11 +77,7 @@ describe('http hook', () => {
         output: ['HTTP BODY1\nHTTP BODY2'],
       },
     };
-    const wrapper = httpHook.httpRequestEmitBeforeHookWrapper(
-      transactionId,
-      awsRequestId,
-      requestData
-    );
+    const wrapper = Http.httpRequestEmitBeforeHookWrapper(transactionId, awsRequestId, requestData);
     wrapper([emitEventName, emitArg]);
 
     expect(requestData).toEqual({
@@ -103,7 +98,7 @@ describe('http hook', () => {
       },
     };
 
-    const wrapper = httpHook.httpRequestEmitBeforeHookWrapper(requestData);
+    const wrapper = Http.httpRequestEmitBeforeHookWrapper(requestData);
     wrapper(emitEventName, emitArg);
 
     expect(requestData).toEqual({ body: '' });
@@ -116,7 +111,7 @@ describe('http hook', () => {
 
     const firstArg = 'BODY';
 
-    const wrapper = httpHook.httpRequestWriteBeforeHookWrapper(requestData);
+    const wrapper = Http.httpRequestWriteBeforeHookWrapper(requestData);
     wrapper([firstArg]);
 
     expect(requestData).toEqual({ body: 'BODY' });
@@ -126,7 +121,7 @@ describe('http hook', () => {
     const requestData = {
       body: '',
     };
-    const wrapper = httpHook.httpRequestWriteBeforeHookWrapper(requestData);
+    const wrapper = Http.httpRequestWriteBeforeHookWrapper(requestData);
     const firstArg = Buffer.from('BODY');
 
     wrapper([firstArg]);
@@ -142,7 +137,7 @@ describe('http hook', () => {
     const firstArg = 'BODY';
     const secArg = 'base64';
 
-    const wrapper = httpHook.httpRequestWriteBeforeHookWrapper(requestData);
+    const wrapper = Http.httpRequestWriteBeforeHookWrapper(requestData);
     wrapper([firstArg, secArg]);
 
     expect(requestData).toEqual({ body: 'Qk9EWQ==' });
@@ -157,7 +152,7 @@ describe('http hook', () => {
     const secArg = 'utf8';
     const thirdArg = () => {};
 
-    const wrapper = httpHook.httpRequestWriteBeforeHookWrapper(requestData);
+    const wrapper = Http.httpRequestWriteBeforeHookWrapper(requestData);
     wrapper([firstArg, secArg, thirdArg]);
 
     expect(requestData).toEqual({ body: 'BODY' });
@@ -171,7 +166,7 @@ describe('http hook', () => {
     const firstArg = Buffer.from('BODY');
     const secArg = () => {};
 
-    const wrapper = httpHook.httpRequestWriteBeforeHookWrapper(requestData);
+    const wrapper = Http.httpRequestWriteBeforeHookWrapper(requestData);
     wrapper([firstArg, secArg]);
 
     expect(requestData).toEqual({ body: 'BODY' });
@@ -185,7 +180,7 @@ describe('http hook', () => {
     const firstArg = 'BODY';
     const secArg = () => {};
 
-    const wrapper = httpHook.httpRequestWriteBeforeHookWrapper(requestData);
+    const wrapper = Http.httpRequestWriteBeforeHookWrapper(requestData);
     wrapper([firstArg, secArg]);
 
     expect(requestData).toEqual({ body: 'BODY' });
@@ -198,7 +193,7 @@ describe('http hook', () => {
 
     const firstArg = Buffer.from('BODY2');
 
-    const wrapper = httpHook.httpRequestWriteBeforeHookWrapper(requestData);
+    const wrapper = Http.httpRequestWriteBeforeHookWrapper(requestData);
     wrapper([firstArg]);
 
     expect(requestData).toEqual({ body: 'BODY1' });
@@ -212,7 +207,7 @@ describe('http hook', () => {
     const firstArg = {};
     const secArg = {};
 
-    const wrapper = httpHook.httpRequestWriteBeforeHookWrapper(requestData);
+    const wrapper = Http.httpRequestWriteBeforeHookWrapper(requestData);
     wrapper(firstArg, secArg);
 
     expect(requestData).toEqual({ body: '' });
@@ -223,13 +218,13 @@ describe('http hook', () => {
     const options2 = { hostname: 'asdf2.com' };
     const options3 = { uri: { hostname: 'asdf3.com' } };
     const options4 = {};
-    expect(httpHook.getHostFromOptionsOrUrl(options1)).toEqual('asdf1.com');
-    expect(httpHook.getHostFromOptionsOrUrl(options2)).toEqual('asdf2.com');
-    expect(httpHook.getHostFromOptionsOrUrl(options3)).toEqual('asdf3.com');
-    expect(httpHook.getHostFromOptionsOrUrl(options4)).toEqual('localhost');
+    expect(Http.getHostFromOptionsOrUrl(options1)).toEqual('asdf1.com');
+    expect(Http.getHostFromOptionsOrUrl(options2)).toEqual('asdf2.com');
+    expect(Http.getHostFromOptionsOrUrl(options3)).toEqual('asdf3.com');
+    expect(Http.getHostFromOptionsOrUrl(options4)).toEqual('localhost');
 
     const url1 = 'https://asdf.io:1234/yo?ref=baba';
-    expect(httpHook.getHostFromOptionsOrUrl({}, url1)).toEqual('asdf.io');
+    expect(Http.getHostFromOptionsOrUrl({}, url1)).toEqual('asdf.io');
   });
 
   test('parseHttpRequestOptions', () => {
@@ -261,7 +256,7 @@ describe('http hook', () => {
       sendTime,
       body: '',
     };
-    expect(httpHook.parseHttpRequestOptions(options1)).toEqual(expected1);
+    expect(Http.parseHttpRequestOptions(options1)).toEqual(expected1);
 
     const url2 = 'https://asdf.io:1234/yo.php?ref=baba';
     const options2 = { headers, method: 'POST' };
@@ -281,7 +276,7 @@ describe('http hook', () => {
       sendTime: 895179612345,
     };
 
-    expect(httpHook.parseHttpRequestOptions(options2, url2)).toEqual(expected2);
+    expect(Http.parseHttpRequestOptions(options2, url2)).toEqual(expected2);
   });
 
   test('createEmitResponseHandler - add span simple flow', () => {
@@ -313,7 +308,7 @@ describe('http hook', () => {
 
     MockDate.set(testData.responseData.receivedTime);
 
-    httpHook.createEmitResponseHandler(
+    Http.createEmitResponseHandler(
       transactionId,
       'DummyParentId2',
       testData.requestData,
@@ -383,7 +378,7 @@ describe('http hook', () => {
 
     MockDate.set(testData.responseData.receivedTime);
 
-    httpHook.createEmitResponseHandler(
+    Http.createEmitResponseHandler(
       transactionId,
       'DummyParentId',
       testData.requestData,
@@ -440,7 +435,7 @@ describe('http hook', () => {
 
     MockDate.set(testData.responseData.receivedTime);
 
-    httpHook.createEmitResponseHandler(
+    Http.createEmitResponseHandler(
       transactionId,
       'DummyParentId',
       testData.requestData,
@@ -460,13 +455,13 @@ describe('http hook', () => {
     //This should raise exception
     const requestData = { host: 'dynamodb.amazonaws.com' };
 
-    httpHook.createEmitResponseHandler(requestData)({});
+    Http.createEmitResponseHandler(requestData)({});
     // No exception.
   });
 
   test('wrappedHttpResponseCallback no exception', () => {
     // Calling without params raising Exception
-    httpHook.createEmitResponseHandler()({});
+    Http.createEmitResponseHandler()({});
     // Assert No exception.
   });
 
@@ -477,13 +472,13 @@ describe('http hook', () => {
     const data = body;
     const encoding = 'utf8';
     const callback = jest.fn();
-    httpHook.httpRequestEndWrapper(requestData)([data, encoding, callback]);
+    Http.httpRequestEndWrapper(requestData)([data, encoding, callback]);
 
     expect(requestData).toEqual({ body: body });
   });
 
   test('httpRequestArguments -> no arguments', () => {
-    expect(() => httpHook.httpRequestArguments([])).toThrow(
+    expect(() => Http.httpRequestArguments([])).toThrow(
       new Error('http/s.request(...) was called without any arguments.')
     );
   });
@@ -494,7 +489,7 @@ describe('http hook', () => {
       options: undefined,
       callback: undefined,
     };
-    expect(httpHook.httpRequestArguments(['https://x.com'])).toEqual(expected1);
+    expect(Http.httpRequestArguments(['https://x.com'])).toEqual(expected1);
   });
 
   test('httpRequestArguments -> http(stringUrl, callback)', () => {
@@ -505,7 +500,7 @@ describe('http hook', () => {
       options: undefined,
       callback,
     };
-    expect(httpHook.httpRequestArguments(['https://x.com', callback])).toEqual(expected2);
+    expect(Http.httpRequestArguments(['https://x.com', callback])).toEqual(expected2);
   });
 
   test('httpRequestArguments -> http(stringUrl, options, callback)', () => {
@@ -516,7 +511,7 @@ describe('http hook', () => {
       options,
       callback,
     };
-    expect(httpHook.httpRequestArguments(['https://x.com', options, callback])).toEqual(expected3);
+    expect(Http.httpRequestArguments(['https://x.com', options, callback])).toEqual(expected3);
   });
 
   test('httpRequestArguments -> http(options, callback)', () => {
@@ -527,7 +522,7 @@ describe('http hook', () => {
       options,
       callback,
     };
-    expect(httpHook.httpRequestArguments([options, callback])).toEqual(expected4);
+    expect(Http.httpRequestArguments([options, callback])).toEqual(expected4);
   });
 
   test('httpRequestArguments -> http(objectUrl)', () => {
@@ -537,7 +532,7 @@ describe('http hook', () => {
       options: undefined,
       callback: undefined,
     };
-    expect(httpHook.httpRequestArguments([url])).toEqual(expected1);
+    expect(Http.httpRequestArguments([url])).toEqual(expected1);
   });
 
   test('httpRequestArguments -> http(objectUrl, options)', () => {
@@ -548,7 +543,7 @@ describe('http hook', () => {
       options,
       callback: undefined,
     };
-    expect(httpHook.httpRequestArguments([url, options])).toEqual(expected1);
+    expect(Http.httpRequestArguments([url, options])).toEqual(expected1);
   });
 
   test('httpRequestArguments -> http(objectUrl, callback)', () => {
@@ -559,7 +554,7 @@ describe('http hook', () => {
       options: undefined,
       callback,
     };
-    expect(httpHook.httpRequestArguments([url, callback])).toEqual(expected1);
+    expect(Http.httpRequestArguments([url, callback])).toEqual(expected1);
   });
 
   test('wrapHttpLib - simple flow', () => {
@@ -572,7 +567,7 @@ describe('http hook', () => {
       body: 'OK',
     };
 
-    wrapHttpLib(HttpsMocker);
+    Http.wrapHttpLib(HttpsMocker);
 
     const req = HttpsMocker.request(requestData, () => {});
     HttpsScenarioBuilder.appendNextResponse(req, responseData.body);
@@ -604,7 +599,7 @@ describe('http hook', () => {
       body: 'OK',
     };
 
-    wrapHttpLib(HttpsMocker);
+    Http.wrapHttpLib(HttpsMocker);
 
     const req = HttpsMocker.request(requestData);
     HttpsScenarioBuilder.appendNextResponse(req, responseData.body);
@@ -631,7 +626,7 @@ describe('http hook', () => {
     const handlerInputs = new HandlerInputesBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
 
-    wrapHttpLib(HttpsMocker);
+    Http.wrapHttpLib(HttpsMocker);
 
     TracerGlobals.setTracerInputs({ token: 'TOKEN' });
     clearGlobals();
@@ -657,7 +652,7 @@ describe('http hook', () => {
       body: 'OK',
     };
 
-    wrapHttpLib(HttpsMocker);
+    Http.wrapHttpLib(HttpsMocker);
 
     const req = HttpsMocker.request(requestData);
     HttpsScenarioBuilder.appendNextResponse(req, responseData.body);
@@ -674,7 +669,7 @@ describe('http hook', () => {
 
     HttpsScenarioBuilder.dontFinishNextRequest();
 
-    wrapHttpLib(HttpsMocker);
+    Http.wrapHttpLib(HttpsMocker);
     HttpsMocker.request(requestData, () => {});
 
     const spans = SpansContainer.getSpans();
@@ -706,7 +701,7 @@ describe('http hook', () => {
 
     HttpsScenarioBuilder.dontFinishNextRequest();
 
-    wrapHttpLib(HttpsMocker);
+    Http.wrapHttpLib(HttpsMocker);
     HttpsMocker.request(requestData, () => {});
 
     const spans = SpansContainer.getSpans();
@@ -736,8 +731,8 @@ describe('http hook', () => {
       body: 'OK',
     };
 
-    wrapHttpLib(HttpsMocker);
-    wrapHttpLib(HttpsMocker);
+    Http.wrapHttpLib(HttpsMocker);
+    Http.wrapHttpLib(HttpsMocker);
 
     const reqContext = HttpsMocker.request(requestData, () => {});
     HttpsScenarioBuilder.appendNextResponse(reqContext, responseData.body);
@@ -783,7 +778,7 @@ describe('http hook', () => {
     });
     process.env['LUMIGO_VALID_ALIASES'] = '["wrong"]';
 
-    wrapHttpLib(HttpsMocker);
+    Http.wrapHttpLib(HttpsMocker);
 
     const requestContext = HttpsMocker.request(requestData, () => {});
     HttpsScenarioBuilder.appendNextResponse(requestContext, responseData.body);
@@ -808,7 +803,7 @@ describe('http hook', () => {
       body: 'OK',
     };
 
-    wrapHttpLib(HttpsMocker);
+    Http.wrapHttpLib(HttpsMocker);
 
     const requstContext = HttpsMocker.request(requestData, () => {});
     HttpsScenarioBuilder.appendNextResponse(requstContext, responseData.body);
@@ -831,7 +826,7 @@ describe('http hook', () => {
   });
 
   test('addStepFunctionEvent', () => {
-    httpHook.addStepFunctionEvent('123');
+    Http.addStepFunctionEvent('123');
 
     const spans = SpansContainer.getSpans();
 
@@ -853,7 +848,7 @@ describe('http hook', () => {
         throw Error(funcName);
       }
     });
-    wrapHttpLib(HttpsMocker.request);
+    Http.wrapHttpLib(HttpsMocker.request);
 
     HttpsMocker.request(requestData, () => {});
 
