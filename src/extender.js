@@ -1,7 +1,6 @@
 import * as shimmer from 'shimmer';
 import * as logger from './logger';
 import { safeExecute } from './utils';
-import { Timer } from './globals';
 
 const noop = () => {};
 
@@ -17,9 +16,7 @@ export const hook = (module, funcName, options = {}, shimmerLib = shimmer) => {
       if (isFunctionAlreadyWrapped(originalFn)) return originalFn;
       return function (...args) {
         safeBeforeHook.call(this, args, extenderContext);
-        Timer.pause();
         const originalFnResult = originalFn.apply(this, args);
-        Timer.start();
         safeAfterHook.call(this, args, originalFnResult, extenderContext);
         return originalFnResult;
       };

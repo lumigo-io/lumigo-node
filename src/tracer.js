@@ -13,7 +13,6 @@ import {
   isTimeoutTimerEnabled,
   getTimeoutTimerBuffer,
   getTimeoutMinDuration,
-  runOneTimeWrapper,
 } from './utils';
 import {
   getFunctionSpan,
@@ -22,16 +21,10 @@ import {
   isSpanIsFromAnotherInvocation,
 } from './spans/awsSpan';
 import { sendSingleSpan, sendSpans } from './reporter';
-import {
-  TracerGlobals,
-  SpansContainer,
-  GlobalTimer,
-  clearGlobals,
-  Timer,
-  DEFAULT_TRACER_TIMEOUT,
-} from './globals';
+import { TracerGlobals, SpansContainer, GlobalTimer, clearGlobals } from './globals';
 import * as logger from './logger';
 import { Http } from './hooks/Http';
+import { runOneTimeWrapper } from './utils/functionUtils';
 
 export const HANDLER_CALLBACKED = 'handler_callbacked';
 export const ASYNC_HANDLER_RESOLVED = 'async_handler_resolved';
@@ -131,9 +124,6 @@ export const callbackResolver = (resolve) => (err, data) =>
 export const promisifyUserHandler = (userHandler, event, context) =>
   new Promise((resolve) => {
     try {
-      const { remainingTimeInMillis } = getContextInfo(context);
-      const tracerDuration = Math.min(DEFAULT_TRACER_TIMEOUT, remainingTimeInMillis / 5);
-      Timer.init(process.env.LUMIGO_TRACER_TIMEOUT || tracerDuration);
       const result = userHandler(event, context, callbackResolver(resolve));
       if (isPromise(result)) {
         result
@@ -186,7 +176,6 @@ export const trace = ({ token, debug, edgeHost, switchOff, eventFilter, stepFunc
   userHandler
 ) => async (event, context, callback) => {
   try {
-    Timer.start();
     TracerGlobals.setHandlerInputs({ event, context });
     TracerGlobals.setTracerInputs({
       token,

@@ -16,7 +16,7 @@ import { TracerGlobals } from './globals';
 import crypto from 'crypto';
 import { GET_KEY_DEPTH_ENV_KEY } from './utils';
 import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
-import { getEnvVarAsList, isEncodingType, isEmptyString, runOneTimeWrapper } from './utils';
+import { getEnvVarAsList, isEncodingType, isEmptyString } from './utils';
 import { DEFAULT_TIMEOUT_MIN_DURATION } from './utils';
 import * as globals from './globals';
 import { removeDuplicates } from './utils';
@@ -450,6 +450,50 @@ describe('utils', () => {
       },
     });
     expect(utils.getTimeoutTimerBuffer()).toEqual(2000);
+  });
+
+  test('getTracerMaxDurationTimeout -> ENV_VAR', () => {
+    process.env.LUMIGO_TRACER_TIMEOUT = '111';
+    expect(utils.getTracerMaxDurationTimeout()).toEqual(111);
+  });
+
+  test('getTracerMaxDurationTimeout -> default value', () => {
+    expect(utils.getTracerMaxDurationTimeout()).toEqual(500);
+  });
+
+  test('getTracerMaxDurationTimeout -> Max value', () => {
+    TracerGlobals.setHandlerInputs({
+      context: {
+        invokedFunctionArn: '',
+        awsRequestId: '',
+        callbackWaitsForEmptyEventLoop: '',
+        clientContext: '',
+        functionName: '',
+        getRemainingTimeInMillis: () => 600000,
+        logGroupName: '',
+        logStreamName: '',
+        memoryLimitInMB: '',
+      },
+    });
+    expect(utils.getTracerMaxDurationTimeout()).toEqual(500);
+  });
+
+  test('getTracerMaxDurationTimeout -> 20% of the run time', () => {
+    expect(utils.isValidAlias()).toEqual(true);
+    TracerGlobals.setHandlerInputs({
+      context: {
+        invokedFunctionArn: '',
+        awsRequestId: '',
+        callbackWaitsForEmptyEventLoop: '',
+        clientContext: '',
+        functionName: '',
+        getRemainingTimeInMillis: () => 1000,
+        logGroupName: '',
+        logStreamName: '',
+        memoryLimitInMB: '',
+      },
+    });
+    expect(utils.getTracerMaxDurationTimeout()).toEqual(200);
   });
 
   test('setSwitchOff', () => {
@@ -910,57 +954,6 @@ describe('utils', () => {
     expect(isEmptyString()).toEqual(true);
     expect(isEmptyString([])).toEqual(false);
     expect(isEmptyString({})).toEqual(false);
-  });
-
-  test('runOneTime -> simple flow', () => {
-    let i = 0;
-    const addToI = () => {
-      i++;
-    };
-    const wrappedAddToI = runOneTimeWrapper(addToI, this);
-    wrappedAddToI();
-    wrappedAddToI();
-
-    expect(i).toEqual(1);
-  });
-
-  test('runOneTime -> without context', () => {
-    let i = 0;
-    const addToI = () => {
-      i++;
-    };
-    const wrappedAddToI = runOneTimeWrapper(addToI);
-    wrappedAddToI();
-    wrappedAddToI();
-
-    expect(i).toEqual(1);
-  });
-
-  test('runOneTime -> return value', () => {
-    let i = 0;
-    const addToI = () => {
-      i++;
-      return 'OK';
-    };
-    const wrappedAddToI = runOneTimeWrapper(addToI, this);
-    const retValue = wrappedAddToI();
-    wrappedAddToI();
-
-    expect(i).toEqual(1);
-    expect(retValue).toEqual('OK');
-  });
-
-  test('runOneTime -> use params', () => {
-    let i = 0;
-    const addToI = (count) => {
-      i += count;
-      return 'OK';
-    };
-    const wrappedAddToI = runOneTimeWrapper(addToI, this);
-    wrappedAddToI(5);
-    wrappedAddToI(10);
-
-    expect(i).toEqual(5);
   });
 
   test('md5Hash should yield the same result for the same items', () => {

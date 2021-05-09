@@ -589,6 +589,27 @@ describe('http hook', () => {
     expect(spans).toEqual([expectedSpan]);
   });
 
+  test('wrapHttpLib - Timer time is passed', () => {
+    process.env.LUMIGO_TRACER_TIMEOUT = '0';
+
+    const handlerInputs = new HandlerInputesBuilder().build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
+    const requestData = HttpSpanBuilder.getDefaultData(HttpSpanBuilder.DEFAULT_REQUEST_DATA);
+    const responseData = {
+      statusCode: 200,
+      body: 'OK',
+    };
+
+    Http.wrapHttpLib(HttpsMocker);
+
+    const req = HttpsMocker.request(requestData, () => {});
+    HttpsScenarioBuilder.appendNextResponse(req, responseData.body);
+
+    const spans = SpansContainer.getSpans();
+
+    expect(spans).toEqual([]);
+  });
+
   test('wrapHttpLib - no callback provided', () => {
     utils.setTimeoutTimerDisabled();
     const handlerInputs = new HandlerInputesBuilder().build();

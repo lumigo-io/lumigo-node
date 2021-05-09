@@ -11,7 +11,6 @@ import {
   isTimeoutTimerEnabled,
   isValidAlias,
   lowerCaseObjectKeys,
-  runOneTimeWrapper,
 } from '../utils';
 import {
   extractBodyFromEmitSocketEvent,
@@ -20,12 +19,14 @@ import {
 } from './httpUtils';
 import { getCurrentTransactionId, getHttpInfo, getHttpSpan } from '../spans/awsSpan';
 import { URL } from 'url';
-import { SpansContainer, Timer, TracerGlobals } from '../globals';
+import { SpansContainer, TracerGlobals } from '../globals';
 import * as logger from '../logger';
 
 import * as extender from '../extender';
 import * as http from 'http';
 import * as https from 'https';
+import { GlobalDurationTimer } from '../utils/globalDurationTimer';
+import { runOneTimeWrapper } from '../utils/functionUtils';
 
 export const hostBlaclist = new Set(['127.0.0.1']);
 
@@ -48,7 +49,7 @@ export type ParseHttpRequestOptions = {
 export class Http {
   static httpRequestEndWrapper(requestData, currentSpan) {
     return function (args) {
-      Timer.start();
+      GlobalDurationTimer.start();
       if (isEmptyString(requestData.body)) {
         const body = extractBodyFromEndFunc(args);
         if (body) {
@@ -56,11 +57,11 @@ export class Http {
         }
         if (currentSpan) currentSpan.info.httpInfo = getHttpInfo(requestData, {});
       }
-      Timer.pause();
+      GlobalDurationTimer.stop();
     };
   }
 
-  @Timer.timedSync()
+  @GlobalDurationTimer.timedSync()
   static httpRequestArguments(args) {
     if (args.length === 0) {
       throw new Error('http/s.request(...) was called without any arguments.');
@@ -90,7 +91,7 @@ export class Http {
     }
     return { url, options, callback };
   }
-  @Timer.timedSync()
+  @GlobalDurationTimer.timedSync()
   static getHostFromOptionsOrUrl(options, url) {
     if (url) {
       return new URL(url).hostname;
@@ -102,7 +103,7 @@ export class Http {
     return host === getEdgeHost() || hostBlaclist.has(host);
   }
 
-  @Timer.timedSync()
+  @GlobalDurationTimer.timedSync()
   static parseHttpRequestOptions(options: ParseHttpRequestOptions = {}, url) {
     const host = Http.getHostFromOptionsOrUrl(options, url);
     const agent = options.agent || options._defaultAgent;
@@ -142,7 +143,7 @@ export class Http {
     };
   }
 
-  @Timer.timedSync()
+  @GlobalDurationTimer.timedSync()
   static httpBeforeRequestWrapper(args, extenderContext) {
     // @ts-ignore
     const { awsRequestId } = TracerGlobals.getHandlerInputs().context;
@@ -154,9 +155,10 @@ export class Http {
     const { url, options } = Http.httpRequestArguments(args);
     const { headers } = options || {};
     const host = Http.getHostFromOptionsOrUrl(options, url);
-    extenderContext.isTracedDisabled = Http.isBlacklisted(host) || !isValidAlias();
+    extenderContext.isTracedDisabled =
+      Http.isBlacklisted(host) || !isValidAlias() || GlobalDurationTimer.isTimePassed();
 
-    if (!extenderContext.isTracedDisabled && !Timer.isTimePassed()) {
+    if (!extenderContext.isTracedDisabled) {
       logger.debug('Starting hook', { host, url, headers });
 
       const isRequestToAwsService = isAwsService(host);
@@ -180,7 +182,7 @@ export class Http {
     }
   }
 
-  @Timer.timedSync()
+  @GlobalDurationTimer.timedSync()
   static httpAfterRequestWrapper(args, originalFnResult, extenderContext) {
     const clientRequest = originalFnResult;
     const {
@@ -191,7 +193,7 @@ export class Http {
       transactionId,
       currentSpan,
     } = extenderContext;
-    if (!isTracedDisabled && !Timer.isTimePassed()) {
+    if (!isTracedDisabled) {
       const endWrapper = Http.httpRequestEndWrapper(requestData, currentSpan);
       extender.hook(clientRequest, 'end', { beforeHook: endWrapper });
 
@@ -211,7 +213,7 @@ export class Http {
 
   static httpRequestWriteBeforeHookWrapper(requestData, currentSpan) {
     return function (args) {
-      Timer.start();
+      GlobalDurationTimer.start();
       if (isEmptyString(requestData.body)) {
         const body = extractBodyFromWriteFunc(args);
         if (body) {
@@ -219,11 +221,11 @@ export class Http {
           if (currentSpan) currentSpan.info.httpInfo = getHttpInfo(requestData, {});
         }
       }
-      Timer.pause();
+      GlobalDurationTimer.stop();
     };
   }
 
-  @Timer.timedSync()
+  @GlobalDurationTimer.timedSync()
   static addStepFunctionEvent(messageId) {
     // @ts-ignore
     const awsRequestId = TracerGlobals.getHandlerInputs().context.awsRequestId;
@@ -264,8 +266,7 @@ export class Http {
     let body = '';
     const payloadSize = getEventEntitySize();
     return function (args) {
-      //Here
-      Timer.start();
+      GlobalDurationTimer.start();
       const receivedTime = new Date().getTime();
       const { headers, statusCode } = response;
       if (args[0] === 'data') {
@@ -293,7 +294,7 @@ export class Http {
         }
         SpansContainer.addSpan(httpSpan);
       }
-      Timer.pause();
+      GlobalDurationTimer.stop();
     };
   }
 
@@ -324,7 +325,7 @@ export class Http {
       {}
     );
     return function (args) {
-      Timer.start();
+      GlobalDurationTimer.start();
       if (args[0] === 'response') {
         oneTimerEmitResponseHandler(args[1]);
       }
@@ -337,7 +338,7 @@ export class Http {
           }
         }
       }
-      Timer.pause();
+      GlobalDurationTimer.stop();
     };
   }
 }

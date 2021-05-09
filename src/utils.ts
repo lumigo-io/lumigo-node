@@ -5,6 +5,7 @@ import { sortify } from './tools/jsonSortify';
 import { Context } from 'aws-lambda';
 import { EdgeUrl } from './types/common/edgeTypes';
 import { AwsEnvironment, ContextInfo } from './types/aws/awsEnvironment';
+import { isAwsContext } from './guards/awsGuards';
 
 export const SPAN_PATH = '/api/spans';
 export const LUMIGO_TRACER_EDGE = 'lumigo-tracer-edge.golumigo.com';
@@ -31,6 +32,7 @@ export const DEFAULT_GET_KEY_DEPTH = 3;
 export const EXECUTION_TAGS_KEY = 'lumigo_execution_tags_no_scrub';
 export const DEFAULT_TIMEOUT_MIN_DURATION = 2000;
 export const DEFAULT_CONNECTION_TIMEOUT = 300;
+export const DEFAULT_TRACER_MAX_DURATION_TIMEOUT = 500;
 
 export const getContextInfo = (context: Context): ContextInfo => {
   const remainingTimeInMillis = context.getRemainingTimeInMillis();
@@ -143,6 +145,7 @@ const STORE_LOGS_FLAG = 'LUMIGO_STORE_LOGS';
 const TIMEOUT_BUFFER_FLAG = 'LUMIGO_TIMEOUT_BUFFER';
 const TIMEOUT_MIN_DURATION = 'LUMIGO_TIMEOUT_MIN_DURATION';
 const TIMEOUT_BUFFER_FLAG_MS = 'LUMIGO_TIMEOUT_BUFFER_MS';
+const TRACER_TIMEOUT_FLAG = 'LUMIGO_TRACER_TIMEOUT';
 const AGENT_KEEPALIVE = 'LUMIGO_AGENT_KEEPALIVE_MS';
 const REUSE_CONNECTION = 'LUMIGO_REUSE_HTTP_CONNECTION';
 const KEEP_HEADERS = 'LUMIGO_KEEP_HTTP_HEADERS';
@@ -185,6 +188,16 @@ export const getTimeoutTimerBuffer = (): number => {
   // @ts-ignore
   const { remainingTimeInMillis } = getContextInfo(context);
   return Math.max(500, Math.min(remainingTimeInMillis / 10, 3000));
+};
+
+export const getTracerMaxDurationTimeout = (): number => {
+  if (process.env[TRACER_TIMEOUT_FLAG]) return parseFloat(process.env[TRACER_TIMEOUT_FLAG]);
+  const { context } = TracerGlobals.getHandlerInputs();
+  if (isAwsContext(context)) {
+    const { remainingTimeInMillis } = getContextInfo(context);
+    return Math.min(DEFAULT_TRACER_MAX_DURATION_TIMEOUT, remainingTimeInMillis / 5);
+  }
+  return DEFAULT_TRACER_MAX_DURATION_TIMEOUT;
 };
 
 export const getAgentKeepAlive = () => {
@@ -497,17 +510,6 @@ export const isEncodingType = (encodingType): boolean =>
 
 export const isEmptyString = (str): boolean =>
   !!(!str || (typeof str === 'string' && str.length === 0));
-
-export const runOneTimeWrapper = (func: Function, context: any): Function => {
-  let done = false;
-  return (...args) => {
-    if (!done) {
-      const result = func.apply(context || this, args);
-      done = true;
-      return result;
-    }
-  };
-};
 
 // @ts-ignore
 export const removeDuplicates = (arr) => [...new Set(arr)];
