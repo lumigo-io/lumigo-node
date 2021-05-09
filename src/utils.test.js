@@ -21,6 +21,7 @@ import { DEFAULT_TIMEOUT_MIN_DURATION } from './utils';
 import * as globals from './globals';
 import { removeDuplicates } from './utils';
 import * as logger from './logger';
+import { HandlerInputesBuilder } from '../testUtils/handlerInputesBuilder';
 
 describe('utils', () => {
   const spies = {};
@@ -462,37 +463,14 @@ describe('utils', () => {
   });
 
   test('getTracerMaxDurationTimeout -> Max value', () => {
-    TracerGlobals.setHandlerInputs({
-      context: {
-        invokedFunctionArn: '',
-        awsRequestId: '',
-        callbackWaitsForEmptyEventLoop: '',
-        clientContext: '',
-        functionName: '',
-        getRemainingTimeInMillis: () => 600000,
-        logGroupName: '',
-        logStreamName: '',
-        memoryLimitInMB: '',
-      },
-    });
+    const inputs = new HandlerInputesBuilder().withTimeout(6000000).build();
+    TracerGlobals.setHandlerInputs(inputs);
     expect(utils.getTracerMaxDurationTimeout()).toEqual(500);
   });
 
   test('getTracerMaxDurationTimeout -> 20% of the run time', () => {
-    expect(utils.isValidAlias()).toEqual(true);
-    TracerGlobals.setHandlerInputs({
-      context: {
-        invokedFunctionArn: '',
-        awsRequestId: '',
-        callbackWaitsForEmptyEventLoop: '',
-        clientContext: '',
-        functionName: '',
-        getRemainingTimeInMillis: () => 1000,
-        logGroupName: '',
-        logStreamName: '',
-        memoryLimitInMB: '',
-      },
-    });
+    const inputs = new HandlerInputesBuilder().withTimeout(1000).build();
+    TracerGlobals.setHandlerInputs(inputs);
     expect(utils.getTracerMaxDurationTimeout()).toEqual(200);
   });
 
