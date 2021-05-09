@@ -5,7 +5,7 @@ import { hookPg } from './pg';
 import { hookMySql } from './mySql';
 import { hookMssql } from './msSql';
 import { hookNeo4j } from './neo4j';
-import { Http } from './Http';
+import { Http } from './http';
 
 export default () => {
   if (!isSwitchedOff() && isAwsEnvironment()) {
