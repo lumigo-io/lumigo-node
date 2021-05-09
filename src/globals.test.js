@@ -1,12 +1,8 @@
 import * as globals from './globals';
 import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
 import { DEFAULT_MAX_SIZE_FOR_REQUEST } from './globals';
-import * as logger from './logger';
 
 describe('globals', () => {
-  const spies = {};
-  spies.logger = jest.spyOn(logger, 'warnClient');
-
   test('SpansContainer - simple flow', () => {
     const span1 = { a: 'b', c: 'd', id: '1' };
     const span2 = { e: 'f', g: 'h', id: '2' };
