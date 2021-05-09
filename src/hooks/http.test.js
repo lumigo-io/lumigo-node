@@ -13,7 +13,7 @@ import * as utils from '../utils';
 import { clearGlobals, SpansContainer, TracerGlobals } from '../globals';
 import { HandlerInputesBuilder } from '../../testUtils/handlerInputesBuilder';
 import { getCurrentTransactionId } from '../spans/awsSpan';
-import { Http } from './Http';
+import { Http } from './http';
 
 describe('http hook', () => {
   process.env['AWS_REGION'] = 'us-east-x';
