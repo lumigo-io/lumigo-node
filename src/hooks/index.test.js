@@ -1,5 +1,5 @@
-jest.mock('./Http');
-import { Http } from './Http';
+jest.mock('./http');
+import { Http } from './http';
 import * as utils from '../utils';
 import hooksIndex from './index';
 import { TracerGlobals } from '../globals';

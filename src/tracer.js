@@ -23,7 +23,7 @@ import {
 import { sendSingleSpan, sendSpans } from './reporter';
 import { TracerGlobals, SpansContainer, GlobalTimer, clearGlobals } from './globals';
 import * as logger from './logger';
-import { Http } from './hooks/Http';
+import { Http } from './hooks/http';
 import { runOneTimeWrapper } from './utils/functionUtils';
 
 export const HANDLER_CALLBACKED = 'handler_callbacked';

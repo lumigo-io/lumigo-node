@@ -14,8 +14,8 @@ import { EnvironmentBuilder } from '../testUtils/environmentBuilder';
 import { SpansContainer } from './globals';
 import { AxiosMocker } from '../testUtils/axiosMocker';
 import { createContext } from '../testUtils/awsTestUtils';
-jest.mock('./hooks/Http');
-import { Http } from './hooks/Http';
+jest.mock('./hooks/http');
+import { Http } from './hooks/http';
 
 const TOKEN = 't_10faa5e13e7844aaa1234';
 
