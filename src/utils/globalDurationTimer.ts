@@ -3,7 +3,7 @@ import { getTracerMaxDurationTimeout } from '../utils';
 import { runOneTimeWrapper } from './functionUtils';
 
 const warnTimeoutOnce = runOneTimeWrapper(() => {
-  logger.warnClient('Lumigo tracer reached its timeout and will no longer collect data');
+  logger.warnClient('Lumigo tracer timed out and is no longer collecting data on the invocation.');
 }, {});
 
 export const GlobalDurationTimer = (() => {
