@@ -5,8 +5,6 @@ import * as utils from './utils';
 import * as globals from './globals';
 import * as reporter from './reporter';
 import * as awsSpan from './spans/awsSpan';
-import * as http from './hooks/http';
-import { hookHttp } from './hooks/http';
 import * as logger from './logger';
 import { TracerGlobals } from './globals';
 import { setSwitchOff, STEP_FUNCTION_UID_KEY } from './utils';
@@ -16,19 +14,18 @@ import { EnvironmentBuilder } from '../testUtils/environmentBuilder';
 import { SpansContainer } from './globals';
 import { AxiosMocker } from '../testUtils/axiosMocker';
 import { createContext } from '../testUtils/awsTestUtils';
+jest.mock('./hooks/http');
+import { Http } from './hooks/http';
 
 const TOKEN = 't_10faa5e13e7844aaa1234';
 
-jest.mock('./hooks/http');
 describe('tracer', () => {
   const spies = {};
   spies.isSwitchedOff = jest.spyOn(utils, 'isSwitchedOff');
   spies.setSwitchOff = jest.spyOn(utils, 'setSwitchOff');
   spies.isAwsEnvironment = jest.spyOn(utils, 'isAwsEnvironment');
   spies.isSendOnlyIfErrors = jest.spyOn(utils, 'isSendOnlyIfErrors');
-  spies.getContextInfo = jest.spyOn(utils, 'getContextInfo');
   spies.getRandomId = jest.spyOn(utils, 'getRandomId');
-  spies.addStepFunctionEvent = jest.spyOn(http, 'addStepFunctionEvent');
   spies.sendSingleSpan = jest.spyOn(reporter, 'sendSingleSpan');
   spies.sendSpans = jest.spyOn(reporter, 'sendSpans');
   spies.getFunctionSpan = jest.spyOn(awsSpan, 'getFunctionSpan');
@@ -46,7 +43,6 @@ describe('tracer', () => {
   spies.log.mockImplementation(() => {});
 
   beforeEach(() => {
-    hookHttp.mockClear();
     jest.clearAllMocks();
   });
   test('startTrace - not failed on error', async () => {
@@ -207,11 +203,6 @@ describe('tracer', () => {
     const functionSpan = { a: 'b', c: 'd', transactionId: 'x' };
     const handlerReturnValue = 'Satoshi was here1';
     const endFunctionSpan = { a: 'b', c: 'd', rtt, transactionId: 'x' };
-
-    spies.getContextInfo.mockReturnValueOnce({
-      callbackWaitsForEmptyEventLoop: false,
-    });
-
     spies.SpansContainer.getSpans.mockReturnValueOnce([dummySpan]);
     spies.getEndFunctionSpan.mockReturnValueOnce(endFunctionSpan);
 
@@ -251,10 +242,6 @@ describe('tracer', () => {
 
     const functionSpan = { a: 'b', c: 'd' };
     const handlerReturnValue = { type: tracer.HANDLER_CALLBACKED };
-
-    spies.getContextInfo.mockReturnValueOnce({
-      callbackWaitsForEmptyEventLoop: true,
-    });
 
     const result1 = await tracer.endTrace(functionSpan, handlerReturnValue);
     expect(result1).toEqual(undefined);
@@ -386,7 +373,7 @@ describe('tracer', () => {
 
     await lumigoTracer.trace(userHandler1)(event, context, callback1);
 
-    expect(hookHttp).toHaveBeenCalledTimes(1);
+    expect(Http.hookHttp).toHaveBeenCalledTimes(1);
   });
 
   test('trace; imported twice', async (done) => {
@@ -407,7 +394,7 @@ describe('tracer', () => {
     await lumigoTracer1.trace(userHandler1)(event, context, callback1);
     await lumigoTracer2.trace(userHandler1)(event, context, callback1);
 
-    expect(hookHttp).toHaveBeenCalledTimes(1);
+    expect(Http.hookHttp).toHaveBeenCalledTimes(1);
   });
 
   test('trace; non async throw error', async () => {
@@ -425,7 +412,7 @@ describe('tracer', () => {
       new Error('bla')
     );
 
-    expect(hookHttp).toHaveBeenCalledTimes(1);
+    expect(Http.hookHttp).toHaveBeenCalledTimes(1);
   });
 
   test('trace; async callbacked ', async (done) => {
@@ -465,7 +452,7 @@ describe('tracer', () => {
       retVal
     );
 
-    expect(hookHttp).toHaveBeenCalledTimes(1);
+    expect(Http.hookHttp).toHaveBeenCalledTimes(1);
   });
 
   test('trace; async rejected', async () => {
@@ -485,7 +472,7 @@ describe('tracer', () => {
       new Error(retVal)
     );
 
-    expect(hookHttp).toHaveBeenCalledTimes(1);
+    expect(Http.hookHttp).toHaveBeenCalledTimes(1);
   });
 
   test('trace; follow AWS stringify on the return value - happy flow', async () => {
@@ -604,7 +591,7 @@ describe('tracer', () => {
     const userHandlerAsync = async (event, context, callback) => 1;
     const result = lumigoTracer.trace(lumigoTracer.trace(userHandlerAsync))(event, {});
     await expect(result).resolves.toEqual(1);
-    expect(hookHttp).toHaveBeenCalledTimes(1);
+    expect(Http.hookHttp).toHaveBeenCalledTimes(1);
 
     let callBackCalled = false;
     const callback = (err, val) => {
@@ -627,7 +614,7 @@ describe('tracer', () => {
   });
 
   test('No exception at startHooks', async (done) => {
-    hookHttp.mockImplementationOnce(() => {
+    Http.hookHttp.mockImplementationOnce(() => {
       throw new Error('Mocked error');
     });
     const handler = jest.fn(() => done());
@@ -656,7 +643,7 @@ describe('tracer', () => {
 
     await tracer.trace({ stepFunction: false })(handler)({}, {});
 
-    expect(spies.addStepFunctionEvent).not.toBeCalled();
+    expect(Http.addStepFunctionEvent).not.toBeCalled();
   });
 
   test('performStepFunctionLogic - Happy flow', async () => {
@@ -669,22 +656,22 @@ describe('tracer', () => {
       hello: 'world',
       [LUMIGO_EVENT_KEY]: { [STEP_FUNCTION_UID_KEY]: '123' },
     });
-    expect(spies.addStepFunctionEvent).toBeCalledWith('123');
-    spies.addStepFunctionEvent.mockClear();
+    expect(Http.addStepFunctionEvent).toBeCalledWith('123');
+    Http.addStepFunctionEvent.mockClear();
   });
 
   test('performStepFunctionLogic - Error should be contained', async () => {
     const handler = jest.fn(async () => ({ hello: 'world' }));
     spies.getRandomId.mockReturnValueOnce('123');
-    spies.addStepFunctionEvent.mockImplementationOnce(() => {
+    Http.addStepFunctionEvent.mockImplementationOnce(() => {
       throw new Error('stam1');
     });
 
     const result3 = await tracer.trace({ stepFunction: true })(handler)({}, {});
 
     expect(result3).toEqual({ hello: 'world' });
-    expect(spies.addStepFunctionEvent).toBeCalled();
-    spies.addStepFunctionEvent.mockClear();
+    expect(Http.addStepFunctionEvent).toBeCalled();
+    Http.addStepFunctionEvent.mockClear();
   });
 
   test('performStepFunctionLogic - override the step function key if exists', async () => {

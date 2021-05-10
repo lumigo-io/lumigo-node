@@ -1,11 +1,12 @@
 import * as logger from './logger';
 import { Context } from 'aws-lambda';
-
+import { GlobalDurationTimer } from './utils/globalDurationTimer';
 const MAX_TAGS = 50;
 const MAX_TAG_KEY_LEN = 50;
 const MAX_TAG_VALUE_LEN = 50;
 const ADD_TAG_ERROR_MSG_PREFIX = 'Skipping addExecutionTag: Unable to add tag';
 export const DEFAULT_MAX_SIZE_FOR_REQUEST = 1000 * 1000;
+export const DEFAULT_TRACER_TIMEOUT = 500;
 
 export const SpansContainer = (() => {
   let spansToSend = {};
@@ -171,6 +172,7 @@ export const TracerGlobals = (() => {
 })();
 
 export const clearGlobals = () => {
+  GlobalDurationTimer.reset();
   SpansContainer.clearSpans();
   TracerGlobals.clearHandlerInputs();
   GlobalTimer.clearTimer();

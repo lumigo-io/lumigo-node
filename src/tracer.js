@@ -13,7 +13,6 @@ import {
   isTimeoutTimerEnabled,
   getTimeoutTimerBuffer,
   getTimeoutMinDuration,
-  runOneTimeWrapper,
 } from './utils';
 import {
   getFunctionSpan,
@@ -24,7 +23,8 @@ import {
 import { sendSingleSpan, sendSpans } from './reporter';
 import { TracerGlobals, SpansContainer, GlobalTimer, clearGlobals } from './globals';
 import * as logger from './logger';
-import { addStepFunctionEvent } from './hooks/http';
+import { Http } from './hooks/http';
+import { runOneTimeWrapper } from './utils/functionUtils';
 
 export const HANDLER_CALLBACKED = 'handler_callbacked';
 export const ASYNC_HANDLER_RESOLVED = 'async_handler_resolved';
@@ -161,7 +161,7 @@ export const performStepFunctionLogic = (handlerReturnValue) => {
       const { err, data, type } = handlerReturnValue;
       const messageId = getRandomId();
 
-      addStepFunctionEvent(messageId);
+      Http.addStepFunctionEvent(messageId);
 
       const modifiedData = Object.assign(data, {
         [LUMIGO_EVENT_KEY]: { [STEP_FUNCTION_UID_KEY]: messageId },
