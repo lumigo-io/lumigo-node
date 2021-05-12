@@ -36,12 +36,8 @@ export const DEFAULT_TRACER_MAX_DURATION_TIMEOUT = 500;
 
 export const getContextInfo = (context: Context): ContextInfo => {
   const remainingTimeInMillis = context.getRemainingTimeInMillis();
-  const {
-    functionName,
-    awsRequestId,
-    invokedFunctionArn,
-    callbackWaitsForEmptyEventLoop,
-  } = context;
+  const { functionName, awsRequestId, invokedFunctionArn, callbackWaitsForEmptyEventLoop } =
+    context;
   const awsAccountId = getAccountIdFromInvokedFunctinArn(invokedFunctionArn);
 
   return {

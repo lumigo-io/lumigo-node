@@ -41,7 +41,10 @@ export const LogStore = (() => {
   return { addLog, clean };
 })();
 
-const invokeLog = (type) => (msg, obj = undefined) => log(type, msg, obj);
+const invokeLog =
+  (type) =>
+  (msg, obj = undefined) =>
+    log(type, msg, obj);
 
 export const info = invokeLog('INFO');
 

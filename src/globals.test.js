@@ -295,8 +295,7 @@ describe('globals', () => {
     expect(globals.ExecutionTags.getTags()).toEqual([]);
     expect(ConsoleWritesForTesting.getLogs()).toEqual([
       {
-        msg:
-          'Lumigo Warning: Skipping addExecutionTag: Unable to add tag: key length should be between 1 and 50:  - v0',
+        msg: 'Lumigo Warning: Skipping addExecutionTag: Unable to add tag: key length should be between 1 and 50:  - v0',
         obj: undefined,
       },
     ]);
@@ -319,8 +318,7 @@ describe('globals', () => {
     expect(globals.ExecutionTags.getTags()).toEqual([]);
     expect(ConsoleWritesForTesting.getLogs()).toEqual([
       {
-        msg:
-          'Lumigo Warning: Skipping addExecutionTag: Unable to add tag: value length should be between 1 and 50: k0 - ',
+        msg: 'Lumigo Warning: Skipping addExecutionTag: Unable to add tag: value length should be between 1 and 50: k0 - ',
         obj: undefined,
       },
     ]);
