@@ -199,8 +199,7 @@ describe('aws parser', () => {
     const response = {
       statusCode: 200,
       receivedTime: 1564495048705,
-      body:
-        '<PublishResponse xmlns="http://sns.amazonaws.com/doc/2010-03-31/">\n  <PublishResult>\n    <MessageId>72eaeab7-267d-5bac-8eee-bf0d69758085</MessageId>\n  </PublishResult>\n  <ResponseMetadata>\n    <RequestId>3e7f7a41-4c85-5f51-8160-2ffb038d8478</RequestId>\n  </ResponseMetadata>\n</PublishResponse>\n',
+      body: '<PublishResponse xmlns="http://sns.amazonaws.com/doc/2010-03-31/">\n  <PublishResult>\n    <MessageId>72eaeab7-267d-5bac-8eee-bf0d69758085</MessageId>\n  </PublishResult>\n  <ResponseMetadata>\n    <RequestId>3e7f7a41-4c85-5f51-8160-2ffb038d8478</RequestId>\n  </ResponseMetadata>\n</PublishResponse>\n',
       headers: {
         'x-amzn-requestid': '3e7f7a41-4c85-5f51-8160-2ffb038d8478',
         'x-amzn-trace-id':
@@ -242,8 +241,7 @@ describe('aws parser', () => {
     const response = {
       statusCode: 200,
       receivedTime: 1564495048705,
-      body:
-        '<PublishResponse xmlns="http://sns.amazonaws.com/doc/2010-03-31/">\n  <PublishResult>\n    <MessageId>72eaeab7-267d-5bac-8eee-bf0d69758085</MessageId>\n  </PublishResult>\n  <ResponseMetadata>\n    <RequestId>3e7f7a41-4c85-5f51-8160-2ffb038d8478</RequestId>\n  </ResponseMetadata>\n</PublishResponse>\n',
+      body: '<PublishResponse xmlns="http://sns.amazonaws.com/doc/2010-03-31/">\n  <PublishResult>\n    <MessageId>72eaeab7-267d-5bac-8eee-bf0d69758085</MessageId>\n  </PublishResult>\n  <ResponseMetadata>\n    <RequestId>3e7f7a41-4c85-5f51-8160-2ffb038d8478</RequestId>\n  </ResponseMetadata>\n</PublishResponse>\n',
       headers: {
         'x-amzn-requestid': '3e7f7a41-4c85-5f51-8160-2ffb038d8478',
         'x-amzn-trace-id':
@@ -303,8 +301,7 @@ describe('aws parser', () => {
       sendTime: 1564474992235,
     };
     const responseData = {
-      body:
-        '<?xml version="1.0"?><SendMessageResponse xmlns="http://queue.amazonaws.com/doc/2012-11-05/"><SendMessageResult><MessageId>85dc3997-b060-47bc-9d89-c754d7260dbd</MessageId><MD5OfMessageBody>c5cb6abef11b88049177473a73ed662f</MD5OfMessageBody></SendMessageResult><ResponseMetadata><RequestId>b6b5a045-23c6-5e3a-a54f-f7dd99f7b379</RequestId></ResponseMetadata></SendMessageResponse>',
+      body: '<?xml version="1.0"?><SendMessageResponse xmlns="http://queue.amazonaws.com/doc/2012-11-05/"><SendMessageResult><MessageId>85dc3997-b060-47bc-9d89-c754d7260dbd</MessageId><MD5OfMessageBody>c5cb6abef11b88049177473a73ed662f</MD5OfMessageBody></SendMessageResult><ResponseMetadata><RequestId>b6b5a045-23c6-5e3a-a54f-f7dd99f7b379</RequestId></ResponseMetadata></SendMessageResponse>',
     };
 
     const result = aws.sqsParser(requestData, responseData);

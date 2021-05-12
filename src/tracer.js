@@ -172,52 +172,53 @@ export const performStepFunctionLogic = (handlerReturnValue) => {
   );
 };
 
-export const trace = ({ token, debug, edgeHost, switchOff, eventFilter, stepFunction }) => (
-  userHandler
-) => async (event, context, callback) => {
-  try {
-    TracerGlobals.setHandlerInputs({ event, context });
-    TracerGlobals.setTracerInputs({
-      token,
-      debug,
-      edgeHost,
-      switchOff,
-      eventFilter,
-      stepFunction,
-    });
-  } catch (err) {
-    logger.warn('Failed to start tracer', err);
-  }
+export const trace =
+  ({ token, debug, edgeHost, switchOff, eventFilter, stepFunction }) =>
+  (userHandler) =>
+  async (event, context, callback) => {
+    try {
+      TracerGlobals.setHandlerInputs({ event, context });
+      TracerGlobals.setTracerInputs({
+        token,
+        debug,
+        edgeHost,
+        switchOff,
+        eventFilter,
+        stepFunction,
+      });
+    } catch (err) {
+      logger.warn('Failed to start tracer', err);
+    }
 
-  if (!context) {
-    logger.warnClient(
-      'missing context parameter - learn more at https://docs.lumigo.io/docs/nodejs'
-    );
-    const { err, data, type } = await promisifyUserHandler(userHandler, event, context, callback);
+    if (!context) {
+      logger.warnClient(
+        'missing context parameter - learn more at https://docs.lumigo.io/docs/nodejs'
+      );
+      const { err, data, type } = await promisifyUserHandler(userHandler, event, context, callback);
+      return performPromisifyType(err, data, type, callback);
+    }
+
+    if (context.__wrappedByLumigo) {
+      const { err, data, type } = await promisifyUserHandler(userHandler, event, context, callback);
+      return performPromisifyType(err, data, type, callback);
+    }
+    context.__wrappedByLumigo = true;
+
+    const pStartTrace = startTrace();
+    const pUserHandler = promisifyUserHandler(userHandler, event, context, callback);
+
+    let [functionSpan, handlerReturnValue] = await Promise.all([pStartTrace, pUserHandler]);
+
+    handlerReturnValue = normalizeLambdaError(handlerReturnValue);
+
+    if (isStepFunction()) {
+      handlerReturnValue = performStepFunctionLogic(handlerReturnValue);
+    }
+
+    const cleanedHandlerReturnValue = removeLumigoFromStacktrace(handlerReturnValue);
+
+    await endTrace(functionSpan, cleanedHandlerReturnValue);
+    const { err, data, type } = cleanedHandlerReturnValue;
+
     return performPromisifyType(err, data, type, callback);
-  }
-
-  if (context.__wrappedByLumigo) {
-    const { err, data, type } = await promisifyUserHandler(userHandler, event, context, callback);
-    return performPromisifyType(err, data, type, callback);
-  }
-  context.__wrappedByLumigo = true;
-
-  const pStartTrace = startTrace();
-  const pUserHandler = promisifyUserHandler(userHandler, event, context, callback);
-
-  let [functionSpan, handlerReturnValue] = await Promise.all([pStartTrace, pUserHandler]);
-
-  handlerReturnValue = normalizeLambdaError(handlerReturnValue);
-
-  if (isStepFunction()) {
-    handlerReturnValue = performStepFunctionLogic(handlerReturnValue);
-  }
-
-  const cleanedHandlerReturnValue = removeLumigoFromStacktrace(handlerReturnValue);
-
-  await endTrace(functionSpan, cleanedHandlerReturnValue);
-  const { err, data, type } = cleanedHandlerReturnValue;
-
-  return performPromisifyType(err, data, type, callback);
-};
+  };

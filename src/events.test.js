@@ -90,8 +90,7 @@ describe('events', () => {
     });
 
     expect(events.getRelevantEventData('dynamodb', exampleDynamoDBInsertEvent)).toEqual({
-      arn:
-        'arn:aws:dynamodb:us-east-1:123456789012:table/Example-Table/stream/2016-12-01T00:00:00.000',
+      arn: 'arn:aws:dynamodb:us-east-1:123456789012:table/Example-Table/stream/2016-12-01T00:00:00.000',
       messageIds: [
         md5Hash({
           val: { S: 'data' },
