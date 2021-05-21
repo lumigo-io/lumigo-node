@@ -25,6 +25,7 @@ import { TracerGlobals, SpansContainer, GlobalTimer, clearGlobals } from './glob
 import * as logger from './logger';
 import { Http } from './hooks/http';
 import { runOneTimeWrapper } from './utils/functionUtils';
+import { isAwsContext } from './guards/awsGuards';
 
 export const HANDLER_CALLBACKED = 'handler_callbacked';
 export const ASYNC_HANDLER_RESOLVED = 'async_handler_resolved';
@@ -50,7 +51,7 @@ const setupTimeoutTimer = () => {
   }
 };
 
-export const startTrace = async () => {
+export const startTrace = async (functionSpan) => {
   try {
     if (!isSwitchedOff() && isAwsEnvironment()) {
       const tracerInputs = TracerGlobals.getTracerInputs();
@@ -65,16 +66,11 @@ export const startTrace = async () => {
 
       if (isTimeoutTimerEnabled()) setupTimeoutTimer();
 
-      const functionSpan = getFunctionSpan();
-      logger.debug('startTrace span created', functionSpan);
-
       const { rtt } = await sendSingleSpan(functionSpan);
-      return addRttToFunctionSpan(functionSpan, rtt);
+      addRttToFunctionSpan(functionSpan, rtt);
     }
-    return null;
   } catch (err) {
     logger.warn('startTrace failure', err);
-    return null;
   }
 };
 
@@ -172,6 +168,23 @@ export const performStepFunctionLogic = (handlerReturnValue) => {
   );
 };
 
+const originalUnhandledRejection = process._events.unhandledRejection;
+export const hookUnhandledRejection = async (functionSpan) => {
+  process._events.unhandledRejection = async (reason, promise) => {
+    process._events.unhandledRejection = originalUnhandledRejection;
+    const err = Error(reason);
+    err.name = 'Runtime.UnhandledPromiseRejection';
+    await endTrace(functionSpan, {
+      err: err,
+      type: ASYNC_HANDLER_REJECTED,
+      data: null,
+    }).then(() => {
+      typeof originalUnhandledRejection === 'function' &&
+        originalUnhandledRejection(reason, promise);
+    });
+  };
+};
+
 export const trace =
   ({ token, debug, edgeHost, switchOff, eventFilter, stepFunction }) =>
   (userHandler) =>
@@ -190,7 +203,7 @@ export const trace =
       logger.warn('Failed to start tracer', err);
     }
 
-    if (!context) {
+    if (!context || !isAwsContext(context)) {
       logger.warnClient(
         'missing context parameter - learn more at https://docs.lumigo.io/docs/nodejs'
       );
@@ -204,10 +217,14 @@ export const trace =
     }
     context.__wrappedByLumigo = true;
 
+    const functionSpan = getFunctionSpan(event, context);
+
+    await hookUnhandledRejection(functionSpan);
+
     const pStartTrace = startTrace();
     const pUserHandler = promisifyUserHandler(userHandler, event, context, callback);
 
-    let [functionSpan, handlerReturnValue] = await Promise.all([pStartTrace, pUserHandler]);
+    let [, handlerReturnValue] = await Promise.all([pStartTrace, pUserHandler]);
 
     handlerReturnValue = normalizeLambdaError(handlerReturnValue);
 

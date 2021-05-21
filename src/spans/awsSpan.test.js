@@ -7,6 +7,7 @@ import * as utils from '../utils';
 import { payloadStringify } from '../utils/payloadStringify';
 import { HTTP_SPAN } from './awsSpan';
 import { HttpSpanBuilder } from '../../testUtils/httpSpanBuilder';
+import { HandlerInputesBuilder } from '../../testUtils/handlerInputesBuilder';
 
 const exampleApiGatewayEvent = require('../../testUtils/testdata/events/apigw-request.json');
 
@@ -122,15 +123,13 @@ describe('awsSpan', () => {
           Sampled: '0',
           transactionId: '64a1b06067c2100c52e51ef4',
         },
-        tracer: { name: '@lumigo/tracerMock', version: '1.2.3' },
+        tracer: {
+          name: '@lumigo/tracerMock',
+          version: '1.2.3',
+        },
         logGroupName: '/aws/lambda/aws-nodejs-dev-hello',
         logStreamName: '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',
-        messageId: 'deef4878-7910-11e6-8f14-25afc3e9ae33',
-        httpMethod: 'POST',
-        resource: '/{proxy+}',
-        stage: 'testStage',
-        api: 'gy415nuibc.execute-api.us-east-1.amazonaws.com',
-        triggeredBy: 'apigw',
+        triggeredBy: 'invocation',
       },
       vendor: 'AWS',
       transactionId: '64a1b06067c2100c52e51ef4',
@@ -145,37 +144,21 @@ describe('awsSpan', () => {
       invokedArn: 'arn:aws:lambda:us-east-1:985323015126:function:aws-nodejs-dev-hello',
       invokedVersion: '1',
       id: '6d26e3c8-60a6-4cee-8a70-f525f47a4caf_started',
-      envs: payloadStringify({
-        LAMBDA_TASK_ROOT: '/var/task',
-        LAMBDA_RUNTIME_DIR: '/var/runtime',
-        AWS_REGION: 'us-east-1',
-        AWS_DEFAULT_REGION: 'us-east-1',
-        AWS_LAMBDA_LOG_GROUP_NAME: '/aws/lambda/aws-nodejs-dev-hello',
-        AWS_LAMBDA_LOG_STREAM_NAME: '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',
-        AWS_LAMBDA_FUNCTION_NAME: 'aws-nodejs-dev-hello',
-        AWS_LAMBDA_FUNCTION_MEMORY_SIZE: '1024',
-        AWS_LAMBDA_FUNCTION_VERSION: '$LATEST',
-        _AWS_XRAY_DAEMON_ADDRESS: '169.254.79.2',
-        _AWS_XRAY_DAEMON_PORT: '2000',
-        AWS_XRAY_DAEMON_ADDRESS: '169.254.79.2:2000',
-        AWS_XRAY_CONTEXT_MISSING: 'LOG_ERROR',
-        _X_AMZN_TRACE_ID:
-          'Root=1-5cdcf03a-64a1b06067c2100c52e51ef4;Parent=28effe37598bb622;Sampled=0',
-        AWS_EXECUTION_ENV: 'AWS_Lambda_nodejs8.10',
-        LUMIGO_IS_WARM: 'TRUE',
-      }),
-      name: 'w00t',
+      envs: '{"LAMBDA_TASK_ROOT":"/var/task","LAMBDA_RUNTIME_DIR":"/var/runtime","AWS_REGION":"us-east-1","AWS_DEFAULT_REGION":"us-east-1","AWS_LAMBDA_LOG_GROUP_NAME":"/aws/lambda/aws-nodejs-dev-hello","AWS_LAMBDA_LOG_STREAM_NAME":"2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73","AWS_LAMBDA_FUNCTION_NAME":"aws-nodejs-dev-hello","AWS_LAMBDA_FUNCTION_MEMORY_SIZE":"1024","AWS_LAMBDA_FUNCTION_VERSION":"$LATEST","_AWS_XRAY_DAEMON_ADDRESS":"169.254.79.2","_AWS_XRAY_DAEMON_PORT":"2000","AWS_XRAY_DAEMON_ADDRESS":"169.254.79.2:2000","AWS_XRAY_CONTEXT_MISSING":"LOG_ERROR","_X_AMZN_TRACE_ID":"Root=1-5cdcf03a-64a1b06067c2100c52e51ef4;Parent=28effe37598bb622;Sampled=0","AWS_EXECUTION_ENV":"AWS_Lambda_nodejs8.10","LUMIGO_IS_WARM":"TRUE"}',
+      name: 'aws-nodejs-dev-hello',
       type: 'function',
       ended: 895093200000,
-      event: payloadStringify(exampleApiGatewayEvent),
+      event:
+        '{"resource":"/{proxy+}","path":"/hello/world","httpMethod":"POST","headers":{"Accept":"*/*","Accept-Encoding":"gzip, deflate","cache-control":"no-cache","CloudFront-Forwarded-Proto":"https","CloudFront-Is-Desktop-Viewer":"true","CloudFront-Is-Mobile-Viewer":"false","CloudFront-Is-SmartTV-Viewer":"false","CloudFront-Is-Tablet-Viewer":"false","CloudFront-Viewer-Country":"US","Content-Type":"application/json","headerName":"headerValue","Host":"gy415nuibc.execute-api.us-east-1.amazonaws.com","Postman-Token":"9f583ef0-ed83-4a38-aef3-eb9ce3f7a57f","User-Agent":"PostmanRuntime/2.4.5","Via":"1.1 d98420743a69852491bbdea73f7680bd.cloudfront.net (CloudFront)","X-Amz-Cf-Id":"pn-PWIJc6thYnZm5P0NMgOUglL1DYtl0gdeJky8tqsg8iS_sgsKD1A==","X-Forwarded-For":"54.240.196.186, 54.182.214.83","X-Forwarded-Port":"443","X-Forwarded-Proto":"https"},"multiValueHeaders":{"Accept":["*/*"],"Accept-Encoding":["gzip, deflate"],"cache-control":["no-cache"],"CloudFront-Forwarded-Proto":["https"],"CloudFront-Is-Desktop-Viewer":["true"],"CloudFront-Is-Mobile-Viewer":["false"],"CloudFront-Is-SmartTV-Viewer":["false"],"CloudFront-Is-Tablet-Viewer":["false"],"CloudFront-Viewer-Country":["US"],"Content-Type":["application/json"],"headerName":["headerValue"],"Host":["gy415nuibc.execute-api.us-east-1.amazonaws.com"],"Postman-Token":["9f583ef0-ed83-4a38-aef3-eb9ce3f7a57f"],"User-Agent":["PostmanRuntime/2.4.5"],"Via":["1.1 d98420743a69852491bbdea73f7680bd.cloudfront.net (CloudFront)"],"X-Amz-Cf-Id":["pn-PWIJc6thYnZm5P0NMgOUglL1DYtl0gdeJky8tqsg8iS_sgsKD1A=="],"X-Forwarded-For":["54.240.196.186, 54.182.214.83"],"X-Forwarded-Port":["443"],"X-Forwarded-Proto":["https"]},"queryStringParameters":{"name":"me"},"multiValueQueryStringParameters":{"name":["me"]},"pathParameters":{"proxy":"hello/world"},"stageVariables":{"stageVariableName":"stageVariableValue"},"requestContext":{"accountId":"12345678912","resourceId":"roq9wj","stage":"testStage","requestId":"deef4878-7910-11e6-8f14-25afc3e9ae33","identity":{"cognitoIdentityPoolId":"theCognitoIdentityPoolId","accountId":"theAccountId","cognitoIdentityId":"theCognitoIdentityId","caller":"theCaller","apiKey":"****","accessKey":"****","sourceIp":"192.168.196.186","cognitoAuthenticationType":"theCognitoAuthenticationType","cognitoAuthenticationProvider":"theCognitoAuthenticationProvider","userArn":"theUserArn","userAgent":"PostmanRuntime/2.4.5","user":"theUser"},"authorizer":{"principalId":"admin","clientId":1,"clientName":"Exata"},"resourcePath":"/{proxy+}","httpMethod":"POST","apiId":"gy415nuibc"},"body":"{\\r\\n\\t\\"a\\": 1\\r\\n}"}',
       started: 895093200000,
-      maxFinishTime: 895093323456,
+      maxFinishTime: 895093210000,
     };
-
-    expect(awsSpan.getFunctionSpan()).toEqual(expectedStartSpan);
+    const { event, context } = new HandlerInputesBuilder().build();
+    expect(awsSpan.getFunctionSpan(event, context)).toEqual(expectedStartSpan);
   });
 
   test('getFunctionSpan', () => {
+    const { event, context } = TracerGlobals.getHandlerInputs();
     const expectedStartSpan = {
       info: {
         traceId: {
@@ -233,7 +216,7 @@ describe('awsSpan', () => {
       started: 895093200000,
       maxFinishTime: 895093323456,
     };
-    expect(awsSpan.getFunctionSpan()).toEqual(expectedStartSpan);
+    expect(awsSpan.getFunctionSpan(event, context)).toEqual(expectedStartSpan);
   });
 
   test('removeStartedFromId', () => {
@@ -402,7 +385,7 @@ describe('awsSpan', () => {
     process.env = envs;
     const err = new Error('new error man');
     const handlerReturnValue = { err, data: undefined, type: 'async_callbacked' };
-    const startSpan = awsSpan.getFunctionSpan();
+    const startSpan = awsSpan.getFunctionSpan(event, context);
 
     const endSpan = awsSpan.getEndFunctionSpan(startSpan, handlerReturnValue);
 
@@ -433,7 +416,7 @@ describe('awsSpan', () => {
       ],
     };
     TracerGlobals.setHandlerInputs({ event, context });
-    const startSpan = awsSpan.getFunctionSpan();
+    const startSpan = awsSpan.getFunctionSpan(event, context);
     expect(JSON.parse(startSpan.event).Records[0].s3.object.key).toEqual('value');
   });
 
@@ -478,7 +461,7 @@ describe('awsSpan', () => {
       ],
     };
     TracerGlobals.setHandlerInputs({ event, context });
-    const startSpan = awsSpan.getFunctionSpan();
+    const startSpan = awsSpan.getFunctionSpan(event, context);
     expect(JSON.parse(startSpan.event).Records[0].dynamodb.Keys).toEqual({ k: { S: 'k1' } });
     expect(JSON.parse(startSpan.event).Records[1].dynamodb.Keys).toEqual({ k: { S: 'k2' } });
   });
@@ -491,7 +474,7 @@ describe('awsSpan', () => {
     const envs = { ...process.env, longString };
     process.env = envs;
     const handlerReturnValue = { err: null, data: undefined, type: 'async_callbacked' };
-    const startSpan = awsSpan.getFunctionSpan();
+    const startSpan = awsSpan.getFunctionSpan(event, context);
 
     const endSpan = awsSpan.getEndFunctionSpan(startSpan, handlerReturnValue);
 
@@ -985,6 +968,7 @@ describe('awsSpan', () => {
     const rtt = 1234;
     // eslint-disable-next-line camelcase
     const expected = { reporter_rtt: rtt, ...functionSpan };
-    expect(awsSpan.addRttToFunctionSpan(functionSpan, rtt)).toEqual(expected);
+    awsSpan.addRttToFunctionSpan(functionSpan, rtt);
+    expect(functionSpan).toEqual(expected);
   });
 });

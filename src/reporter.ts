@@ -9,7 +9,7 @@ import * as logger from './logger';
 import { HttpSpansAgent } from './httpSpansAgent';
 export const NUMBER_OF_SPANS_IN_REPORT_OPTIMIZATION = 200;
 
-export const sendSingleSpan = async (span) => exports.sendSpans([span]);
+export const sendSingleSpan = async (span) => sendSpans([span]);
 
 export const logSpans = (rtt: number, spans): void => {
   const spanIds = spans.map((span) => span.id);
