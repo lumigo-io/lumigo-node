@@ -962,13 +962,4 @@ describe('awsSpan', () => {
       ended: receivedTime,
     });
   });
-
-  test('addRttToFunctionSpan', () => {
-    const functionSpan = { a: 'b' };
-    const rtt = 1234;
-    // eslint-disable-next-line camelcase
-    const expected = { reporter_rtt: rtt, ...functionSpan };
-    awsSpan.addRttToFunctionSpan(functionSpan, rtt);
-    expect(functionSpan).toEqual(expected);
-  });
 });

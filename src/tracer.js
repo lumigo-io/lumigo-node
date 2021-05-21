@@ -17,7 +17,6 @@ import {
 import {
   getFunctionSpan,
   getEndFunctionSpan,
-  addRttToFunctionSpan,
   isSpanIsFromAnotherInvocation,
 } from './spans/awsSpan';
 import { sendSingleSpan, sendSpans } from './reporter';
@@ -66,8 +65,7 @@ export const startTrace = async (functionSpan) => {
 
       if (isTimeoutTimerEnabled()) setupTimeoutTimer();
 
-      const { rtt } = await sendSingleSpan(functionSpan);
-      addRttToFunctionSpan(functionSpan, rtt);
+      await sendSingleSpan(functionSpan);
     }
   } catch (err) {
     logger.warn('startTrace failure', err);

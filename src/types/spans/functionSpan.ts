@@ -8,5 +8,4 @@ export interface FunctionSpan {
   event: string;
   started: number;
   maxFinishTime: number;
-  reporter_rtt?: number;
 }

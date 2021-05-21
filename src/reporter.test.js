@@ -12,12 +12,10 @@ describe('reporter', () => {
     TracerGlobals.setTracerInputs({ token });
     const span = { a: 'b', c: 'd' };
 
-    const result = await reporter.sendSingleSpan(span);
+    await reporter.sendSingleSpan(span);
 
     const spans = AxiosMocker.getSentSpans();
     expect(spans).toEqual([[span]]);
-
-    expect(result.rtt).toBeGreaterThanOrEqual(0);
   });
 
   test('isSpansContainsErrors', async () => {
@@ -49,12 +47,10 @@ describe('reporter', () => {
       { e: 'f', g: 'h' },
     ];
 
-    const result = await reporter.sendSpans(spans);
+    await reporter.sendSpans(spans);
 
     const sentSpans = AxiosMocker.getSentSpans();
     expect(sentSpans).toEqual([[{ e: 'f', g: 'h' }]]);
-
-    expect(result.rtt).toBeGreaterThanOrEqual(0);
   });
 
   test('sendSpans - simple flow', async () => {
@@ -65,12 +61,10 @@ describe('reporter', () => {
       { e: 'f', g: 'h' },
     ];
 
-    const result = await reporter.sendSpans(spans);
+    await reporter.sendSpans(spans);
 
     const sentSpans = AxiosMocker.getSentSpans();
     expect(sentSpans).toEqual([spans]);
-
-    expect(result.rtt).toBeGreaterThanOrEqual(0);
   });
 
   test('sendSpans - send only on errors without errors', async () => {
@@ -82,12 +76,10 @@ describe('reporter', () => {
       { e: 'f', g: 'h' },
     ];
 
-    const result = await reporter.sendSpans(spans);
+    await reporter.sendSpans(spans);
 
     const sentSpans = AxiosMocker.getSentSpans();
     expect(sentSpans).toEqual([]);
-
-    expect(result.rtt).toEqual(0);
   });
 
   test('sendSpans - send only on errors with errors', async () => {
@@ -99,11 +91,10 @@ describe('reporter', () => {
       { e: 'f', g: 'h', error: 'error' },
     ];
 
-    const result = await reporter.sendSpans(spans);
+    await reporter.sendSpans(spans);
 
     const sentSpans = AxiosMocker.getSentSpans();
     expect(sentSpans).toEqual([spans]);
-    expect(result.rtt).toBeGreaterThanOrEqual(0);
   });
 
   test('sendSpans - with bad LUMIGO_SECRET_MASKING_REGEX still send spans', async () => {
@@ -116,11 +107,10 @@ describe('reporter', () => {
       { e: 'f', g: 'h', error: 'error' },
     ];
 
-    const result = await reporter.sendSpans(spans);
+    await reporter.sendSpans(spans);
 
     const sentSpans = AxiosMocker.getSentSpans();
     expect(sentSpans).toEqual([spans]);
-    expect(result.rtt).toBeGreaterThanOrEqual(0);
   });
 
   test('forgeRequestBody - simple flow', async () => {

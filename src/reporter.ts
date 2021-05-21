@@ -22,10 +22,10 @@ export const isSpansContainsErrors = (spans): boolean => {
   return spans.filter(spanHasError).length > 0;
 };
 
-export const sendSpans = async (spans): Promise<{ rtt: number }> => {
+export const sendSpans = async (spans): Promise<void> => {
   if (isSendOnlyIfErrors() && !isSpansContainsErrors(spans)) {
     logger.debug('No Spans was sent, `SEND_ONLY_IF_ERROR` is on and no span has error');
-    return { rtt: 0 };
+    return;
   }
   const reqBody = forgeRequestBody(spans, getMaxRequestSize());
 
@@ -37,7 +37,6 @@ export const sendSpans = async (spans): Promise<{ rtt: number }> => {
   const rtt = roundTripEnd - roundTripStart;
 
   logSpans(rtt, spans);
-  return { rtt };
 };
 
 export const shouldTrim = (spans, maxSendBytes: number): boolean => {

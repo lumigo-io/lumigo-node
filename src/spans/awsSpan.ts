@@ -333,8 +333,3 @@ export const getHttpSpan = (
 
   return { ...basicHttpSpan, info, service, started, ended };
 };
-
-export const addRttToFunctionSpan = (functionSpan: any, rtt: number): void => {
-  // eslint-disable-next-line camelcase
-  functionSpan.reporter_rtt = rtt;
-};
