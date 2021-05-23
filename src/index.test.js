@@ -6,6 +6,8 @@ import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
 import * as fsExtra from 'fs-extra';
 import { AxiosMocker } from '../testUtils/axiosMocker';
 import { MAX_ELEMENTS_IN_EXTRA } from './tracer';
+import { HandlerInputesBuilder } from '../testUtils/handlerInputesBuilder';
+import { sleep } from '../testUtils/sleep';
 
 const TOKEN = 't_10faa5e13e7844aaa1234';
 
@@ -25,7 +27,7 @@ describe('index', () => {
     const dupDirPath = `${originDirPath}Dup'`;
     const layerPath = `${dupDirPath}/index.js`;
 
-    const context = { getRemainingTimeInMillis: () => 30000 };
+    const { context } = new HandlerInputesBuilder().build();
     const callback = jest.fn();
     const retVal = 'The Tracer Wars';
 
@@ -52,7 +54,7 @@ describe('index', () => {
   });
 
   test('execution tags - async handler', async () => {
-    const context = { getRemainingTimeInMillis: () => 30000 };
+    const { context } = new HandlerInputesBuilder().build();
     const callback = jest.fn();
     const retVal = 'The Tracer Wars';
 
@@ -180,7 +182,7 @@ describe('index', () => {
   });
 
   test('execution tags - with undefined', async () => {
-    const context = { getRemainingTimeInMillis: () => 30000 };
+    const { context } = new HandlerInputesBuilder().build();
 
     const lumigoImport = require('./index');
     const lumigo = lumigoImport({ token: TOKEN });
@@ -199,7 +201,7 @@ describe('index', () => {
   });
 
   test('execution tags - non async handler', async () => {
-    const context = { getRemainingTimeInMillis: () => 30000 };
+    const { context } = new HandlerInputesBuilder().build();
 
     const lumigoImport = require('./index');
     const lumigo = lumigoImport({ token: TOKEN });
@@ -220,6 +222,32 @@ describe('index', () => {
       { key: 'k0', value: 'v0' },
       { key: 'k1', value: 'v1' },
     ]);
+  });
+
+  test('trace => UnhandledPromiseRejection', async () => {
+    process.exit = jest.fn();
+
+    const mError = new Error('dead lock');
+    jest.spyOn(process, 'on').mockImplementation((event, handler) => {
+      if (event === 'unhandledRejection') {
+        handler(mError);
+      }
+    });
+
+    const { context } = new HandlerInputesBuilder().build();
+
+    const lumigoImport = require('./index');
+    const lumigo = lumigoImport({ token: TOKEN });
+
+    const userHandler = async (event, context) => {
+      await sleep(0);
+    };
+    await lumigo.trace(userHandler)({}, context);
+    await process._events.unhandledRejection('Boom', Promise.reject('Boom'));
+
+    const lastSpan = AxiosMocker.getSentSpans().pop().pop();
+    expect(lastSpan.error.type).toBe('Runtime.UnhandledPromiseRejection');
+    expect(lastSpan.error.message).toBe('Boom');
   });
 
   test('addExecutionTag without tracer not throw exception', async () => {

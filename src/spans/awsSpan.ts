@@ -32,6 +32,8 @@ import * as logger from '../logger';
 import { payloadStringify, prune } from '../utils/payloadStringify';
 import { HttpInfo } from '../types/spans/httpSpan';
 import { BasicSpan, SpanInfo } from '../types/spans/basicSpan';
+import { FunctionSpan } from '../types/spans/functionSpan';
+import { Context } from 'aws-lambda';
 
 export const HTTP_SPAN = 'http';
 export const FUNCTION_SPAN = 'function';
@@ -119,9 +121,7 @@ const getEventForSpan = (hasError: boolean = false): string => {
 const getEnvsForSpan = (hasError: boolean = false): string =>
   payloadStringify(process.env, getEventEntitySize(hasError));
 
-export const getFunctionSpan = () => {
-  const { event: lambdaEvent, context: lambdaContext } = TracerGlobals.getHandlerInputs();
-
+export const getFunctionSpan = (lambdaEvent: {}, lambdaContext: Context): FunctionSpan => {
   const transactionId = getCurrentTransactionId();
   const basicSpan = getBasicSpan(transactionId);
   const info = { ...basicSpan.info, ...getEventInfo(lambdaEvent) };
@@ -134,13 +134,12 @@ export const getFunctionSpan = () => {
   const event = getEventForSpan();
   const envs = getEnvsForSpan();
 
-  // @ts-ignore
   const { functionName: name, awsRequestId, remainingTimeInMillis } = getContextInfo(lambdaContext);
 
   const id = `${awsRequestId}_started`;
   const maxFinishTime = started + remainingTimeInMillis;
 
-  return {
+  const startSpan = {
     ...basicSpan,
     info,
     id,
@@ -152,6 +151,10 @@ export const getFunctionSpan = () => {
     started,
     maxFinishTime,
   };
+
+  logger.debug('startTrace span created', startSpan);
+
+  return startSpan;
 };
 
 export const removeStartedFromId = (id) => id.split('_')[0];
@@ -329,9 +332,4 @@ export const getHttpSpan = (
   const { started, ended } = getHttpSpanTimings(requestData, responseData);
 
   return { ...basicHttpSpan, info, service, started, ended };
-};
-
-export const addRttToFunctionSpan = (functionSpan: any, rtt: number): any => {
-  // eslint-disable-next-line camelcase
-  return Object.assign({}, functionSpan, { reporter_rtt: rtt });
 };
