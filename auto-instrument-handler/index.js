@@ -33,12 +33,13 @@ const removeLumigoFromStacktrace = err => {
 };
 
 const handler = (event, context, callback) => {
+  let userHandler;
   try {
-    const handler = getHandler();
+    userHandler = getHandler();
   } catch (e) {
     throw removeLumigoFromStacktrace(e);
   }
-  return lumigo.trace(handler)(event, context, callback);
+  return lumigo.trace(userHandler)(event, context, callback);
 };
 
 module.exports = { ORIGINAL_HANDLER_KEY, handler };
