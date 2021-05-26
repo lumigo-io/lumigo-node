@@ -1,23 +1,15 @@
 const lumigo = require('@lumigo/tracer')({});
+const { load } = require('./aws/aws-user-function.js');
 
 const ORIGINAL_HANDLER_KEY = 'LUMIGO_ORIGINAL_HANDLER';
 
-const parseOriginalHandler = originalHandler => {
-  if (!originalHandler) {
+const getHandler = () => {
+  if (process.env[ORIGINAL_HANDLER_KEY] === undefined)
     throw Error('Could not load the original handler. Are you sure that the handler is correct?');
-  }
-  // The handler's format is `file_path.function`, where the `file_path` is inside `/var/task`
-  if (!originalHandler.includes('.')) {
-    throw Error('Could not parse the original handler - invalid format');
-  }
-  const handlerParts = originalHandler.split('.');
-  const moduleName = handlerParts.slice(0, -1).join('.');
-  let moduleFullName = moduleName;
-  if (!moduleName.startsWith("/opt/")) {
-    moduleFullName = `/var/task/${moduleName}`;
-  }
-  const functionName = handlerParts.slice(-1)[0];
-  return [moduleFullName, functionName];
+  return load(
+      process.env.LAMBDA_TASK_ROOT,
+      process.env[ORIGINAL_HANDLER_KEY]
+  );
 };
 
 const removeLumigoFromStacktrace = err => {
@@ -41,25 +33,17 @@ const removeLumigoFromStacktrace = err => {
 };
 
 const handler = (event, context, callback) => {
-  const originalHandler = process.env[ORIGINAL_HANDLER_KEY];
-  const [moduleName, functionName] = parseOriginalHandler(originalHandler);
-  let module;
   try {
-    module = require(moduleName);
+    const handler = getHandler();
   } catch (e) {
     throw removeLumigoFromStacktrace(e);
   }
-  if (!module[functionName]) {
-    throw Error(
-      `Could not find the handler's function (${functionName}) inside the handler's file (${moduleName})`
-    );
-  }
-  return lumigo.trace(module[functionName])(event, context, callback);
+  return lumigo.trace(handler)(event, context, callback);
 };
 
-module.exports = { ORIGINAL_HANDLER_KEY, _utils: {parseOriginalHandler}, handler };
+module.exports = { ORIGINAL_HANDLER_KEY, handler };
 try {
-  // require the user's handler during initialization time, just as without Lumigo
-  const [moduleName] = parseOriginalHandler(process.env[ORIGINAL_HANDLER_KEY]);
-  require(moduleName);
-} catch (e) {}
+  // require the handler during the cold-start phase.
+   getHandler();
+}
+catch (e) {}
