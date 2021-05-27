@@ -2,21 +2,21 @@ Layers runtime: nodejs10.x
 ----
 | Region | ARN |
 | --- | --- |
-|US East (N. Virginia)  `us-east-1`|`arn:aws:lambda:us-east-1:114300393969:layer:lumigo-node-tracer:141`|
-|US East (Ohio)  `us-east-2`|`arn:aws:lambda:us-east-2:114300393969:layer:lumigo-node-tracer:141`|
-|US West (N. California)  `us-west-1`|`arn:aws:lambda:us-west-1:114300393969:layer:lumigo-node-tracer:141`|
-|US West (Oregon)  `us-west-2`|`arn:aws:lambda:us-west-2:114300393969:layer:lumigo-node-tracer:144`|
-|Canada (Central)  `ca-central-1`|`arn:aws:lambda:ca-central-1:114300393969:layer:lumigo-node-tracer:141`|
-|EU (Stockholm)  `eu-north-1`|`arn:aws:lambda:eu-north-1:114300393969:layer:lumigo-node-tracer:141`|
-|EU (Ireland)  `eu-west-1`|`arn:aws:lambda:eu-west-1:114300393969:layer:lumigo-node-tracer:141`|
-|EU (London)  `eu-west-2`|`arn:aws:lambda:eu-west-2:114300393969:layer:lumigo-node-tracer:141`|
-|EU (Paris)  `eu-west-3`|`arn:aws:lambda:eu-west-3:114300393969:layer:lumigo-node-tracer:141`|
-|EU (Frankfurt)  `eu-central-1`|`arn:aws:lambda:eu-central-1:114300393969:layer:lumigo-node-tracer:141`|
-|Asia Pacific (Tokyo)  `ap-northeast-1`|`arn:aws:lambda:ap-northeast-1:114300393969:layer:lumigo-node-tracer:141`|
-|Asia Pacific (Seoul)  `ap-northeast-2`|`arn:aws:lambda:ap-northeast-2:114300393969:layer:lumigo-node-tracer:141`|
-|Asia Pacific (Singapore)  `ap-southeast-1`|`arn:aws:lambda:ap-southeast-1:114300393969:layer:lumigo-node-tracer:141`|
-|Asia Pacific (Sydney)  `ap-southeast-2`|`arn:aws:lambda:ap-southeast-2:114300393969:layer:lumigo-node-tracer:141`|
-|Asia Pacific (Hong Kong)  `ap-east-1`|`arn:aws:lambda:ap-east-1:114300393969:layer:lumigo-node-tracer:126`|
-|Asia Pacific (Mumbai)  `ap-south-1`|`arn:aws:lambda:ap-south-1:114300393969:layer:lumigo-node-tracer:141`|
-|South America (São Paulo)  `sa-east-1`|`arn:aws:lambda:sa-east-1:114300393969:layer:lumigo-node-tracer:141`|
-|Middle East (Bahrain)  `me-south-1`|`arn:aws:lambda:me-south-1:114300393969:layer:lumigo-node-tracer:126`|
+|US East (N. Virginia)  `us-east-1`|`arn:aws:lambda:us-east-1:114300393969:layer:lumigo-node-tracer:142`|
+|US East (Ohio)  `us-east-2`|`arn:aws:lambda:us-east-2:114300393969:layer:lumigo-node-tracer:142`|
+|US West (N. California)  `us-west-1`|`arn:aws:lambda:us-west-1:114300393969:layer:lumigo-node-tracer:142`|
+|US West (Oregon)  `us-west-2`|`arn:aws:lambda:us-west-2:114300393969:layer:lumigo-node-tracer:145`|
+|Canada (Central)  `ca-central-1`|`arn:aws:lambda:ca-central-1:114300393969:layer:lumigo-node-tracer:142`|
+|EU (Stockholm)  `eu-north-1`|`arn:aws:lambda:eu-north-1:114300393969:layer:lumigo-node-tracer:142`|
+|EU (Ireland)  `eu-west-1`|`arn:aws:lambda:eu-west-1:114300393969:layer:lumigo-node-tracer:142`|
+|EU (London)  `eu-west-2`|`arn:aws:lambda:eu-west-2:114300393969:layer:lumigo-node-tracer:142`|
+|EU (Paris)  `eu-west-3`|`arn:aws:lambda:eu-west-3:114300393969:layer:lumigo-node-tracer:142`|
+|EU (Frankfurt)  `eu-central-1`|`arn:aws:lambda:eu-central-1:114300393969:layer:lumigo-node-tracer:142`|
+|Asia Pacific (Tokyo)  `ap-northeast-1`|`arn:aws:lambda:ap-northeast-1:114300393969:layer:lumigo-node-tracer:142`|
+|Asia Pacific (Seoul)  `ap-northeast-2`|`arn:aws:lambda:ap-northeast-2:114300393969:layer:lumigo-node-tracer:142`|
+|Asia Pacific (Singapore)  `ap-southeast-1`|`arn:aws:lambda:ap-southeast-1:114300393969:layer:lumigo-node-tracer:142`|
+|Asia Pacific (Sydney)  `ap-southeast-2`|`arn:aws:lambda:ap-southeast-2:114300393969:layer:lumigo-node-tracer:142`|
+|Asia Pacific (Hong Kong)  `ap-east-1`|`arn:aws:lambda:ap-east-1:114300393969:layer:lumigo-node-tracer:127`|
+|Asia Pacific (Mumbai)  `ap-south-1`|`arn:aws:lambda:ap-south-1:114300393969:layer:lumigo-node-tracer:142`|
+|South America (São Paulo)  `sa-east-1`|`arn:aws:lambda:sa-east-1:114300393969:layer:lumigo-node-tracer:142`|
+|Middle East (Bahrain)  `me-south-1`|`arn:aws:lambda:me-south-1:114300393969:layer:lumigo-node-tracer:127`|
