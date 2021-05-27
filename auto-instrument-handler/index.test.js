@@ -5,6 +5,11 @@ describe('tracer', () => {
     process.env[index.LUMIGO_SWITCH_OFF] = 'TRUE';
     process.env.LAMBDA_TASK_ROOT = '/var/task';
 
+    delete process.env[index.ORIGINAL_HANDLER_KEY];
+    expect(() => index.handler({}, {})).toThrowError(
+      'Could not load the original handler. Please contact Lumigo.'
+    );
+
     process.env[index.ORIGINAL_HANDLER_KEY] = '';
     expect(() => index.handler({}, {})).toThrowError(
       'Bad handler'

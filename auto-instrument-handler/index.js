@@ -5,7 +5,7 @@ const ORIGINAL_HANDLER_KEY = 'LUMIGO_ORIGINAL_HANDLER';
 
 const getHandler = () => {
   if (process.env[ORIGINAL_HANDLER_KEY] === undefined)
-    throw Error('Could not load the original handler. Are you sure that the handler is correct?');
+    throw Error('Could not load the original handler. Please contact Lumigo.');
   return load(
       process.env.LAMBDA_TASK_ROOT,
       process.env[ORIGINAL_HANDLER_KEY]
