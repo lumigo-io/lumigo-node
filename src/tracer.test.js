@@ -80,7 +80,7 @@ describe('tracer', () => {
     expect(requests.length).toEqual(0);
   });
 
-  test('startTrace - timeout timer - simple flow', async (done) => {
+  test('startTrace - timeout timer - simple flow', (done) => {
     const timeout = 2000;
     const testBuffer = 50;
 
@@ -89,19 +89,19 @@ describe('tracer', () => {
     const { event, context } = new HandlerInputesBuilder().withTimeout(timeout).build();
     TracerGlobals.setHandlerInputs({ event, context });
     const functionSpan = getFunctionSpan(event, context);
-    await tracer.startTrace(functionSpan);
+    tracer.startTrace(functionSpan).then(() => {
+      SpansContainer.addSpan({ id: 'SomeRandomHttpSpan' });
 
-    SpansContainer.addSpan({ id: 'SomeRandomHttpSpan' });
-
-    setTimeout(() => {
-      const requests = AxiosMocker.getRequests();
-      //1 for start span, 1 for SomeRandomHttpSpan
-      expect(requests.length).toEqual(2);
-      done();
-    }, timeout + testBuffer);
+      setTimeout(() => {
+        const requests = AxiosMocker.getRequests();
+        //1 for start span, 1 for SomeRandomHttpSpan
+        expect(requests.length).toEqual(2);
+        done();
+      }, timeout + testBuffer);
+    });
   });
 
-  test('startTrace - timeout timer - too short timeout', async (done) => {
+  test('startTrace - timeout timer - too short timeout', (done) => {
     const timeout = 500;
     const testBuffer = 50;
 
@@ -109,18 +109,19 @@ describe('tracer', () => {
     const { event, context } = new HandlerInputesBuilder().withTimeout(timeout).build();
     TracerGlobals.setHandlerInputs({ event, context });
     const functionSpan = getFunctionSpan(event, context);
-    await tracer.startTrace(functionSpan);
-    SpansContainer.addSpan({ id: 'SomeRandomHttpSpan' });
+    tracer.startTrace(functionSpan).then(() => {
+      SpansContainer.addSpan({ id: 'SomeRandomHttpSpan' });
 
-    setTimeout(() => {
-      const requests = AxiosMocker.getRequests();
-      //1 for start span
-      expect(requests.length).toEqual(1);
-      done();
-    }, timeout + testBuffer);
+      setTimeout(() => {
+        const requests = AxiosMocker.getRequests();
+        //1 for start span
+        expect(requests.length).toEqual(1);
+        done();
+      }, timeout + testBuffer);
+    });
   });
 
-  test('startTrace - timeout timer - called twice', async (done) => {
+  test('startTrace - timeout timer - called twice', (done) => {
     const timeout = 2000;
     const testBuffer = 50;
 
@@ -128,20 +129,21 @@ describe('tracer', () => {
     const { event, context } = new HandlerInputesBuilder().withTimeout(timeout).build();
     TracerGlobals.setHandlerInputs({ event, context });
     const functionSpan = getFunctionSpan(event, context);
-    await tracer.startTrace(functionSpan);
-    await tracer.startTrace(functionSpan);
+    tracer.startTrace(functionSpan).then(() => {
+      tracer.startTrace(functionSpan).then(() => {
+        SpansContainer.addSpan({ id: 'SomeRandomHttpSpan' });
 
-    SpansContainer.addSpan({ id: 'SomeRandomHttpSpan' });
-
-    setTimeout(() => {
-      const requests = AxiosMocker.getRequests();
-      //Expect 3 - 2 start spans and 1 from the timer
-      expect(requests.length).toEqual(3);
-      done();
-    }, timeout + testBuffer);
+        setTimeout(() => {
+          const requests = AxiosMocker.getRequests();
+          //Expect 3 - 2 start spans and 1 from the timer
+          expect(requests.length).toEqual(3);
+          done();
+        }, timeout + testBuffer);
+      });
+    });
   });
 
-  test('startTrace - timeout timer - too short timeout (timer not effects)', async (done) => {
+  test('startTrace - timeout timer - too short timeout (timer not effects)', (done) => {
     const timeout = 10;
     const testBuffer = 50;
 
@@ -150,18 +152,19 @@ describe('tracer', () => {
     const { event, context } = new HandlerInputesBuilder().withTimeout(timeout).build();
     TracerGlobals.setHandlerInputs({ event, context });
     const functionSpan = getFunctionSpan(event, context);
-    await tracer.startTrace(functionSpan);
-    SpansContainer.addSpan({ id: 'SomeRandomHttpSpan' });
+    tracer.startTrace(functionSpan).then(() => {
+      SpansContainer.addSpan({ id: 'SomeRandomHttpSpan' });
 
-    setTimeout(() => {
-      const requests = AxiosMocker.getRequests();
-      //Expect 1 for start span
-      expect(requests.length).toEqual(1);
-      done();
-    }, timeout + testBuffer);
+      setTimeout(() => {
+        const requests = AxiosMocker.getRequests();
+        //Expect 1 for start span
+        expect(requests.length).toEqual(1);
+        done();
+      }, timeout + testBuffer);
+    });
   });
 
-  test('startTrace - timeout timer - SEND_ONLY_ON_ERROR - not sending spans', async (done) => {
+  test('startTrace - timeout timer - SEND_ONLY_ON_ERROR - not sending spans', (done) => {
     const timeout = 1000;
     const testBuffer = 50;
 
@@ -169,14 +172,15 @@ describe('tracer', () => {
     new EnvironmentBuilder().awsEnvironment().applyEnv();
     const { event, context } = new HandlerInputesBuilder().withTimeout(timeout).build();
     const functionSpan = getFunctionSpan(event, context);
-    await tracer.startTrace(functionSpan);
-    SpansContainer.addSpan({ id: 'SomeRandomHttpSpan' });
+    tracer.startTrace(functionSpan).then(() => {
+      SpansContainer.addSpan({ id: 'SomeRandomHttpSpan' });
 
-    setTimeout(() => {
-      const requests = AxiosMocker.getRequests();
-      expect(requests.length).toEqual(0);
-      done();
-    }, timeout + testBuffer);
+      setTimeout(() => {
+        const requests = AxiosMocker.getRequests();
+        expect(requests.length).toEqual(0);
+        done();
+      }, timeout + testBuffer);
+    });
   });
 
   test('isCallbacked', async () => {
@@ -349,7 +353,7 @@ describe('tracer', () => {
     expect(spies.warnClient).toHaveBeenCalledTimes(1);
   });
 
-  test('trace; non async callbacked', async (done) => {
+  test('trace; non async callbacked', (done) => {
     const token = TOKEN;
     const lumigoTracer = require('./index')({ token });
 
@@ -362,12 +366,14 @@ describe('tracer', () => {
 
     const { event, context } = new HandlerInputesBuilder().build();
 
-    await lumigoTracer.trace(userHandler1)(event, context, callback1);
-
-    expect(Http.hookHttp).toHaveBeenCalledTimes(1);
+    lumigoTracer
+      .trace(userHandler1)(event, context, callback1)
+      .then(() => {
+        expect(Http.hookHttp).toHaveBeenCalledTimes(1);
+      });
   });
 
-  test('trace; imported twice', async (done) => {
+  test('trace; imported twice', (done) => {
     const token = TOKEN;
     const lumigoTracer1 = require('./index')({ token });
     const lumigoTracer2 = require('./index')({ token });
@@ -381,10 +387,15 @@ describe('tracer', () => {
 
     const { event, context } = new HandlerInputesBuilder().build();
 
-    await lumigoTracer1.trace(userHandler1)(event, context, callback1);
-    await lumigoTracer2.trace(userHandler1)(event, context, callback1);
-
-    expect(Http.hookHttp).toHaveBeenCalledTimes(1);
+    lumigoTracer1
+      .trace(userHandler1)(event, context, callback1)
+      .then(() => {
+        lumigoTracer2
+          .trace(userHandler1)(event, context, callback1)
+          .then(() => {
+            expect(Http.hookHttp).toHaveBeenCalledTimes(1);
+          });
+      });
   });
 
   test('trace; non async throw error', async () => {
@@ -404,7 +415,7 @@ describe('tracer', () => {
     expect(Http.hookHttp).toHaveBeenCalledTimes(1);
   });
 
-  test('trace; async callbacked ', async (done) => {
+  test('trace; async callbacked ', (done) => {
     const { event, context } = new HandlerInputesBuilder().build();
     const token = TOKEN;
 
@@ -419,7 +430,7 @@ describe('tracer', () => {
     const userHandler3 = async (event, context, callback) => {
       callback(null, retVal);
     };
-    await tracer.trace({ token })(userHandler3)(event, context, callback3);
+    tracer.trace({ token })(userHandler3)(event, context, callback3);
   });
 
   test('trace; async resolved ', async () => {
@@ -604,19 +615,21 @@ describe('tracer', () => {
     expect(callBackCalled).toEqual(true);
   });
 
-  test('No exception at startHooks', async (done) => {
+  test('No exception at startHooks', (done) => {
     Http.hookHttp.mockImplementationOnce(() => {
       throw new Error('Mocked error');
     });
     const { event, context } = new HandlerInputesBuilder().build();
     const handler = jest.fn(() => done());
-    await tracer.trace({})(handler)(event, context);
-
+    tracer
+      .trace({})(handler)(event, context)
+      .then(() => {
+        expect(handler).toHaveBeenCalledOnce();
+      });
     // No exception.
-    expect(handler).toHaveBeenCalledOnce();
   });
 
-  test('No exception at initialization', async (done) => {
+  test('No exception at initialization', (done) => {
     const mockedTracerGlobals = jest.spyOn(TracerGlobals, 'setHandlerInputs');
     mockedTracerGlobals.mockImplementationOnce(() => {
       throw new Error('Mocked error');
@@ -625,11 +638,14 @@ describe('tracer', () => {
 
     const { event, context } = new HandlerInputesBuilder().build();
 
-    await tracer.trace({})(handler)(event, context);
+    tracer
+      .trace({})(handler)(event, context)
+      .then(() => {
+        expect(handler).toHaveBeenCalledOnce();
+        mockedTracerGlobals.mockClear();
+      });
 
     // No exception.
-    expect(handler).toHaveBeenCalledOnce();
-    mockedTracerGlobals.mockClear();
   });
 
   test('performStepFunctionLogic - performStepFunctionLogic doesnt call if not step function', async () => {
