@@ -38,6 +38,7 @@
     "@commitlint/config-conventional": "^12.1.4",
     "@semantic-release/changelog": "^3.0.6",
     "@semantic-release/git": "^7.0.18",
+    "@semantic-release/github": "^7.2.3",
     "@types/aws-lambda": "^8.10.77",
     "@types/jest": "^26.0.23",
     "aws-sdk": "^2.922.0",
@@ -65,7 +66,8 @@
       "@semantic-release/commit-analyzer",
       "@semantic-release/release-notes-generator",
       "@semantic-release/npm",
-      "@semantic-release/git"
+      "@semantic-release/git",
+      "@semantic-release/github"
     ]
   },
   "husky": {
