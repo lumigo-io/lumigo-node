@@ -7,7 +7,9 @@
     "test": "jest"
   },
   "files": [
-    "index.js"
+    "index.js",
+    "aws/aws-user-function.js",
+    "aws/Errors.js"
   ],
   "author": "saart",
   "license": "ISC",

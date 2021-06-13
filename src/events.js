@@ -22,7 +22,7 @@ export const getTriggeredBy = (event) => {
   }
 
   if (
-    (event && event['httpMethod'] && event['requestContext']['stage']) ||
+    (event && event['httpMethod'] && event['requestContext'] && event['requestContext']['stage']) ||
     (event &&
       event['headers'] &&
       event['version'] === '2.0' &&

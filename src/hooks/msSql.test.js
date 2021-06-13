@@ -40,10 +40,10 @@ describe('msSql', () => {
     TracerGlobals.setHandlerInputs(handlerInputs);
   });
 
-  test('hook -> query (text: string, callback: Function) -> success', async (done) => {
+  test('hook -> query (text: string, callback: Function) -> success', (done) => {
     const client = createHookedClient();
 
-    await client.connect(DUMMY_CONNECTION_STRING);
+    client.connect(DUMMY_CONNECTION_STRING);
 
     client.query('SELECT * from users', () => {
       const spans = SpansContainer.getSpans();
@@ -58,14 +58,14 @@ describe('msSql', () => {
     });
   });
 
-  test('hook -> query (text: string, callback: Function) -> failed', async (done) => {
+  test('hook -> query (text: string, callback: Function) -> failed', (done) => {
     const client = createHookedClient({
       error: {
         errorMessage: 'BAD_ERROR',
       },
     });
 
-    await client.connect(DUMMY_CONNECTION_STRING);
+    client.connect(DUMMY_CONNECTION_STRING);
 
     client.query('SELECT * from users', () => {
       const spans = SpansContainer.getSpans();

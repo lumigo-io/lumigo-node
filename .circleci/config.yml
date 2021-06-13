@@ -118,9 +118,9 @@ jobs:
       auth:
         username: lumigo
         password: $DOCKERHUB_PASSWORD
+    resource_class: medium+
     environment:
     - TZ: Asia/Jerusalem
-    resource_class: small
     steps:
     - run:
         command: |
@@ -158,7 +158,7 @@ jobs:
         password: $DOCKERHUB_PASSWORD
     environment:
     - TZ: Asia/Jerusalem
-    resource_class: small
+    resource_class: medium+
     steps:
     - run:
         command: |
