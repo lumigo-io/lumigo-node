@@ -1,7 +1,7 @@
-import { Context } from 'aws-lambda/handler';
+import { LambdaContext } from '../types/aws/awsEnvironment';
 
-export function isAwsContext(awsContext: Context | any): awsContext is Context {
-  const context = awsContext as Context;
+export function isAwsContext(awsContext: LambdaContext | any): awsContext is LambdaContext {
+  const context = awsContext as LambdaContext;
   return (
     context.invokedFunctionArn !== undefined &&
     context.awsRequestId !== undefined &&
