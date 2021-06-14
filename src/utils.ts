@@ -2,9 +2,8 @@ import { TracerGlobals } from './globals';
 import * as crypto from 'crypto';
 import * as logger from './logger';
 import { sortify } from './tools/jsonSortify';
-import { Context } from 'aws-lambda';
 import { EdgeUrl } from './types/common/edgeTypes';
-import { AwsEnvironment, ContextInfo } from './types/aws/awsEnvironment';
+import { AwsEnvironment, ContextInfo, LambdaContext } from './types/aws/awsEnvironment';
 import { isAwsContext } from './guards/awsGuards';
 
 export const SPAN_PATH = '/api/spans';
@@ -34,7 +33,7 @@ export const DEFAULT_TIMEOUT_MIN_DURATION = 2000;
 export const DEFAULT_CONNECTION_TIMEOUT = 300;
 export const DEFAULT_TRACER_MAX_DURATION_TIMEOUT = 500;
 
-export const getContextInfo = (context: Context): ContextInfo => {
+export const getContextInfo = (context: LambdaContext): ContextInfo => {
   const remainingTimeInMillis = context.getRemainingTimeInMillis();
   const { functionName, awsRequestId, invokedFunctionArn, callbackWaitsForEmptyEventLoop } =
     context;
@@ -52,7 +51,7 @@ export const getContextInfo = (context: Context): ContextInfo => {
 export const getAccountIdFromInvokedFunctinArn = (invokedFunctionArn: string): string =>
   invokedFunctionArn ? invokedFunctionArn.split(':')[4] : '';
 
-export const getAccountId = (context: Context): string => {
+export const getAccountId = (context: LambdaContext): string => {
   const { invokedFunctionArn } = context;
   return getAccountIdFromInvokedFunctinArn(invokedFunctionArn);
 };

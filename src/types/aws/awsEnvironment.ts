@@ -1,3 +1,5 @@
+import { Context } from 'aws-lambda';
+
 export interface AwsEnvironment {
   awsRegion: string;
   awsExecutionEnv: string;
@@ -17,4 +19,8 @@ export interface ContextInfo {
   awsAccountId: string;
   remainingTimeInMillis: number;
   callbackWaitsForEmptyEventLoop: boolean;
+}
+
+export interface LambdaContext extends Context {
+  __wrappedByLumigo?: boolean | undefined;
 }

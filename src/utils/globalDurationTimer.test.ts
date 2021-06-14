@@ -14,7 +14,7 @@ describe('GlobalDurationTimer', () => {
     GlobalDurationTimer.stop();
 
     expect(GlobalDurationTimer.isTimePassed(150)).toBeFalsy();
-    expect(GlobalDurationTimer.isTimePassed(20)).toBeTruthy();
+    expect(GlobalDurationTimer.isTimePassed(10)).toBeTruthy();
     expect(GlobalDurationTimer.isTimePassed()).toBeFalsy();
   });
 
@@ -30,7 +30,7 @@ describe('GlobalDurationTimer', () => {
     await timeout(10);
     await a.a();
     expect(GlobalDurationTimer.isTimePassed(150)).toBeFalsy();
-    expect(GlobalDurationTimer.isTimePassed(20)).toBeTruthy();
+    expect(GlobalDurationTimer.isTimePassed(10)).toBeTruthy();
   });
 
   test('@timedSync => simple flow', () => {
