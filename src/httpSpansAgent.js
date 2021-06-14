@@ -93,6 +93,7 @@ export const HttpSpansAgent = (() => {
       })
       .catch((e) => {
         logger.debug('Edge error (Tracer skipping)', e.message);
+        logger.warnClientInternalError('Could not send span. Please contact Lumigo.', e.message);
       });
 
     await Promise.race([requestPromise, requestTimeout]).finally(() => {

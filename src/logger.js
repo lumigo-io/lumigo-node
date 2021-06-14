@@ -1,6 +1,8 @@
 import { isDebug, isStoreLogs } from './utils';
 const LOG_PREFIX = '#LUMIGO#';
 const WARN_CLIENT_PREFIX = 'Lumigo Warning';
+const WARN_CLIENT_INTERNAL_ERROR_PREFIX = 'Lumigo Internal Error';
+export const LUMIGO_ALREADY_SENT_INTERNAL_ERROR_KEY = 'LUMIGO_INTERNAL_ERROR_SENT';
 
 const MAX_DUPLICATE_LOGS = 50;
 
@@ -92,4 +94,16 @@ export const warnClient = (msg, obj) => {
   // eslint-disable-next-line no-console
   else console.log(`${WARN_CLIENT_PREFIX}: ${msg}`);
   return true;
+};
+
+export const warnClientInternalError = (msg, obj) => {
+  if (process.env.LUMIGO_WARNINGS !== 'off') {
+    if (!process.env[LUMIGO_ALREADY_SENT_INTERNAL_ERROR_KEY]) {
+      // eslint-disable-next-line no-console
+      console.log(`${WARN_CLIENT_INTERNAL_ERROR_PREFIX}: ${msg}`, obj);
+      process.env[LUMIGO_ALREADY_SENT_INTERNAL_ERROR_KEY] = true;
+      return true;
+    }
+  }
+  return false;
 };

@@ -283,4 +283,16 @@ describe('logger', () => {
     process.env.LUMIGO_WARNINGS = undefined;
     expect(logger.warnClient('msg')).toEqual(true);
   });
+
+  test('lumigoInternalWarnings; print only if not env var and only once', () => {
+    process.env[logger.LUMIGO_ALREADY_SENT_INTERNAL_ERROR_KEY] = undefined;
+    process.env.LUMIGO_WARNINGS = 'off';
+    expect(logger.warnClientInternalError('msg')).toEqual(false);
+
+    process.env.LUMIGO_WARNINGS = undefined;
+    expect(logger.warnClientInternalError('msg')).toEqual(true);
+
+    process.env.LUMIGO_WARNINGS = undefined;
+    expect(logger.warnClientInternalError('msg')).toEqual(false);
+  });
 });
