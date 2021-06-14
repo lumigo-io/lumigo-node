@@ -1,26 +1,26 @@
 import {
-  isPromise,
-  isSwitchedOff,
-  isAwsEnvironment,
-  getEdgeUrl,
-  removeLumigoFromStacktrace,
-  isStepFunction,
-  safeExecute,
-  getRandomId,
-  LUMIGO_EVENT_KEY,
-  STEP_FUNCTION_UID_KEY,
   getContextInfo,
-  isTimeoutTimerEnabled,
-  getTimeoutTimerBuffer,
+  getEdgeUrl,
+  getRandomId,
   getTimeoutMinDuration,
+  getTimeoutTimerBuffer,
+  isAwsEnvironment,
+  isPromise,
+  isStepFunction,
+  isSwitchedOff,
+  isTimeoutTimerEnabled,
+  LUMIGO_EVENT_KEY,
+  removeLumigoFromStacktrace,
+  safeExecute,
+  STEP_FUNCTION_UID_KEY,
 } from './utils';
 import {
-  getFunctionSpan,
   getEndFunctionSpan,
+  getFunctionSpan,
   isSpanIsFromAnotherInvocation,
 } from './spans/awsSpan';
 import { sendSingleSpan, sendSpans } from './reporter';
-import { TracerGlobals, SpansContainer, GlobalTimer, clearGlobals } from './globals';
+import { clearGlobals, GlobalTimer, SpansContainer, TracerGlobals } from './globals';
 import * as logger from './logger';
 import { Http } from './hooks/http';
 import { runOneTimeWrapper } from './utils/functionUtils';
@@ -37,16 +37,18 @@ export const LEAK_MESSAGE =
 const setupTimeoutTimer = () => {
   logger.debug('Timeout timer set-up started');
   const { context } = TracerGlobals.getHandlerInputs();
-  const { remainingTimeInMillis } = getContextInfo(context);
-  const timeoutBuffer = getTimeoutTimerBuffer();
-  const minDuration = getTimeoutMinDuration();
-  if (timeoutBuffer < remainingTimeInMillis && remainingTimeInMillis >= minDuration) {
-    GlobalTimer.setGlobalTimeout(async () => {
-      logger.debug('Invocation is about to timeout, sending trace data.');
-      const spans = SpansContainer.getSpans();
-      SpansContainer.clearSpans();
-      await sendSpans(spans);
-    }, remainingTimeInMillis - timeoutBuffer);
+  if (isAwsContext(context)) {
+    const { remainingTimeInMillis } = getContextInfo(context);
+    const timeoutBuffer = getTimeoutTimerBuffer();
+    const minDuration = getTimeoutMinDuration();
+    if (timeoutBuffer < remainingTimeInMillis && remainingTimeInMillis >= minDuration) {
+      GlobalTimer.setGlobalTimeout(async () => {
+        logger.debug('Invocation is about to timeout, sending trace data.');
+        const spans = SpansContainer.getSpans();
+        SpansContainer.clearSpans();
+        await sendSpans(spans);
+      }, remainingTimeInMillis - timeoutBuffer);
+    }
   }
 };
 
@@ -115,8 +117,12 @@ export const callbackResolver = (resolve) => (err, data) =>
   resolve({ err, data, type: HANDLER_CALLBACKED });
 
 // See https://docs.aws.amazon.com/lambda/latest/dg/nodejs-prog-model-handler.html
-export const promisifyUserHandler = (userHandler, event, context) =>
-  new Promise((resolve) => {
+export function promisifyUserHandler(
+  userHandler,
+  event,
+  context
+): Promise<{ err: any; data: any; type: string }> {
+  return new Promise((resolve) => {
     try {
       const result = userHandler(event, context, callbackResolver(resolve));
       if (isPromise(result)) {
@@ -128,6 +134,7 @@ export const promisifyUserHandler = (userHandler, event, context) =>
       resolve({ err, data: null, type: NON_ASYNC_HANDLER_ERRORED });
     }
   });
+}
 
 const performPromisifyType = (err, data, type, callback) => {
   switch (type) {
@@ -166,10 +173,13 @@ export const performStepFunctionLogic = (handlerReturnValue) => {
   );
 };
 
-const originalUnhandledRejection = process._events.unhandledRejection;
+// @ts-ignore
+const events = process._events;
+const { unhandledRejection } = events;
+const originalUnhandledRejection = unhandledRejection;
 export const hookUnhandledRejection = async (functionSpan) => {
-  process._events.unhandledRejection = async (reason, promise) => {
-    process._events.unhandledRejection = originalUnhandledRejection;
+  events.unhandledRejection = async (reason, promise) => {
+    events.unhandledRejection = originalUnhandledRejection;
     const err = Error(reason);
     err.name = 'Runtime.UnhandledPromiseRejection';
     await endTrace(functionSpan, {
@@ -184,7 +194,7 @@ export const hookUnhandledRejection = async (functionSpan) => {
 };
 
 export const trace =
-  ({ token, debug, edgeHost, switchOff, eventFilter, stepFunction }) =>
+  ({ token, debug, edgeHost, switchOff, stepFunction }) =>
   (userHandler) =>
   async (event, context, callback) => {
     try {
@@ -194,7 +204,6 @@ export const trace =
         debug,
         edgeHost,
         switchOff,
-        eventFilter,
         stepFunction,
       });
     } catch (err) {
@@ -205,12 +214,12 @@ export const trace =
       logger.warnClient(
         'missing context parameter - learn more at https://docs.lumigo.io/docs/nodejs'
       );
-      const { err, data, type } = await promisifyUserHandler(userHandler, event, context, callback);
+      const { err, data, type } = await promisifyUserHandler(userHandler, event, context);
       return performPromisifyType(err, data, type, callback);
     }
 
     if (context.__wrappedByLumigo) {
-      const { err, data, type } = await promisifyUserHandler(userHandler, event, context, callback);
+      const { err, data, type } = await promisifyUserHandler(userHandler, event, context);
       return performPromisifyType(err, data, type, callback);
     }
     context.__wrappedByLumigo = true;
@@ -219,8 +228,8 @@ export const trace =
 
     await hookUnhandledRejection(functionSpan);
 
-    const pStartTrace = startTrace();
-    const pUserHandler = promisifyUserHandler(userHandler, event, context, callback);
+    const pStartTrace = startTrace(functionSpan);
+    const pUserHandler = promisifyUserHandler(userHandler, event, context);
 
     let [, handlerReturnValue] = await Promise.all([pStartTrace, pUserHandler]);
 
