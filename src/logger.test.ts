@@ -286,7 +286,7 @@ describe('logger', () => {
 
   test('lumigoInternalWarnings; print only once', () => {
     process.env.LUMIGO_WARNINGS = undefined;
-    expect(logger.warnClientInternalError('msg')).toEqual(true);
-    expect(logger.warnClientInternalError('msg')).toEqual(undefined);
+    expect(logger.internalAnalyticsMessage('msg')).toEqual(true);
+    expect(logger.internalAnalyticsMessage('msg')).toEqual(undefined);
   });
 });
