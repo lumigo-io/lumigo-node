@@ -97,7 +97,7 @@ export const warnClient = (msg, obj) => {
 };
 
 export const internalAnalyticsMessage = runOneTimeWrapper((msg) => {
-  if (process.env.LUMIGO_WARNINGS !== 'off') {
+  if (process.env.LUMIGO_ANALYTICS !== 'off') {
     const b64Message = Buffer.from(msg).toString('base64');
     // eslint-disable-next-line no-console
     console.log(`${INTERNAL_ANALYTICS_PREFIX}: ${b64Message}`);
