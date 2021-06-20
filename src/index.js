@@ -21,6 +21,7 @@ module.exports = function ({
   verbose && setVerboseMode();
   switchOff && setSwitchOff();
   let tokenToValidate = token || process.env.LUMIGO_TRACER_TOKEN;
+
   if (!isValidToken(tokenToValidate)) {
     logger.warnClient(`Invalid Token. Go to Lumigo Settings to get a valid token.`);
     setSwitchOff();
