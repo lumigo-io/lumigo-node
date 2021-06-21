@@ -283,4 +283,10 @@ describe('logger', () => {
     process.env.LUMIGO_WARNINGS = undefined;
     expect(logger.warnClient('msg')).toEqual(true);
   });
+
+  test('lumigoInternalWarnings; print only once', () => {
+    process.env.LUMIGO_ANALYTICS = undefined;
+    expect(logger.internalAnalyticsMessage('msg')).toEqual(true);
+    expect(logger.internalAnalyticsMessage('msg')).toEqual(undefined);
+  });
 });

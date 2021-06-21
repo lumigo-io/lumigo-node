@@ -1,6 +1,8 @@
 import { isDebug, isStoreLogs } from './utils';
+import { runOneTimeWrapper } from './utils/functionUtils';
 const LOG_PREFIX = '#LUMIGO#';
 const WARN_CLIENT_PREFIX = 'Lumigo Warning';
+const INTERNAL_ANALYTICS_PREFIX = 'Lumigo Analytic Log';
 
 const MAX_DUPLICATE_LOGS = 50;
 
@@ -93,3 +95,12 @@ export const warnClient = (msg, obj) => {
   else console.log(`${WARN_CLIENT_PREFIX}: ${msg}`);
   return true;
 };
+
+export const internalAnalyticsMessage = runOneTimeWrapper((msg) => {
+  if (process.env.LUMIGO_ANALYTICS !== 'off') {
+    const b64Message = Buffer.from(msg).toString('base64');
+    // eslint-disable-next-line no-console
+    console.log(`${INTERNAL_ANALYTICS_PREFIX}: ${b64Message}`);
+    return true;
+  }
+});

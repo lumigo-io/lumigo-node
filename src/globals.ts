@@ -1,6 +1,6 @@
 import * as logger from './logger';
-import { Context } from 'aws-lambda';
 import { GlobalDurationTimer } from './utils/globalDurationTimer';
+import { LambdaContext } from './types/aws/awsEnvironment';
 const MAX_TAGS = 50;
 const MAX_TAG_KEY_LEN = 50;
 const MAX_TAG_VALUE_LEN = 50;
@@ -104,7 +104,7 @@ export const ExecutionTags = (() => {
 })();
 
 export const TracerGlobals = (() => {
-  const handlerInputs: { event: {}; context: Context | {} } = {
+  const handlerInputs: { event: {}; context: LambdaContext | {} } = {
     event: {},
     context: {},
   };
@@ -119,7 +119,7 @@ export const TracerGlobals = (() => {
 
   const setHandlerInputs = ({ event, context }) => Object.assign(handlerInputs, { event, context });
 
-  const getHandlerInputs = (): { event: {}; context: Context | {} } => handlerInputs;
+  const getHandlerInputs = (): { event: {}; context: LambdaContext | {} } => handlerInputs;
 
   const clearHandlerInputs = () => Object.assign(handlerInputs, { event: {}, context: {} });
 
