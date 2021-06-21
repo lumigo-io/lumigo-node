@@ -507,4 +507,4 @@ export const isEmptyString = (str): boolean =>
   !!(!str || (typeof str === 'string' && str.length === 0));
 
 // @ts-ignore
-export const removeDuplicates = (arr) => [...new Set(arr)];
+export const removeDuplicates = (arr) => Array.from(new Set(arr));
