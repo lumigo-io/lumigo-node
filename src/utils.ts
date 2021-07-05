@@ -56,7 +56,7 @@ export const getAccountId = (context: LambdaContext): string => {
   return getAccountIdFromInvokedFunctinArn(invokedFunctionArn);
 };
 
-export const getTracerInfo = (): { name: string, version: string } => {
+export const getTracerInfo = (): { name: string; version: string } => {
   const pkg = require('../package.json');
   const { name, version } = pkg;
   return { name, version };
