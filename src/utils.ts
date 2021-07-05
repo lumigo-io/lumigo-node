@@ -56,7 +56,7 @@ export const getAccountId = (context: LambdaContext): string => {
   return getAccountIdFromInvokedFunctinArn(invokedFunctionArn);
 };
 
-export const getTracerInfo = (): { name: string; version: string } => {
+export const getTracerInfo = (): { name: string, version: string } => {
   const pkg = require('../package.json');
   const { name, version } = pkg;
   return { name, version };
@@ -305,7 +305,10 @@ export const isString = (x) => Object.prototype.toString.call(x) === '[object St
 export const MAX_ENTITY_SIZE = 2048;
 
 export const getEventEntitySize = (hasError = false) => {
-  const basicSize = parseInt(process.env['MAX_EVENT_ENTITY_SIZE']) || MAX_ENTITY_SIZE;
+  const basicSize =
+    parseInt(process.env['MAX_EVENT_ENTITY_SIZE']) ||
+    parseInt(process.env['LUMIGO_MAX_ENTRY_SIZE']) ||
+    MAX_ENTITY_SIZE;
   if (hasError) {
     return basicSize * 2;
   }
