@@ -302,13 +302,13 @@ export const setTimeoutTimerDisabled = () => (process.env[TIMEOUT_ENABLE_FLAG] =
 
 export const isString = (x) => Object.prototype.toString.call(x) === '[object String]';
 
-export const MAX_ENTITY_SIZE = 2048;
+export const LUMIGO_MAX_ENTRY_SIZE = 2048;
 
 export const getEventEntitySize = (hasError = false) => {
   const basicSize =
     parseInt(process.env['MAX_EVENT_ENTITY_SIZE']) ||
     parseInt(process.env['LUMIGO_MAX_ENTRY_SIZE']) ||
-    MAX_ENTITY_SIZE;
+    LUMIGO_MAX_ENTRY_SIZE;
   if (hasError) {
     return basicSize * 2;
   }
