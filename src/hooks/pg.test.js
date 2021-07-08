@@ -102,7 +102,10 @@ describe('pg', () => {
   test('hookPg -> query ({query: string, values: string[]}) => Promise -> success', async () => {
     const client = createHookedPgClient();
 
-    await client.query({ "text": "insert into \"users\" (\"user_name\") values ($1)", "values": [ "Value" ] });
+    await client.query({
+      text: 'insert into "users" ("user_name") values ($1)',
+      values: ['Value'],
+    });
 
     const spans = SpansContainer.getSpans();
     expect(spans).toEqual([

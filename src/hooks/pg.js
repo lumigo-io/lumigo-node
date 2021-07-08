@@ -13,10 +13,10 @@ function queryBeforeHook(args, extenderContext) {
   const started = Date.now();
   let [query] = args;
   let values;
-  if(query.constructor === Object){
-    values = safeGet(query,['values']);
-    query = safeGet(query,['text']);
-  } else{
+  if (query.constructor === Object) {
+    values = safeGet(query, ['values']);
+    query = safeGet(query, ['text']);
+  } else {
     values = Array.isArray(args[1]) ? args[1] : [];
   }
   const { connectionParameters } = this;
