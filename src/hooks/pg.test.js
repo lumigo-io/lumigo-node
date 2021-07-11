@@ -99,6 +99,25 @@ describe('pg', () => {
     expect(errorIsRaised).toBeTruthy();
   });
 
+  test('hookPg -> query ({query: string, values: string[]}) => Promise -> success', async () => {
+    const client = createHookedPgClient();
+
+    await client.query({
+      text: 'insert into "users" ("user_name") values ($1)',
+      values: ['Value'],
+    });
+
+    const spans = SpansContainer.getSpans();
+    expect(spans).toEqual([
+      createBaseBuilderFromSpan(spans[0])
+        .withQuery('insert into "users" ("user_name") values ($1)')
+        .withConnectionParameters(DUMMY_PG_OPTIONS)
+        .withResponse(createExpectedResponse())
+        .withValues(payloadStringify(['Value']))
+        .build(),
+    ]);
+  });
+
   test('hookPg -> query (text: string, values: Array) => Promise -> success', async () => {
     const client = createHookedPgClient();
 
