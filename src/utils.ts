@@ -300,7 +300,9 @@ export const setDebug = () => (process.env['LUMIGO_DEBUG'] = 'TRUE');
 
 export const setTimeoutTimerDisabled = () => (process.env[TIMEOUT_ENABLE_FLAG] = 'FALSE');
 
-export const isString = (x) => Object.prototype.toString.call(x) === '[object String]';
+export function isString(x: any): x is string {
+  return Object.prototype.toString.call(x) === '[object String]';
+}
 
 export const LUMIGO_MAX_ENTRY_SIZE = 2048;
 

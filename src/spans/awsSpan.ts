@@ -14,6 +14,7 @@ import {
   EXECUTION_TAGS_KEY,
   getEventEntitySize,
   safeGet,
+  isString,
 } from '../utils';
 import {
   dynamodbParser,
@@ -34,6 +35,7 @@ import { HttpInfo } from '../types/spans/httpSpan';
 import { BasicSpan, SpanInfo } from '../types/spans/basicSpan';
 import { FunctionSpan } from '../types/spans/functionSpan';
 import { Context } from 'aws-lambda';
+import { decode, encode } from 'utf8';
 
 export const HTTP_SPAN = 'http';
 export const FUNCTION_SPAN = 'function';
@@ -232,7 +234,8 @@ export const getAwsServiceData = (requestData, responseData) => {
 };
 
 export const getHttpInfo = (requestData, responseData): HttpInfo => {
-  const sizeLimit = getEventEntitySize(isErrorResponse(responseData));
+  const isError = isErrorResponse(responseData);
+  const sizeLimit = getEventEntitySize(isError);
   const { host } = requestData;
   try {
     const request = Object.assign({}, requestData);
@@ -250,7 +253,7 @@ export const getHttpInfo = (requestData, responseData): HttpInfo => {
       delete request.uri;
     } else {
       request.headers = payloadStringify(request.headers, sizeLimit);
-      request.body = payloadStringify(request.body, sizeLimit);
+      request.body = payloadStringify(decodeHttpBody(request.body, isError), sizeLimit);
 
       if (response.headers) response.headers = payloadStringify(response.headers, sizeLimit);
       if (response.body) response.body = payloadStringify(response.body, sizeLimit);
@@ -265,6 +268,13 @@ export const getHttpInfo = (requestData, responseData): HttpInfo => {
       response: payloadStringify(responseData, sizeLimit),
     };
   }
+};
+
+export const decodeHttpBody = (httpBody: any, hasError: boolean): any | string => {
+  if (isString(httpBody) && httpBody.length < getEventEntitySize(hasError)) {
+    return decode(httpBody);
+  }
+  return httpBody;
 };
 
 export const getBasicChildSpan = (transactionId, awsRequestId, spanId, spanType) => {
