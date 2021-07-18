@@ -11,8 +11,8 @@ const API_GW_KEYS_ORDER = getEnvVarAsList('LUMIGO_API_GW_KEYS_ORDER', [
   'httpMethod',
   'queryStringParameters',
   'pathParameters',
-  'body',
   'requestContext',
+  'body',
   'headers',
 ]);
 const API_GW_PREFIX_KEYS_HEADERS_DELETE_KEYS = getEnvVarAsList(
