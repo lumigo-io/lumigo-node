@@ -5,9 +5,10 @@ import { TracerGlobals } from '../globals';
 import * as awsParsers from '../parsers/aws';
 import * as utils from '../utils';
 import { payloadStringify } from '../utils/payloadStringify';
-import { HTTP_SPAN } from './awsSpan';
+import { decodeHttpBody, HTTP_SPAN } from './awsSpan';
 import { HttpSpanBuilder } from '../../testUtils/httpSpanBuilder';
 import { HandlerInputesBuilder } from '../../testUtils/handlerInputesBuilder';
+import { encode } from 'utf8';
 
 const exampleApiGatewayEvent = require('../../testUtils/testdata/events/apigw-request.json');
 
@@ -594,6 +595,32 @@ describe('awsSpan', () => {
     expect(awsSpan.getHttpInfo(requestData, responseData)).toEqual(scrubbedExpected);
   });
 
+  test('getHttpInfo => decode utf-8', () => {
+    const requestData = {
+      host: 'your.mind.com',
+      headers: { Tyler: 'Durden', secretKey: 'lumigo' },
+      body: 'the first rule of fight club',
+    };
+    const responseData = {
+      headers: { Peter: 'Parker' },
+      body: encode('Well, Tony is dead.'),
+    };
+    const expected = {
+      host: 'your.mind.com',
+      request: {
+        body: '"the first rule of fight club"',
+        headers: '{"Tyler":"Durden","secretKey":"****"}',
+        host: 'your.mind.com',
+      },
+      response: {
+        body: '"Well, Tony is dead."',
+        headers: '{"Peter":"Parker"}',
+      },
+    };
+
+    expect(awsSpan.getHttpInfo(requestData, responseData)).toEqual(expected);
+  });
+
   test('getBasicChildSpan', () => {
     const id = 'not-a-random-id';
     const awsRequestId = '6d26e3c8-60a6-4cee-8a70-f525f47a4caf';
@@ -961,5 +988,47 @@ describe('awsSpan', () => {
       started: sendTime,
       ended: receivedTime,
     });
+  });
+
+  test('decodeHttpBody => simple flow', () => {
+    const httpBody = encode('Bla Bla Body');
+
+    const result = decodeHttpBody(httpBody, false);
+
+    expect(result).toEqual('Bla Bla Body');
+  });
+
+  test('decodeHttpBody => not utf-8', () => {
+    const httpBody = 'Bla Bla Body';
+
+    const result = decodeHttpBody(httpBody, false);
+
+    expect(result).toEqual('Bla Bla Body');
+  });
+
+  test('decodeHttpBody => not string', () => {
+    const httpBody = { text: 'Bla Bla Body' };
+
+    const result = decodeHttpBody(httpBody, false);
+
+    expect(result).toEqual({ text: 'Bla Bla Body' });
+  });
+
+  test('decodeHttpBody => entity to big (not decoding)', () => {
+    const body = 'B'.repeat(getEventEntitySize() + 100);
+    const httpBody = encode(body);
+
+    const result = decodeHttpBody(httpBody, false);
+
+    expect(result).toEqual(httpBody);
+  });
+
+  test('decodeHttpBody => error => entity to big (decoding)', () => {
+    const body = 'B'.repeat(getEventEntitySize() + 100);
+    const httpBody = encode(body);
+
+    const result = decodeHttpBody(httpBody, true);
+
+    expect(result).toEqual(body);
   });
 });
