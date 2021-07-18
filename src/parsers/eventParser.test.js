@@ -206,7 +206,6 @@ describe('event parser', () => {
         httpMethod: 'POST',
         queryStringParameters: '1',
         pathParameters: '1',
-        body: '{"email":"a@a.com"}',
         requestContext: {
           authorizer: {
             claims: {
@@ -230,6 +229,7 @@ describe('event parser', () => {
           },
           requestId: '78542821-ca17-4e83-94ec-96993a9d451d',
         },
+        body: '{"email":"a@a.com"}',
         headers: {
           Authorization: 'auth',
           'content-type': 'application/json;charset=UTF-8',
