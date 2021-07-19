@@ -184,7 +184,6 @@ export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
     envs,
   });
   newSpan.analytics = generateTracerAnalyticsReport();
-  logger.debug('CREATED ANALYTICS', newSpan.analytics);
   logger.debug('End span created', newSpan);
   return newSpan;
 };
