@@ -14,7 +14,8 @@ import {
   EXECUTION_TAGS_KEY,
   getEventEntitySize,
   safeGet,
-  isString, isSendAnalytics,
+  isString,
+  isSendAnalytics,
 } from '../utils';
 
 import { TracerGlobals, ExecutionTags } from '../globals';

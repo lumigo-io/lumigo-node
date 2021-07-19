@@ -6,9 +6,6 @@ const warnTimeoutOnce = runOneTimeWrapper(() => {
   logger.warnClient('Lumigo tracer timed out and is no longer collecting data on the invocation.');
 }, {});
 
-
-
-
 export type TimerReport = { name: string; duration: number };
 
 export type TracerTimer = {
