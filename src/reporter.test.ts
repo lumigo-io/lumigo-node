@@ -9,7 +9,7 @@ describe('reporter', () => {
   const basicAnalytics = {
     name: 'global',
     duration: 0,
-  }
+  };
   test('sendSingleSpan', async () => {
     const token = 'DEADBEEF';
     utils.setDebug();
@@ -59,7 +59,7 @@ describe('reporter', () => {
         {
           e: 'f',
           g: 'h',
-          analytics: basicAnalytics,
+          analytics: [basicAnalytics],
         },
       ],
     ]);
@@ -128,15 +128,13 @@ describe('reporter', () => {
   test('forgeRequestBody - simple flow', async () => {
     const dummy = 'dummy';
     const dummyEnd = 'dummyEnd';
-    const spans = [{ dummy }, { dummy }, { dummyEnd, analytics: basicAnalytics }];
+    const spans = [{ dummy }, { dummy }, { dummyEnd, analytics: [basicAnalytics] }];
 
-    const expectedResult = [{ dummy }, { dummyEnd, analytics: basicAnalytics }];
+    const expectedResult = [{ dummy }, { dummyEnd, analytics: [basicAnalytics] }];
     const expectedResultSize = getJSONBase64Size(expectedResult);
 
     const actual = reporter.forgeRequestBody(spans, expectedResultSize);
-    expect(actual).toEqual(
-      JSON.stringify(expectedResult)
-    );
+    expect(actual).toEqual(JSON.stringify(expectedResult));
   });
 
   test('forgeRequestBody - cut spans', async () => {
@@ -144,8 +142,11 @@ describe('reporter', () => {
     const dummyEnd = 'dummyEnd';
     const error = 'error';
 
-    const spans = [{ dummy }, { dummy, error }, { dummyEnd, analytics: basicAnalytics }];
-    const expectedResult = [{ dummy, error }, { dummyEnd, analytics: basicAnalytics }];
+    const spans = [{ dummy }, { dummy, error }, { dummyEnd, analytics: [basicAnalytics] }];
+    const expectedResult = [
+      { dummy, error },
+      { dummyEnd, analytics: [basicAnalytics] },
+    ];
     const expectedResultSize = getJSONBase64Size(expectedResult);
 
     expect(reporter.forgeRequestBody(spans, expectedResultSize)).toEqual(
