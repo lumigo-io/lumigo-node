@@ -16,7 +16,7 @@ const awsParserTimer = getDurationTimer('awsParser');
 
 export class AwsParser {
   @extractDynamodbMessageIdTimer.timedSync()
-  static extractDynamodbMessageId(reqBody, method){
+  static extractDynamodbMessageId(reqBody, method) {
     if (method === 'PutItem' && reqBody['Item']) {
       return md5Hash(reqBody.Item);
     } else if (method === 'UpdateItem' && reqBody['Key']) {
@@ -35,19 +35,19 @@ export class AwsParser {
       }
     }
     return undefined;
-  };
+  }
 
   @extractDynamodbTableNameTimer.timedSync()
-  static extractDynamodbTableName (reqBody, method){
+  static extractDynamodbTableName(reqBody, method) {
     const tableName = (reqBody['TableName'] && reqBody.TableName) || '';
     if (!tableName && ['BatchWriteItem', 'BatchGetItem'].includes(method)) {
       return Object.keys(reqBody.RequestItems)[0];
     }
     return tableName;
-  };
+  }
 
   @dynamodbParserTimer.timedSync()
-  static dynamodbParser(requestData){
+  static dynamodbParser(requestData) {
     const { headers: reqHeaders, body: reqBody } = requestData;
     const dynamodbMethod =
       (reqHeaders['x-amz-target'] && reqHeaders['x-amz-target'].split('.')[1]) || '';
@@ -58,7 +58,7 @@ export class AwsParser {
 
     const awsServiceData = { resourceName, dynamodbMethod, messageId };
     return { awsServiceData };
-  };
+  }
 
   // non-official
   static isArn = (arnToValidate) => {
@@ -68,7 +68,7 @@ export class AwsParser {
   static extractLambdaNameFromArn = (arn) => arn.split(':')[6];
 
   @lambdaParserTimer.timedSync()
-  static lambdaParser (requestData, responseData){
+  static lambdaParser(requestData, responseData) {
     if (!responseData) return {};
     const { path, headers } = requestData;
     let resourceName = decodeURIComponent(path).split('/')[3];
@@ -80,10 +80,10 @@ export class AwsParser {
     const spanId = responseHeaders['x-amzn-requestid'] || responseHeaders['x-amz-requestid'] || '';
     const awsServiceData = { resourceName, invocationType };
     return { awsServiceData, spanId };
-  };
+  }
 
   @snsParserTimer.timedSync()
-  static snsParser (requestData, responseData){
+  static snsParser(requestData, responseData) {
     if (!responseData) return {};
     const { body: reqBody } = requestData;
     const { body: resBody } = responseData;
@@ -96,7 +96,7 @@ export class AwsParser {
 
     const awsServiceData = { resourceName, targetArn: resourceName, messageId };
     return { awsServiceData };
-  };
+  }
 
   @apigwParserTimer.timedSync()
   static apigwParser(requestData, responseData) {
@@ -114,10 +114,10 @@ export class AwsParser {
     }
 
     return baseData;
-  };
+  }
 
   @eventBridgeParserTimer.timedSync()
-  static eventBridgeParser (requestData, responseData){
+  static eventBridgeParser(requestData, responseData) {
     const { body: reqBody } = requestData;
     const { body: resBody } = responseData;
     const reqBodyJSON = (!!reqBody && JSON.parse(reqBody)) || {};
@@ -130,10 +130,10 @@ export class AwsParser {
       : undefined;
     const awsServiceData = { resourceNames, messageIds };
     return { awsServiceData };
-  };
+  }
 
   @sqsParserTimer.timedSync()
-  static sqsParser (requestData, responseData){
+  static sqsParser(requestData, responseData) {
     const { body: reqBody } = requestData;
     const { body: resBody } = responseData;
     const parsedReqBody = reqBody ? parseQueryParams(reqBody) : undefined;
@@ -158,10 +158,10 @@ export class AwsParser {
         undefined
       );
     return { awsServiceData };
-  };
+  }
 
   @kinesisParserTimer.timedSync()
-  static kinesisParser(requestData, responseData){
+  static kinesisParser(requestData, responseData) {
     const { body: reqBody } = requestData;
     const { body: resBody } = responseData;
     const reqBodyJSON = (!!reqBody && JSON.parse(reqBody)) || {};
@@ -183,10 +183,10 @@ export class AwsParser {
         .filter((x) => !!x);
     }
     return { awsServiceData };
-  };
+  }
 
   @awsParserTimer.timedSync()
-  static awsParser(requestData, responseData){
+  static awsParser(requestData, responseData) {
     if (!responseData) return {};
     const { headers: resHeader } = responseData;
     const messageId = resHeader
@@ -195,5 +195,5 @@ export class AwsParser {
 
     const awsServiceData = { messageId };
     return messageId ? { awsServiceData } : {};
-  };
+  }
 }

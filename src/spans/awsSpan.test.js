@@ -273,6 +273,12 @@ describe('awsSpan', () => {
     const expectedFunctionSpan1 = {
       account: '985323015126',
       id: '6d26e3c8-60a6-4cee-8a70-f525f47a4caf',
+      analytics: [
+        {
+          duration: 0,
+          name: 'global',
+        },
+      ],
       info: {
         api: 'gy415nuibc.execute-api.us-east-1.amazonaws.com',
         httpMethod: 'POST',
@@ -332,6 +338,12 @@ describe('awsSpan', () => {
     const expectedFunctionSpan2 = {
       account: '985323015126',
       id: '6d26e3c8-60a6-4cee-8a70-f525f47a4caf',
+      analytics: [
+        {
+          duration: 0,
+          name: 'global',
+        },
+      ],
       info: {
         api: 'gy415nuibc.execute-api.us-east-1.amazonaws.com',
         httpMethod: 'POST',

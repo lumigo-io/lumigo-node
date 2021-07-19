@@ -59,7 +59,6 @@ describe('reporter', () => {
         {
           e: 'f',
           g: 'h',
-          analytics: [basicAnalytics],
         },
       ],
     ]);

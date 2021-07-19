@@ -58,7 +58,6 @@ export const forgeRequestBody = (spans, maxSendBytes): string | undefined => {
   const functionEndSpan = spans[spans.length - 1];
   const errorSpans = spans.filter((span) => spanHasErrors(span) && span !== functionEndSpan);
   const normalSpans = spans.filter((span) => !spanHasErrors(span) && span !== functionEndSpan);
-  functionEndSpan.analytics = generateTracerAnalyticsReport();
   const orderedSpans = [...errorSpans, ...normalSpans];
 
   let totalSize = getJSONBase64Size(resultSpans) + getJSONBase64Size(functionEndSpan);
