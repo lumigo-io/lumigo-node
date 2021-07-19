@@ -14,7 +14,7 @@ import {
   EXECUTION_TAGS_KEY,
   getEventEntitySize,
   safeGet,
-  isString,
+  isString, isSendAnalytics,
 } from '../utils';
 
 import { TracerGlobals, ExecutionTags } from '../globals';
@@ -183,7 +183,9 @@ export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
     event,
     envs,
   });
-  newSpan.analytics = generateTracerAnalyticsReport();
+  if (isSendAnalytics()) {
+    newSpan.analytics = generateTracerAnalyticsReport();
+  }
   logger.debug('End span created', newSpan);
   return newSpan;
 };

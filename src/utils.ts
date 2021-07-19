@@ -501,6 +501,9 @@ export const md5Hash = (item: {}): string | undefined => {
   }
 };
 
+export const isSendAnalytics = (): boolean =>
+  validateEnvVar(process.env.IS_SEND_ANALYTICS_FLAG)
+
 export const isEncodingType = (encodingType): boolean =>
   !!(
     encodingType &&
