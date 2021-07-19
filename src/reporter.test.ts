@@ -6,6 +6,10 @@ import { AxiosMocker } from '../testUtils/axiosMocker';
 import { getJSONBase64Size } from './utils';
 
 describe('reporter', () => {
+  const basicAnalytics = {
+    name: 'global',
+    duration: 0,
+  }
   test('sendSingleSpan', async () => {
     const token = 'DEADBEEF';
     utils.setDebug();
@@ -50,7 +54,15 @@ describe('reporter', () => {
     await reporter.sendSpans(spans);
 
     const sentSpans = AxiosMocker.getSentSpans();
-    expect(sentSpans).toEqual([[{ e: 'f', g: 'h' }]]);
+    expect(sentSpans).toEqual([
+      [
+        {
+          e: 'f',
+          g: 'h',
+          analytics: basicAnalytics,
+        },
+      ],
+    ]);
   });
 
   test('sendSpans - simple flow', async () => {
@@ -116,12 +128,13 @@ describe('reporter', () => {
   test('forgeRequestBody - simple flow', async () => {
     const dummy = 'dummy';
     const dummyEnd = 'dummyEnd';
-    const spans = [{ dummy }, { dummy }, { dummyEnd }];
+    const spans = [{ dummy }, { dummy }, { dummyEnd, analytics: basicAnalytics }];
 
-    const expectedResult = [{ dummy }, { dummyEnd }];
+    const expectedResult = [{ dummy }, { dummyEnd, analytics: basicAnalytics }];
     const expectedResultSize = getJSONBase64Size(expectedResult);
 
-    expect(reporter.forgeRequestBody(spans, expectedResultSize)).toEqual(
+    const actual = reporter.forgeRequestBody(spans, expectedResultSize);
+    expect(actual).toEqual(
       JSON.stringify(expectedResult)
     );
   });
@@ -131,8 +144,8 @@ describe('reporter', () => {
     const dummyEnd = 'dummyEnd';
     const error = 'error';
 
-    const spans = [{ dummy }, { dummy, error }, { dummyEnd }];
-    const expectedResult = [{ dummy, error }, { dummyEnd }];
+    const spans = [{ dummy }, { dummy, error }, { dummyEnd, analytics: basicAnalytics }];
+    const expectedResult = [{ dummy, error }, { dummyEnd, analytics: basicAnalytics }];
     const expectedResultSize = getJSONBase64Size(expectedResult);
 
     expect(reporter.forgeRequestBody(spans, expectedResultSize)).toEqual(

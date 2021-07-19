@@ -7,6 +7,7 @@ import {
 } from './utils';
 import * as logger from './logger';
 import { HttpSpansAgent } from './httpSpansAgent';
+import { generateTracerAnalyticsReport } from './utils/globalDurationTimer';
 export const NUMBER_OF_SPANS_IN_REPORT_OPTIMIZATION = 200;
 
 export const sendSingleSpan = async (span) => sendSpans([span]);
@@ -57,7 +58,7 @@ export const forgeRequestBody = (spans, maxSendBytes): string | undefined => {
   const functionEndSpan = spans[spans.length - 1];
   const errorSpans = spans.filter((span) => spanHasErrors(span) && span !== functionEndSpan);
   const normalSpans = spans.filter((span) => !spanHasErrors(span) && span !== functionEndSpan);
-
+  functionEndSpan.analytics = generateTracerAnalyticsReport();
   const orderedSpans = [...errorSpans, ...normalSpans];
 
   let totalSize = getJSONBase64Size(resultSpans) + getJSONBase64Size(functionEndSpan);

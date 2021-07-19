@@ -39,7 +39,7 @@ const isSecretKey = (regexes, key) => {
   }
   return !!regexes.some((regex) => regex.test(key));
 };
-
+export const prune2 = (str, maxLength) => (str || '').replace('\n', ' ').substr(0, maxLength);
 //Base64 calculation taken from : https://stackoverflow.com/questions/13378815/base64-length-calculation
 const getNativeVarSize = (obj) => (obj ? (obj.toString().length * 4) / 3 : 0);
 

@@ -6,7 +6,22 @@ const warnTimeoutOnce = runOneTimeWrapper(() => {
   logger.warnClient('Lumigo tracer timed out and is no longer collecting data on the invocation.');
 }, {});
 
-export const GlobalDurationTimer = (() => {
+// eslint-disable-next-line no-undef
+export const TracerTimers: Record<string, TracerTimer> = {};
+
+export type TimerReport = { name: string; duration: number };
+
+export type TracerTimer = {
+  timedSync: Function;
+  timedAsync: Function;
+  stop: () => void;
+  isTimePassed: (time?: number) => boolean;
+  start: () => void;
+  reset: () => void;
+  getReport: () => TimerReport;
+};
+
+export const getDurationTimer = (name = 'global'): TracerTimer => {
   let lastStartTime: number | undefined;
   let currentDuration = 0;
 
@@ -38,6 +53,13 @@ export const GlobalDurationTimer = (() => {
     return false;
   };
 
+  const getReport = (): { name: string; duration: number } => {
+    return {
+      name,
+      duration: currentDuration,
+    };
+  };
+
   const timedAsync = () => {
     // eslint-disable-next-line no-undef
     return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
@@ -67,5 +89,19 @@ export const GlobalDurationTimer = (() => {
       return descriptor;
     };
   };
-  return { timedSync, timedAsync, stop, isTimePassed, start, reset };
-})();
+  const res = { timedSync, timedAsync, stop, isTimePassed, start, reset, getReport };
+  TracerTimers[name] = res;
+  return res;
+};
+
+export const getTimerByName = (name: string) => {
+  return TracerTimers[name];
+};
+
+export const generateTracerAnalyticsReport = () => {
+  const reports: TimerReport[] = Object.values(TracerTimers).map((timer) => timer.getReport());
+  // @ts-ignore
+  return Object.assign(...reports);
+};
+
+export const GlobalDurationTimer = getDurationTimer();

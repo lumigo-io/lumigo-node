@@ -2,7 +2,7 @@ import * as awsSpan from './awsSpan';
 import { EXECUTION_TAGS_KEY, getEventEntitySize, parseErrorObject } from '../utils';
 import MockDate from 'mockdate';
 import { TracerGlobals } from '../globals';
-import * as awsParsers from '../parsers/aws';
+import { AwsParser } from '../parsers/aws';
 import * as utils from '../utils';
 import { payloadStringify } from '../utils/payloadStringify';
 import { decodeHttpBody, HTTP_SPAN } from './awsSpan';
@@ -519,40 +519,40 @@ describe('awsSpan', () => {
     requestData.host = `dynamodb.amazonaws.com`;
 
     awsSpan.getAwsServiceData(requestData, responseData);
-    expect(awsParsers.dynamodbParser).toHaveBeenCalledWith(requestData);
+    expect(AwsParser.dynamodbParser).toHaveBeenCalledWith(requestData);
 
     requestData.host = `sns.amazonaws.com`;
 
     awsSpan.getAwsServiceData(requestData, responseData);
-    expect(awsParsers.snsParser).toHaveBeenCalledWith(requestData, responseData);
+    expect(AwsParser.snsParser).toHaveBeenCalledWith(requestData, responseData);
 
     requestData.host = `lambda.amazonaws.com`;
 
     awsSpan.getAwsServiceData(requestData, responseData);
-    expect(awsParsers.lambdaParser).toHaveBeenCalledWith(requestData, responseData);
+    expect(AwsParser.lambdaParser).toHaveBeenCalledWith(requestData, responseData);
 
     requestData.host = `sqs.amazonaws.com`;
 
     awsSpan.getAwsServiceData(requestData, responseData);
-    expect(awsParsers.sqsParser).toHaveBeenCalledWith(requestData, responseData);
+    expect(AwsParser.sqsParser).toHaveBeenCalledWith(requestData, responseData);
 
     requestData.host = `kinesis.amazonaws.com`;
 
     awsSpan.getAwsServiceData(requestData, responseData);
-    expect(awsParsers.kinesisParser).toHaveBeenCalledWith(requestData, responseData);
+    expect(AwsParser.kinesisParser).toHaveBeenCalledWith(requestData, responseData);
 
     requestData.host = `events.us-west-2.amazonaws.com`;
 
     awsSpan.getAwsServiceData(requestData, responseData);
-    expect(awsParsers.eventBridgeParser).toHaveBeenCalledWith(requestData, responseData);
+    expect(AwsParser.eventBridgeParser).toHaveBeenCalledWith(requestData, responseData);
 
     requestData.host = `random.random.execute-api.amazonaws.com`;
     awsSpan.getAwsServiceData(requestData, responseData);
-    expect(awsParsers.apigwParser).toHaveBeenCalledWith(requestData, responseData);
+    expect(AwsParser.apigwParser).toHaveBeenCalledWith(requestData, responseData);
 
     requestData.host = `deadbeef.amazonaws.com`;
     awsSpan.getAwsServiceData(requestData, responseData);
-    expect(awsParsers.awsParser).toHaveBeenCalledWith(requestData, responseData);
+    expect(AwsParser.awsParser).toHaveBeenCalledWith(requestData, responseData);
   });
 
   test('getHttpInfo', () => {

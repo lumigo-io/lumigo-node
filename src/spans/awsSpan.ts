@@ -16,16 +16,7 @@ import {
   safeGet,
   isString,
 } from '../utils';
-import {
-  dynamodbParser,
-  snsParser,
-  lambdaParser,
-  sqsParser,
-  kinesisParser,
-  awsParser,
-  apigwParser,
-  eventBridgeParser,
-} from '../parsers/aws';
+
 import { TracerGlobals, ExecutionTags } from '../globals';
 import { getEventInfo } from '../events';
 import { getSkipScrubPath, parseEvent } from '../parsers/eventParser';
@@ -35,7 +26,8 @@ import { HttpInfo } from '../types/spans/httpSpan';
 import { BasicSpan, SpanInfo } from '../types/spans/basicSpan';
 import { FunctionSpan } from '../types/spans/functionSpan';
 import { Context } from 'aws-lambda';
-import { decode, encode } from 'utf8';
+import { decode } from 'utf8';
+import { AwsParser } from '../parsers/aws';
 
 export const HTTP_SPAN = 'http';
 export const FUNCTION_SPAN = 'function';
@@ -215,21 +207,21 @@ export const getAwsServiceData = (requestData, responseData) => {
 
   switch (awsService) {
     case 'dynamodb':
-      return dynamodbParser(requestData);
+      return AwsParser.dynamodbParser(requestData);
     case 'sns':
-      return snsParser(requestData, responseData);
+      return AwsParser.snsParser(requestData, responseData);
     case 'lambda':
-      return lambdaParser(requestData, responseData);
+      return AwsParser.lambdaParser(requestData, responseData);
     case 'sqs':
-      return sqsParser(requestData, responseData);
+      return AwsParser.sqsParser(requestData, responseData);
     case 'kinesis':
-      return kinesisParser(requestData, responseData);
+      return AwsParser.kinesisParser(requestData, responseData);
     case 'apigw':
-      return apigwParser(requestData, responseData);
+      return AwsParser.apigwParser(requestData, responseData);
     case 'events':
-      return eventBridgeParser(requestData, responseData);
+      return AwsParser.eventBridgeParser(requestData, responseData);
     default:
-      return awsParser(requestData, responseData);
+      return AwsParser.awsParser(requestData, responseData);
   }
 };
 
