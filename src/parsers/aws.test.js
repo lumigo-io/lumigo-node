@@ -1,5 +1,6 @@
-import { AwsParser } from '../parsers/aws';
+import { AwsParser } from './aws';
 import { md5Hash } from '../utils';
+import { generateTracerAnalyticsReport } from '../utils/globalDurationTimer';
 
 describe('aws parser', () => {
   test('dynamodbParser', () => {
@@ -540,5 +541,22 @@ describe('aws parser', () => {
     const result = AwsParser.awsParser({}, responseData);
 
     expect(result).toEqual({});
+  });
+
+  test('awsParser -> happy flow (should have all analytics)', () => {
+    const report = generateTracerAnalyticsReport();
+    expect(report).toMatchObject([
+      { duration: expect.any(Number), name: 'global' },
+      { duration: expect.any(Number), name: 'extractDynamodbMessageId' },
+      { duration: expect.any(Number), name: 'extractDynamodbTableName' },
+      { duration: expect.any(Number), name: 'dynamodbParser' },
+      { duration: expect.any(Number), name: 'lambdaParser' },
+      { duration: expect.any(Number), name: 'snsParser' },
+      { duration: expect.any(Number), name: 'apigwParser' },
+      { duration: expect.any(Number), name: 'eventBridgeParser' },
+      { duration: expect.any(Number), name: 'sqsParser' },
+      { duration: expect.any(Number), name: 'kinesisParser' },
+      { duration: expect.any(Number), name: 'awsParser' },
+    ]);
   });
 });
