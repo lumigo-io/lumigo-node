@@ -1,8 +1,6 @@
-import { HttpsAgent } from 'agentkeepalive';
 import * as logger from './logger';
 import { TracerGlobals } from './globals';
 import {
-  getAgentKeepAlive,
   getEdgeUrl,
   getJSONBase64Size,
   getTracerInfo,
@@ -34,28 +32,15 @@ export const HttpSpansAgent = (() => {
   };
 
   const initAgent = () => {
-    sessionAgent = createHttpAgent();
     sessionInstance = createSessionInstance(sessionAgent);
     logger.debug('Http session created to');
   };
 
-  const createHttpAgent = () => {
-    const timeout = getAgentKeepAlive() || 900000;
-    return new HttpsAgent({
-      maxSockets: 5,
-      maxFreeSockets: 5,
-      timeout: timeout,
-      freeSocketTimeout: timeout,
-    });
-  };
-
-  const createSessionInstance = httpAgent => {
+  const createSessionInstance = () => {
     const baseConfiguration = { timeout: REQUEST_TIMEOUT, maxRedirects: 0, validateStatus };
     if (isReuseHttpConnection()) {
       return axios.create({
         ...baseConfiguration,
-        httpsAgent: httpAgent,
-        httpAgent: httpAgent,
       });
     }
     return axios.create(baseConfiguration);
