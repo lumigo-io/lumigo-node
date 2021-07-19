@@ -1,6 +1,6 @@
 {
   "name": "@lumigo/tracer",
-  "version": "1.58.0",
+  "version": "1.59.2",
   "description": "Lumigo Tracer for Node.js v8.x / v10.x / v12.x Runtimes",
   "main": "dist/index.js",
   "repository": "git@github.com:lumigo-io/lumigo-node.git",
@@ -23,7 +23,8 @@
   "dependencies": {
     "agentkeepalive": "^4.1.4",
     "axios": "0.21.1",
-    "shimmer": "1.2.1"
+    "shimmer": "1.2.1",
+    "utf8": "^3.0.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.14.5",
@@ -41,6 +42,7 @@
     "@semantic-release/github": "^7.2.3",
     "@types/aws-lambda": "^8.10.77",
     "@types/jest": "^26.0.23",
+    "@types/utf8": "^3.0.0",
     "aws-sdk": "^2.927.0",
     "axios-mock-adapter": "^1.19.0",
     "babel-eslint": "^10.1.0",

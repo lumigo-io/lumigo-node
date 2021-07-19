@@ -1,7 +1,7 @@
 import * as utils from './utils';
 import {
   getJSONBase64Size,
-  MAX_ENTITY_SIZE,
+  LUMIGO_MAX_ENTRY_SIZE,
   parseErrorObject,
   parseQueryParams,
   shouldScrubDomain,
@@ -225,16 +225,22 @@ describe('utils', () => {
     expect(utils.isTimeoutTimerEnabled()).toBe(false);
   });
 
-  test('getEventEntitySize', () => {
-    expect(utils.getEventEntitySize()).toBe(MAX_ENTITY_SIZE);
-    expect(utils.getEventEntitySize(true)).toBe(MAX_ENTITY_SIZE * 2);
+  test('getEventEntitySize MAX_EVENT_ENTITY_SIZE', () => {
+    expect(utils.getEventEntitySize()).toBe(LUMIGO_MAX_ENTRY_SIZE);
+    expect(utils.getEventEntitySize(true)).toBe(LUMIGO_MAX_ENTRY_SIZE * 2);
     process.env.MAX_EVENT_ENTITY_SIZE = '2048';
+    expect(utils.getEventEntitySize()).toBe(2048);
+  });
+
+  test('getEventEntitySize LUMIGO_MAX_ENTRY_SIZE', () => {
+    delete process.env.MAX_EVENT_ENTITY_SIZE;
+    process.env.LUMIGO_MAX_ENTRY_SIZE = '2048';
     expect(utils.getEventEntitySize()).toBe(2048);
   });
 
   test('getEventEntitySize NaN', () => {
     process.env.MAX_EVENT_ENTITY_SIZE = 'A 2048';
-    expect(utils.getEventEntitySize()).toBe(MAX_ENTITY_SIZE);
+    expect(utils.getEventEntitySize()).toBe(LUMIGO_MAX_ENTRY_SIZE);
   });
 
   test('getConnectionTimeout => simple flow', () => {
