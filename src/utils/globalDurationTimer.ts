@@ -94,10 +94,6 @@ export const getDurationTimer = (name = 'global'): TracerTimer => {
   return res;
 };
 
-export const getTimerByName = (name: string) => {
-  return TracerTimers[name];
-};
-
 export const generateTracerAnalyticsReport = () => {
   const reports: TimerReport[] = Object.values(TracerTimers).map((timer) => timer.getReport());
   return reports;
