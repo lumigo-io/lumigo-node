@@ -7,9 +7,9 @@ import {
 } from '../utils';
 import { safeExecute } from '../utils';
 import * as logger from '../logger';
-import { getDurationTimer } from './globalDurationTimer';
+import { DurationTimer } from './globalDurationTimer';
 
-const payloadStringifyTimer = getDurationTimer('payloadStringify');
+const payloadStringifyTimer = DurationTimer.getDurationTimer('payloadStringify');
 const nativeTypes = ['string', 'bigint', 'number', 'undefined', 'boolean'];
 const SCRUBBED_TEXT = '****';
 const TRUNCATED_TEXT = '...[too long]';

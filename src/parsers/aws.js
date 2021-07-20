@@ -1,18 +1,18 @@
 import { md5Hash, parseQueryParams, removeDuplicates, safeGet } from '../utils';
 import { traverse } from '../tools/xmlToJson';
 import * as logger from '../logger';
-import { getDurationTimer } from '../utils/globalDurationTimer';
+import { DurationTimer } from '../utils/globalDurationTimer';
 
-const extractDynamodbMessageIdTimer = getDurationTimer('extractDynamodbMessageId');
-const extractDynamodbTableNameTimer = getDurationTimer('extractDynamodbTableName');
-const dynamodbParserTimer = getDurationTimer('dynamodbParser');
-const lambdaParserTimer = getDurationTimer('lambdaParser');
-const snsParserTimer = getDurationTimer('snsParser');
-const apigwParserTimer = getDurationTimer('apigwParser');
-const eventBridgeParserTimer = getDurationTimer('eventBridgeParser');
-const sqsParserTimer = getDurationTimer('sqsParser');
-const kinesisParserTimer = getDurationTimer('kinesisParser');
-const awsParserTimer = getDurationTimer('awsParser');
+const extractDynamodbMessageIdTimer = DurationTimer.getDurationTimer('extractDynamodbMessageId');
+const extractDynamodbTableNameTimer = DurationTimer.getDurationTimer('extractDynamodbTableName');
+const dynamodbParserTimer = DurationTimer.getDurationTimer('dynamodbParser');
+const lambdaParserTimer = DurationTimer.getDurationTimer('lambdaParser');
+const snsParserTimer = DurationTimer.getDurationTimer('snsParser');
+const apigwParserTimer = DurationTimer.getDurationTimer('apigwParser');
+const eventBridgeParserTimer = DurationTimer.getDurationTimer('eventBridgeParser');
+const sqsParserTimer = DurationTimer.getDurationTimer('sqsParser');
+const kinesisParserTimer = DurationTimer.getDurationTimer('kinesisParser');
+const awsParserTimer = DurationTimer.getDurationTimer('awsParser');
 
 export class AwsParser {
   @extractDynamodbMessageIdTimer.timedSync()

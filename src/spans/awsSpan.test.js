@@ -279,6 +279,10 @@ describe('awsSpan', () => {
           duration: 0,
           name: 'global',
         },
+        {
+          duration: 0,
+          name: 'payloadStringify',
+        },
       ],
       info: {
         api: 'gy415nuibc.execute-api.us-east-1.amazonaws.com',
@@ -343,6 +347,10 @@ describe('awsSpan', () => {
         {
           duration: 0,
           name: 'global',
+        },
+        {
+          duration: 0,
+          name: 'payloadStringify',
         },
       ],
       info: {

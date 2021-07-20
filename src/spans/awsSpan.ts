@@ -29,7 +29,7 @@ import { FunctionSpan } from '../types/spans/functionSpan';
 import { Context } from 'aws-lambda';
 import { decode } from 'utf8';
 import { AwsParser } from '../parsers/aws';
-import { generateTracerAnalyticsReport } from '../utils/globalDurationTimer';
+import { DurationTimer } from '../utils/globalDurationTimer';
 
 export const HTTP_SPAN = 'http';
 export const FUNCTION_SPAN = 'function';
@@ -185,7 +185,7 @@ export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
     envs,
   });
   if (isSendAnalytics()) {
-    newSpan.analytics = generateTracerAnalyticsReport();
+    newSpan.analytics = DurationTimer.generateTracerAnalyticsReport();
   }
   logger.debug('End span created', newSpan);
   return newSpan;

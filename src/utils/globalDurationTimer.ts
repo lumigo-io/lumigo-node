@@ -19,83 +19,87 @@ export type TracerTimer = {
 };
 
 // eslint-disable-next-line no-undef
-export const TracerTimers: Record<string, TracerTimer> = {};
+const tracerTimers: Record<string, TracerTimer> = {};
 
-export const getDurationTimer = (name = 'global'): TracerTimer => {
-  let lastStartTime: number | undefined;
-  let currentDuration = 0;
+export class DurationTimer {
+  static getTimers() {
+    return tracerTimers;
+  }
+  static getDurationTimer(name = 'global'): TracerTimer {
+    let lastStartTime: number | undefined;
+    let currentDuration = 0;
 
-  const appendTime = () => {
-    if (lastStartTime) currentDuration += new Date().getTime() - lastStartTime;
-  };
-
-  const start = () => {
-    lastStartTime = new Date().getTime();
-  };
-
-  const stop = () => {
-    appendTime();
-    lastStartTime = undefined;
-  };
-
-  const reset = () => {
-    lastStartTime = undefined;
-    currentDuration = 0;
-  };
-
-  const isTimePassed = (threshold: undefined | number = undefined) => {
-    appendTime();
-    threshold = threshold || getTracerMaxDurationTimeout();
-    if (currentDuration >= threshold) {
-      warnTimeoutOnce();
-      return true;
-    }
-    return false;
-  };
-
-  const getReport = (): { name: string; duration: number } => {
-    return {
-      name,
-      duration: currentDuration,
+    const appendTime = () => {
+      if (lastStartTime) currentDuration += new Date().getTime() - lastStartTime;
     };
-  };
 
-  const timedAsync = () => {
-    // eslint-disable-next-line no-undef
-    return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
-      const originalMethod = descriptor.value;
+    const start = () => {
+      lastStartTime = new Date().getTime();
+    };
 
-      descriptor.value = async function (...args: any[]) {
-        start();
-        const result = await originalMethod.apply(this, args);
-        stop();
-        return result;
+    const stop = () => {
+      appendTime();
+      lastStartTime = undefined;
+    };
+
+    const reset = () => {
+      lastStartTime = undefined;
+      currentDuration = 0;
+    };
+
+    const isTimePassed = (threshold: undefined | number = undefined) => {
+      appendTime();
+      threshold = threshold || getTracerMaxDurationTimeout();
+      if (currentDuration >= threshold) {
+        warnTimeoutOnce();
+        return true;
+      }
+      return false;
+    };
+
+    const getReport = (): { name: string; duration: number } => {
+      return {
+        name,
+        duration: currentDuration,
       };
-
-      return descriptor;
     };
-  };
 
-  const timedSync = () => {
-    // eslint-disable-next-line no-undef
-    return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
-      const originalMethod = descriptor.value;
-      descriptor.value = function (...args: any[]) {
-        start();
-        const result = originalMethod.apply(this, args);
-        stop();
-        return result;
+    const timedAsync = () => {
+      // eslint-disable-next-line no-undef
+      return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+        const originalMethod = descriptor.value;
+
+        descriptor.value = async function (...args: any[]) {
+          start();
+          const result = await originalMethod.apply(this, args);
+          stop();
+          return result;
+        };
+
+        return descriptor;
       };
-      return descriptor;
     };
-  };
-  const res = { timedSync, timedAsync, stop, isTimePassed, start, reset, getReport };
-  TracerTimers[name] = res;
-  return res;
-};
 
-export const generateTracerAnalyticsReport = (): TimerReport[] => {
-  return Object.values(TracerTimers).map((timer) => timer.getReport());
-};
+    const timedSync = () => {
+      // eslint-disable-next-line no-undef
+      return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+        const originalMethod = descriptor.value;
+        descriptor.value = function (...args: any[]) {
+          start();
+          const result = originalMethod.apply(this, args);
+          stop();
+          return result;
+        };
+        return descriptor;
+      };
+    };
+    const res = { timedSync, timedAsync, stop, isTimePassed, start, reset, getReport };
+    tracerTimers[name] = res;
+    return res;
+  }
+  static generateTracerAnalyticsReport(): TimerReport[] {
+    return Object.values(tracerTimers).map((timer) => timer.getReport());
+  }
+}
 
-export const GlobalDurationTimer = getDurationTimer();
+export const GlobalDurationTimer = DurationTimer.getDurationTimer();

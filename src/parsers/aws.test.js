@@ -1,6 +1,6 @@
 import { AwsParser } from './aws';
 import { md5Hash } from '../utils';
-import { generateTracerAnalyticsReport } from '../utils/globalDurationTimer';
+import { DurationTimer } from '../utils/globalDurationTimer';
 
 describe('aws parser', () => {
   test('dynamodbParser', () => {
@@ -544,7 +544,7 @@ describe('aws parser', () => {
   });
 
   test('awsParser -> happy flow (should have all analytics)', () => {
-    const report = generateTracerAnalyticsReport();
+    const report = DurationTimer.generateTracerAnalyticsReport();
     expect(report).toMatchObject([
       { duration: expect.any(Number), name: 'global' },
       { duration: expect.any(Number), name: 'extractDynamodbMessageId' },
