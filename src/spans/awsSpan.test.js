@@ -2,7 +2,7 @@ import * as awsSpan from './awsSpan';
 import { EXECUTION_TAGS_KEY, getEventEntitySize, parseErrorObject } from '../utils';
 import MockDate from 'mockdate';
 import { TracerGlobals } from '../globals';
-import * as awsParsers from '../parsers/aws';
+import { AwsParser } from '../parsers/aws';
 import * as utils from '../utils';
 import { payloadStringify } from '../utils/payloadStringify';
 import { decodeHttpBody, HTTP_SPAN } from './awsSpan';
@@ -37,7 +37,7 @@ describe('awsSpan', () => {
       AWS_EXECUTION_ENV: 'AWS_Lambda_nodejs8.10',
     };
 
-    process.env = { ...awsEnv };
+    process.env = { ...awsEnv, IS_SEND_ANALYTICS_FLAG: 'TRUE' };
 
     const token = 'DEADBEEF';
 
@@ -145,7 +145,7 @@ describe('awsSpan', () => {
       invokedArn: 'arn:aws:lambda:us-east-1:985323015126:function:aws-nodejs-dev-hello',
       invokedVersion: '1',
       id: '6d26e3c8-60a6-4cee-8a70-f525f47a4caf_started',
-      envs: '{"LAMBDA_TASK_ROOT":"/var/task","LAMBDA_RUNTIME_DIR":"/var/runtime","AWS_REGION":"us-east-1","AWS_DEFAULT_REGION":"us-east-1","AWS_LAMBDA_LOG_GROUP_NAME":"/aws/lambda/aws-nodejs-dev-hello","AWS_LAMBDA_LOG_STREAM_NAME":"2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73","AWS_LAMBDA_FUNCTION_NAME":"aws-nodejs-dev-hello","AWS_LAMBDA_FUNCTION_MEMORY_SIZE":"1024","AWS_LAMBDA_FUNCTION_VERSION":"$LATEST","_AWS_XRAY_DAEMON_ADDRESS":"169.254.79.2","_AWS_XRAY_DAEMON_PORT":"2000","AWS_XRAY_DAEMON_ADDRESS":"169.254.79.2:2000","AWS_XRAY_CONTEXT_MISSING":"LOG_ERROR","_X_AMZN_TRACE_ID":"Root=1-5cdcf03a-64a1b06067c2100c52e51ef4;Parent=28effe37598bb622;Sampled=0","AWS_EXECUTION_ENV":"AWS_Lambda_nodejs8.10","LUMIGO_IS_WARM":"TRUE"}',
+      envs: '{"LAMBDA_TASK_ROOT":"/var/task","LAMBDA_RUNTIME_DIR":"/var/runtime","AWS_REGION":"us-east-1","AWS_DEFAULT_REGION":"us-east-1","AWS_LAMBDA_LOG_GROUP_NAME":"/aws/lambda/aws-nodejs-dev-hello","AWS_LAMBDA_LOG_STREAM_NAME":"2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73","AWS_LAMBDA_FUNCTION_NAME":"aws-nodejs-dev-hello","AWS_LAMBDA_FUNCTION_MEMORY_SIZE":"1024","AWS_LAMBDA_FUNCTION_VERSION":"$LATEST","_AWS_XRAY_DAEMON_ADDRESS":"169.254.79.2","_AWS_XRAY_DAEMON_PORT":"2000","AWS_XRAY_DAEMON_ADDRESS":"169.254.79.2:2000","AWS_XRAY_CONTEXT_MISSING":"LOG_ERROR","_X_AMZN_TRACE_ID":"Root=1-5cdcf03a-64a1b06067c2100c52e51ef4;Parent=28effe37598bb622;Sampled=0","AWS_EXECUTION_ENV":"AWS_Lambda_nodejs8.10","IS_SEND_ANALYTICS_FLAG":"TRUE","LUMIGO_IS_WARM":"TRUE"}',
       name: 'aws-nodejs-dev-hello',
       type: 'function',
       ended: 895093200000,
@@ -208,6 +208,7 @@ describe('awsSpan', () => {
         _X_AMZN_TRACE_ID:
           'Root=1-5cdcf03a-64a1b06067c2100c52e51ef4;Parent=28effe37598bb622;Sampled=0',
         AWS_EXECUTION_ENV: 'AWS_Lambda_nodejs8.10',
+        IS_SEND_ANALYTICS_FLAG: 'TRUE',
         LUMIGO_IS_WARM: 'TRUE',
       }),
       name: 'w00t',
@@ -273,6 +274,16 @@ describe('awsSpan', () => {
     const expectedFunctionSpan1 = {
       account: '985323015126',
       id: '6d26e3c8-60a6-4cee-8a70-f525f47a4caf',
+      analytics: [
+        {
+          duration: 0,
+          name: 'global',
+        },
+        {
+          duration: 0,
+          name: 'payloadStringify',
+        },
+      ],
       info: {
         api: 'gy415nuibc.execute-api.us-east-1.amazonaws.com',
         httpMethod: 'POST',
@@ -332,6 +343,16 @@ describe('awsSpan', () => {
     const expectedFunctionSpan2 = {
       account: '985323015126',
       id: '6d26e3c8-60a6-4cee-8a70-f525f47a4caf',
+      analytics: [
+        {
+          duration: 0,
+          name: 'global',
+        },
+        {
+          duration: 0,
+          name: 'payloadStringify',
+        },
+      ],
       info: {
         api: 'gy415nuibc.execute-api.us-east-1.amazonaws.com',
         httpMethod: 'POST',
@@ -519,40 +540,40 @@ describe('awsSpan', () => {
     requestData.host = `dynamodb.amazonaws.com`;
 
     awsSpan.getAwsServiceData(requestData, responseData);
-    expect(awsParsers.dynamodbParser).toHaveBeenCalledWith(requestData);
+    expect(AwsParser.dynamodbParser).toHaveBeenCalledWith(requestData);
 
     requestData.host = `sns.amazonaws.com`;
 
     awsSpan.getAwsServiceData(requestData, responseData);
-    expect(awsParsers.snsParser).toHaveBeenCalledWith(requestData, responseData);
+    expect(AwsParser.snsParser).toHaveBeenCalledWith(requestData, responseData);
 
     requestData.host = `lambda.amazonaws.com`;
 
     awsSpan.getAwsServiceData(requestData, responseData);
-    expect(awsParsers.lambdaParser).toHaveBeenCalledWith(requestData, responseData);
+    expect(AwsParser.lambdaParser).toHaveBeenCalledWith(requestData, responseData);
 
     requestData.host = `sqs.amazonaws.com`;
 
     awsSpan.getAwsServiceData(requestData, responseData);
-    expect(awsParsers.sqsParser).toHaveBeenCalledWith(requestData, responseData);
+    expect(AwsParser.sqsParser).toHaveBeenCalledWith(requestData, responseData);
 
     requestData.host = `kinesis.amazonaws.com`;
 
     awsSpan.getAwsServiceData(requestData, responseData);
-    expect(awsParsers.kinesisParser).toHaveBeenCalledWith(requestData, responseData);
+    expect(AwsParser.kinesisParser).toHaveBeenCalledWith(requestData, responseData);
 
     requestData.host = `events.us-west-2.amazonaws.com`;
 
     awsSpan.getAwsServiceData(requestData, responseData);
-    expect(awsParsers.eventBridgeParser).toHaveBeenCalledWith(requestData, responseData);
+    expect(AwsParser.eventBridgeParser).toHaveBeenCalledWith(requestData, responseData);
 
     requestData.host = `random.random.execute-api.amazonaws.com`;
     awsSpan.getAwsServiceData(requestData, responseData);
-    expect(awsParsers.apigwParser).toHaveBeenCalledWith(requestData, responseData);
+    expect(AwsParser.apigwParser).toHaveBeenCalledWith(requestData, responseData);
 
     requestData.host = `deadbeef.amazonaws.com`;
     awsSpan.getAwsServiceData(requestData, responseData);
-    expect(awsParsers.awsParser).toHaveBeenCalledWith(requestData, responseData);
+    expect(AwsParser.awsParser).toHaveBeenCalledWith(requestData, responseData);
   });
 
   test('getHttpInfo', () => {

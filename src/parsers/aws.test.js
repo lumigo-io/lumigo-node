@@ -1,5 +1,6 @@
-import * as aws from './aws';
+import { AwsParser } from './aws';
 import { md5Hash } from '../utils';
+import { DurationTimer } from '../utils/globalDurationTimer';
 
 describe('aws parser', () => {
   test('dynamodbParser', () => {
@@ -11,7 +12,7 @@ describe('aws parser', () => {
     const expectedBad = {
       awsServiceData: { resourceName: '', dynamodbMethod: '' },
     };
-    expect(aws.dynamodbParser(requestDataBad)).toEqual(expectedBad);
+    expect(AwsParser.dynamodbParser(requestDataBad)).toEqual(expectedBad);
 
     const bodyGet = JSON.stringify({ TableName: resourceName });
     const headersGet = { 'x-amz-target': 'DynamoDB_20120810.GetItem' };
@@ -19,7 +20,7 @@ describe('aws parser', () => {
     const expectedGet = {
       awsServiceData: { resourceName, dynamodbMethod: 'GetItem' },
     };
-    expect(aws.dynamodbParser(requestDataGet)).toEqual(expectedGet);
+    expect(AwsParser.dynamodbParser(requestDataGet)).toEqual(expectedGet);
 
     const bodyPut = JSON.stringify({
       TableName: resourceName,
@@ -34,7 +35,7 @@ describe('aws parser', () => {
         messageId: md5Hash({ key: { S: 'value' } }),
       },
     };
-    expect(aws.dynamodbParser(requestDataPut)).toEqual(expectedPut);
+    expect(AwsParser.dynamodbParser(requestDataPut)).toEqual(expectedPut);
 
     const bodyDelete = JSON.stringify({
       TableName: resourceName,
@@ -49,7 +50,7 @@ describe('aws parser', () => {
         messageId: md5Hash({ key: { S: 'value' } }),
       },
     };
-    expect(aws.dynamodbParser(requestDataDelete)).toEqual(expectedDelete);
+    expect(AwsParser.dynamodbParser(requestDataDelete)).toEqual(expectedDelete);
 
     const bodyUpdate = JSON.stringify({
       TableName: resourceName,
@@ -64,7 +65,7 @@ describe('aws parser', () => {
         messageId: md5Hash({ key: { S: 'value' } }),
       },
     };
-    expect(aws.dynamodbParser(requestDataUpdate)).toEqual(expectedUpdate);
+    expect(AwsParser.dynamodbParser(requestDataUpdate)).toEqual(expectedUpdate);
 
     const bodyWriteBatch = JSON.stringify({
       RequestItems: {
@@ -85,7 +86,7 @@ describe('aws parser', () => {
         messageId: md5Hash({ key: { S: 'value' } }),
       },
     };
-    expect(aws.dynamodbParser(requestDataWriteBatch)).toEqual(expectedWriteBatch);
+    expect(AwsParser.dynamodbParser(requestDataWriteBatch)).toEqual(expectedWriteBatch);
 
     const bodyGetBatch = JSON.stringify({
       RequestItems: {
@@ -107,7 +108,7 @@ describe('aws parser', () => {
         dynamodbMethod: 'BatchGetItem',
       },
     };
-    expect(aws.dynamodbParser(requestDataGetBatch)).toEqual(expectedDataGetBatch);
+    expect(AwsParser.dynamodbParser(requestDataGetBatch)).toEqual(expectedDataGetBatch);
 
     const bodyDeleteBatch = JSON.stringify({
       RequestItems: {
@@ -128,7 +129,7 @@ describe('aws parser', () => {
         messageId: md5Hash({ key: { S: 'value' } }),
       },
     };
-    expect(aws.dynamodbParser(requestDataDeleteBatch)).toEqual(expectedDeleteBatch);
+    expect(AwsParser.dynamodbParser(requestDataDeleteBatch)).toEqual(expectedDeleteBatch);
   });
 
   test('lambdaParser', () => {
@@ -145,7 +146,7 @@ describe('aws parser', () => {
       awsServiceData: { resourceName, invocationType },
       spanId,
     };
-    expect(aws.lambdaParser(requestData, responseData)).toEqual(expected);
+    expect(AwsParser.lambdaParser(requestData, responseData)).toEqual(expected);
   });
 
   test('lambdaParser with arn', () => {
@@ -165,7 +166,7 @@ describe('aws parser', () => {
       awsServiceData: { resourceName, invocationType },
       spanId,
     };
-    expect(aws.lambdaParser(requestData, responseData)).toEqual(expected);
+    expect(AwsParser.lambdaParser(requestData, responseData)).toEqual(expected);
   });
 
   test('snsParser -> happy flow (request)', () => {
@@ -185,7 +186,7 @@ describe('aws parser', () => {
       sendTime: 1564474039619,
     };
 
-    const result = aws.snsParser(requestData, {});
+    const result = AwsParser.snsParser(requestData, {});
 
     expect(result).toEqual({
       awsServiceData: {
@@ -210,7 +211,7 @@ describe('aws parser', () => {
       },
     };
 
-    const result = aws.snsParser({}, response);
+    const result = AwsParser.snsParser({}, response);
 
     expect(result).toEqual({
       awsServiceData: {
@@ -252,7 +253,7 @@ describe('aws parser', () => {
       },
     };
 
-    const result = aws.snsParser(requestData, response);
+    const result = AwsParser.snsParser(requestData, response);
 
     expect(result).toEqual({
       awsServiceData: {
@@ -271,7 +272,7 @@ describe('aws parser', () => {
       sendTime: 1564474039619,
     };
 
-    const result = aws.snsParser(requestData, {});
+    const result = AwsParser.snsParser(requestData, {});
 
     expect(result).toEqual({
       awsServiceData: {
@@ -304,7 +305,7 @@ describe('aws parser', () => {
       body: '<?xml version="1.0"?><SendMessageResponse xmlns="http://queue.amazonaws.com/doc/2012-11-05/"><SendMessageResult><MessageId>85dc3997-b060-47bc-9d89-c754d7260dbd</MessageId><MD5OfMessageBody>c5cb6abef11b88049177473a73ed662f</MD5OfMessageBody></SendMessageResult><ResponseMetadata><RequestId>b6b5a045-23c6-5e3a-a54f-f7dd99f7b379</RequestId></ResponseMetadata></SendMessageResponse>',
     };
 
-    const result = aws.sqsParser(requestData, responseData);
+    const result = AwsParser.sqsParser(requestData, responseData);
 
     expect(result).toEqual({
       awsServiceData: {
@@ -321,7 +322,7 @@ describe('aws parser', () => {
       sendTime: 1564474992235,
     };
 
-    const result = aws.sqsParser(requestData, {});
+    const result = AwsParser.sqsParser(requestData, {});
 
     expect(result).toEqual({
       awsServiceData: {
@@ -367,7 +368,7 @@ describe('aws parser', () => {
       }),
     };
 
-    const result = aws.eventBridgeParser(requestData, responseData);
+    const result = AwsParser.eventBridgeParser(requestData, responseData);
 
     expect(result).toEqual({
       awsServiceData: {
@@ -384,7 +385,7 @@ describe('aws parser', () => {
       sendTime: 1564474992235,
     };
 
-    const result = aws.eventBridgeParser(requestData, {});
+    const result = AwsParser.eventBridgeParser(requestData, {});
 
     expect(result).toEqual({
       awsServiceData: {
@@ -405,7 +406,7 @@ describe('aws parser', () => {
       body: JSON.stringify({ SequenceNumber: '1' }),
     };
 
-    const result = aws.kinesisParser(requestData, responseData);
+    const result = AwsParser.kinesisParser(requestData, responseData);
 
     expect(result).toEqual({
       awsServiceData: {
@@ -428,7 +429,7 @@ describe('aws parser', () => {
       }),
     };
 
-    const result = aws.kinesisParser(requestData, responseData);
+    const result = AwsParser.kinesisParser(requestData, responseData);
 
     expect(result).toEqual({
       awsServiceData: {
@@ -444,7 +445,7 @@ describe('aws parser', () => {
       sendTime: 1564474992235,
     };
 
-    const result = aws.kinesisParser(requestData, {});
+    const result = AwsParser.kinesisParser(requestData, {});
 
     expect(result).toEqual({
       awsServiceData: {
@@ -462,7 +463,7 @@ describe('aws parser', () => {
     const responseData = {
       body: '<hello',
     };
-    const result = aws.kinesisParser(requestData, responseData);
+    const result = AwsParser.kinesisParser(requestData, responseData);
 
     expect(result).toEqual({
       awsServiceData: {
@@ -477,7 +478,7 @@ describe('aws parser', () => {
       headers: { 'x-amzn-requestid': '123' },
     };
 
-    const result = aws.apigwParser({}, responseData);
+    const result = AwsParser.apigwParser({}, responseData);
 
     expect(result).toEqual({
       awsServiceData: {
@@ -492,7 +493,7 @@ describe('aws parser', () => {
       headers: { 'apigw-requestid': '123' },
     };
 
-    const result = aws.apigwParser({}, responseData);
+    const result = AwsParser.apigwParser({}, responseData);
 
     expect(result).toEqual({
       awsServiceData: {
@@ -507,7 +508,7 @@ describe('aws parser', () => {
       headers: { 'Apigw-Requestid': '123', 'x-amzn-requestid': 'x-amzn-123' },
     };
 
-    const result = aws.apigwParser({}, responseData);
+    const result = AwsParser.apigwParser({}, responseData);
 
     expect(result).toEqual({
       awsServiceData: {
@@ -522,7 +523,7 @@ describe('aws parser', () => {
       headers: { 'x-amzn-requestid': '123' },
     };
 
-    const result = aws.awsParser({}, responseData);
+    const result = AwsParser.awsParser({}, responseData);
 
     expect(result).toEqual({
       awsServiceData: {
@@ -537,8 +538,25 @@ describe('aws parser', () => {
       headers: { hello: 'world' },
     };
 
-    const result = aws.awsParser({}, responseData);
+    const result = AwsParser.awsParser({}, responseData);
 
     expect(result).toEqual({});
+  });
+
+  test('awsParser -> happy flow (should have all analytics)', () => {
+    const report = DurationTimer.generateTracerAnalyticsReport();
+    expect(report).toMatchObject([
+      { duration: expect.any(Number), name: 'global' },
+      { duration: expect.any(Number), name: 'extractDynamodbMessageId' },
+      { duration: expect.any(Number), name: 'extractDynamodbTableName' },
+      { duration: expect.any(Number), name: 'dynamodbParser' },
+      { duration: expect.any(Number), name: 'lambdaParser' },
+      { duration: expect.any(Number), name: 'snsParser' },
+      { duration: expect.any(Number), name: 'apigwParser' },
+      { duration: expect.any(Number), name: 'eventBridgeParser' },
+      { duration: expect.any(Number), name: 'sqsParser' },
+      { duration: expect.any(Number), name: 'kinesisParser' },
+      { duration: expect.any(Number), name: 'awsParser' },
+    ]);
   });
 });
