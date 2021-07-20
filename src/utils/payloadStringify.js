@@ -7,7 +7,9 @@ import {
 } from '../utils';
 import { safeExecute } from '../utils';
 import * as logger from '../logger';
+import { getDurationTimer } from './globalDurationTimer';
 
+const payloadStringifyTimer = getDurationTimer('payloadStringify');
 const nativeTypes = ['string', 'bigint', 'number', 'undefined', 'boolean'];
 const SCRUBBED_TEXT = '****';
 const TRUNCATED_TEXT = '...[too long]';
@@ -69,6 +71,7 @@ export const payloadStringify = (
   maxPayloadSize = getEventEntitySize(),
   skipScrubPath = null
 ) => {
+  payloadStringifyTimer.start();
   let totalSize = 0;
   let refsFound = [];
   const regexes = keyToOmitRegexes();
@@ -112,5 +115,6 @@ export const payloadStringify = (
     result = result.replace(/,null/g, '');
     result = result.concat(TRUNCATED_TEXT);
   }
+  payloadStringifyTimer.stop();
   return result || '';
 };
