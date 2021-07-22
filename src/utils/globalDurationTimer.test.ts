@@ -13,7 +13,7 @@ describe('GlobalDurationTimer', () => {
     expect(DurationTimer.getTimers()['global']).toEqual(GlobalDurationTimer);
   });
 
-  const testTimer = async (timer: TracerTimer, name: string, time = 10) => {
+  const testTimer = async (timer: TracerTimer, name: string, time = 60) => {
     timer.start();
     await wait(time);
     timer.stop();
@@ -23,7 +23,7 @@ describe('GlobalDurationTimer', () => {
     timer.stop();
     const timerReport = DurationTimer.getTimers()[name].getReport();
     expect(timerReport.duration).toBeGreaterThanOrEqual(time * 2);
-    expect(timerReport.duration).toBeLessThanOrEqual(time * 3);
+    expect(timerReport.duration).toBeLessThanOrEqual(time * 2 + 15);
     expect(timer.isTimePassed(time * 4)).toBeFalsy();
     expect(timer.isTimePassed(time / 2)).toBeTruthy();
     expect(timer.isTimePassed()).toBeFalsy();
@@ -32,7 +32,7 @@ describe('GlobalDurationTimer', () => {
 
   test('GlobalDurationTimer => simple flow (timerA)', async () => {
     const timerAReport = await testTimer(timerA, 'timerA');
-    const timerBReport = await testTimer(timerB, 'timerB', 5);
+    const timerBReport = await testTimer(timerB, 'timerB', 30);
     const report = DurationTimer.generateTracerAnalyticsReport();
     expect(report[0]).toEqual({
       name: 'global',
