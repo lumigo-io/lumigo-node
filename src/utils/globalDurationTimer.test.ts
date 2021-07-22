@@ -44,7 +44,7 @@ describe('GlobalDurationTimer', () => {
 
   test('@timedAsync => simple flow', async () => {
     timerA.reset();
-    expect(timerA.getReport().duration).toEqual(0)
+    expect(timerA.getReport().duration).toEqual(0);
     class A {
       @timerA.timedAsync()
       async a() {
