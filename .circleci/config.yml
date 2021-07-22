@@ -19,7 +19,7 @@ jobs:
     environment:
     - TZ: Asia/Jerusalem
     - NODE_OPTIONS: --max_old_space_size=1500
-    resource_class: medium+
+    resource_class: large
     steps:
     - checkout
     - restore_cache:
