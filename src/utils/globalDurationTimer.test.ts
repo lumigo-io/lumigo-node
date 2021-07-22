@@ -13,7 +13,7 @@ describe('GlobalDurationTimer', () => {
     expect(DurationTimer.getTimers()['global']).toEqual(GlobalDurationTimer);
   });
 
-  const testTimer = async (timer: TracerTimer, name: string, time = 60) => {
+  const testTimer = async (timer: TracerTimer, name: string, time = 10) => {
     timer.start();
     await wait(time);
     timer.stop();
@@ -30,8 +30,8 @@ describe('GlobalDurationTimer', () => {
     return timerReport;
   };
 
-  test('GlobalDurationTimer => simple flow (timerA)', async () => {
-    const timerAReport = await testTimer(timerA, 'timerA');
+  test('GlobalDurationTimer => simple flow (timerA, timerB)', async () => {
+    const timerAReport = await testTimer(timerA, 'timerA', 60);
     const timerBReport = await testTimer(timerB, 'timerB', 30);
     const report = DurationTimer.generateTracerAnalyticsReport();
     expect(report[0]).toEqual({
@@ -43,6 +43,8 @@ describe('GlobalDurationTimer', () => {
   });
 
   test('@timedAsync => simple flow', async () => {
+    timerA.reset();
+    expect(timerA.getReport().duration).toEqual(0)
     class A {
       @timerA.timedAsync()
       async a() {
@@ -58,13 +60,16 @@ describe('GlobalDurationTimer', () => {
   });
 
   test('@timedSync => simple flow', () => {
+    timerA.reset();
     class A {
       @timerA.timedSync()
       a() {
+        let x = 0;
         for (let i = 0; i < 10000000; i++) {
           // eslint-disable-next-line no-console
-          console.log(i);
+          x++;
         }
+        return x;
       }
     }
     const a = new A();
