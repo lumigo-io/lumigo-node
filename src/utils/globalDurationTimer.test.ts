@@ -3,38 +3,36 @@ import { GlobalDurationTimer, TracerTimer, DurationTimer } from './globalDuratio
 describe('GlobalDurationTimer', () => {
   let timerA = DurationTimer.getDurationTimer('timerA');
   let timerB = DurationTimer.getDurationTimer('timerB');
-  function timeout(ms) {
+  function wait(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   test('GlobalDurationTimer => TracerTimers validate', async () => {
     expect(DurationTimer.getTimers()['timerA']).toEqual(timerA);
+    expect(DurationTimer.getTimers()['timerB']).toEqual(timerB);
     expect(DurationTimer.getTimers()['global']).toEqual(GlobalDurationTimer);
   });
 
-  const testTimer = async (timer: TracerTimer, time = 10) => {
+  const testTimer = async (timer: TracerTimer, name: string, time = 10) => {
     timer.start();
-    await timeout(time);
+    await wait(time);
     timer.stop();
-    await timeout(time);
+    await wait(time);
     timer.start();
-    await timeout(time);
+    await wait(time);
     timer.stop();
-
+    const timerReport = DurationTimer.getTimers()[name].getReport();
+    expect(timerReport.duration).toBeGreaterThanOrEqual(time * 2);
+    expect(timerReport.duration).toBeLessThanOrEqual(time * 3);
     expect(timer.isTimePassed(time * 4)).toBeFalsy();
     expect(timer.isTimePassed(time / 2)).toBeTruthy();
     expect(timer.isTimePassed()).toBeFalsy();
+    return timerReport;
   };
 
   test('GlobalDurationTimer => simple flow (timerA)', async () => {
-    await testTimer(timerA);
-    await testTimer(timerB, 5);
-    const timerAReport = DurationTimer.getTimers()['timerA'].getReport();
-    const timerBReport = DurationTimer.getTimers()['timerB'].getReport();
-    expect(timerAReport.duration).toBeGreaterThanOrEqual(20);
-    expect(timerAReport.duration).toBeLessThanOrEqual(30);
-    expect(timerBReport.duration).toBeGreaterThanOrEqual(10);
-    expect(timerBReport.duration).toBeLessThanOrEqual(20);
+    const timerAReport = await testTimer(timerA, 'timerA');
+    const timerBReport = await testTimer(timerB, 'timerB', 5);
     const report = DurationTimer.generateTracerAnalyticsReport();
     expect(report[0]).toEqual({
       name: 'global',
@@ -48,12 +46,12 @@ describe('GlobalDurationTimer', () => {
     class A {
       @timerA.timedAsync()
       async a() {
-        await timeout(10);
+        await wait(10);
       }
     }
     const a = new A();
     await a.a();
-    await timeout(10);
+    await wait(10);
     await a.a();
     expect(timerA.isTimePassed(150)).toBeFalsy();
     expect(timerA.isTimePassed(10)).toBeTruthy();
