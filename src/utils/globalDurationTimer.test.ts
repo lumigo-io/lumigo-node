@@ -21,9 +21,13 @@ describe('GlobalDurationTimer', () => {
     timer.start();
     await wait(time);
     timer.stop();
+    await wait(time);
+    timer.start();
+    await wait(time);
+    timer.stop();
     const timerReport = DurationTimer.getTimers()[name].getReport();
-    expect(timerReport.duration).toBeGreaterThanOrEqual(time * 2);
-    expect(timerReport.duration).toBeLessThanOrEqual(time * 2 + 20);
+    expect(timerReport.duration).toBeGreaterThanOrEqual(time * 3);
+    expect(timerReport.duration).toBeLessThanOrEqual(time * 3 + 20);
     expect(timer.isTimePassed(time * 4)).toBeFalsy();
     expect(timer.isTimePassed(time / 2)).toBeTruthy();
     expect(timer.isTimePassed()).toBeFalsy();

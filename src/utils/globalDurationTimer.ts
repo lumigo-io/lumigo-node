@@ -27,16 +27,18 @@ export class DurationTimer {
   }
   static getDurationTimer(name = 'global'): TracerTimer {
     // eslint-disable-next-line no-undef
-    let lastStartTime: bigint | undefined;
+    let lastStartTime;
     let currentDuration = 0;
 
     const appendTime = () => {
-      if (lastStartTime)
-        currentDuration += Number(process.hrtime.bigint() - lastStartTime) / 1000000;
+      if (lastStartTime) {
+        let diff = process.hrtime(lastStartTime);
+        currentDuration += Number(diff[0] * 1000 + diff[1] / 1000000);
+      }
     };
 
     const start = () => {
-      lastStartTime = process.hrtime.bigint();
+      lastStartTime = process.hrtime();
     };
 
     const stop = () => {
