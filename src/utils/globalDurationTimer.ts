@@ -6,16 +6,16 @@ const warnTimeoutOnce = runOneTimeWrapper(() => {
   logger.warnClient('Lumigo tracer timed out and is no longer collecting data on the invocation.');
 }, {});
 
-export type TimerReport = { name: string; duration: number };
+export type TimerReport = { name: string, duration: number };
 
 export type TracerTimer = {
-  timedSync: Function;
-  timedAsync: Function;
-  stop: () => void;
-  isTimePassed: (time?: number) => boolean;
-  start: () => void;
-  reset: () => void;
-  getReport: () => TimerReport;
+  timedSync: Function,
+  timedAsync: Function,
+  stop: () => void,
+  isTimePassed: (time?: number) => boolean,
+  start: () => void,
+  reset: () => void,
+  getReport: () => TimerReport,
 };
 
 // eslint-disable-next-line no-undef
@@ -26,15 +26,17 @@ export class DurationTimer {
     return tracerTimers;
   }
   static getDurationTimer(name = 'global'): TracerTimer {
-    let lastStartTime: number | undefined;
+    // eslint-disable-next-line no-undef
+    let lastStartTime: bigint | undefined;
     let currentDuration = 0;
 
     const appendTime = () => {
-      if (lastStartTime) currentDuration += new Date().getTime() - lastStartTime;
+      if (lastStartTime)
+        currentDuration += Number(process.hrtime.bigint() - lastStartTime) / 1000000;
     };
 
     const start = () => {
-      lastStartTime = new Date().getTime();
+      lastStartTime = process.hrtime.bigint();
     };
 
     const stop = () => {
@@ -57,7 +59,7 @@ export class DurationTimer {
       return false;
     };
 
-    const getReport = (): { name: string; duration: number } => {
+    const getReport = (): { name: string, duration: number } => {
       return {
         name,
         duration: currentDuration,
