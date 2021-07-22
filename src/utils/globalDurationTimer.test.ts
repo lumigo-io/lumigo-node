@@ -14,22 +14,32 @@ describe('GlobalDurationTimer', () => {
   });
 
   const testTimer = async (timer: TracerTimer, name: string, time = 10) => {
+    // FIRST
     timer.start();
     await wait(time);
     timer.stop();
+
+    // WAIT NO TIMING
     await wait(time);
+
+    // SECOND
     timer.start();
     await wait(time);
     timer.stop();
+
+    // WAIT NO TIMING
     await wait(time);
+
+    //THIRD
     timer.start();
     await wait(time);
     timer.stop();
+
     const timerReport = DurationTimer.getTimers()[name].getReport();
     expect(timerReport.duration).toBeGreaterThanOrEqual(time * 3);
     expect(timerReport.duration).toBeLessThanOrEqual(time * 3 + 20);
-    expect(timer.isTimePassed(time * 4)).toBeFalsy();
-    expect(timer.isTimePassed(time / 2)).toBeTruthy();
+    expect(timer.isTimePassed(time * 3 + 20)).toBeFalsy();
+    expect(timer.isTimePassed(time * 3 - 1)).toBeTruthy();
     expect(timer.isTimePassed()).toBeFalsy();
     return timerReport;
   };
