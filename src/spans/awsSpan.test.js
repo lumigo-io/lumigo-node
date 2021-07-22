@@ -280,7 +280,7 @@ describe('awsSpan', () => {
           name: 'global',
         },
         {
-          duration: 0,
+          duration: expect.any(Number),
           name: 'payloadStringify',
         },
       ],
@@ -349,7 +349,7 @@ describe('awsSpan', () => {
           name: 'global',
         },
         {
-          duration: 0,
+          duration: expect.any(Number),
           name: 'payloadStringify',
         },
       ],
