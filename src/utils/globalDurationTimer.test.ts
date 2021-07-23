@@ -13,18 +13,18 @@ describe('GlobalDurationTimer', () => {
     expect(DurationTimer.getTimers()['global']).toEqual(GlobalDurationTimer);
   });
 
-  const expects = (name: string, greaterThan: number, lessThan: number) =>{
+  const expects = (name: string, greaterThan: number, lessThan: number) => {
     const timerReport = DurationTimer.getTimers()[name].getReport();
     expect(timerReport.duration).toBeGreaterThanOrEqual(greaterThan);
     expect(timerReport.duration).toBeLessThanOrEqual(lessThan);
-  }
+  };
 
   const testTimer = async (timer: TracerTimer, name: string, time = 10) => {
     // FIRST
     timer.start();
     await wait(time);
     timer.stop();
-    expects(name, time, time * 1.1)
+    expects(name, time, time * 1.15);
     // WAIT NO TIMING
     await wait(time);
 
@@ -32,7 +32,7 @@ describe('GlobalDurationTimer', () => {
     timer.start();
     await wait(time);
     timer.stop();
-    expects(name, time * 2, time * 2.2)
+    expects(name, time * 2, time * 2.3);
 
     // WAIT NO TIMING
     await wait(time);
@@ -41,11 +41,9 @@ describe('GlobalDurationTimer', () => {
     timer.start();
     await wait(time);
     timer.stop();
-    expects(name, time * 3, time * 3.3)
+    expects(name, time * 3, time * 3.35);
 
     const timerReport = DurationTimer.getTimers()[name].getReport();
-    expect(timerReport.duration).toBeGreaterThanOrEqual(time * 3);
-    expect(timerReport.duration).toBeLessThanOrEqual(time * 3 + 50);
     expect(timer.isTimePassed(time * 3 + 20)).toBeFalsy();
     expect(timer.isTimePassed(time * 3 - 1)).toBeTruthy();
     expect(timer.isTimePassed()).toBeFalsy();
