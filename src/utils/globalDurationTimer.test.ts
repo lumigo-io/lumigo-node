@@ -1,11 +1,9 @@
 import { GlobalDurationTimer, TracerTimer, DurationTimer } from './globalDurationTimer';
+import { sleep } from '../../testUtils/sleep';
 
 describe('GlobalDurationTimer', () => {
   let timerA = DurationTimer.getDurationTimer('timerA');
   let timerB = DurationTimer.getDurationTimer('timerB');
-  function wait(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  }
 
   test('GlobalDurationTimer => TracerTimers validate', async () => {
     expect(DurationTimer.getTimers()['timerA']).toEqual(timerA);
@@ -22,24 +20,24 @@ describe('GlobalDurationTimer', () => {
   const testTimer = async (timer: TracerTimer, name: string, time = 10) => {
     // FIRST
     timer.start();
-    await wait(time);
+    await sleep(time);
     timer.stop();
     expects(name, time - 1, time * 1.15);
     // WAIT NO TIMING
-    await wait(time);
+    await sleep(time);
 
     // SECOND
     timer.start();
-    await wait(time);
+    await sleep(time);
     timer.stop();
     expects(name, time * 2 - 1, time * 2.3);
 
     // WAIT NO TIMING
-    await wait(time);
+    await sleep(time);
 
     //THIRD
     timer.start();
-    await wait(time);
+    await sleep(time);
     timer.stop();
     expects(name, time * 3 - 1, time * 3.35);
 
@@ -52,14 +50,14 @@ describe('GlobalDurationTimer', () => {
 
   test('GlobalDurationTimer => simple flow (timerA, timerB)', async () => {
     const timerAReport = await testTimer(timerA, 'timerA', 60);
-    // const timerBReport = testTimer(timerB, 'timerB', 30);
+    const timerBReport = await testTimer(timerB, 'timerB', 30);
     const report = DurationTimer.generateTracerAnalyticsReport();
     expect(report[0]).toEqual({
       name: 'global',
       duration: 0,
     });
     expect(report[1]).toEqual(timerAReport);
-    // expect(report[2]).toEqual(timerBReport);
+    expect(report[2]).toEqual(timerBReport);
   });
 
   test('@timedAsync => simple flow', async () => {
@@ -68,12 +66,12 @@ describe('GlobalDurationTimer', () => {
     class A {
       @timerA.timedAsync()
       async a() {
-        await wait(10);
+        await sleep(10);
       }
     }
     const a = new A();
     await a.a();
-    await wait(10);
+    await sleep(10);
     await a.a();
     expect(timerA.isTimePassed(150)).toBeFalsy();
     expect(timerA.isTimePassed(10)).toBeTruthy();
