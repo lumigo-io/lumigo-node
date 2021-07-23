@@ -31,14 +31,11 @@ export class DurationTimer {
     let currentDuration = 0;
 
     const appendTime = () => {
-      if (lastStartTime) {
-        let diff = process.hrtime(lastStartTime);
-        currentDuration += Number(diff[0] * 1000 + diff[1] / 1000000);
-      }
+      if (lastStartTime) currentDuration += new Date().getTime() - lastStartTime;
     };
 
     const start = () => {
-      lastStartTime = process.hrtime();
+      lastStartTime = new Date().getTime();
     };
 
     const stop = () => {
