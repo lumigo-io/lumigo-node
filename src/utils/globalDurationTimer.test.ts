@@ -24,7 +24,7 @@ describe('GlobalDurationTimer', () => {
     timer.start();
     await wait(time);
     timer.stop();
-    expects(name, time, time * 1.15);
+    expects(name, time - 1, time * 1.15);
     // WAIT NO TIMING
     await wait(time);
 
@@ -32,7 +32,7 @@ describe('GlobalDurationTimer', () => {
     timer.start();
     await wait(time);
     timer.stop();
-    expects(name, time * 2, time * 2.3);
+    expects(name, time * 2 - 1, time * 2.3);
 
     // WAIT NO TIMING
     await wait(time);
@@ -41,7 +41,7 @@ describe('GlobalDurationTimer', () => {
     timer.start();
     await wait(time);
     timer.stop();
-    expects(name, time * 3, time * 3.35);
+    expects(name, time * 3 - 1, time * 3.35);
 
     const timerReport = DurationTimer.getTimers()[name].getReport();
     expect(timer.isTimePassed(time * 3 + 20)).toBeFalsy();
