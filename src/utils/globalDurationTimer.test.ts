@@ -51,7 +51,7 @@ describe('GlobalDurationTimer', () => {
   };
 
   test('GlobalDurationTimer => simple flow (timerA, timerB)', async () => {
-    const timerAReport = testTimer(timerA, 'timerA', 60);
+    const timerAReport = await testTimer(timerA, 'timerA', 60);
     // const timerBReport = testTimer(timerB, 'timerB', 30);
     const report = DurationTimer.generateTracerAnalyticsReport();
     expect(report[0]).toEqual({
