@@ -30,7 +30,7 @@ describe('GlobalDurationTimer', () => {
     timer.start();
     await sleep(time);
     timer.stop();
-    expects(name, time * 2 - 1, time * 3);
+    expects(name, time * 2 - 1, time * 4);
 
     // WAIT NO TIMING
     await sleep(time);
@@ -39,7 +39,7 @@ describe('GlobalDurationTimer', () => {
     timer.start();
     await sleep(time);
     timer.stop();
-    expects(name, time * 3 - 1, time * 4);
+    expects(name, time * 3 - 1, time * 6);
 
     const timerReport = DurationTimer.getTimers()[name].getReport();
     expect(timer.isTimePassed(time * 4)).toBeFalsy();
