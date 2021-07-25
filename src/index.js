@@ -45,4 +45,9 @@ module.exports = function ({
   };
 };
 
-Object.assign(module.exports, { addExecutionTag: ExecutionTags.addTag });
+Object.assign(module.exports, {
+  addExecutionTag: ExecutionTags.addTag,
+  info: LumigoLogger.info,
+  warn: LumigoLogger.warn,
+  error: LumigoLogger.error,
+});
