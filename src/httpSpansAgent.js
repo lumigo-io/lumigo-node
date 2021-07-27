@@ -56,7 +56,7 @@ export const HttpSpansAgent = (() => {
         ...baseConfiguration,
         httpsAgent: httpAgent,
         httpAgent: httpAgent,
-        rejectUnauthorized: false
+        rejectUnauthorized: false,
       });
     }
     return axios.create(baseConfiguration);
