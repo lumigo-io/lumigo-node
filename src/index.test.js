@@ -241,6 +241,7 @@ describe('index', () => {
       switchOff: false,
       eventFilter: {},
       stepFunction: false,
+      sendOnlyIfError: false,
     });
     expect(spies.setVerboseMode).toHaveBeenCalled();
     spies.trace.mockClear();
@@ -257,6 +258,48 @@ describe('index', () => {
       switchOff: true,
       eventFilter: {},
       stepFunction: false,
+      sendOnlyIfError: false,
+    });
+    expect(spies.setSwitchOff).toHaveBeenCalled();
+  });
+
+  test('init tracer => sendOnlyIfError', () => {
+    const retVal = 1234;
+    spies.trace.mockReturnValueOnce(retVal);
+
+    const token = 'DEADBEEF';
+    const debug = false;
+    const edgeHost = 'zarathustra.com';
+    const verbose = true;
+
+    const lumigo1 = require('./index')({ token, edgeHost, verbose, sendOnlyIfError: true });
+    expect(lumigo1.trace).toEqual(retVal);
+    expect(spies.trace).toHaveBeenCalledWith({
+      debug,
+      token,
+      edgeHost,
+      switchOff: false,
+      eventFilter: {},
+      stepFunction: false,
+      sendOnlyIfError: true,
+    });
+    expect(spies.setVerboseMode).toHaveBeenCalled();
+    spies.trace.mockClear();
+    spies.trace.mockReturnValueOnce(retVal);
+    const lumigo2 = require('./index')({
+      token,
+      switchOff: true,
+      sendOnlyIfError: true,
+    });
+    expect(lumigo2.trace).toEqual(retVal);
+    expect(spies.trace).toHaveBeenCalledWith({
+      debug,
+      token,
+      edgeHost: undefined,
+      switchOff: true,
+      eventFilter: {},
+      stepFunction: false,
+      sendOnlyIfError: true,
     });
     expect(spies.setSwitchOff).toHaveBeenCalled();
   });
@@ -279,6 +322,7 @@ describe('index', () => {
       switchOff: false,
       eventFilter: {},
       stepFunction: false,
+      sendOnlyIfError: false,
     });
   });
 });

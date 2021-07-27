@@ -25,7 +25,6 @@ describe('tracer', () => {
   spies.isSwitchedOff = jest.spyOn(utils, 'isSwitchedOff');
   spies.setSwitchOff = jest.spyOn(utils, 'setSwitchOff');
   spies.isAwsEnvironment = jest.spyOn(utils, 'isAwsEnvironment');
-  spies.isSendOnlyIfErrors = jest.spyOn(utils, 'isSendOnlyIfErrors');
   spies.getContextInfo = jest.spyOn(utils, 'getContextInfo');
   spies.getRandomId = jest.spyOn(utils, 'getRandomId');
   spies.addStepFunctionEvent = jest.spyOn(http, 'addStepFunctionEvent');
@@ -74,18 +73,6 @@ describe('tracer', () => {
     new EnvironmentBuilder().notAwsEnvironment().applyEnv();
     const handlerInputs = new HandlerInputesBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
-
-    await tracer.startTrace();
-
-    const requests = AxiosMocker.getRequests();
-    expect(requests.length).toEqual(0);
-  });
-
-  test('startTrace - not sending start-span on SEND_ONLY_ON_ERROR', async () => {
-    new EnvironmentBuilder().awsEnvironment().applyEnv();
-    const handlerInputs = new HandlerInputesBuilder().build();
-    TracerGlobals.setHandlerInputs(handlerInputs);
-    utils.setSendOnlyIfErrors();
 
     await tracer.startTrace();
 
@@ -166,25 +153,6 @@ describe('tracer', () => {
       const requests = AxiosMocker.getRequests();
       //Expect 1 for start span
       expect(requests.length).toEqual(1);
-      done();
-    }, timeout + testBuffer);
-  });
-
-  test('startTrace - timeout timer - SEND_ONLY_ON_ERROR - not sending spans', async done => {
-    const timeout = 1000;
-    const testBuffer = 50;
-
-    utils.setSendOnlyIfErrors();
-    new EnvironmentBuilder().awsEnvironment().applyEnv();
-    const handlerInputs = new HandlerInputesBuilder().withTimeout(timeout).build();
-    TracerGlobals.setHandlerInputs(handlerInputs);
-
-    await tracer.startTrace();
-    SpansContainer.addSpan({ id: 'SomeRandomHttpSpan' });
-
-    setTimeout(() => {
-      const requests = AxiosMocker.getRequests();
-      expect(requests.length).toEqual(0);
       done();
     }, timeout + testBuffer);
   });
@@ -702,5 +670,36 @@ describe('tracer', () => {
     expect(result[LUMIGO_EVENT_KEY][STEP_FUNCTION_UID_KEY]).not.toEqual('old');
     const requests = AxiosMocker.getRequests();
     expect(requests.length).toEqual(2);
+  });
+
+  test('startTrace - not sending start-span on SEND_ONLY_ON_ERROR', async () => {
+    new EnvironmentBuilder().awsEnvironment().applyEnv();
+    const handlerInputs = new HandlerInputesBuilder().build();
+    TracerGlobals.setTracerInputs({ sendOnlyIfError: true });
+    TracerGlobals.setHandlerInputs(handlerInputs);
+
+    await tracer.startTrace();
+
+    const requests = AxiosMocker.getRequests();
+    expect(requests.length).toEqual(0);
+  });
+
+  test('startTrace - timeout timer - SEND_ONLY_ON_ERROR - not sending spans', async done => {
+    const timeout = 1000;
+    const testBuffer = 50;
+
+    TracerGlobals.setTracerInputs({ sendOnlyIfError: true });
+    new EnvironmentBuilder().awsEnvironment().applyEnv();
+    const handlerInputs = new HandlerInputesBuilder().withTimeout(timeout).build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
+
+    await tracer.startTrace();
+    SpansContainer.addSpan({ id: 'SomeRandomHttpSpan' });
+
+    setTimeout(() => {
+      const requests = AxiosMocker.getRequests();
+      expect(requests.length).toEqual(0);
+      done();
+    }, timeout + testBuffer);
   });
 });

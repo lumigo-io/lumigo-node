@@ -132,7 +132,6 @@ const TIMEOUT_ENABLE_FLAG = 'LUMIGO_TIMEOUT_TIMER_ENABLED';
 const WARM_FLAG = 'LUMIGO_IS_WARM';
 const WRAPPED_FLAG = 'LUMIGO_IS_WRAPPED';
 const VERBOSE_FLAG = 'LUMIGO_VERBOSE';
-const SEND_ONLY_IF_ERROR_FLAG = 'SEND_ONLY_IF_ERROR';
 const PRUNE_TRACE_OFF_FLAG = 'LUMIGO_PRUNE_TRACE_OFF';
 const STORE_LOGS_FLAG = 'LUMIGO_STORE_LOGS';
 const TIMEOUT_BUFFER_FLAG = 'LUMIGO_TIMEOUT_BUFFER';
@@ -210,8 +209,6 @@ export const isStoreLogs = () => validateEnvVar(STORE_LOGS_FLAG);
 
 export const isReuseHttpConnection = () => validateEnvVar(REUSE_CONNECTION);
 
-export const isSendOnlyIfErrors = () => validateEnvVar(SEND_ONLY_IF_ERROR_FLAG);
-
 export const isPruneTraceOff = () => validateEnvVar(PRUNE_TRACE_OFF_FLAG);
 
 export const isKeepHeadersOn = () => validateEnvVar(KEEP_HEADERS);
@@ -262,8 +259,6 @@ export const isValidToken = token => {
 };
 
 export const setWarm = () => (process.env[WARM_FLAG] = 'TRUE');
-
-export const setSendOnlyIfErrors = () => (process.env[SEND_ONLY_IF_ERROR_FLAG] = 'TRUE');
 
 export const setPruneTraceOff = () => (process.env[PRUNE_TRACE_OFF_FLAG] = 'TRUE');
 

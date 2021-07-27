@@ -17,6 +17,7 @@ module.exports = function({
   verbose = false,
   switchOff = false,
   stepFunction = false,
+  sendOnlyIfError = false,
 }) {
   verbose && setVerboseMode();
   switchOff && setSwitchOff();
@@ -37,6 +38,7 @@ module.exports = function({
       switchOff,
       eventFilter,
       stepFunction,
+      sendOnlyIfError,
     }),
     addExecutionTag: ExecutionTags.addTag,
     info: LumigoLogger.info,

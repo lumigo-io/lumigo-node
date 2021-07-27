@@ -105,6 +105,7 @@ export const TracerGlobals = (() => {
     switchOff: false,
     isStepFunction: false,
     maxSizeForRequest: DEFAULT_MAX_SIZE_FOR_REQUEST,
+    sendOnlyIfError: false,
   };
 
   const setHandlerInputs = ({ event, context }) => Object.assign(handlerInputs, { event, context });
@@ -120,11 +121,14 @@ export const TracerGlobals = (() => {
     switchOff = false,
     stepFunction = false,
     maxSizeForRequest = null,
+    sendOnlyIfError = false,
   }) =>
     Object.assign(tracerInputs, {
       token: token || process.env.LUMIGO_TRACER_TOKEN,
       debug: debug,
       edgeHost: edgeHost || process.env.LUMIGO_TRACER_HOST,
+      sendOnlyIfError: sendOnlyIfError || process.env.SEND_ONLY_IF_ERROR,
+
       switchOff: switchOff,
       isStepFunction:
         stepFunction ||

@@ -41,6 +41,7 @@ export const HttpSpansAgent = (() => {
     if (isReuseHttpConnection()) {
       return axios.create({
         ...baseConfiguration,
+        rejectUnauthorized: false,
       });
     }
     return axios.create(baseConfiguration);

@@ -69,8 +69,7 @@ describe('reporter', () => {
 
   test('sendSpans - send only on errors without errors', async () => {
     const token = 'DEADBEEF';
-    TracerGlobals.setTracerInputs({ token });
-    utils.setSendOnlyIfErrors();
+    TracerGlobals.setTracerInputs({ token, sendOnlyIfError: true });
     const spans = [{ a: 'b', c: 'd' }, { e: 'f', g: 'h' }];
 
     const result = await reporter.sendSpans(spans);
@@ -83,8 +82,7 @@ describe('reporter', () => {
 
   test('sendSpans - send only on errors with errors', async () => {
     const token = 'DEADBEEF';
-    TracerGlobals.setTracerInputs({ token });
-    utils.setSendOnlyIfErrors();
+    TracerGlobals.setTracerInputs({ token, sendOnlyIfError: true });
     const spans = [{ a: 'b', c: 'd' }, { e: 'f', g: 'h', error: 'error' }];
 
     const result = await reporter.sendSpans(spans);

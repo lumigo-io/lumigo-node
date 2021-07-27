@@ -1,12 +1,7 @@
-import {
-  getJSONBase64Size,
-  getMaxRequestSize,
-  isPruneTraceOff,
-  isSendOnlyIfErrors,
-  spanHasErrors,
-} from './utils';
+import { getJSONBase64Size, getMaxRequestSize, isPruneTraceOff, spanHasErrors } from './utils';
 import * as logger from './logger';
 import { HttpSpansAgent } from './httpSpansAgent';
+import { TracerGlobals } from './globals';
 export const NUMBER_OF_SPANS_IN_REPORT_OPTIMIZATION = 200;
 
 export const sendSingleSpan = async span => exports.sendSpans([span]);
@@ -23,7 +18,7 @@ export const isSpansContainsErrors = spans => {
 };
 
 export const sendSpans = async spans => {
-  if (isSendOnlyIfErrors() && !isSpansContainsErrors(spans)) {
+  if (TracerGlobals.getTracerInputs().sendOnlyIfError && !isSpansContainsErrors(spans)) {
     logger.debug('No Spans was sent, `SEND_ONLY_IF_ERROR` is on and no span has error');
     return { rtt: 0 };
   }

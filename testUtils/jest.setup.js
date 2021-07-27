@@ -27,6 +27,7 @@ beforeEach(() => {
   LogStore.clean();
   HttpSpansAgent.cleanSessionInstance();
   MongoMockerEventEmitter.cleanEventEmitter();
+  // TracerGlobals.clearTracerInputs();
 
   const awsEnv = createAwsEnvVars();
   process.env = { ...oldEnv, ...awsEnv };

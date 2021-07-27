@@ -206,12 +206,6 @@ describe('utils', () => {
     expect(utils.isLambdaWrapped()).toBe(true);
   });
 
-  test('isSendOnlyIfErrors', () => {
-    expect(utils.isSendOnlyIfErrors()).toBe(false);
-    process.env.SEND_ONLY_IF_ERROR = 'TRUE';
-    expect(utils.isSendOnlyIfErrors()).toBe(true);
-  });
-
   test('isPruneTraceOff', () => {
     expect(utils.isPruneTraceOff()).toBe(false);
     process.env.LUMIGO_PRUNE_TRACE_OFF = 'TRUE';
@@ -274,12 +268,6 @@ describe('utils', () => {
     expect(utils.isReuseHttpConnection()).toBe(false);
     process.env['LUMIGO_REUSE_HTTP_CONNECTION'] = 'TRUE';
     expect(utils.isReuseHttpConnection()).toBe(true);
-  });
-
-  test('setSendOnlyIfErrors', () => {
-    expect(utils.isSendOnlyIfErrors()).toBe(false);
-    utils.setSendOnlyIfErrors();
-    expect(utils.isSendOnlyIfErrors()).toBe(true);
   });
 
   test('setTimeoutTimerDisabled', () => {
