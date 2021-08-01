@@ -1,4 +1,4 @@
-import { payloadStringify, keyToOmitRegexes } from './payloadStringify';
+import { payloadStringify, keyToOmitRegexes, prune } from './payloadStringify';
 import { LUMIGO_SECRET_MASKING_REGEX, LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP } from '../utils';
 
 describe('payloadStringify', () => {
@@ -114,6 +114,14 @@ describe('payloadStringify', () => {
     const result = payloadStringify(payload, 10);
 
     expect(result).toEqual('[2,3,3,4,5,6,7,11]...[too long]');
+  });
+
+  test('prune on non-string', () => {
+    const payload = { an: 'object' };
+
+    const result = prune(payload, 10);
+
+    expect(result).toEqual('');
   });
 
   test('payloadStringify -> Huge String', () => {
