@@ -4,6 +4,7 @@ import {
   LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP,
   OMITTING_KEYS_REGEXES,
   parseJsonFromEnvVar,
+  isString,
 } from '../utils';
 import { safeExecute } from '../utils';
 import * as logger from '../logger';
@@ -30,7 +31,14 @@ export const keyToOmitRegexes = () => {
   return regexesList.map((x) => new RegExp(x, 'i'));
 };
 
-export const prune = (str, maxLength) => (str || '').substr(0, maxLength);
+export const prune = (str, maxLength) => {
+  let toPrune = str;
+  if (!isString(toPrune)) {
+    toPrune = '';
+    logger.warn('Prune was called on a non-string object');
+  }
+  return toPrune.substr(0, maxLength);
+};
 
 const isSecretKey = (regexes, key) => {
   if (!isNaN(key)) {
