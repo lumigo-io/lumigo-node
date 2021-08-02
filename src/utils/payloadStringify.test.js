@@ -124,6 +124,18 @@ describe('payloadStringify', () => {
     expect(result).toEqual('');
   });
 
+  test('prune on undefined', () => {
+    const result = prune(undefined, 10);
+
+    expect(result).toEqual('');
+  });
+
+  test('prune on null', () => {
+    const result = prune(null, 10);
+
+    expect(result).toEqual('');
+  });
+
   test('payloadStringify -> Huge String', () => {
     const length = 100000;
     let payload = '';
