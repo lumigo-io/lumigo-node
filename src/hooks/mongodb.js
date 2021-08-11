@@ -1,4 +1,4 @@
-import { safeRequire } from '../utils/requireUtils';
+import { getModules, safeRequire } from '../utils/requireUtils';
 import { getRandomId, safeExecute } from '../utils';
 import { createMongoDbSpan, extendMongoDbSpan } from '../spans/mongoDbSpan';
 import { SpansContainer, TracerGlobals } from '../globals';
@@ -25,6 +25,7 @@ const PendingRequests = (() => {
 })();
 
 const onStartedHook = (event) => {
+  console.log("## onStartedHook", event);
   const awsRequestId = TracerGlobals.getHandlerInputs().context.awsRequestId;
   const transactionId = getCurrentTransactionId();
   const { command, databaseName, commandName, requestId, operationId, connectionId } = event;
@@ -51,6 +52,7 @@ const onStartedHook = (event) => {
 };
 
 const onSucceededHook = (event) => {
+  console.log("## onSucceededHook", event);
   const { duration, reply, requestId } = event;
   const currentSpanId = PendingRequests.popPendingRequestSpanId(requestId);
   const currentSpan = SpansContainer.getSpanById(currentSpanId);
@@ -58,6 +60,7 @@ const onSucceededHook = (event) => {
     duration,
     reply,
   });
+  logger.debug(`Span added:`, extendedMondoDbSpan)
   SpansContainer.addSpan(extendedMondoDbSpan);
 };
 
@@ -73,22 +76,27 @@ const onFailedHook = (event) => {
 };
 
 export const hookMongoDb = (mongoLib) => {
-  const mongoClient = mongoLib || safeRequire('mongodb');
-  if (mongoClient) {
-    logger.info('Starting to instrument MongoDB');
-    const listener = mongoClient.instrument({}, (err) => {
-      if (err) logger.warn('MongoDB instrumentation failed ', err);
-    });
-    const safeStartedHook = safeExecute(onStartedHook);
-    const safeSucceededHook = safeExecute(onSucceededHook);
-    const safeFailedHook = safeExecute(onFailedHook);
-    safeExecute(() => {
-      listener.on('started', safeStartedHook);
-      listener.on('succeeded', safeSucceededHook);
-      listener.on('failed', safeFailedHook);
-    })();
-    logger.info('MongoDB instrumentation done');
-  } else {
-    logger.debug('MongoDB SDK not found');
-  }
+  const mongoClient = mongoLib ? mongoLib : safeRequire('mongodb');
+  const mongoosClients = safeRequire('node_modules/mongoose/node_modules/mongodb');
+  const mongoClients = [mongoClient, mongoosClients].filter(Boolean)
+  mongoClients.forEach(mongoClient => {
+    if (mongoClient) {
+      logger.info('Starting to instrument MongoDB');
+      const listener = mongoClient.instrument({}, (err) => {
+        if (err) logger.warn('MongoDB instrumentation failed ', err);
+      });
+      const safeStartedHook = safeExecute(onStartedHook);
+      const safeSucceededHook = safeExecute(onSucceededHook);
+      const safeFailedHook = safeExecute(onFailedHook);
+      safeExecute(() => {
+        listener.on('started', safeStartedHook);
+        listener.on('succeeded', safeSucceededHook);
+        listener.on('failed', safeFailedHook);
+      })();
+      logger.info('MongoDB instrumentation done');
+    } else {
+      logger.debug('MongoDB SDK not found');
+    }
+  })
+
 };
