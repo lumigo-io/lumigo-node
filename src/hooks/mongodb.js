@@ -1,4 +1,4 @@
-import { getModules, safeRequire } from '../utils/requireUtils';
+import { safeRequire } from '../utils/requireUtils';
 import { getRandomId, safeExecute } from '../utils';
 import { createMongoDbSpan, extendMongoDbSpan } from '../spans/mongoDbSpan';
 import { SpansContainer, TracerGlobals } from '../globals';
