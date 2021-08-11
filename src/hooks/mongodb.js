@@ -25,7 +25,6 @@ const PendingRequests = (() => {
 })();
 
 const onStartedHook = (event) => {
-  console.log("## onStartedHook", event);
   const awsRequestId = TracerGlobals.getHandlerInputs().context.awsRequestId;
   const transactionId = getCurrentTransactionId();
   const { command, databaseName, commandName, requestId, operationId, connectionId } = event;
@@ -52,7 +51,6 @@ const onStartedHook = (event) => {
 };
 
 const onSucceededHook = (event) => {
-  console.log("## onSucceededHook", event);
   const { duration, reply, requestId } = event;
   const currentSpanId = PendingRequests.popPendingRequestSpanId(requestId);
   const currentSpan = SpansContainer.getSpanById(currentSpanId);
@@ -60,7 +58,6 @@ const onSucceededHook = (event) => {
     duration,
     reply,
   });
-  logger.debug(`Span added:`, extendedMondoDbSpan)
   SpansContainer.addSpan(extendedMondoDbSpan);
 };
 
