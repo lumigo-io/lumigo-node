@@ -75,25 +75,26 @@ const onFailedHook = (event) => {
 export const hookMongoDb = (mongoLib) => {
   const mongoClient = mongoLib ? mongoLib : safeRequire('mongodb');
   const mongoosClients = safeRequire('node_modules/mongoose/node_modules/mongodb');
-  const mongoClients = [mongoClient, mongoosClients].filter(Boolean)
-  mongoClients.forEach(mongoClient => {
-    if (mongoClient) {
-      logger.info('Starting to instrument MongoDB');
-      const listener = mongoClient.instrument({}, (err) => {
-        if (err) logger.warn('MongoDB instrumentation failed ', err);
-      });
-      const safeStartedHook = safeExecute(onStartedHook);
-      const safeSucceededHook = safeExecute(onSucceededHook);
-      const safeFailedHook = safeExecute(onFailedHook);
-      safeExecute(() => {
-        listener.on('started', safeStartedHook);
-        listener.on('succeeded', safeSucceededHook);
-        listener.on('failed', safeFailedHook);
-      })();
-      logger.info('MongoDB instrumentation done');
-    } else {
-      logger.debug('MongoDB SDK not found');
-    }
-  })
-
+  const mongoClients = [mongoClient, mongoosClients].filter(Boolean);
+  if (mongoClients.length > 0) {
+    mongoClients.forEach((mongoClient) => {
+      if (mongoClient) {
+        logger.info('Starting to instrument MongoDB');
+        const listener = mongoClient.instrument({}, (err) => {
+          if (err) logger.warn('MongoDB instrumentation failed ', err);
+        });
+        const safeStartedHook = safeExecute(onStartedHook);
+        const safeSucceededHook = safeExecute(onSucceededHook);
+        const safeFailedHook = safeExecute(onFailedHook);
+        safeExecute(() => {
+          listener.on('started', safeStartedHook);
+          listener.on('succeeded', safeSucceededHook);
+          listener.on('failed', safeFailedHook);
+        })();
+      }
+    });
+    logger.info('MongoDB instrumentation done');
+  } else {
+    logger.debug('MongoDB SDK not found');
+  }
 };
