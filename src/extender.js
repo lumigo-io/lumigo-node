@@ -6,11 +6,11 @@ const noop = () => {};
 
 const isFunctionAlreadyWrapped = (fn) => fn && fn.__wrapped;
 
-export const hook = (module, funcName, options = {}, initialContext = {}, shimmerLib = shimmer) => {
+export const hook = (module, funcName, options = {}, shimmerLib = shimmer) => {
   const { beforeHook = noop, afterHook = noop } = options;
   const safeBeforeHook = safeExecute(beforeHook, `before hook of ${funcName} fail`);
   const safeAfterHook = safeExecute(afterHook, `after hook of ${funcName} fail`);
-  const extenderContext = initialContext;
+  const extenderContext = {};
   try {
     const wrapper = (originalFn) => {
       if (isFunctionAlreadyWrapped(originalFn)) return originalFn;
@@ -29,7 +29,7 @@ export const hook = (module, funcName, options = {}, initialContext = {}, shimme
 
 export const hookPromise = (originalPromise, options) => {
   const { thenHandler = noop, catchHandler = noop } = options;
-  const safeThenHandler = safeExecute(thenHandler, `thenHandler of fail`);
+  const safeThenHandler = safeExecute(thenHandler, `thenHandler of  fail`);
   const safeCatchHandler = safeExecute(catchHandler, `catchHandler of fail`);
   const errorHandler = async (err) => {
     safeCatchHandler(err);
