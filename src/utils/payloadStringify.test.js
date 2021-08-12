@@ -1,4 +1,4 @@
-import { payloadStringify, keyToOmitRegexes, prune } from './payloadStringify';
+import { payloadStringify, keyToOmitRegexes, prune, payloadParse } from './payloadStringify';
 import { LUMIGO_SECRET_MASKING_REGEX, LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP } from '../utils';
 
 describe('payloadStringify', () => {
@@ -6,6 +6,14 @@ describe('payloadStringify', () => {
     const payload = { a: 2, b: 3 };
 
     const result = payloadStringify(payload);
+
+    expect(result).toEqual('{"a":2,"b":3}');
+  });
+
+  test('payloadParse -> simple flow -> object', () => {
+    const payload = { a: 2, b: 3 };
+
+    const result = payloadParse(JSON.stringify(payload));
 
     expect(result).toEqual('{"a":2,"b":3}');
   });
@@ -18,12 +26,28 @@ describe('payloadStringify', () => {
     expect(result).toEqual('null');
   });
 
+  test('payloadParse -> simple flow -> null', () => {
+    const payload = null;
+
+    const result = payloadParse(JSON.stringify(payload));
+
+    expect(result).toEqual('null');
+  });
+
   test('payloadStringify -> simple flow -> complex object', () => {
     const payload = { a: [{ a: 2 }], b: 3 };
 
     const result = payloadStringify(payload);
 
     expect(result).toEqual('{"a":[{"a":2}],"b":3}');
+  });
+
+  test('payloadStringify -> simple flow -> complex object2', () => {
+    const payload = '{"a":[{"a":2}],"password":12341}';
+
+    const result = payloadParse(payload);
+
+    expect(result).toEqual('{"a":[{"a":2}],"password":"****"}');
   });
 
   test('payloadStringify -> simple flow -> list', () => {
@@ -105,7 +129,7 @@ describe('payloadStringify', () => {
 
     const result = payloadStringify(payload, 10);
 
-    expect(result).toEqual('{"a":2,"b":3,"c":3,"d":4,"e":5,"f":6,"g":7,"aa":11}...[too long]');
+    expect(result).toEqual('{"a":2,"b":3,"c":3,"d":4}...[too long]');
   });
 
   test('payloadStringify -> prune after 10B -> list', () => {
@@ -113,7 +137,7 @@ describe('payloadStringify', () => {
 
     const result = payloadStringify(payload, 10);
 
-    expect(result).toEqual('[2,3,3,4,5,6,7,11]...[too long]');
+    expect(result).toEqual('[2,3,3,4]...[too long]');
   });
 
   test('prune on non-string', () => {
@@ -147,6 +171,19 @@ describe('payloadStringify', () => {
 
     expect(result).toEqual('"xxxxxxxxxx"...[too long]');
     expect(result.length).toEqual(25);
+  });
+
+  test('payloadParse -> Huge String', () => {
+    const length = 100000;
+    let payload = '';
+    for (let i = 0; i < length; i++) {
+      payload += 'x';
+    }
+
+    const result = payloadParse(JSON.stringify(payload), 10);
+
+    expect(result).toEqual("xxxxxxxxxx...[too long]");
+    expect(result.length).toEqual(23);
   });
 
   test('payloadStringify -> circular object', () => {

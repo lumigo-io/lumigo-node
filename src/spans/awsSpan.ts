@@ -30,7 +30,7 @@ import { TracerGlobals, ExecutionTags } from '../globals';
 import { getEventInfo } from '../events';
 import { getSkipScrubPath, parseEvent } from '../parsers/eventParser';
 import * as logger from '../logger';
-import { payloadStringify, prune } from '../utils/payloadStringify';
+import { payloadParse, payloadStringify, prune } from '../utils/payloadStringify';
 import { HttpInfo } from '../types/spans/httpSpan';
 import { BasicSpan, SpanInfo } from '../types/spans/basicSpan';
 import { FunctionSpan } from '../types/spans/functionSpan';
@@ -232,15 +232,23 @@ export const getAwsServiceData = (requestData, responseData) => {
       return awsParser(requestData, responseData);
   }
 };
+const isJsonContent = (payload, headers) => {
+  return isString(payload) && headers['content-Type'] === 'application/json';
+};
 
 export const getHttpInfo = (requestData, responseData): HttpInfo => {
   const isError = isErrorResponse(responseData);
   const sizeLimit = getEventEntitySize(isError);
   const { host } = requestData;
+  const request = Object.assign({}, requestData);
+  const response = Object.assign({}, responseData);
+  const responseStringify = isJsonContent(response.body, response.headers)
+    ? payloadParse
+    : payloadStringify;
+  const requestStringify = isJsonContent(request.body, request.headers)
+    ? payloadParse
+    : payloadStringify;
   try {
-    const request = Object.assign({}, requestData);
-    const response = Object.assign({}, responseData);
-
     if (
       shouldScrubDomain(host) ||
       (request.host && shouldScrubDomain(request.host)) ||
@@ -252,11 +260,11 @@ export const getHttpInfo = (requestData, responseData): HttpInfo => {
       delete response.headers;
       delete request.uri;
     } else {
-      request.headers = payloadStringify(request.headers, sizeLimit);
-      request.body = payloadStringify(decodeHttpBody(request.body, isError), sizeLimit);
+      request.headers = requestStringify(request.headers, sizeLimit);
+      request.body = requestStringify(decodeHttpBody(request.body, isError), sizeLimit);
 
-      if (response.headers) response.headers = payloadStringify(response.headers, sizeLimit);
-      if (response.body) response.body = payloadStringify(response.body, sizeLimit);
+      if (response.headers) response.headers = responseStringify(response.headers, sizeLimit);
+      if (response.body) response.body = responseStringify(response.body, sizeLimit);
     }
 
     return { host, request, response };
@@ -264,8 +272,8 @@ export const getHttpInfo = (requestData, responseData): HttpInfo => {
     logger.warn('Failed to scrub & stringify http data', e.message);
     return {
       host,
-      request: payloadStringify(requestData, sizeLimit),
-      response: payloadStringify(responseData, sizeLimit),
+      request: requestStringify(requestData, sizeLimit),
+      response: responseStringify(responseData, sizeLimit),
     };
   }
 };

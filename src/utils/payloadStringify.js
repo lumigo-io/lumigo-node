@@ -72,10 +72,11 @@ const getItemsInPath = safeExecute(
   []
 );
 
-export const payloadStringify = (
+const scrub = (
   payload,
   maxPayloadSize = getEventEntitySize(),
-  skipScrubPath = null
+  skipScrubPath = null,
+  method = 'stringify'
 ) => {
   let totalSize = 0;
   let refsFound = [];
@@ -83,19 +84,20 @@ export const payloadStringify = (
   const secretItemsToSkipScrubbing = new Set(getItemsInPath(payload, skipScrubPath));
 
   let isPruned = false;
-  let result = JSON.stringify(payload, function (key, value) {
+  let result = JSON[method](payload, function (key, value) {
     const type = typeof value;
     const isObj = type === 'object';
     const isStr = type === 'string';
+
     const shouldSkipSecretScrub =
       skipScrubPath &&
       skipScrubPath[skipScrubPath.length - 1] === key &&
       secretItemsToSkipScrubbing.has(this);
-    if (!(isObj && refsFound.includes(value))) {
-      if (totalSize < maxPayloadSize) {
+    if (totalSize < maxPayloadSize) {
+      if (!(isObj && refsFound.includes(value))) {
         if (!shouldSkipSecretScrub && isSecretKey(regexes, key)) return SCRUBBED_TEXT;
         if (isNativeType(value)) {
-          totalSize += getNativeVarSize(value);
+          totalSize += getNativeVarSize(value) + getNativeVarSize(key);
         }
         if (isObj) {
           refsFound.push(value);
@@ -111,14 +113,33 @@ export const payloadStringify = (
           };
 
         return value;
-      } else isPruned = true;
+      } else {
+        isPruned = true;
+      }
     } else {
       isPruned = true;
     }
   });
+  if (method === 'parse' && !isString(result)) {
+    result = JSON.stringify(result);
+  }
   if (result && isPruned) {
     result = result.replace(/,null/g, '');
     result = result.concat(TRUNCATED_TEXT);
   }
   return result || '';
+};
+
+export const payloadParse = (
+  payload,
+  maxPayloadSize = getEventEntitySize(),
+  skipScrubPath = null
+) => scrub(payload, maxPayloadSize, skipScrubPath, 'parse');
+
+export const payloadStringify = (
+  payload,
+  maxPayloadSize = getEventEntitySize(),
+  skipScrubPath = null
+) => {
+  return scrub(payload, maxPayloadSize, skipScrubPath);
 };
