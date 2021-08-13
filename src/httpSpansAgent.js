@@ -11,7 +11,7 @@ import {
 } from './utils';
 import axios from 'axios';
 
-const REQUEST_TIMEOUT_FLAG_MS = 'LUMIGO_REQUEST_TIMEOUT_MS'; 
+const REQUEST_TIMEOUT_FLAG_MS = 'LUMIGO_REQUEST_TIMEOUT_MS';
 const getRequestTimeout = () => {
   if (process.env[REQUEST_TIMEOUT_FLAG_MS]) return parseInt(process.env[REQUEST_TIMEOUT_FLAG_MS]);
   return 300;
