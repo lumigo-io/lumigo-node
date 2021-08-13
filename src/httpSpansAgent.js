@@ -11,8 +11,11 @@ import {
 } from './utils';
 import axios from 'axios';
 
-const REQUEST_TIMEOUT = 250;
-
+const REQUEST_TIMEOUT_FLAG_MS = 'LUMIGO_REQUEST_TIMEOUT_MS'; 
+const getRequestTimeout = () => {
+  if (process.env[REQUEST_TIMEOUT_FLAG_MS]) return parseInt(process.env[REQUEST_TIMEOUT_FLAG_MS]);
+  return 300;
+};
 export const HttpSpansAgent = (() => {
   let sessionInstance;
   let sessionAgent;
@@ -50,7 +53,7 @@ export const HttpSpansAgent = (() => {
   };
 
   const createSessionInstance = (httpAgent) => {
-    const baseConfiguration = { timeout: REQUEST_TIMEOUT, maxRedirects: 0, validateStatus };
+    const baseConfiguration = { timeout: getRequestTimeout(), maxRedirects: 0, validateStatus };
     if (isReuseHttpConnection()) {
       return axios.create({
         ...baseConfiguration,
