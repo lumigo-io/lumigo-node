@@ -33,6 +33,12 @@ export const DEFAULT_TIMEOUT_MIN_DURATION = 2000;
 export const DEFAULT_CONNECTION_TIMEOUT = 300;
 export const DEFAULT_TRACER_MAX_DURATION_TIMEOUT = 500;
 
+const REQUEST_TIMEOUT_FLAG_MS = 'LUMIGO_REQUEST_TIMEOUT_MS';
+export const getRequestTimeout = () => {
+  if (process.env[REQUEST_TIMEOUT_FLAG_MS]) return parseInt(process.env[REQUEST_TIMEOUT_FLAG_MS]);
+  return 300;
+};
+
 export const getContextInfo = (context: LambdaContext): ContextInfo => {
   const remainingTimeInMillis = context.getRemainingTimeInMillis();
   const { functionName, awsRequestId, invokedFunctionArn, callbackWaitsForEmptyEventLoop } =
