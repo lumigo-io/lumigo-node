@@ -23,7 +23,7 @@ describe('HttpSpansAgent', () => {
       Authorization: 't_xxx',
       'User-Agent': '@lumigo/tracerMock$1.2.3',
     });
-    expect(requests[0].timeout).toEqual(250);
+    expect(requests[0].timeout).toEqual(300);
     expect(requests[0].url).toEqual(url);
     expect(requests[0].httpsAgent).toBeUndefined();
   });
@@ -45,7 +45,7 @@ describe('HttpSpansAgent', () => {
       Authorization: 't_xxx',
       'User-Agent': '@lumigo/tracerMock$1.2.3',
     });
-    expect(requests[0].timeout).toEqual(250);
+    expect(requests[0].timeout).toEqual(300);
     expect(requests[0].url).toEqual(url);
   });
 

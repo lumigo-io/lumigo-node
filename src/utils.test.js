@@ -248,6 +248,11 @@ describe('utils', () => {
     expect(utils.getConnectionTimeout()).toBe(600);
   });
 
+  test('getRequestTimeout => simple flow', () => {
+    process.env.LUMIGO_REQUEST_TIMEOUT_MS = '600';
+    expect(utils.getRequestTimeout()).toBe(600);
+  });
+
   test('getConnectionTimeout => default value', () => {
     expect(utils.getConnectionTimeout()).toBe(DEFAULT_CONNECTION_TIMEOUT);
   });
