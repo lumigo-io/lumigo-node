@@ -318,19 +318,19 @@ describe('globals', () => {
     expect(globals.ExecutionTags.getTags()).toEqual([]);
     expect(ConsoleWritesForTesting.getLogs()).toEqual([
       {
-        msg: 'Lumigo Warning: Skipping addExecutionTag: Unable to add tag: value length should be between 1 and 50: k0 - ',
+        msg: 'Lumigo Warning: Skipping addExecutionTag: Unable to add tag: value length should be between 1 and 70: k0 - ',
         obj: undefined,
       },
     ]);
   });
 
   test('ExecutionTags.addTag too long value', () => {
-    const value = 'v'.repeat(51);
+    const value = 'v'.repeat(71);
     globals.ExecutionTags.addTag('k0', value);
     expect(globals.ExecutionTags.getTags()).toEqual([]);
     expect(ConsoleWritesForTesting.getLogs()).toEqual([
       {
-        msg: `Lumigo Warning: Skipping addExecutionTag: Unable to add tag: value length should be between 1 and 50: k0 - ${value}`,
+        msg: `Lumigo Warning: Skipping addExecutionTag: Unable to add tag: value length should be between 1 and 70: k0 - ${value}`,
         obj: undefined,
       },
     ]);
