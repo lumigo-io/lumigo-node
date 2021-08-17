@@ -42,7 +42,7 @@ describe('GlobalDurationTimer', () => {
     expects(name, time * 3 - 1, time * 6);
 
     const timerReport = DurationTimer.getTimers()[name].getReport();
-    expect(timer.isTimePassed(time * 4)).toBeFalsy();
+    expect(timer.isTimePassed(time * 5)).toBeFalsy();
     expect(timer.isTimePassed(time * 3 - 1)).toBeTruthy();
     expect(timer.isTimePassed()).toBeFalsy();
     return timerReport;
