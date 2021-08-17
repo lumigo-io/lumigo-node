@@ -8,10 +8,9 @@ import {
   getTracerInfo,
   isReuseHttpConnection,
   getConnectionTimeout,
+  getRequestTimeout,
 } from './utils';
 import axios from 'axios';
-
-const REQUEST_TIMEOUT = 250;
 
 export const HttpSpansAgent = (() => {
   let sessionInstance;
@@ -50,7 +49,7 @@ export const HttpSpansAgent = (() => {
   };
 
   const createSessionInstance = (httpAgent) => {
-    const baseConfiguration = { timeout: REQUEST_TIMEOUT, maxRedirects: 0, validateStatus };
+    const baseConfiguration = { timeout: getRequestTimeout(), maxRedirects: 0, validateStatus };
     if (isReuseHttpConnection()) {
       return axios.create({
         ...baseConfiguration,
