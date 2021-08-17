@@ -302,7 +302,7 @@ describe('globals', () => {
   });
 
   test('ExecutionTags.addTag too long key', () => {
-    const key = 'k'.repeat(51);
+    const key = 'k'.repeat(71);
     globals.ExecutionTags.addTag(key, 'v0');
     expect(globals.ExecutionTags.getTags()).toEqual([]);
     expect(ConsoleWritesForTesting.getLogs()).toEqual([
