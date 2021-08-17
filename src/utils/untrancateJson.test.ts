@@ -1,90 +1,181 @@
 import untruncateJson from './untrancateJson';
-import {parseString} from './regex';
-import { payloadStringify } from './payloadStringify';
-const bigJson = {
-  a: 1,
-  b: 1,
-  c: 1,
-  d: {
-    aa: 1,
-    Signature: "2",
-    Credential: 3213,
-    dd: 4,
-    aaa: {
-      bbb: 1,
-      ccc: 1,
-      secret: 321434354354564,
-      aaaa: {
-        b: 'a'.repeat(100),
-        c: 'a'.repeat(100),
-        secret: 'a'.repeat(100),
-        e: 'a'.repeat(100),
-        f: {
-          a: 1,
-          b: 1,
-          c: 1,
-          d: {
-            Authorization: "1432234",
-            bb: 2,
-            secret: [3],
-            Credential: [321321321],
-            aaa: {
-              bbb: 1,
-              ccc: 1,
-              secret: 'a'.repeat(100),
-              aaaa: {
-                secret: 1232321321,
-                c: 'a'.repeat(100),
-                d: 'a'.repeat(100),
-                e: 'a'.repeat(100),
-              },
-            },
-          },
-        },
-      },
-    },
-  },
-};
-const huge = {};
-let size = 0;
-for (let i = 1; i < 10000; i++) {
-  huge['a'.repeat(i)] = bigJson;
-  size+=JSON.stringify(bigJson).length / 1000000;
-  if(size >= 0.002){
-    break;
+
+describe('untruncateJson', () => {
+  it('returns unmodified valid string', () => {
+    expectUnchanged('"Hello"');
+  });
+
+  it('returns unmodified valid string with bracket characters', () => {
+    expectUnchanged('"}{]["');
+  });
+
+  it('returns unmodified valid string with escaped quotes', () => {
+    expectUnchanged('"\\"Dr.\\" Leo Spaceman"');
+  });
+
+  it('returns unmodified valid string with Unicode escapes', () => {
+    expectUnchanged('ab\\u0065cd');
+  });
+
+  it('returns unmodified valid number', () => {
+    expectUnchanged('20');
+  });
+
+  it('returns unmodified valid boolean', () => {
+    expectUnchanged('true');
+    expectUnchanged('false');
+  });
+
+  it('returns unmodified valid null', () => {
+    expectUnchanged('null');
+  });
+
+  it('returns unmodified valid array', () => {
+    expectUnchanged('[]');
+    expectUnchanged('["a", "b", "c"]');
+    expectUnchanged('[ 1, 2, 3 ]');
+  });
+
+  it('returns unmodified valid object', () => {
+    expectUnchanged('{}');
+    expectUnchanged('{"foo": "bar"}');
+    expectUnchanged('{ "foo": 2 }');
+  });
+
+  it('returns unmodified compound object', () => {
+    expectUnchanged(
+      JSON.stringify({
+        s: 'Hello',
+        num: 10,
+        b: true,
+        nul: 'null',
+        o: { s: 'Hello2', num: 11 },
+        a: ['Hello', 10, { s: 'Hello3' }],
+      })
+    );
+  });
+
+  it('adds a missing close quote', () => {
+    expect(untruncateJson('"Hello')).toBe('"Hello"');
+  });
+
+  it('cuts off trailing "\\" in a string', () => {
+    expect(untruncateJson('"Hello\\')).toBe('"Hello"');
+  });
+
+  it('cuts off a partial Unicode escape in a string', () => {
+    expect(untruncateJson('"ab\\u006')).toBe('"ab"');
+  });
+
+  it('adds "0" to a number cut off at a negative sign', () => {
+    expect(untruncateJson('-')).toBe('-0');
+  });
+
+  it('adds "0" to a number cut off at a decimal point', () => {
+    expect(untruncateJson('12.')).toBe('12.0');
+  });
+
+  it('adds "0" to a number cut off at an "e" or "E"', () => {
+    expect(untruncateJson('12e')).toBe('12e0');
+    expect(untruncateJson('12E')).toBe('12E0');
+  });
+
+  it('adds "0" to a number cut off after "e+" or "e-"', () => {
+    expect(untruncateJson('12e+')).toBe('12e+0');
+    expect(untruncateJson('12E-')).toBe('12E-0');
+  });
+
+  it('completes boolean and null literals', () => {
+    expect(untruncateJson('tr')).toBe('true');
+    expect(untruncateJson('fal')).toBe('false');
+    expect(untruncateJson('nu')).toBe('null');
+  });
+
+  it('closes an empty list', () => {
+    expect(untruncateJson('[')).toBe('[]');
+  });
+
+  it('closes a list with items', () => {
+    expect(untruncateJson('["a", "b"')).toBe('["a", "b"]');
+  });
+
+  it('closes a list ending in a number', () => {
+    expect(untruncateJson('[1, 2')).toBe('[1, 2]');
+  });
+
+  it('completes boolean and null literals at the end of a list', () => {
+    expect(untruncateJson('[tr')).toBe('[true]');
+    expect(untruncateJson('[true, fa')).toBe('[true, false]');
+    expect(untruncateJson('[nul')).toBe('[null]');
+  });
+
+  it('removes a trailing comma to end a list', () => {
+    expect(untruncateJson('[1, 2,')).toBe('[1, 2]');
+  });
+
+  it('closes an empty object', () => {
+    expect(untruncateJson('{')).toBe('{}');
+  });
+
+  it('closes an object after key-value pairs', () => {
+    expect(untruncateJson('{"a": "b"')).toBe('{"a": "b"}');
+    expect(untruncateJson('{"a": 1')).toBe('{"a": 1}');
+  });
+
+  it('cuts off a partial key in an object', () => {
+    expect(untruncateJson('{"hel')).toBe('{}');
+    expect(untruncateJson('{"hello": 1, "wo')).toBe('{"hello": 1}');
+  });
+
+  it('cuts off a key missing a colon in an object', () => {
+    expect(untruncateJson('{"hello"')).toBe('{}');
+    expect(untruncateJson('{"hello": 1, "world"')).toBe('{"hello": 1}');
+  });
+
+  it('cuts off a key and colon without a value in an object', () => {
+    expect(untruncateJson('{"hello":')).toBe('{}');
+    expect(untruncateJson('{"hello": 1, "world": ')).toBe('{"hello": 1}');
+  });
+
+  it('untruncates a value in an object', () => {
+    expect(untruncateJson('{"hello": "wo')).toBe('{"hello": "wo"}');
+    expect(untruncateJson('{"hello": [1, 2')).toBe('{"hello": [1, 2]}');
+  });
+
+  it('handles a string in an array cut off at a "\\"', () => {
+    expect(untruncateJson('["hello\\')).toBe('["hello"]');
+    expect(untruncateJson('["hello", "world\\')).toBe('["hello", "world"]');
+  });
+
+  it('handles a cut off string in an array with an escaped character', () => {
+    expect(untruncateJson('["hello", "\\"Dr.]\\" Leo Spaceman')).toBe(
+      '["hello", "\\"Dr.]\\" Leo Spaceman"]'
+    );
+  });
+
+  it('handles a string in an object key cut off at a "\\"', () => {
+    expect(untruncateJson('{"hello\\')).toBe('{}');
+    expect(untruncateJson('{"hello": 1, "world\\')).toBe('{"hello": 1}');
+  });
+
+  it('removes cut off object with key containing escaped characters', () => {
+    expect(untruncateJson('{"hello\\nworld": ')).toBe('{}');
+    expect(untruncateJson('{"hello": 1, "hello\\nworld')).toBe('{"hello": 1}');
+  });
+
+  it('should produce valid JSON wherever the truncation occurs', () => {
+    const json = `{
+    "ab\\nc\\u0065d": ["ab\\nc\\u0065d", true, false, null, -12.3e-4],
+    "": { "12": "ab\\nc\\u0065d"}
+}  `;
+    for (let i = 1, { length } = json; i < length; i++) {
+      const partialJson = json.slice(0, i);
+      const fixedJson = untruncateJson(partialJson);
+      JSON.parse(fixedJson);
+    }
+  });
+
+  function expectUnchanged(json: string) {
+    expect(untruncateJson(json)).toBe(json);
   }
-}
-const hugeStr = JSON.stringify(huge);
-
-const getNano = ()=>{
-  let hrTime = process.hrtime()
-  return  hrTime[0] * 1000000 + hrTime[1] / 1000
-}
-
-describe("scrub and cut", ()=>{
-  it("untrancate", ()=>{
-    let before = getNano()
-    const str = '{"a":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","b":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","key":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","password":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","e":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","secret":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","f":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","g":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","h":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
-    let payload = untruncateJson(str);
-    const r = payloadStringify(JSON.parse(payload))
-    const payloadStringifyDuration = getNano() - before;
-    expect(payloadStringifyDuration).toBeLessThan(1)
-  })
-  it("regex",()=>{
-    let hrTime = process.hrtime()
-    const before = hrTime[0] * 1000000 + hrTime[1] / 1000
-    const str = '{"secrett":"aaaa\\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","b":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","key":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","password":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","e":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","secret":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","f":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","g":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","h":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
-    const r = parseString(str,str.length)
-    hrTime = process.hrtime()
-    const duration3 = hrTime[0] * 1000000 + hrTime[1] / 1000 - before;
-    expect(duration3).toEqual(1);
-  })
-  it("parse",()=>{
-    let hrTime = process.hrtime()
-    const before = hrTime[0] * 1000000 + hrTime[1] / 1000
-    const r = payloadStringify(JSON.parse(hugeStr))
-    hrTime = process.hrtime()
-    const duration3 = hrTime[0] * 1000000 + hrTime[1] / 1000 - before;
-    expect(duration3).toEqual(4);
-  })
-})
+});

@@ -30,12 +30,12 @@ import { TracerGlobals, ExecutionTags } from '../globals';
 import { getEventInfo } from '../events';
 import { getSkipScrubPath, parseEvent } from '../parsers/eventParser';
 import * as logger from '../logger';
-import { keyToOmitRegexes, payloadParse, payloadStringify, prune } from '../utils/payloadStringify';
+import { keyToOmitRegexes, payloadStringify, prune } from '../utils/payloadStringify';
 import { HttpInfo } from '../types/spans/httpSpan';
 import { BasicSpan, SpanInfo } from '../types/spans/basicSpan';
 import { FunctionSpan } from '../types/spans/functionSpan';
 import { Context } from 'aws-lambda';
-import { decode, encode } from 'utf8';
+import { decode } from 'utf8';
 import untruncateJson from '../utils/untrancateJson';
 
 export const HTTP_SPAN = 'http';
@@ -236,15 +236,11 @@ export const getAwsServiceData = (requestData, responseData) => {
 const isJsonContent = (payload, headers) => {
   return isString(payload) && headers['content-type'] === 'application/json';
 };
-const getNano = ()=>{
-  let hrTime = process.hrtime()
-  return  hrTime[0] * 1000000 + hrTime[1] / 1000
-}
 
 export const isContainingSecrets = (body: string) => {
   const regexes = keyToOmitRegexes();
-  return regexes.some((regex) => regex.test(body))
-}
+  return regexes.some((regex) => regex.test(body));
+};
 
 export const decodeHttpBody = (httpBody: any, hasError: boolean): any | string => {
   if (isString(httpBody) && httpBody.length < getEventEntitySize(hasError)) {
@@ -275,7 +271,6 @@ export const getHttpInfo = (requestData, responseData): HttpInfo => {
     } else {
       request.headers = payloadStringify(request.headers, sizeLimit);
       request.body = payloadStringify(decodeHttpBody(request.body, isError), sizeLimit);
-      // if (response.body) response.body = payloadStringify(response.body, sizeLimit);
       if (response.body) {
         if (isJsonContent(response.body, response.headers) && isContainingSecrets(response.body)) {
           if (!(response.body.length < sizeLimit)) {
@@ -299,7 +294,6 @@ export const getHttpInfo = (requestData, responseData): HttpInfo => {
   }
 };
 
-
 export const getBasicChildSpan = (transactionId, awsRequestId, spanId, spanType) => {
   const { context } = TracerGlobals.getHandlerInputs();
   // @ts-ignore
@@ -319,8 +313,6 @@ export const getHttpSpanTimings = (requestData, responseData) => {
 export const getHttpSpanId = (randomRequestId, awsRequestId = null) => {
   return awsRequestId ? awsRequestId : randomRequestId;
 };
-
-
 
 export const getHttpSpan = (
   transactionId,
