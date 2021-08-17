@@ -72,11 +72,10 @@ const getItemsInPath = safeExecute(
   []
 );
 
-const scrub = (
+export const payloadStringify = (
   payload,
   maxPayloadSize = getEventEntitySize(),
-  skipScrubPath = null,
-  method = 'stringify'
+  skipScrubPath = null
 ) => {
   let totalSize = 0;
   let refsFound = [];
@@ -84,20 +83,19 @@ const scrub = (
   const secretItemsToSkipScrubbing = new Set(getItemsInPath(payload, skipScrubPath));
 
   let isPruned = false;
-  let result = JSON[method](payload, function (key, value) {
+  let result = JSON.stringify(payload, function (key, value) {
     const type = typeof value;
     const isObj = type === 'object';
     const isStr = type === 'string';
-
     const shouldSkipSecretScrub =
       skipScrubPath &&
       skipScrubPath[skipScrubPath.length - 1] === key &&
       secretItemsToSkipScrubbing.has(this);
-    if (totalSize < maxPayloadSize) {
-      if (!(isObj && refsFound.includes(value))) {
+    if (!(isObj && refsFound.includes(value))) {
+      if (totalSize < maxPayloadSize) {
         if (!shouldSkipSecretScrub && isSecretKey(regexes, key)) return SCRUBBED_TEXT;
         if (isNativeType(value)) {
-          totalSize += getNativeVarSize(value) + getNativeVarSize(key);
+          totalSize += getNativeVarSize(value);
         }
         if (isObj) {
           refsFound.push(value);
@@ -113,33 +111,14 @@ const scrub = (
           };
 
         return value;
-      } else {
-        isPruned = true;
-      }
+      } else isPruned = true;
     } else {
       isPruned = true;
     }
   });
-  if (method === 'parse' && !isString(result)) {
-    result = JSON.stringify(result);
-  }
   if (result && isPruned) {
     result = result.replace(/,null/g, '');
     result = result.concat(TRUNCATED_TEXT);
   }
   return result || '';
-};
-
-export const payloadParse = (
-  payload,
-  maxPayloadSize = getEventEntitySize(),
-  skipScrubPath = null
-) => scrub(payload, maxPayloadSize, skipScrubPath, 'parse');
-
-export const payloadStringify = (
-  payload,
-  maxPayloadSize = getEventEntitySize(),
-  skipScrubPath = null
-) => {
-  return scrub(payload, maxPayloadSize, skipScrubPath);
 };
