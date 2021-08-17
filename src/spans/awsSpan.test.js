@@ -600,11 +600,11 @@ describe('awsSpan', () => {
       headers: { Tyler: 'Durden', secretKey: 'lumigo' },
       body: 'the first rule of fight club',
     };
-    let mannyA = 'a'.repeat(88);
-    let mannyMannyA = 'a'.repeat(1268);
+    let manyA = 'a'.repeat(88);
+    let manyManyA = 'a'.repeat(1268);
     const responseData = {
       headers: { Peter: 'Parker', 'content-type': 'application/json' },
-      body: `{"a":"${mannyA}","b":"${mannyA}","key":"${mannyA}","password":"${mannyA}","e":"${mannyA}","secret":"${mannyA}","f":"${mannyA}","g":"${mannyA}","h":"${mannyMannyA}"`,
+      body: `{"a":"${manyA}","b":"${manyA}","key":"${manyA}","password":"${manyA}","e":"${manyA}","secret":"${manyA}","f":"${manyA}","g":"${manyA}","h":"${manyManyA}"`,
     };
     const expected = {
       host: 'your.mind.com',
@@ -614,7 +614,7 @@ describe('awsSpan', () => {
         host: 'your.mind.com',
       },
       response: {
-        body: `{"a":"${mannyA}","b":"${mannyA}","key":"****","password":"****","e":"${mannyA}","secret":"****","f":"${mannyA}","g":"${mannyA}","h":"${mannyMannyA}"}`,
+        body: `{"a":"${manyA}","b":"${manyA}","key":"****","password":"****","e":"${manyA}","secret":"****","f":"${manyA}","g":"${manyA}","h":"${manyManyA}"}`,
         headers: '{"Peter":"Parker","content-type":"application/json"}',
       },
     };
