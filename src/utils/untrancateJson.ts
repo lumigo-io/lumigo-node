@@ -1,3 +1,4 @@
+// copied from https://www.npmjs.com/package/untruncate-json
 enum ContextType {
   TOP_LEVEL = 'topLevel',
   STRING = 'string',
