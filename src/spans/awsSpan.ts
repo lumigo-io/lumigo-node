@@ -251,6 +251,17 @@ export const decodeHttpBody = (httpBody: any, hasError: boolean): any | string =
 
 const isErrorResponse = (response) => safeGet(response, ['statusCode'], 200) >= 400;
 
+function scrub(payload, headers, sizeLimit: number): string {
+  if (isJsonContent(payload, headers) && isContainingSecrets(payload)) {
+    if (!(payload.length < sizeLimit)) {
+      payload = untruncateJson(payload);
+    }
+    return payloadStringify(JSON.parse(payload), sizeLimit);
+  } else {
+    return payloadStringify(payload, sizeLimit);
+  }
+}
+
 export const getHttpInfo = (requestData, responseData): HttpInfo => {
   const isError = isErrorResponse(responseData);
   const sizeLimit = getEventEntitySize(isError);
@@ -271,16 +282,8 @@ export const getHttpInfo = (requestData, responseData): HttpInfo => {
     } else {
       request.headers = payloadStringify(request.headers, sizeLimit);
       request.body = payloadStringify(decodeHttpBody(request.body, isError), sizeLimit);
-      if (response.body) {
-        if (isJsonContent(response.body, response.headers) && isContainingSecrets(response.body)) {
-          if (!(response.body.length < sizeLimit)) {
-            response.body = untruncateJson(response.body);
-          }
-          response.body = payloadStringify(JSON.parse(response.body), sizeLimit);
-        } else {
-          response.body = payloadStringify(response.body, sizeLimit);
-        }
-      }
+      if (response.body) response.body = scrub(response.body, response.headers, sizeLimit);
+      if (request.body) scrub(decodeHttpBody(request.body, isError), request.headers, sizeLimit);
       if (response.headers) response.headers = payloadStringify(response.headers, sizeLimit);
     }
     return { host, request, response };
