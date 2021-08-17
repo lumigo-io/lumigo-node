@@ -85,6 +85,11 @@ describe('untruncateJson', () => {
     expect(untruncateJson('12E-')).toBe('12E-0');
   });
 
+  it('adds "0" to a number cut off after "e" or "e"', () => {
+    expect(untruncateJson('12ee')).toBe('12ee');
+    expect(untruncateJson('12EE')).toBe('12EE');
+  });
+
   it('completes boolean and null literals', () => {
     expect(untruncateJson('tr')).toBe('true');
     expect(untruncateJson('fal')).toBe('false');
