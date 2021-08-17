@@ -274,7 +274,6 @@ export class Http {
           body += args[1];
         }
       }
-
       if (args[0] === 'end') {
         const responseData = {
           statusCode,
