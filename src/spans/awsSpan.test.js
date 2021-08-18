@@ -597,8 +597,8 @@ describe('awsSpan', () => {
   test('getHttpInfo long response', () => {
     const requestData = {
       host: 'your.mind.com',
-      headers: { Tyler: 'Durden', secretKey: 'lumigo' },
-      body: 'the first rule of fight club',
+      headers: { Tyler: 'Durden', secretKey: 'lumigo', 'content-type': 'application/json' },
+      body: '{"secret": "secret"}',
     };
     let manyA = 'a'.repeat(88);
     let manyManyA = 'a'.repeat(1268);
@@ -609,8 +609,8 @@ describe('awsSpan', () => {
     const expected = {
       host: 'your.mind.com',
       request: {
-        body: '"the first rule of fight club"',
-        headers: '{"Tyler":"Durden","secretKey":"****"}',
+        body: '{"secret":"****"}',
+        headers: '{"Tyler":"Durden","secretKey":"****","content-type":"application/json"}',
         host: 'your.mind.com',
       },
       response: {
