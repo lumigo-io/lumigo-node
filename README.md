@@ -108,6 +108,7 @@ To add a tag to an automatically-traced function:
 Execution tags are subject to the following limitations:
 
 * The maximum number of tags is 50. 
-* Key and value length must be between 1 and 50.
+* Key length must be between 1 and 50.
+* Value length must be between 1 and 70.
 
 
