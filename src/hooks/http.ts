@@ -31,19 +31,19 @@ import { runOneTimeWrapper } from '../utils/functionUtils';
 export const hostBlaclist = new Set(['127.0.0.1']);
 
 export type Agent = {
-  defaultPort: number;
+  defaultPort: number,
 };
 
 export type ParseHttpRequestOptions = {
-  agent?: Agent;
-  _defaultAgent?: Agent;
+  agent?: Agent,
+  _defaultAgent?: Agent,
   // eslint-disable-next-line no-undef
-  headers?: Record<string, string>;
-  method?: 'GET' | 'POST';
-  protocol?: string;
-  path?: string;
-  port?: number;
-  defaultPort?: number;
+  headers?: Record<string, string>,
+  method?: 'GET' | 'POST',
+  protocol?: string,
+  path?: string,
+  port?: number,
+  defaultPort?: number,
 };
 
 export class Http {
@@ -269,10 +269,12 @@ export class Http {
       GlobalDurationTimer.start();
       const receivedTime = new Date().getTime();
       const { headers, statusCode } = response;
+      const chunk = args[1].toString();
       if (args[0] === 'data') {
-        if (body.length + args[1].length <= payloadSize || body === '') {
-          const chunk = args[1].toString();
-          body += chunk.length > payloadSize ? chunk.substr(0,payloadSize) : chunk;
+        if (body === '') {
+          body += chunk.length > payloadSize ? chunk.substr(0, payloadSize) : chunk;
+        } else if (body.length + args[1].length <= payloadSize) {
+          body += chunk;
         }
       }
       if (args[0] === 'end') {
