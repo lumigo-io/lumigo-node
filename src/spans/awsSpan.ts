@@ -233,11 +233,11 @@ export const getAwsServiceData = (requestData, responseData) => {
       return awsParser(requestData, responseData);
   }
 };
-const isJsonContent = (payload, headers) => {
+const isJsonContent = (payload: any, headers: Object) => {
   return isString(payload) && headers['content-type'] === 'application/json';
 };
 
-export const isContainingSecrets = (body: string) => {
+export const isContainingSecrets = (body: string): boolean => {
   const regexes = keyToOmitRegexes();
   return regexes.some((regex) => regex.test(body));
 };
@@ -249,7 +249,7 @@ export const decodeHttpBody = (httpBody: any, hasError: boolean): any | string =
   return httpBody;
 };
 
-const isErrorResponse = (response) => safeGet(response, ['statusCode'], 200) >= 400;
+const isErrorResponse = (response: any) => safeGet(response, ['statusCode'], 200) >= 400;
 
 function scrub(payload, headers, sizeLimit: number): string {
   if (isJsonContent(payload, headers) && isContainingSecrets(payload)) {
