@@ -36,7 +36,7 @@ import { BasicSpan, SpanInfo } from '../types/spans/basicSpan';
 import { FunctionSpan } from '../types/spans/functionSpan';
 import { Context } from 'aws-lambda';
 import { decode } from 'utf8';
-import untruncateJson from '../utils/untrancateJson';
+import untruncateJson from '../tools/untrancateJson';
 
 export const HTTP_SPAN = 'http';
 export const FUNCTION_SPAN = 'function';
