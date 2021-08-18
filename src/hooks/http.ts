@@ -269,8 +269,8 @@ export class Http {
       GlobalDurationTimer.start();
       const receivedTime = new Date().getTime();
       const { headers, statusCode } = response;
-      const chunk = args[1].toString();
       if (args[0] === 'data') {
+        const chunk = args[1].toString();
         if (body === '') {
           body += chunk.length > payloadSize ? chunk.substr(0, payloadSize) : chunk;
         } else if (body.length + args[1].length <= payloadSize) {
