@@ -2,48 +2,48 @@ import untruncateJson from './untrancateJson';
 
 describe('untruncateJson', () => {
   it('returns unmodified valid string', () => {
-    expectUnchanged('"Hello"');
+    expectUnchangedByUntruncateJson('"Hello"');
   });
 
   it('returns unmodified valid string with bracket characters', () => {
-    expectUnchanged('"}{]["');
+    expectUnchangedByUntruncateJson('"}{]["');
   });
 
   it('returns unmodified valid string with escaped quotes', () => {
-    expectUnchanged('"\\"Dr.\\" Leo Spaceman"');
+    expectUnchangedByUntruncateJson('"\\"Dr.\\" Leo Spaceman"');
   });
 
   it('returns unmodified valid string with Unicode escapes', () => {
-    expectUnchanged('ab\\u0065cd');
+    expectUnchangedByUntruncateJson('ab\\u0065cd');
   });
 
   it('returns unmodified valid number', () => {
-    expectUnchanged('20');
+    expectUnchangedByUntruncateJson('20');
   });
 
   it('returns unmodified valid boolean', () => {
-    expectUnchanged('true');
-    expectUnchanged('false');
+    expectUnchangedByUntruncateJson('true');
+    expectUnchangedByUntruncateJson('false');
   });
 
   it('returns unmodified valid null', () => {
-    expectUnchanged('null');
+    expectUnchangedByUntruncateJson('null');
   });
 
   it('returns unmodified valid array', () => {
-    expectUnchanged('[]');
-    expectUnchanged('["a", "b", "c"]');
-    expectUnchanged('[ 1, 2, 3 ]');
+    expectUnchangedByUntruncateJson('[]');
+    expectUnchangedByUntruncateJson('["a", "b", "c"]');
+    expectUnchangedByUntruncateJson('[ 1, 2, 3 ]');
   });
 
   it('returns unmodified valid object', () => {
-    expectUnchanged('{}');
-    expectUnchanged('{"foo": "bar"}');
-    expectUnchanged('{ "foo": 2 }');
+    expectUnchangedByUntruncateJson('{}');
+    expectUnchangedByUntruncateJson('{"foo": "bar"}');
+    expectUnchangedByUntruncateJson('{ "foo": 2 }');
   });
 
   it('returns unmodified compound object', () => {
-    expectUnchanged(
+    expectUnchangedByUntruncateJson(
       JSON.stringify({
         s: 'Hello',
         num: 10,
@@ -86,8 +86,8 @@ describe('untruncateJson', () => {
   });
 
   it('adds "0" to a number cut off after "e" or "e"', () => {
-    expect(expectUnchanged('12ee'));
-    expect(expectUnchanged('12EE'));
+    expect(expectUnchangedByUntruncateJson('12ee'));
+    expect(expectUnchangedByUntruncateJson('12EE'));
   });
 
   it('completes boolean and null literals', () => {
@@ -180,7 +180,7 @@ describe('untruncateJson', () => {
     }
   });
 
-  function expectUnchanged(json: string) {
+  function expectUnchangedByUntruncateJson(json: string) {
     expect(untruncateJson(json)).toBe(json);
   }
 });
