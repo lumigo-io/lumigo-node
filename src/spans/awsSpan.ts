@@ -282,7 +282,7 @@ export const getHttpInfo = (requestData, responseData): HttpInfo => {
     } else {
       if (response.body) response.body = scrub(response.body, response.headers, sizeLimit);
       request.body = scrub(decodeHttpBody(request.body, isError), request.headers, sizeLimit);
-      if (request.headers) request.headers = payloadStringify(request.headers, sizeLimit);
+      request.headers = payloadStringify(request.headers, sizeLimit);
       if (response.headers) response.headers = payloadStringify(response.headers, sizeLimit);
     }
     return { host, request, response };
