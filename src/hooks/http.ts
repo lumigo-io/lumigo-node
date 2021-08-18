@@ -270,8 +270,9 @@ export class Http {
       const receivedTime = new Date().getTime();
       const { headers, statusCode } = response;
       if (args[0] === 'data') {
-        if (body.length + args[1].length <= payloadSize) {
-          body += args[1];
+        if (body.length + args[1].length <= payloadSize || body === '') {
+          const chunk = args[1].toString();
+          body += chunk.length > payloadSize ? chunk.substr(0,payloadSize) : chunk;
         }
       }
       if (args[0] === 'end') {
