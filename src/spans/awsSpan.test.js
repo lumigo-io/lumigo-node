@@ -594,7 +594,57 @@ describe('awsSpan', () => {
     process.env.LUMIGO_DOMAINS_SCRUBBER = '["mind"]';
     expect(awsSpan.getHttpInfo(requestData, responseData)).toEqual(scrubbedExpected);
   });
+  test('getHttpInfo long response', () => {
+    const requestData = {
+      host: 'your.mind.com',
+      headers: { Tyler: 'Durden', secretKey: 'lumigo', 'content-type': 'application/json' },
+      body: '{"secret": "secret"}',
+    };
+    let manyA = 'a'.repeat(88);
+    let manyManyA = 'a'.repeat(1268);
+    const responseData = {
+      headers: { Peter: 'Parker', 'content-type': 'application/json' },
+      body: `{"a":"${manyA}","b":"${manyA}","key":"${manyA}","password":"${manyA}","e":"${manyA}","secret":"${manyA}","f":"${manyA}","g":"${manyA}","h":"${manyManyA}"`,
+    };
+    const expected = {
+      host: 'your.mind.com',
+      request: {
+        body: '{"secret":"****"}',
+        headers: '{"Tyler":"Durden","secretKey":"****","content-type":"application/json"}',
+        host: 'your.mind.com',
+      },
+      response: {
+        body: `{"a":"${manyA}","b":"${manyA}","key":"****","password":"****","e":"${manyA}","secret":"****","f":"${manyA}","g":"${manyA}","h":"${manyManyA}"}`,
+        headers: '{"Peter":"Parker","content-type":"application/json"}',
+      },
+    };
+    expect(awsSpan.getHttpInfo(requestData, responseData)).toEqual(expected);
+  });
 
+  test('getHttpInfo short response', () => {
+    const requestData = {
+      host: 'your.mind.com',
+      headers: { Tyler: 'Durden', secretKey: 'lumigo' },
+      body: 'the first rule of fight club',
+    };
+    const responseData = {
+      headers: { Peter: 'Parker', 'content-type': 'application/json' },
+      body: '{"secret": "abcd"}',
+    };
+    const expected = {
+      host: 'your.mind.com',
+      request: {
+        body: '"the first rule of fight club"',
+        headers: '{"Tyler":"Durden","secretKey":"****"}',
+        host: 'your.mind.com',
+      },
+      response: {
+        body: '{"secret":"****"}',
+        headers: '{"Peter":"Parker","content-type":"application/json"}',
+      },
+    };
+    expect(awsSpan.getHttpInfo(requestData, responseData)).toEqual(expected);
+  });
   test('getHttpInfo => decode utf-8', () => {
     const requestData = {
       host: 'your.mind.com',
