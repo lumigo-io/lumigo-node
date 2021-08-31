@@ -234,7 +234,7 @@ export const getAwsServiceData = (requestData, responseData) => {
   }
 };
 const isJsonContent = (payload: any, headers: Object) => {
-  return isString(payload) && headers['content-type'] === 'application/json';
+  return isString(payload) && headers['content-type'] && headers['content-type'].includes('json');
 };
 
 export const isContainingSecrets = (body: string): boolean => {
