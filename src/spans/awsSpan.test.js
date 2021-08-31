@@ -621,6 +621,31 @@ describe('awsSpan', () => {
     expect(awsSpan.getHttpInfo(requestData, responseData)).toEqual(expected);
   });
 
+  test('getHttpInfo contain json header but not json body', () => {
+    const requestData = {
+      host: 'your.mind.com',
+      headers: { Tyler: 'Durden', secretKey: 'lumigo', 'content-type': 'application/json' },
+      body: 'Scotty doesnt know secret...',
+    };
+    const responseData = {
+      headers: { Peter: 'Parker', 'content-type': 'application/json' },
+      body: 'That Fiona and me... password',
+    };
+    const expected = {
+      host: 'your.mind.com',
+      request: {
+        body: '"Scotty doesnt know secret..."',
+        headers: '{"Tyler":"Durden","secretKey":"****","content-type":"application/json"}',
+        host: 'your.mind.com',
+      },
+      response: {
+        body: '"That Fiona and me... password"',
+        headers: '{"Peter":"Parker","content-type":"application/json"}',
+      },
+    };
+    expect(awsSpan.getHttpInfo(requestData, responseData)).toEqual(expected);
+  });
+
   test('getHttpInfo short response', () => {
     const requestData = {
       host: 'your.mind.com',
@@ -645,6 +670,7 @@ describe('awsSpan', () => {
     };
     expect(awsSpan.getHttpInfo(requestData, responseData)).toEqual(expected);
   });
+
   test('getHttpInfo => decode utf-8', () => {
     const requestData = {
       host: 'your.mind.com',
