@@ -252,12 +252,16 @@ export const decodeHttpBody = (httpBody: any, hasError: boolean): any | string =
 const isErrorResponse = (response: any) => safeGet(response, ['statusCode'], 200) >= 400;
 
 function scrub(payload, headers, sizeLimit: number): string {
-  if (isJsonContent(payload, headers) && isContainingSecrets(payload)) {
-    if (!(payload.length < sizeLimit)) {
-      payload = untruncateJson(payload);
+  try {
+    if (isJsonContent(payload, headers) && isContainingSecrets(payload)) {
+      if (!(payload.length < sizeLimit)) {
+        payload = untruncateJson(payload);
+      }
+      return payloadStringify(JSON.parse(payload), sizeLimit);
+    } else {
+      return payloadStringify(payload, sizeLimit);
     }
-    return payloadStringify(JSON.parse(payload), sizeLimit);
-  } else {
+  } catch (e) {
     return payloadStringify(payload, sizeLimit);
   }
 }
