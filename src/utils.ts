@@ -376,7 +376,7 @@ export const removeLumigoFromStacktrace = (handleReturnValue) => {
     const { stack } = err;
     const stackArr = stack.split('\n');
 
-    const pattern = '/dist/lumigo.js:';
+    const pattern = 'lumigo';
     const cleanedStack = stackArr.filter((v) => !v.includes(pattern));
 
     err.stack = cleanedStack.join('\n');
