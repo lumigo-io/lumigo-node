@@ -48,5 +48,5 @@ git add layers/LAYERS10x.md
 git add layers/LAYERS12x.md
 git add layers/LAYERS14x.md
 git commit -m "docs: layers md [skip ci]"
-echo \{\"type\":\"Release\",\"repo\":\"${CIRCLE_PROJECT_REPONAME}\",\"buildUrl\":\"${CIRCLE_BUILD_URL}\"\} | curl -X POST "https://listener.logz.io:8071?token=FYsbaSwPmNLYwzeIzywFIBqNvUmZRkZY" -v --data-binary @-
+echo \{\"type\":\"Release\",\"repo\":\"${CIRCLE_PROJECT_REPONAME}\",\"buildUrl\":\"${CIRCLE_BUILD_URL}\"\} | curl -X POST "https://listener.logz.io:8071?token=${LOGZ}" -v --data-binary @-
 git push origin master
