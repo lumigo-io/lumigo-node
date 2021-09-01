@@ -617,6 +617,7 @@ describe('utils', () => {
         '    at a (/var/task/child.js:18:19)\n' +
         '    at childFn (/var/task/child.js:19:3)\n' +
         '    at r (/var/task/node_modules/@lumigo/tracer/dist/lumigo.js:1:11897)\n' +
+        '    at Object.normalizeLambdaError (/opt/nodejs/node_modules/@lumigo/tracer/dist/tracer.js:210:15)\n' +
         '    at new Promise (<anonymous>)\n' +
         '    at g (/var/task/node_modules/@lumigo/tracer/dist/lumigo.js:1:11852)\n' +
         '    at Runtime.handler (/var/task/node_modules/@lumigo/tracer/dist/lumigo.js:1:12385)\n' +

@@ -156,6 +156,10 @@ const IS_STEP_FUNCTION_FLAG = 'LUMIGO_STEP_FUNCTION';
 const SCRUB_KNOWN_SERVICES_FLAG = 'LUMIGO_SCRUB_KNOWN_SERVICES';
 const LUMIGO_LOG_PREFIX = '[LUMIGO_LOG]';
 const LUMIGO_LOG_PREFIX_FLAG = 'LUMIGO_LOG_PREFIX';
+const LUMIGO_STACK_PATTERNS = [
+  new RegExp('/dist/lumigo.js:', 'i'),
+  new RegExp('/node_modules/@lumigo/tracer/', 'i'),
+];
 
 const validateEnvVar = (envVar: string, value: string = 'TRUE'): boolean =>
   !!(process.env[envVar] && process.env[envVar].toUpperCase() === value.toUpperCase());
@@ -366,8 +370,8 @@ export const isAwsService = (host, responseData = undefined): boolean => {
   );
 };
 
-const checkInput = (input, words) => {
-  return words.some((word) => new RegExp(word, 'i').test(input));
+const isLumigoStackTrace = (input) => {
+  return LUMIGO_STACK_PATTERNS.some((word) => new RegExp(word, 'i').test(input));
 };
 
 export const removeLumigoFromStacktrace = (handleReturnValue) => {
@@ -380,8 +384,7 @@ export const removeLumigoFromStacktrace = (handleReturnValue) => {
     const { stack } = err;
     const stackArr = stack.split('\n');
 
-    const patterns = ['/dist/lumigo.js:', '/node_modules/@lumigo/tracer/'];
-    const cleanedStack = stackArr.filter((v) => !checkInput(v, patterns));
+    const cleanedStack = stackArr.filter((v) => !isLumigoStackTrace(v));
 
     err.stack = cleanedStack.join('\n');
 
