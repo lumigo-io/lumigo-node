@@ -366,6 +366,10 @@ export const isAwsService = (host, responseData = undefined): boolean => {
   );
 };
 
+const checkInput = (input, words) => {
+  return words.some(word => new RegExp(word, "i").test(input));
+}
+
 export const removeLumigoFromStacktrace = (handleReturnValue) => {
   // Note: this function was copied to the auto-instrument-handler. Keep them both up to date.
   try {
@@ -376,8 +380,8 @@ export const removeLumigoFromStacktrace = (handleReturnValue) => {
     const { stack } = err;
     const stackArr = stack.split('\n');
 
-    const pattern = 'lumigo';
-    const cleanedStack = stackArr.filter((v) => !v.includes(pattern));
+    const patterns = ['/dist/lumigo.js:', '/@lumigo/'];
+    const cleanedStack = stackArr.filter((v) => !checkInput(v, patterns));
 
     err.stack = cleanedStack.join('\n');
 
