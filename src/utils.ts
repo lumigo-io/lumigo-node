@@ -371,7 +371,7 @@ export const isAwsService = (host, responseData = undefined): boolean => {
 };
 
 const isLumigoStackTrace = (input) => {
-  return LUMIGO_STACK_PATTERNS.some((word) => new RegExp(word, 'i').test(input));
+  return LUMIGO_STACK_PATTERNS.some((word) => word.test(input));
 };
 
 export const removeLumigoFromStacktrace = (handleReturnValue) => {
