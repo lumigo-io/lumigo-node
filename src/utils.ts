@@ -421,7 +421,6 @@ export const getEdgeUrl = (): EdgeUrl => {
   return { host, path, url };
 };
 
-
 //Base64 calculation taken from : https://stackoverflow.com/questions/13378815/base64-length-calculation
 export const getJSONBase64Size = (obj) => {
   return Math.ceil((Buffer.byteLength(JSON.stringify(obj), 'utf8') / 3) * 4);
