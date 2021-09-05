@@ -93,7 +93,7 @@ export const forgeRequestBody = (spans, maxSendBytes): string | undefined => {
   }
   resultSpans.push(functionEndSpan);
 
-  resultSpans = resultSpans.map((span) => {
+  resultSpans.forEach((span) => {
     if (span.info && span.info.httpInfo) {
       const { request, response } = span.info?.httpInfo;
       const isError = spanHasErrors(span);
@@ -112,13 +112,14 @@ export const forgeRequestBody = (spans, maxSendBytes): string | undefined => {
       if (response.headers)
         span.info.httpInfo.response.headers = payloadStringify(response.headers, sizeLimit);
     }
-    return span;
   });
   if (spans.length - resultSpans.length > 0) {
     logger.debug(`Trimmed spans due to size`);
   }
   logger.debug(
-    `Filtered [${spans.length - resultSpans.length}] spans out, Took: [${new Date().getTime() - start}ms]`
+    `Filtered [${spans.length - resultSpans.length}] spans out, Took: [${
+      new Date().getTime() - start
+    }ms]`
   );
   return resultSpans.length > 0 ? JSON.stringify(resultSpans) : undefined;
 };
