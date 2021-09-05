@@ -91,7 +91,7 @@ export const forgeRequestBody = (spans, maxSendBytes): string | undefined => {
       break;
     }
   }
-
+  logger.debug(`Filtered [${spans.length - resultSpans.length}] spans out`);
   resultSpans.push(functionEndSpan);
 
   const scrubedSpans = resultSpans.map((span) => {
