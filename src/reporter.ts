@@ -72,7 +72,7 @@ function scrub(payload, headers, sizeLimit: number): string {
 export const forgeRequestBody = (spans, maxSendBytes): string | undefined => {
   let resultSpans = [];
 
-  logger.debug('Starting trim spans before send');
+  logger.debug(`Starting trim spans [${spans.length}] bigger than: [${maxSendBytes}] before send`);
 
   const functionEndSpan = spans[spans.length - 1];
   const errorSpans = spans.filter((span) => spanHasErrors(span) && span !== functionEndSpan);
