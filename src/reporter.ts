@@ -72,10 +72,6 @@ function scrub(payload, headers, sizeLimit: number): string {
 export const forgeRequestBody = (spans, maxSendBytes): string | undefined => {
   let resultSpans = [];
 
-  if (isPruneTraceOff() || !shouldTrim(spans, maxSendBytes)) {
-    return spans.length > 0 ? JSON.stringify(spans) : undefined;
-  }
-
   logger.debug('Starting trim spans before send');
 
   const functionEndSpan = spans[spans.length - 1];
@@ -88,7 +84,7 @@ export const forgeRequestBody = (spans, maxSendBytes): string | undefined => {
 
   for (let span of orderedSpans) {
     let spanSize = getJSONBase64Size(span);
-    if (totalSize + spanSize < maxSendBytes) {
+    if (totalSize + spanSize <= maxSendBytes) {
       resultSpans.push(span);
       totalSize += spanSize;
     } else {
@@ -103,13 +99,16 @@ export const forgeRequestBody = (spans, maxSendBytes): string | undefined => {
       const { request, response } = span.info?.httpInfo;
       const isError = spanHasErrors(span);
       const sizeLimit = getEventEntitySize(isError);
-      if (span.info.response.body)
+      if (span.info.httpInfo.response.body) {
         span.info.httpInfo.response.body = scrub(response.body, response.headers, sizeLimit);
-      span.info.httpInfo.request.body = scrub(
-        decodeHttpBody(request.body, isError),
-        request.headers,
-        sizeLimit
-      );
+      }
+      if (span.info.httpInfo.request.body) {
+        span.info.httpInfo.request.body = scrub(
+          decodeHttpBody(request.body, isError),
+          request.headers,
+          sizeLimit
+        );
+      }
       span.info.httpInfo.request.headers = payloadStringify(request.headers, sizeLimit);
       if (response.headers)
         span.info.httpInfo.response.headers = payloadStringify(response.headers, sizeLimit);
