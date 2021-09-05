@@ -14,7 +14,7 @@
     "build": "rm -rf dist && tsc --build --force",
     "jest": "jest",
     "semantic-release": "semantic-release",
-    "test": "npm run build && npm run jest",
+    "test": "npm run build",
     "lint": "eslint ./src",
     "prepublishOnly": "npm run prettier:fix && npm run lint",
     "prettier:ci": "prettier --list-different \"src/**/*.[jt]s\" --parser typescript",
