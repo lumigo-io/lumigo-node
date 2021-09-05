@@ -233,9 +233,6 @@ export const getAwsServiceData = (requestData, responseData) => {
       return awsParser(requestData, responseData);
   }
 };
-const isJsonContent = (payload: any, headers: Object) => {
-  return isString(payload) && headers['content-type'] && headers['content-type'].includes('json');
-};
 
 export const isContainingSecrets = (body: string): boolean => {
   const regexes = keyToOmitRegexes();
@@ -250,21 +247,6 @@ export const decodeHttpBody = (httpBody: any, hasError: boolean): any | string =
 };
 
 const isErrorResponse = (response: any) => safeGet(response, ['statusCode'], 200) >= 400;
-
-function scrub(payload, headers, sizeLimit: number): string {
-  try {
-    if (isJsonContent(payload, headers) && isContainingSecrets(payload)) {
-      if (!(payload.length < sizeLimit)) {
-        payload = untruncateJson(payload);
-      }
-      return payloadStringify(JSON.parse(payload), sizeLimit);
-    } else {
-      return payloadStringify(payload, sizeLimit);
-    }
-  } catch (e) {
-    return payloadStringify(payload, sizeLimit);
-  }
-}
 
 export const getHttpInfo = (requestData, responseData): HttpInfo => {
   const isError = isErrorResponse(responseData);
@@ -283,11 +265,6 @@ export const getHttpInfo = (requestData, responseData): HttpInfo => {
       delete request.headers;
       delete response.headers;
       delete request.uri;
-    } else {
-      if (response.body) response.body = scrub(response.body, response.headers, sizeLimit);
-      request.body = scrub(decodeHttpBody(request.body, isError), request.headers, sizeLimit);
-      request.headers = payloadStringify(request.headers, sizeLimit);
-      if (response.headers) response.headers = payloadStringify(response.headers, sizeLimit);
     }
     return { host, request, response };
   } catch (e) {
