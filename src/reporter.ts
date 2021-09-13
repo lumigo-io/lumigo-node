@@ -28,7 +28,7 @@ export const isSpansContainsErrors = (spans): boolean => {
   return spans.filter(spanHasError).length > 0;
 };
 
-export const sendSpans = async (spans): Promise<void> => {
+export const sendSpans = async (spans: any[]): Promise<void> => {
   if (isSendOnlyIfErrors() && !isSpansContainsErrors(spans)) {
     logger.debug('No Spans was sent, `SEND_ONLY_IF_ERROR` is on and no span has error');
     return;
@@ -42,7 +42,7 @@ export const sendSpans = async (spans): Promise<void> => {
   const roundTripEnd = Date.now();
   const rtt = roundTripEnd - roundTripStart;
 
-  logSpans(rtt, spans);
+  logSpans(rtt, spans.slice(Math.min(25, spans.length)));
 };
 
 export const shouldTrim = (spans, maxSendBytes: number): boolean => {
@@ -105,21 +105,20 @@ function scrubSpans(resultSpans: any[]) {
   });
 }
 
-function prunSpans(spans: any[], maxSendBytes: number) {
-  logger.debug(`Starting trim spans [${spans.length}] bigger than: [${maxSendBytes}] before send`);
-
-  const functionEndSpan = spans.pop();
-  spans.sort((a, b) => (spanHasErrors(a) ? -1 : spanHasErrors(b) ? 1 : 0));
-  let totalSize = getJSONBase64Size(functionEndSpan) + getJSONBase64Size(spans);
-  while (totalSize > maxSendBytes && spans.length > 0) totalSize -= getJSONBase64Size(spans.pop());
-  spans.push(functionEndSpan);
-}
-
 export const forgeAndScrubRequestBody = (spans, maxSendBytes): string | undefined => {
   const start = new Date().getTime();
   const originalSize = spans.length;
   if (!isPruneTraceOff() && shouldTrim(spans, maxSendBytes)) {
-    prunSpans(spans, maxSendBytes);
+    logger.debug(
+      `Starting trim spans [${spans.length}] bigger than: [${maxSendBytes}] before send`
+    );
+
+    const functionEndSpan = spans.pop();
+    spans.sort((a, b) => (spanHasErrors(a) ? -1 : spanHasErrors(b) ? 1 : 0));
+    let totalSize = getJSONBase64Size(functionEndSpan) + getJSONBase64Size(spans);
+    while (totalSize > maxSendBytes && spans.length > 0)
+      totalSize -= getJSONBase64Size(spans.pop());
+    spans.push(functionEndSpan);
   }
   scrubSpans(spans);
   if (originalSize - spans.length > 0) {
