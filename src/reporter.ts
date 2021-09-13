@@ -55,7 +55,7 @@ const isJsonContent = (payload: any, headers: Object) => {
   return isString(payload) && headers['content-type'] && headers['content-type'].includes('json');
 };
 
-function scrub(payload: any, headers: object, sizeLimit: number): string {
+function scrub(payload: any, headers: any, sizeLimit: number): string {
   try {
     if (isJsonContent(payload, headers) && isContainingSecrets(payload)) {
       if (!(payload.length < sizeLimit)) {
@@ -105,31 +105,22 @@ function scrubSpans(resultSpans: any[]) {
   });
 }
 
-function prunSpans(spans, maxSendBytes) {
-  if (isPruneTraceOff() || !shouldTrim(spans, maxSendBytes)) {
-    return spans;
-  } else {
-    logger.debug(
-      `Starting trim spans [${spans.length}] bigger than: [${maxSendBytes}] before send`
-    );
+function prunSpans(spans: any[], maxSendBytes: number) {
+  logger.debug(`Starting trim spans [${spans.length}] bigger than: [${maxSendBytes}] before send`);
 
-    const functionEndSpan = spans[spans.length - 1];
-    const errorSpans = spans.filter((span) => spanHasErrors(span) && span !== functionEndSpan);
-    const normalSpans = spans.filter((span) => !spanHasErrors(span) && span !== functionEndSpan);
-
-    const orderedSpans = [...errorSpans, ...normalSpans];
-    let totalSize = getJSONBase64Size(functionEndSpan) + getJSONBase64Size(orderedSpans);
-    while (totalSize > maxSendBytes && orderedSpans.length > 0)
-      totalSize -= getJSONBase64Size(orderedSpans.pop());
-
-    return [...orderedSpans, functionEndSpan];
-  }
+  const functionEndSpan = spans.pop();
+  spans.sort((a, b) => (spanHasErrors(a) ? -1 : spanHasErrors(b) ? 1 : 0));
+  let totalSize = getJSONBase64Size(functionEndSpan) + getJSONBase64Size(spans);
+  while (totalSize > maxSendBytes && spans.length > 0) totalSize -= getJSONBase64Size(spans.pop());
+  spans.push(functionEndSpan);
 }
 
 export const forgeAndScrubRequestBody = (spans, maxSendBytes): string | undefined => {
   const start = new Date().getTime();
   const originalSize = spans.length;
-  spans = prunSpans(spans, maxSendBytes);
+  if (!isPruneTraceOff() && shouldTrim(spans, maxSendBytes)) {
+    prunSpans(spans, maxSendBytes);
+  }
   scrubSpans(spans);
   if (originalSize - spans.length > 0) {
     logger.debug(`Trimmed spans due to size`);
