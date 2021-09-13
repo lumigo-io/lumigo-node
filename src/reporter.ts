@@ -106,9 +106,8 @@ function scrubSpans(resultSpans: any[]) {
 }
 
 function prunSpans(spans, maxSendBytes) {
-  let resultSpans = [];
   if (isPruneTraceOff() || !shouldTrim(spans, maxSendBytes)) {
-    resultSpans = spans;
+    return spans;
   } else {
     logger.debug(
       `Starting trim spans [${spans.length}] bigger than: [${maxSendBytes}] before send`
@@ -119,33 +118,24 @@ function prunSpans(spans, maxSendBytes) {
     const normalSpans = spans.filter((span) => !spanHasErrors(span) && span !== functionEndSpan);
 
     const orderedSpans = [...errorSpans, ...normalSpans];
-    let totalSize = getJSONBase64Size(resultSpans) + getJSONBase64Size(functionEndSpan);
-    for (let span of orderedSpans) {
-      let spanSize = getJSONBase64Size(span);
-      if (totalSize + spanSize <= maxSendBytes) {
-        resultSpans.push(span);
-        totalSize += spanSize;
-      } else {
-        break;
-      }
-    }
-    resultSpans.push(functionEndSpan);
+    let totalSize = getJSONBase64Size(functionEndSpan) + getJSONBase64Size(orderedSpans);
+    while (totalSize > maxSendBytes && orderedSpans.length > 0)
+      totalSize -= getJSONBase64Size(orderedSpans.pop());
+
+    return [...orderedSpans, functionEndSpan];
   }
-  return resultSpans;
 }
 
 export const forgeAndScrubRequestBody = (spans, maxSendBytes): string | undefined => {
   const start = new Date().getTime();
-
-  const resultSpans = prunSpans(spans, maxSendBytes);
-  scrubSpans(resultSpans);
-  if (spans.length - resultSpans.length > 0) {
+  const originalSize = spans.length;
+  spans = prunSpans(spans, maxSendBytes);
+  scrubSpans(spans);
+  if (originalSize - spans.length > 0) {
     logger.debug(`Trimmed spans due to size`);
   }
   logger.debug(
-    `Filtered [${spans.length - resultSpans.length}] spans out, Took: [${
-      new Date().getTime() - start
-    }ms]`
+    `Filtered [${spans.length - spans.length}] spans out, Took: [${new Date().getTime() - start}ms]`
   );
-  return resultSpans.length > 0 ? JSON.stringify(resultSpans) : undefined;
+  return spans.length > 0 ? JSON.stringify(spans) : undefined;
 };

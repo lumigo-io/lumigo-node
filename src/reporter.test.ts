@@ -3,8 +3,7 @@ import { TracerGlobals } from './globals';
 import * as reporter from './reporter';
 import * as utils from './utils';
 import { AxiosMocker } from '../testUtils/axiosMocker';
-import { getEventEntitySize, getJSONBase64Size } from './utils';
-import * as awsSpan from './spans/awsSpan';
+import { getJSONBase64Size } from './utils';
 import { encode } from 'utf8';
 
 describe('reporter', () => {
