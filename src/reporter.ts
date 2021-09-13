@@ -32,7 +32,7 @@ export const sendSpans = async (spans): Promise<void> => {
     logger.debug('No Spans was sent, `SEND_ONLY_IF_ERROR` is on and no span has error');
     return;
   }
-  const reqBody = forgeRequestBody(spans, getMaxRequestSize());
+  const reqBody = forgeAndScrubRequestBody(spans, getMaxRequestSize());
 
   const roundTripStart = Date.now();
   if (reqBody) {
@@ -69,30 +69,7 @@ function scrub(payload, headers, sizeLimit: number): string {
   }
 }
 
-export const forgeRequestBody = (spans, maxSendBytes): string | undefined => {
-  let resultSpans = [];
-
-  logger.debug(`Starting trim spans [${spans.length}] bigger than: [${maxSendBytes}] before send`);
-  const start = new Date().getTime();
-  const functionEndSpan = spans[spans.length - 1];
-  const errorSpans = spans.filter((span) => spanHasErrors(span) && span !== functionEndSpan);
-  const normalSpans = spans.filter((span) => !spanHasErrors(span) && span !== functionEndSpan);
-
-  const orderedSpans = [...errorSpans, ...normalSpans];
-
-  let totalSize = getJSONBase64Size(resultSpans) + getJSONBase64Size(functionEndSpan);
-
-  for (let span of orderedSpans) {
-    let spanSize = getJSONBase64Size(span);
-    if (totalSize + spanSize <= maxSendBytes) {
-      resultSpans.push(span);
-      totalSize += spanSize;
-    } else {
-      break;
-    }
-  }
-  resultSpans.push(functionEndSpan);
-
+function scrubSpans(resultSpans: any[]) {
   resultSpans.forEach((span) => {
     if (span.info && span.info.httpInfo) {
       const { request, response } = span.info?.httpInfo;
@@ -113,6 +90,42 @@ export const forgeRequestBody = (spans, maxSendBytes): string | undefined => {
         span.info.httpInfo.response.headers = payloadStringify(response.headers, sizeLimit);
     }
   });
+}
+
+function prunSpans(spans, maxSendBytes) {
+  let resultSpans = [];
+  if (isPruneTraceOff() || !shouldTrim(spans, maxSendBytes)) {
+    resultSpans = spans;
+  } else {
+    logger.debug(
+      `Starting trim spans [${spans.length}] bigger than: [${maxSendBytes}] before send`
+    );
+
+    const functionEndSpan = spans[spans.length - 1];
+    const errorSpans = spans.filter((span) => spanHasErrors(span) && span !== functionEndSpan);
+    const normalSpans = spans.filter((span) => !spanHasErrors(span) && span !== functionEndSpan);
+
+    const orderedSpans = [...errorSpans, ...normalSpans];
+    let totalSize = getJSONBase64Size(resultSpans) + getJSONBase64Size(functionEndSpan);
+    for (let span of orderedSpans) {
+      let spanSize = getJSONBase64Size(span);
+      if (totalSize + spanSize <= maxSendBytes) {
+        resultSpans.push(span);
+        totalSize += spanSize;
+      } else {
+        break;
+      }
+    }
+    resultSpans.push(functionEndSpan);
+  }
+  return resultSpans;
+}
+
+export const forgeAndScrubRequestBody = (spans, maxSendBytes): string | undefined => {
+  const start = new Date().getTime();
+
+  const resultSpans = prunSpans(spans, maxSendBytes);
+  scrubSpans(resultSpans);
   if (spans.length - resultSpans.length > 0) {
     logger.debug(`Trimmed spans due to size`);
   }

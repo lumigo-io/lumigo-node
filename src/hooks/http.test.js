@@ -330,7 +330,8 @@ describe('http hook', () => {
       .withRequest(testData.requestData)
       .withHost(testData.requestData.host)
       .build();
-    expect(SpansContainer.getSpans()).toEqual([expectedHttpSpan]);
+    const actual = SpansContainer.getSpans();
+    expect(actual).toEqual([expectedHttpSpan]);
   });
   test('createEmitResponseHandler - add big span simple flow', () => {
     const transactionId = HttpSpanBuilder.DEFAULT_TRANSACTION_ID;

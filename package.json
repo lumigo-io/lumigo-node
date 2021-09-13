@@ -1,6 +1,6 @@
 {
   "name": "@lumigo/tracer",
-  "version": "1.63.0",
+  "version": "1.62.0",
   "description": "Lumigo Tracer for Node.js v8.x / v10.x / v12.x Runtimes",
   "main": "dist/index.js",
   "repository": "git@github.com:lumigo-io/lumigo-node.git",
@@ -14,9 +14,9 @@
     "build": "rm -rf dist && tsc --build --force",
     "jest": "jest",
     "semantic-release": "semantic-release",
-    "test": "npm run build",
+    "test": "npm run build && npm run jest",
     "lint": "eslint ./src",
-    "prepublishOnly": "npm run prettier:fix && npm run lint",
+    "prepublishOnly": "npm run prettier:fix && npm run lint && npm run test",
     "prettier:ci": "prettier --list-different \"src/**/*.[jt]s\" --parser typescript",
     "prettier:fix": "prettier --write \"./src/**/*.[jt]s\" --parser typescript"
   },
