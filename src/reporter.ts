@@ -55,7 +55,7 @@ const isJsonContent = (payload: any, headers: Object) => {
   return isString(payload) && headers['content-type'] && headers['content-type'].includes('json');
 };
 
-function scrub(payload, headers, sizeLimit: number): string {
+function scrub(payload: any, headers: object, sizeLimit: number): string {
   try {
     if (isJsonContent(payload, headers) && isContainingSecrets(payload)) {
       if (!(payload.length < sizeLimit)) {
