@@ -128,8 +128,8 @@ describe('reporter', () => {
     );
   });
 
-  describe('http parsing tests', () => {
-    test('forgeRequestBody - scrub secrets', async () => {
+  describe('forgeAndScrubRequestBody parsing tests', () => {
+    test('forgeAndScrubRequestBody - scrub secrets', async () => {
       const dummyEnd = 'dummyEnd';
       const spans = [
         {
@@ -187,7 +187,7 @@ describe('reporter', () => {
       expect(actual).toEqual(JSON.stringify(expectedResult));
     });
 
-    test('getHttpInfo scrub domain', () => {
+    test('forgeAndScrubRequestBody scrub domain', () => {
       const dummyEnd = 'dummyEnd';
       const spans = [
         {
@@ -230,7 +230,7 @@ describe('reporter', () => {
       const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize));
       expect(actual).toEqual(expected);
     });
-    test('getHttpInfo', () => {
+    test('forgeAndScrubRequestBody', () => {
       const dummyEnd = 'dummyEnd';
       const spans = [
         {
@@ -274,7 +274,7 @@ describe('reporter', () => {
       expect(actual).toEqual(expected);
     });
 
-    test('getHttpInfo long response', () => {
+    test('forgeAndScrubRequestBody long response', () => {
       let manyA = 'a'.repeat(88);
       let manyManyA = 'a'.repeat(1268);
       const dummyEnd = 'dummyEnd';
@@ -326,7 +326,7 @@ describe('reporter', () => {
       expect(actual).toEqual(expected);
     });
 
-    test('getHttpInfo short response', () => {
+    test('forgeAndScrubRequestBody short response', () => {
       const dummyEnd = 'dummyEnd';
       const spans = [
         {
@@ -372,7 +372,7 @@ describe('reporter', () => {
       expect(actual).toEqual(expected);
     });
 
-    test('getHttpInfo => decode utf-8', () => {
+    test('forgeAndScrubRequestBody => decode utf-8', () => {
       const dummyEnd = 'dummyEnd';
       const spans = [
         {
@@ -418,7 +418,7 @@ describe('reporter', () => {
       expect(actual).toEqual(expected);
     });
 
-    test('getHttpInfo contain json header but not json body', () => {
+    test('forgeAndScrubRequestBody contain json header but not json body', () => {
       const dummyEnd = 'dummyEnd';
       const spans = [
         {
