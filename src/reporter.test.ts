@@ -186,6 +186,50 @@ describe('reporter', () => {
       const actual = reporter.forgeAndScrubRequestBody(spans, expectedResultSize);
       expect(actual).toEqual(JSON.stringify(expectedResult));
     });
+
+    test('getHttpInfo scrub domain', () => {
+      const dummyEnd = 'dummyEnd';
+      const spans = [
+        {
+          info: {
+            httpInfo: {
+              host: 'your.mind.com',
+              request: {
+                host: 'your.mind.com',
+                headers: { Tyler: 'Durden', secretKey: 'lumigo' },
+                body: 'the first rule of fight club',
+              },
+              response: {
+                headers: { Peter: 'Parker' },
+                body: 'Well, Tony is dead.',
+              },
+            },
+          },
+        },
+        { dummyEnd },
+      ];
+      const expected = [
+        {
+          info: {
+            httpInfo: {
+              host: 'your.mind.com',
+              request: {
+                body: 'The data is not available',
+                host: 'your.mind.com',
+              },
+              response: {
+                body: 'The data is not available',
+              },
+            },
+          },
+        },
+        { dummyEnd },
+      ];
+      const expectedResultSize = getJSONBase64Size(spans);
+      process.env.LUMIGO_DOMAINS_SCRUBBER = '["mind"]';
+      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize));
+      expect(actual).toEqual(expected);
+    });
     test('getHttpInfo', () => {
       const dummyEnd = 'dummyEnd';
       const spans = [

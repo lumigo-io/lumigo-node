@@ -5,6 +5,7 @@ import {
   isPruneTraceOff,
   isSendOnlyIfErrors,
   isString,
+  shouldScrubDomain,
   spanHasErrors,
 } from './utils';
 import * as logger from './logger';
@@ -72,22 +73,34 @@ function scrub(payload, headers, sizeLimit: number): string {
 function scrubSpans(resultSpans: any[]) {
   resultSpans.forEach((span) => {
     if (span.info && span.info.httpInfo) {
-      const { request, response } = span.info?.httpInfo;
-      const isError = spanHasErrors(span);
-      const sizeLimit = getEventEntitySize(isError);
-      if (span.info.httpInfo.response.body) {
-        span.info.httpInfo.response.body = scrub(response.body, response.headers, sizeLimit);
+      const { request, response, host } = span.info?.httpInfo;
+      if (
+        shouldScrubDomain(host) ||
+        (request.host && shouldScrubDomain(request.host)) ||
+        (response.host && shouldScrubDomain(response.host))
+      ) {
+        request.body = 'The data is not available';
+        response.body = 'The data is not available';
+        delete request.headers;
+        delete response.headers;
+        delete request.uri;
+      } else {
+        const isError = spanHasErrors(span);
+        const sizeLimit = getEventEntitySize(isError);
+        if (span.info.httpInfo.response.body) {
+          span.info.httpInfo.response.body = scrub(response.body, response.headers, sizeLimit);
+        }
+        if (span.info.httpInfo.request.body) {
+          span.info.httpInfo.request.body = scrub(
+            decodeHttpBody(request.body, isError),
+            request.headers,
+            sizeLimit
+          );
+        }
+        span.info.httpInfo.request.headers = payloadStringify(request.headers, sizeLimit);
+        if (response.headers)
+          span.info.httpInfo.response.headers = payloadStringify(response.headers, sizeLimit);
       }
-      if (span.info.httpInfo.request.body) {
-        span.info.httpInfo.request.body = scrub(
-          decodeHttpBody(request.body, isError),
-          request.headers,
-          sizeLimit
-        );
-      }
-      span.info.httpInfo.request.headers = payloadStringify(request.headers, sizeLimit);
-      if (response.headers)
-        span.info.httpInfo.response.headers = payloadStringify(response.headers, sizeLimit);
     }
   });
 }

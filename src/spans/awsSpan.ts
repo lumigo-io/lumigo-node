@@ -255,17 +255,6 @@ export const getHttpInfo = (requestData, responseData): HttpInfo => {
   try {
     const request = Object.assign({}, requestData);
     const response = Object.assign({}, responseData);
-    if (
-      shouldScrubDomain(host) ||
-      (request.host && shouldScrubDomain(request.host)) ||
-      (response.host && shouldScrubDomain(response.host))
-    ) {
-      request.body = 'The data is not available';
-      response.body = 'The data is not available';
-      delete request.headers;
-      delete response.headers;
-      delete request.uri;
-    }
     return { host, request, response };
   } catch (e) {
     logger.warn('Failed to scrub & stringify http data', e.message);
