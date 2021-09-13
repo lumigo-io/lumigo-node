@@ -246,24 +246,11 @@ export const decodeHttpBody = (httpBody: any, hasError: boolean): any | string =
   return httpBody;
 };
 
-const isErrorResponse = (response: any) => safeGet(response, ['statusCode'], 200) >= 400;
-
 export const getHttpInfo = (requestData, responseData): HttpInfo => {
-  const isError = isErrorResponse(responseData);
-  const sizeLimit = getEventEntitySize(isError);
   const { host } = requestData;
-  try {
-    const request = Object.assign({}, requestData);
-    const response = Object.assign({}, responseData);
-    return { host, request, response };
-  } catch (e) {
-    logger.warn('Failed to scrub & stringify http data', e.message);
-    return {
-      host,
-      request: payloadStringify(requestData, sizeLimit),
-      response: payloadStringify(responseData, sizeLimit),
-    };
-  }
+  const request = Object.assign({}, requestData);
+  const response = Object.assign({}, responseData);
+  return { host, request, response };
 };
 
 export const getBasicChildSpan = (transactionId, awsRequestId, spanId, spanType) => {
