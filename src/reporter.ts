@@ -107,9 +107,10 @@ function scrubSpans(resultSpans: any[]) {
 
 function prunSpans(spans: any[], maxSendBytes: number) {
   logger.debug(`Starting trim spans [${spans.length}] bigger than: [${maxSendBytes}] before send`);
-  let totalSize = getJSONBase64Size(spans);
+
   const functionEndSpan = spans.pop();
   spans.sort((a, b) => (spanHasErrors(a) ? -1 : spanHasErrors(b) ? 1 : 0));
+  let totalSize = getJSONBase64Size(functionEndSpan) + getJSONBase64Size(spans);
   while (totalSize > maxSendBytes && spans.length > 0) totalSize -= getJSONBase64Size(spans.pop());
   spans.push(functionEndSpan);
 }
