@@ -1,6 +1,7 @@
 import * as logger from './logger';
 import { GlobalDurationTimer } from './utils/globalDurationTimer';
 import { LambdaContext } from './types/aws/awsEnvironment';
+import { getJSONBase64Size, getMaxRequestSize, spanHasErrors } from './utils';
 const MAX_TAGS = 50;
 const MAX_TAG_KEY_LEN = 50;
 const MAX_TAG_VALUE_LEN = 70;
@@ -10,10 +11,13 @@ export const DEFAULT_TRACER_TIMEOUT = 500;
 
 export const SpansContainer = (() => {
   let spansToSend = {};
-
+  let totalSize = 0;
   const addSpan = (span) => {
-    spansToSend[span.id] = span;
-    logger.debug('Span created', span);
+    if (spanHasErrors(span) || getMaxRequestSize() > totalSize) {
+      spansToSend[span.id] = span;
+      totalSize += getJSONBase64Size(span);
+      logger.debug('Span created', span);
+    }
   };
   const getSpans = () => Object.values(spansToSend);
   const getSpanById = (spanId) => spansToSend[spanId];
