@@ -711,7 +711,6 @@ describe('awsSpan', () => {
     expect(result).toEqual(expected);
   });
 
-
   test('getHttpSpan - only for request data', () => {
     const id = 'not-a-random-id';
     const sendTime = 1234;
