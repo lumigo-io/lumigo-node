@@ -3,8 +3,10 @@ import { TracerGlobals } from './globals';
 import * as reporter from './reporter';
 import * as utils from './utils';
 import { AxiosMocker } from '../testUtils/axiosMocker';
-import { getJSONBase64Size } from './utils';
+import { getEventEntitySize, getJSONBase64Size } from './utils';
 import { encode } from 'utf8';
+import { HttpSpanBuilder } from '../testUtils/httpSpanBuilder';
+import * as awsSpan from './spans/awsSpan';
 
 describe('reporter', () => {
   test('sendSingleSpan', async () => {
@@ -465,6 +467,80 @@ describe('reporter', () => {
 
       const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize));
       expect(actual).toEqual(expected);
+    });
+
+    test('getHttpSpan - response with error should double payload size', () => {
+      const sendTime = 1234;
+      const receivedTime = 1256;
+      const longString = 'a'.repeat(getEventEntitySize() * 2);
+
+      const dummyEnd = 'dummyEnd';
+      const spansSuccess = [
+        {
+          info: {
+            httpInfo: {
+              host: 'your.mind.com',
+              request: {
+                host: 'your.mind.com',
+                headers: { longString },
+                body: longString,
+                sendTime,
+              },
+              response: {
+                headers: { longString },
+                body: longString,
+                statusCode: 200,
+                receivedTime,
+              },
+            },
+          },
+        },
+        { dummyEnd },
+      ];
+      const spansFail = [
+        {
+          info: {
+            httpInfo: {
+              host: 'your.mind.com',
+              request: {
+                host: 'your.mind.com',
+                headers: { longString },
+                body: longString,
+                sendTime,
+              },
+              response: {
+                headers: { longString },
+                body: longString,
+                statusCode: 404,
+                receivedTime,
+              },
+            },
+          },
+        },
+        { dummyEnd },
+      ];
+
+      const expectedResultSizeSuccess = getJSONBase64Size(spansSuccess);
+      const expectedResultSizeFail = getJSONBase64Size(spansFail);
+
+      const spanSuccess = JSON.parse(
+        reporter.forgeAndScrubRequestBody(spansSuccess, expectedResultSizeSuccess)
+      )[0];
+      const spanError = JSON.parse(
+        reporter.forgeAndScrubRequestBody(spansFail, expectedResultSizeFail)
+      )[0];
+      expect(spanError.info.httpInfo.request.body.length).toBeGreaterThan(
+        spanSuccess.info.httpInfo.request.body.length * 1.8 + 1
+      );
+      expect(spanError.info.httpInfo.request.headers.length).toBeGreaterThan(
+        spanSuccess.info.httpInfo.request.headers.length * 1.8 + 1
+      );
+      expect(spanError.info.httpInfo.response.body.length).toBeGreaterThan(
+        spanSuccess.info.httpInfo.response.body.length * 1.8 + 1
+      );
+      expect(spanError.info.httpInfo.response.headers.length).toBeGreaterThan(
+        spanSuccess.info.httpInfo.response.headers.length * 1.8 + 1
+      );
     });
   });
 

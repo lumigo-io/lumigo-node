@@ -711,52 +711,6 @@ describe('awsSpan', () => {
     expect(result).toEqual(expected);
   });
 
-  // test('getHttpSpan - response with error should double payload size', () => {
-  //   const id = 'not-a-random-id';
-  //   const transcationId = HttpSpanBuilder.DEFAULT_TRANSACTION_ID;
-  //   const sendTime = 1234;
-  //   const receivedTime = 1256;
-  //   const longString = 'a'.repeat(getEventEntitySize() * 2);
-  //   const requestData = {
-  //     host: 'your.mind.com',
-  //     headers: { longString },
-  //     body: longString,
-  //     sendTime,
-  //   };
-  //   const responseDataSuccess = {
-  //     headers: { longString },
-  //     body: longString,
-  //     statusCode: 200,
-  //     receivedTime,
-  //   };
-  //   const responseDataFailed = {
-  //     headers: { longString },
-  //     body: longString,
-  //     statusCode: 404,
-  //     receivedTime,
-  //   };
-  //
-  //   const spanSuccess = awsSpan.getHttpSpan(
-  //     transcationId,
-  //     id,
-  //     id,
-  //     requestData,
-  //     responseDataSuccess
-  //   );
-  //   const spanError = awsSpan.getHttpSpan(transcationId, id, id, requestData, responseDataFailed);
-  //   expect(spanError.info.httpInfo.request.body.length).toBeGreaterThan(
-  //     spanSuccess.info.httpInfo.request.body.length * 1.8 + 1
-  //   );
-  //   expect(spanError.info.httpInfo.request.headers.length).toBeGreaterThan(
-  //     spanSuccess.info.httpInfo.request.headers.length * 1.8 + 1
-  //   );
-  //   expect(spanError.info.httpInfo.response.body.length).toBeGreaterThan(
-  //     spanSuccess.info.httpInfo.response.body.length * 1.8 + 1
-  //   );
-  //   expect(spanError.info.httpInfo.response.headers.length).toBeGreaterThan(
-  //     spanSuccess.info.httpInfo.response.headers.length * 1.8 + 1
-  //   );
-  // });
 
   test('getHttpSpan - only for request data', () => {
     const id = 'not-a-random-id';
