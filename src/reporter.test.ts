@@ -469,7 +469,7 @@ describe('reporter', () => {
       expect(actual).toEqual(expected);
     });
 
-    test('getHttpSpan - response with error should double payload size', () => {
+    test('forgeAndScrubRequestBody - response with error should double payload size', () => {
       const sendTime = 1234;
       const receivedTime = 1256;
       const longString = 'a'.repeat(getEventEntitySize() * 2);

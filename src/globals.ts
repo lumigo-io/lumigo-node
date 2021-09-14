@@ -13,6 +13,7 @@ export const SpansContainer = (() => {
   let spansToSend = {};
   let totalSize = 0;
   const addSpan = (span) => {
+    // Memory optimization
     if (spanHasErrors(span) || getMaxRequestSize() > totalSize) {
       spansToSend[span.id] = span;
       totalSize += getJSONBase64Size(span);
