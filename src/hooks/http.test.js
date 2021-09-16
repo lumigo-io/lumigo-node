@@ -332,60 +332,7 @@ describe('http hook', () => {
       .build();
     expect(SpansContainer.getSpans()).toEqual([expectedHttpSpan]);
   });
-  test('createEmitResponseHandler - add big span simple flow', () => {
-    const transactionId = HttpSpanBuilder.DEFAULT_TRANSACTION_ID;
-    const testData = {
-      randomId: 'DummyRandomId',
-      requestData: {
-        a: 'request',
-        sendTime: 1,
-        host: 'your.mind.com',
-        headers: { host: 'your.mind.com' },
-        body: '',
-      },
-      responseData: {
-        statusCode: 200,
-        receivedTime: 895179612345,
-        headers: { X: 'Y', z: 'A' },
-        body: 'start' + 'a'.repeat(10000),
-      },
-    };
-    const handlerInputs = new HandlerInputesBuilder()
-      .withAwsRequestId('DummyParentId')
-      .withInvokedFunctionArn('arn:aws:l:region:335722316285:function:dummy-func')
-      .build();
-    TracerGlobals.setHandlerInputs(handlerInputs);
 
-    let responseEmitter = new EventEmitter();
-    responseEmitter = Object.assign(responseEmitter, testData.responseData);
-
-    MockDate.set(testData.responseData.receivedTime);
-
-    Http.createEmitResponseHandler(
-      transactionId,
-      'DummyParentId2',
-      testData.requestData,
-      testData.randomId
-    )(responseEmitter);
-
-    responseEmitter.emit('data', 'start');
-    responseEmitter.emit('data', 'a'.repeat(10000));
-    responseEmitter.emit('end');
-
-    const expectedHttpSpan = new HttpSpanBuilder()
-      .withSpanId(testData.randomId)
-      .withParentId('DummyParentId2')
-      .withReporterAwsRequestId('DummyParentId')
-      .withInvokedArn('arn:aws:l:region:335722316285:function:dummy-func')
-      .withEnded(testData.responseData.receivedTime)
-      .withStarted(1)
-      .withAccountId('335722316285')
-      .withResponse({ ...testData.responseData, body: 'start' + 'a'.repeat(2043) })
-      .withRequest(testData.requestData)
-      .withHost(testData.requestData.host)
-      .build();
-    expect(SpansContainer.getSpans()).toEqual([expectedHttpSpan]);
-  });
   test('createEmitResponseHandler - change request id from headers', () => {
     const testData = {
       randomId: 'DummyRandomId',

@@ -111,7 +111,4 @@ Execution tags are subject to the following limitations:
 * Key length must be between 1 and 50.
 * Value length must be between 1 and 70.
 
-### Scrubbing Limitations:
-Secrets scrubbing are subject to the following limitations:
 
-* support only json data secrets scrubbing
