@@ -248,7 +248,9 @@ const isErrorResponse = (response: any) => safeGet(response, ['statusCode'], 200
 
 function scrub(payload, headers, sizeLimit: number): string {
   if (isJsonContent(payload, headers)) {
-    payload = untruncateJson(payload);
+    if (!(payload.length < sizeLimit)) {
+      payload = untruncateJson(payload);
+    }
     return payloadStringify(JSON.parse(payload), sizeLimit);
   } else {
     return payloadStringify(payload, sizeLimit);
