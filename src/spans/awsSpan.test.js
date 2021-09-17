@@ -1,5 +1,10 @@
 import * as awsSpan from './awsSpan';
-import { EXECUTION_TAGS_KEY, getEventEntitySize, parseErrorObject } from '../utils';
+import {
+  EXECUTION_TAGS_KEY,
+  getEventEntitySize,
+  parseErrorObject,
+  LUMIGO_MAX_ENTRY_SIZE,
+} from '../utils';
 import MockDate from 'mockdate';
 import { TracerGlobals } from '../globals';
 import * as awsParsers from '../parsers/aws';
@@ -615,6 +620,32 @@ describe('awsSpan', () => {
       },
       response: {
         body: `{"a":"${manyA}","b":"${manyA}","key":"****","password":"****","e":"${manyA}","secret":"****","f":"${manyA}","g":"${manyA}","h":"${manyManyA}"}`,
+        headers: '{"Peter":"Parker","content-type":"application/json"}',
+      },
+    };
+    expect(awsSpan.getHttpInfo(requestData, responseData)).toEqual(expected);
+  });
+
+  test('getHttpInfo long request', () => {
+    let manyA = 'a'.repeat(1000 * 1000);
+    const requestData = {
+      host: 'your.mind.com',
+      headers: { Tyler: 'Durden', secretKey: 'lumigo', 'content-type': 'application/json' },
+      body: `{"a": "${manyA}"`,
+    };
+    const responseData = {
+      headers: { Peter: 'Parker', 'content-type': 'application/json' },
+      body: '{"secret": "secret"}',
+    };
+    const expected = {
+      host: 'your.mind.com',
+      request: {
+        body: `{"a":"${'a'.repeat(LUMIGO_MAX_ENTRY_SIZE)}"}...[too long]`,
+        headers: '{"Tyler":"Durden","secretKey":"****","content-type":"application/json"}',
+        host: 'your.mind.com',
+      },
+      response: {
+        body: '{"secret":"****"}',
         headers: '{"Peter":"Parker","content-type":"application/json"}',
       },
     };
