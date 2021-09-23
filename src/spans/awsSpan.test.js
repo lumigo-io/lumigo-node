@@ -664,6 +664,7 @@ describe('awsSpan', () => {
             sendTime: 1234,
           },
           response: {
+            truncated: false,
             body: 'Well, Tony is dead.',
             headers: { Peter: 'Parker' },
             receivedTime: 1256,
@@ -735,7 +736,9 @@ describe('awsSpan', () => {
             host: 'your.mind.com',
             sendTime: 1234,
           },
-          response: {},
+          response: {
+            truncated: false,
+          },
         },
         logGroupName: '/aws/lambda/aws-nodejs-dev-hello',
         logStreamName: '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',
@@ -797,7 +800,9 @@ describe('awsSpan', () => {
             host: 'your.mind.com',
             sendTime: 1234,
           },
-          response: {},
+          response: {
+            truncated: false,
+          },
         },
         logGroupName: '/aws/lambda/aws-nodejs-dev-hello',
         logStreamName: '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',

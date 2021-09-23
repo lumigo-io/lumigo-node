@@ -264,15 +264,18 @@ export class Http {
     response
   ) {
     let body = '';
-    const payloadSize = getEventEntitySize();
+    // todo: will never double size due to error?
+    let payloadSize = getEventEntitySize();
     return function (args) {
       GlobalDurationTimer.start();
       const receivedTime = new Date().getTime();
+      let truncated = false;
       const { headers, statusCode } = response;
       if (args[0] === 'data' && body.length < payloadSize) {
         let chunk = args[1].toString();
         const allowedLengthToAdd = payloadSize - body.length;
         if (chunk.length > allowedLengthToAdd) {
+          truncated = true;
           chunk = chunk.substr(0, allowedLengthToAdd);
         }
         body += chunk;
@@ -289,7 +292,8 @@ export class Http {
           awsRequestId,
           requestRandomId,
           requestData,
-          responseData
+          responseData,
+          truncated
         );
         if (httpSpan.id !== requestRandomId) {
           // In Http case, one of our parser decide to change the spanId for async connection

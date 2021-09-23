@@ -11,7 +11,7 @@ import {
 import * as logger from './logger';
 import { HttpSpansAgent } from './httpSpansAgent';
 import { payloadStringify } from './utils/payloadStringify';
-import { decodeHttpBody, isContainingSecrets } from './spans/awsSpan';
+import { decodeHttpBody } from './spans/awsSpan';
 import untruncateJson from './tools/untrancateJson';
 export const NUMBER_OF_SPANS_IN_REPORT_OPTIMIZATION = 200;
 
@@ -55,10 +55,10 @@ const isJsonContent = (payload: any, headers: Object) => {
   return isString(payload) && headers['content-type'] && headers['content-type'].includes('json');
 };
 
-function scrub(payload: any, headers: any, sizeLimit: number): string {
+function scrub(payload: any, headers: any, sizeLimit: number, truncated = false): string {
   try {
-    if (isJsonContent(payload, headers) && isContainingSecrets(payload)) {
-      if (!(payload.length < sizeLimit)) {
+    if (isJsonContent(payload, headers)) {
+      if (truncated) {
         payload = untruncateJson(payload);
       }
       return payloadStringify(JSON.parse(payload), sizeLimit);
@@ -88,7 +88,12 @@ function scrubSpans(resultSpans: any[]) {
         const isError = spanHasErrors(span);
         const sizeLimit = getEventEntitySize(isError);
         if (span.info.httpInfo.response.body) {
-          span.info.httpInfo.response.body = scrub(response.body, response.headers, sizeLimit);
+          span.info.httpInfo.response.body = scrub(
+            decodeHttpBody(response.body, isError),
+            response.headers,
+            sizeLimit,
+            span.info.httpInfo.response.truncated
+          );
         }
         if (span.info.httpInfo.request.body) {
           span.info.httpInfo.request.body = scrub(

@@ -292,6 +292,7 @@ describe('http hook', () => {
       },
       responseData: {
         statusCode: 200,
+        truncated: false,
         receivedTime: 895179612345,
         headers: { X: 'Y', z: 'A' },
         body: 'SomeResponse',
@@ -345,6 +346,7 @@ describe('http hook', () => {
         body: '',
       },
       responseData: {
+        truncated: false,
         statusCode: 200,
         receivedTime: 895179612345,
         headers: { X: 'Y', z: 'A' },
@@ -399,6 +401,7 @@ describe('http hook', () => {
         body: '',
       },
       responseData: {
+        truncated: false,
         statusCode: 200,
         receivedTime: 895179612345,
         headers: { X: 'Y', z: 'A', 'x-amzn-requestid': 'newSpanId' },
@@ -467,6 +470,7 @@ describe('http hook', () => {
         body: '',
       },
       responseData: {
+        truncated: false,
         statusCode: 200,
         receivedTime: 895179612345,
         headers: { X: 'Y', z: 'A' },
@@ -617,6 +621,7 @@ describe('http hook', () => {
     TracerGlobals.setHandlerInputs(handlerInputs);
     const requestData = HttpSpanBuilder.getDefaultData(HttpSpanBuilder.DEFAULT_REQUEST_DATA);
     const responseData = {
+      truncated: false,
       statusCode: 200,
       body: 'OK',
     };
@@ -670,6 +675,7 @@ describe('http hook', () => {
     TracerGlobals.setHandlerInputs(handlerInputs);
     const requestData = HttpSpanBuilder.getDefaultData(HttpSpanBuilder.DEFAULT_REQUEST_DATA);
     const responseData = {
+      truncated: false,
       statusCode: 200,
       body: 'OK',
     };
@@ -802,6 +808,7 @@ describe('http hook', () => {
     TracerGlobals.setHandlerInputs(handlerInputs);
     const requestData = HttpSpanBuilder.getDefaultData(HttpSpanBuilder.DEFAULT_REQUEST_DATA);
     const responseData = {
+      truncated: false,
       statusCode: 200,
       body: 'OK',
     };
@@ -874,6 +881,7 @@ describe('http hook', () => {
     requestData.a = a;
 
     const responseData = {
+      truncated: false,
       statusCode: 200,
       body: 'OK',
     };

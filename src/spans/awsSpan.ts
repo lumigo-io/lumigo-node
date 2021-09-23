@@ -28,7 +28,7 @@ import { TracerGlobals, ExecutionTags } from '../globals';
 import { getEventInfo } from '../events';
 import { getSkipScrubPath, parseEvent } from '../parsers/eventParser';
 import * as logger from '../logger';
-import { keyToOmitRegexes, payloadStringify, prune } from '../utils/payloadStringify';
+import { payloadStringify, prune } from '../utils/payloadStringify';
 import { HttpInfo } from '../types/spans/httpSpan';
 import { BasicSpan, SpanInfo } from '../types/spans/basicSpan';
 import { FunctionSpan } from '../types/spans/functionSpan';
@@ -231,11 +231,6 @@ export const getAwsServiceData = (requestData, responseData) => {
   }
 };
 
-export const isContainingSecrets = (body: string): boolean => {
-  const regexes = keyToOmitRegexes();
-  return regexes.some((regex) => regex.test(body));
-};
-
 export const decodeHttpBody = (httpBody: any, hasError: boolean): any | string => {
   if (isString(httpBody) && httpBody.length < getEventEntitySize(hasError)) {
     return decode(httpBody);
@@ -243,10 +238,10 @@ export const decodeHttpBody = (httpBody: any, hasError: boolean): any | string =
   return httpBody;
 };
 
-export const getHttpInfo = (requestData, responseData): HttpInfo => {
+export const getHttpInfo = (requestData, responseData, truncated = false): HttpInfo => {
   const { host } = requestData;
   const request = Object.assign({}, requestData);
-  const response = Object.assign({}, responseData);
+  const response = Object.assign({ truncated }, responseData);
   return { host, request, response };
 };
 
@@ -275,7 +270,8 @@ export const getHttpSpan = (
   awsRequestId,
   randomRequestId,
   requestData,
-  responseData = null
+  responseData = null,
+  truncated = false
 ) => {
   let serviceData = {};
   try {
@@ -289,7 +285,7 @@ export const getHttpSpan = (
   const { awsServiceData, spanId } = serviceData;
 
   const prioritizedSpanId = getHttpSpanId(randomRequestId, spanId);
-  const httpInfo = getHttpInfo(requestData, responseData);
+  const httpInfo = getHttpInfo(requestData, responseData, truncated);
 
   const basicHttpSpan = getBasicChildSpan(
     transactionId,

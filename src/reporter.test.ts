@@ -5,8 +5,6 @@ import * as utils from './utils';
 import { AxiosMocker } from '../testUtils/axiosMocker';
 import { getEventEntitySize, getJSONBase64Size } from './utils';
 import { encode } from 'utf8';
-import { HttpSpanBuilder } from '../testUtils/httpSpanBuilder';
-import * as awsSpan from './spans/awsSpan';
 
 describe('reporter', () => {
   test('sendSingleSpan', async () => {
@@ -235,6 +233,7 @@ describe('reporter', () => {
       const dummyEnd = 'dummyEnd';
       const spans = [
         {
+          truncated: false,
           info: {
             httpInfo: {
               host: 'your.mind.com',
@@ -253,6 +252,7 @@ describe('reporter', () => {
       ];
       const expected = [
         {
+          truncated: false,
           info: {
             httpInfo: {
               host: 'your.mind.com',
@@ -294,6 +294,7 @@ describe('reporter', () => {
                 body: '{"secret": "secret"}',
               },
               response: {
+                truncated: true,
                 headers: { Peter: 'Parker', 'content-type': 'application/json' },
                 body: `{"a":"${manyA}","b":"${manyA}","key":"${manyA}","password":"${manyA}","e":"${manyA}","secret":"${manyA}","f":"${manyA}","g":"${manyA}","h":"${manyManyA}"`,
               },
@@ -313,6 +314,7 @@ describe('reporter', () => {
                 host: 'your.mind.com',
               },
               response: {
+                truncated: true,
                 body: `{"a":"${manyA}","b":"${manyA}","key":"****","password":"****","e":"${manyA}","secret":"****","f":"${manyA}","g":"${manyA}","h":"${manyManyA}"}`,
                 headers: '{"Peter":"Parker","content-type":"application/json"}',
               },
@@ -477,6 +479,7 @@ describe('reporter', () => {
       const dummyEnd = 'dummyEnd';
       const spansSuccess = [
         {
+          truncated: false,
           info: {
             httpInfo: {
               host: 'your.mind.com',

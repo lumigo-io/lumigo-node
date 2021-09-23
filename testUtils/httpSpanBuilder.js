@@ -172,7 +172,7 @@ export class HttpSpanBuilder {
   };
 
   withNoResponse = () => {
-    this._span.info.httpInfo.response = {};
+    this._span.info.httpInfo.response = { truncated: false};
     return this;
   };
 
