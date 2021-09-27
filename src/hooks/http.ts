@@ -264,7 +264,6 @@ export class Http {
     response
   ) {
     let body = '';
-    // todo: will never double size due to error?
     let payloadSize = getEventEntitySize(true);
     return function (args) {
       GlobalDurationTimer.start();
