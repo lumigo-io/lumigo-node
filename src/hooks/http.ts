@@ -265,7 +265,7 @@ export class Http {
   ) {
     let body = '';
     // todo: will never double size due to error?
-    let payloadSize = getEventEntitySize();
+    let payloadSize = getEventEntitySize(true);
     return function (args) {
       GlobalDurationTimer.start();
       const receivedTime = new Date().getTime();
@@ -281,10 +281,14 @@ export class Http {
         body += chunk;
       }
       if (args[0] === 'end') {
+        let maxSizeNoErrors = getEventEntitySize();
         const responseData = {
           statusCode,
           receivedTime,
-          body,
+          body:
+            statusCode < 400 && body.length > maxSizeNoErrors
+              ? body.substr(0, maxSizeNoErrors)
+              : body,
           headers: lowerCaseObjectKeys(headers),
         };
         const httpSpan = getHttpSpan(

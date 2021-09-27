@@ -58,9 +58,7 @@ const isJsonContent = (payload: any, headers: Object) => {
 function scrub(payload: any, headers: any, sizeLimit: number, truncated = false): string {
   try {
     if (isJsonContent(payload, headers)) {
-      if (truncated) {
-        payload = untruncateJson(payload);
-      }
+      if (truncated) payload = untruncateJson(payload);
       return payloadStringify(JSON.parse(payload), sizeLimit);
     } else {
       return payloadStringify(payload, sizeLimit);
