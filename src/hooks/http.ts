@@ -205,7 +205,7 @@ export class Http {
         currentSpan
       );
       extender.hook(clientRequest, 'emit', { beforeHook: emitWrapper });
-
+      // todo: cut size here also
       const writeWrapper = Http.httpRequestWriteBeforeHookWrapper(requestData, currentSpan);
       extender.hook(clientRequest, 'write', { beforeHook: writeWrapper });
     }
@@ -264,15 +264,17 @@ export class Http {
     response
   ) {
     let body = '';
-    let payloadSize = getEventEntitySize(true);
+    let maxPayloadSize = getEventEntitySize(true);
     return function (args) {
       GlobalDurationTimer.start();
       const receivedTime = new Date().getTime();
       let truncated = false;
       const { headers, statusCode } = response;
-      if (args[0] === 'data' && body.length < payloadSize) {
+      // add to body only if we didnt pass the max size
+      if (args[0] === 'data' && body.length < maxPayloadSize) {
         let chunk = args[1].toString();
-        const allowedLengthToAdd = payloadSize - body.length;
+        const allowedLengthToAdd = maxPayloadSize - body.length;
+        //if we reached or close to limit get only substring of the part to reach the limit
         if (chunk.length > allowedLengthToAdd) {
           truncated = true;
           chunk = chunk.substr(0, allowedLengthToAdd);
@@ -285,7 +287,7 @@ export class Http {
           statusCode,
           receivedTime,
           body:
-            statusCode < 400 && body.length > maxSizeNoErrors
+            statusCode < 400 && body.length > maxSizeNoErrors // if there are no errors cut the size to max allowed with no errors
               ? body.substr(0, maxSizeNoErrors)
               : body,
           headers: lowerCaseObjectKeys(headers),
