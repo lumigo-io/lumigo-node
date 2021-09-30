@@ -70,8 +70,8 @@ function scrub(payload: any, headers: any, sizeLimit: number, truncated = false)
 
 function scrubSpans(resultSpans: any[]) {
   resultSpans.forEach((span) => {
-    if (span.info && span.info.httpInfo) {
-      const { request, response, host } = span.info?.httpInfo;
+    if (span.info?.httpInfo) {
+      const { request, response, host } = span.info.httpInfo;
       if (
         shouldScrubDomain(host) ||
         (request.host && shouldScrubDomain(request.host)) ||
