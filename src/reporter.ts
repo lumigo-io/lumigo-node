@@ -42,7 +42,7 @@ export const sendSpans = async (spans: any[]): Promise<void> => {
   const roundTripEnd = Date.now();
   const rtt = roundTripEnd - roundTripStart;
 
-  logSpans(rtt, spans.slice(Math.min(25, spans.length)));
+  logSpans(rtt, spans);
 };
 
 export const shouldTrim = (spans, maxSendBytes: number): boolean => {
@@ -108,6 +108,7 @@ function scrubSpans(resultSpans: any[]) {
   });
 }
 
+// We muted the spans itself to keep the memory footprint of the tracer to a minimum
 export const forgeAndScrubRequestBody = (spans, maxSendBytes): string | undefined => {
   const start = new Date().getTime();
   const originalSize = spans.length;
