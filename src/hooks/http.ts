@@ -31,19 +31,19 @@ import { runOneTimeWrapper } from '../utils/functionUtils';
 export const hostBlaclist = new Set(['127.0.0.1']);
 
 export type Agent = {
-  defaultPort: number,
+  defaultPort: number;
 };
 
 export type ParseHttpRequestOptions = {
-  agent?: Agent,
-  _defaultAgent?: Agent,
+  agent?: Agent;
+  _defaultAgent?: Agent;
   // eslint-disable-next-line no-undef
-  headers?: Record<string, string>,
-  method?: 'GET' | 'POST',
-  protocol?: string,
-  path?: string,
-  port?: number,
-  defaultPort?: number,
+  headers?: Record<string, string>;
+  method?: 'GET' | 'POST';
+  protocol?: string;
+  path?: string;
+  port?: number;
+  defaultPort?: number;
 };
 
 export class Http {
@@ -53,7 +53,7 @@ export class Http {
       if (isEmptyString(requestData.body)) {
         const body = extractBodyFromEndFunc(args);
         if (body) {
-          requestData.body += body;
+          requestData.body += body.substr(0, getEventEntitySize(false));
         }
         if (currentSpan) currentSpan.info.httpInfo = getHttpInfo(requestData, {});
       }
@@ -349,7 +349,7 @@ export class Http {
         if (isEmptyString(requestData.body)) {
           const body = extractBodyFromEmitSocketEvent(args[1]);
           if (body) {
-            requestData.body += body;
+            requestData.body += body.substr(0, getEventEntitySize(false));
             if (currentSpan) currentSpan.info.httpInfo = getHttpInfo(requestData, {});
           }
         }
