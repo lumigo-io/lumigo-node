@@ -31,19 +31,19 @@ import { runOneTimeWrapper } from '../utils/functionUtils';
 export const hostBlaclist = new Set(['127.0.0.1']);
 
 export type Agent = {
-  defaultPort: number;
+  defaultPort: number,
 };
 
 export type ParseHttpRequestOptions = {
-  agent?: Agent;
-  _defaultAgent?: Agent;
+  agent?: Agent,
+  _defaultAgent?: Agent,
   // eslint-disable-next-line no-undef
-  headers?: Record<string, string>;
-  method?: 'GET' | 'POST';
-  protocol?: string;
-  path?: string;
-  port?: number;
-  defaultPort?: number;
+  headers?: Record<string, string>,
+  method?: 'GET' | 'POST',
+  protocol?: string,
+  path?: string,
+  port?: number,
+  defaultPort?: number,
 };
 
 export class Http {
@@ -195,7 +195,6 @@ export class Http {
     } = extenderContext;
     if (!isTracedDisabled) {
       const endWrapper = Http.httpRequestEndWrapper(requestData, currentSpan);
-      extender.hook(clientRequest, 'end', { beforeHook: endWrapper });
 
       const emitWrapper = Http.httpRequestEmitBeforeHookWrapper(
         transactionId,
@@ -204,9 +203,11 @@ export class Http {
         requestRandomId,
         currentSpan
       );
-      extender.hook(clientRequest, 'emit', { beforeHook: emitWrapper });
-      // todo: cut size here also
+
       const writeWrapper = Http.httpRequestWriteBeforeHookWrapper(requestData, currentSpan);
+
+      extender.hook(clientRequest, 'end', { beforeHook: endWrapper });
+      extender.hook(clientRequest, 'emit', { beforeHook: emitWrapper });
       extender.hook(clientRequest, 'write', { beforeHook: writeWrapper });
     }
   }
@@ -332,10 +333,13 @@ export class Http {
     requestRandomId,
     currentSpan
   ) {
-    const oneTimerEmitResponseHandler = runOneTimeWrapper(
-      Http.createEmitResponseHandler(transactionId, awsRequestId, requestData, requestRandomId),
-      {}
+    const emitResponseHandler = Http.createEmitResponseHandler(
+      transactionId,
+      awsRequestId,
+      requestData,
+      requestRandomId
     );
+    const oneTimerEmitResponseHandler = runOneTimeWrapper(emitResponseHandler, {});
     return function (args) {
       GlobalDurationTimer.start();
       if (args[0] === 'response') {
