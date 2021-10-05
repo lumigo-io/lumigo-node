@@ -1,17 +1,11 @@
 import * as awsSpan from './awsSpan';
-import {
-  EXECUTION_TAGS_KEY,
-  getEventEntitySize,
-  parseErrorObject,
-  LUMIGO_MAX_ENTRY_SIZE,
-} from '../utils';
+import { EXECUTION_TAGS_KEY, getEventEntitySize, parseErrorObject } from '../utils';
 import MockDate from 'mockdate';
 import { TracerGlobals } from '../globals';
 import * as awsParsers from '../parsers/aws';
 import * as utils from '../utils';
 import { payloadStringify } from '../utils/payloadStringify';
 import { decodeHttpBody, HTTP_SPAN } from './awsSpan';
-import { HttpSpanBuilder } from '../../testUtils/httpSpanBuilder';
 import { HandlerInputesBuilder } from '../../testUtils/handlerInputesBuilder';
 import { encode } from 'utf8';
 
@@ -560,148 +554,6 @@ describe('awsSpan', () => {
     expect(awsParsers.awsParser).toHaveBeenCalledWith(requestData, responseData);
   });
 
-  test('getHttpInfo', () => {
-    const requestData = {
-      host: 'your.mind.com',
-      headers: { Tyler: 'Durden', secretKey: 'lumigo' },
-      body: 'the first rule of fight club',
-    };
-    const responseData = {
-      headers: { Peter: 'Parker' },
-      body: 'Well, Tony is dead.',
-    };
-    const expected = {
-      host: 'your.mind.com',
-      request: {
-        body: '"the first rule of fight club"',
-        headers: '{"Tyler":"Durden","secretKey":"****"}',
-        host: 'your.mind.com',
-      },
-      response: {
-        body: '"Well, Tony is dead."',
-        headers: '{"Peter":"Parker"}',
-      },
-    };
-
-    expect(awsSpan.getHttpInfo(requestData, responseData)).toEqual(expected);
-
-    const scrubbedExpected = {
-      host: 'your.mind.com',
-      request: {
-        body: 'The data is not available',
-        host: 'your.mind.com',
-      },
-      response: {
-        body: 'The data is not available',
-      },
-    };
-
-    process.env.LUMIGO_DOMAINS_SCRUBBER = '["mind"]';
-    expect(awsSpan.getHttpInfo(requestData, responseData)).toEqual(scrubbedExpected);
-  });
-  test('getHttpInfo long response', () => {
-    const requestData = {
-      host: 'your.mind.com',
-      headers: { Tyler: 'Durden', secretKey: 'lumigo', 'content-type': 'application/json' },
-      body: '{"secret": "secret"}',
-    };
-    let manyA = 'a'.repeat(88);
-    let manyManyA = 'a'.repeat(1268);
-    const responseData = {
-      headers: { Peter: 'Parker', 'content-type': 'application/json' },
-      body: `{"a":"${manyA}","b":"${manyA}","key":"${manyA}","password":"${manyA}","e":"${manyA}","secret":"${manyA}","f":"${manyA}","g":"${manyA}","h":"${manyManyA}"`,
-    };
-    const expected = {
-      host: 'your.mind.com',
-      request: {
-        body: '{"secret":"****"}',
-        headers: '{"Tyler":"Durden","secretKey":"****","content-type":"application/json"}',
-        host: 'your.mind.com',
-      },
-      response: {
-        body: `{"a":"${manyA}","b":"${manyA}","key":"****","password":"****","e":"${manyA}","secret":"****","f":"${manyA}","g":"${manyA}","h":"${manyManyA}"}`,
-        headers: '{"Peter":"Parker","content-type":"application/json"}',
-      },
-    };
-    expect(awsSpan.getHttpInfo(requestData, responseData)).toEqual(expected);
-  });
-
-  test('getHttpInfo long request', () => {
-    let manyA = 'a'.repeat(1000 * 1000);
-    const requestData = {
-      host: 'your.mind.com',
-      headers: { Tyler: 'Durden', secretKey: 'lumigo', 'content-type': 'application/json' },
-      body: `{"a": "${manyA}"`,
-    };
-    const responseData = {
-      headers: { Peter: 'Parker', 'content-type': 'application/json' },
-      body: '{"secret": "secret"}',
-    };
-    const expected = {
-      host: 'your.mind.com',
-      request: {
-        body: `{"a":"${'a'.repeat(LUMIGO_MAX_ENTRY_SIZE)}"}...[too long]`,
-        headers: '{"Tyler":"Durden","secretKey":"****","content-type":"application/json"}',
-        host: 'your.mind.com',
-      },
-      response: {
-        body: '{"secret":"****"}',
-        headers: '{"Peter":"Parker","content-type":"application/json"}',
-      },
-    };
-    expect(awsSpan.getHttpInfo(requestData, responseData)).toEqual(expected);
-  });
-
-  test('getHttpInfo short response', () => {
-    const requestData = {
-      host: 'your.mind.com',
-      headers: { Tyler: 'Durden', secretKey: 'lumigo' },
-      body: 'the first rule of fight club',
-    };
-    const responseData = {
-      headers: { Peter: 'Parker', 'content-type': 'application/json' },
-      body: '{"secret": "abcd"}',
-    };
-    const expected = {
-      host: 'your.mind.com',
-      request: {
-        body: '"the first rule of fight club"',
-        headers: '{"Tyler":"Durden","secretKey":"****"}',
-        host: 'your.mind.com',
-      },
-      response: {
-        body: '{"secret":"****"}',
-        headers: '{"Peter":"Parker","content-type":"application/json"}',
-      },
-    };
-    expect(awsSpan.getHttpInfo(requestData, responseData)).toEqual(expected);
-  });
-  test('getHttpInfo => decode utf-8', () => {
-    const requestData = {
-      host: 'your.mind.com',
-      headers: { Tyler: 'Durden', secretKey: 'lumigo' },
-      body: 'the first rule of fight club',
-    };
-    const responseData = {
-      headers: { Peter: 'Parker' },
-      body: encode('Well, Tony is dead.'),
-    };
-    const expected = {
-      host: 'your.mind.com',
-      request: {
-        body: '"the first rule of fight club"',
-        headers: '{"Tyler":"Durden","secretKey":"****"}',
-        host: 'your.mind.com',
-      },
-      response: {
-        body: '"Well, Tony is dead."',
-        headers: '{"Peter":"Parker"}',
-      },
-    };
-
-    expect(awsSpan.getHttpInfo(requestData, responseData)).toEqual(expected);
-  });
-
   test('getBasicChildSpan', () => {
     const id = 'not-a-random-id';
     const awsRequestId = '6d26e3c8-60a6-4cee-8a70-f525f47a4caf';
@@ -806,14 +658,15 @@ describe('awsSpan', () => {
         httpInfo: {
           host: 'your.mind.com',
           request: {
-            body: '"the first rule of fight club"',
-            headers: '{"Tyler":"Durden"}',
+            body: 'the first rule of fight club',
+            headers: { Tyler: 'Durden' },
             host: 'your.mind.com',
             sendTime: 1234,
           },
           response: {
-            body: '"Well, Tony is dead."',
-            headers: '{"Peter":"Parker"}',
+            truncated: false,
+            body: 'Well, Tony is dead.',
+            headers: { Peter: 'Parker' },
             receivedTime: 1256,
             statusCode: 200,
           },
@@ -859,53 +712,6 @@ describe('awsSpan', () => {
     expect(result).toEqual(expected);
   });
 
-  test('getHttpSpan - response with error should double payload size', () => {
-    const id = 'not-a-random-id';
-    const transcationId = HttpSpanBuilder.DEFAULT_TRANSACTION_ID;
-    const sendTime = 1234;
-    const receivedTime = 1256;
-    const longString = 'a'.repeat(getEventEntitySize() * 2);
-    const requestData = {
-      host: 'your.mind.com',
-      headers: { longString },
-      body: longString,
-      sendTime,
-    };
-    const responseDataSuccess = {
-      headers: { longString },
-      body: longString,
-      statusCode: 200,
-      receivedTime,
-    };
-    const responseDataFailed = {
-      headers: { longString },
-      body: longString,
-      statusCode: 404,
-      receivedTime,
-    };
-
-    const spanSuccess = awsSpan.getHttpSpan(
-      transcationId,
-      id,
-      id,
-      requestData,
-      responseDataSuccess
-    );
-    const spanError = awsSpan.getHttpSpan(transcationId, id, id, requestData, responseDataFailed);
-    expect(spanError.info.httpInfo.request.body.length).toBeGreaterThan(
-      spanSuccess.info.httpInfo.request.body.length * 1.8 + 1
-    );
-    expect(spanError.info.httpInfo.request.headers.length).toBeGreaterThan(
-      spanSuccess.info.httpInfo.request.headers.length * 1.8 + 1
-    );
-    expect(spanError.info.httpInfo.response.body.length).toBeGreaterThan(
-      spanSuccess.info.httpInfo.response.body.length * 1.8 + 1
-    );
-    expect(spanError.info.httpInfo.response.headers.length).toBeGreaterThan(
-      spanSuccess.info.httpInfo.response.headers.length * 1.8 + 1
-    );
-  });
-
   test('getHttpSpan - only for request data', () => {
     const id = 'not-a-random-id';
     const sendTime = 1234;
@@ -925,12 +731,14 @@ describe('awsSpan', () => {
         httpInfo: {
           host: 'your.mind.com',
           request: {
-            body: '"the first rule of fight club"',
-            headers: '{"Tyler":"Durden"}',
+            body: 'the first rule of fight club',
+            headers: { Tyler: 'Durden' },
             host: 'your.mind.com',
             sendTime: 1234,
           },
-          response: {},
+          response: {
+            truncated: false,
+          },
         },
         logGroupName: '/aws/lambda/aws-nodejs-dev-hello',
         logStreamName: '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',
@@ -987,12 +795,14 @@ describe('awsSpan', () => {
         httpInfo: {
           host: 'your.mind.com',
           request: {
-            body: '"the first rule of fight club"',
-            headers: '{"Tyler":"Durden"}',
+            body: 'the first rule of fight club',
+            headers: { Tyler: 'Durden' },
             host: 'your.mind.com',
             sendTime: 1234,
           },
-          response: {},
+          response: {
+            truncated: false,
+          },
         },
         logGroupName: '/aws/lambda/aws-nodejs-dev-hello',
         logStreamName: '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',

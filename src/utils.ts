@@ -418,7 +418,7 @@ export const spanHasErrors = (span) =>
       span.info.httpInfo &&
       span.info.httpInfo.response &&
       span.info.httpInfo.response.statusCode &&
-      span.info.httpInfo.response.statusCode > 400)
+      span.info.httpInfo.response.statusCode >= 400)
   );
 
 export const getEdgeUrl = (): EdgeUrl => {
