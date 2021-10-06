@@ -6,7 +6,7 @@ const MAX_TAGS = 50;
 const MAX_TAG_KEY_LEN = 50;
 const MAX_TAG_VALUE_LEN = 70;
 const ADD_TAG_ERROR_MSG_PREFIX = 'Skipping addExecutionTag: Unable to add tag';
-export const DEFAULT_MAX_SIZE_FOR_REQUEST = 1000 * 1000;
+export const DEFAULT_MAX_SIZE_FOR_REQUEST = 1024 * 500;
 export const DEFAULT_TRACER_TIMEOUT = 500;
 
 export const SpansContainer = (() => {
