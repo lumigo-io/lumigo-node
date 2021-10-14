@@ -57,4 +57,11 @@ export const hookRedis = (redisLib) => {
       beforeHook: sendCommandBeforeHook,
     });
   }
+  const ioredis = redisLib || safeRequire('ioredis');
+  if (ioredis) {
+    logger.info('Starting to instrument ioredis');
+    hook(ioredis.prototype, 'sendCommand', {
+      beforeHook: sendCommandBeforeHook,
+    });
+  }
 };
