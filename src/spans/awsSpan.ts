@@ -33,7 +33,7 @@ import { HttpInfo } from '../types/spans/httpSpan';
 import { BasicSpan, SpanInfo } from '../types/spans/basicSpan';
 import { FunctionSpan } from '../types/spans/functionSpan';
 import { Context } from 'aws-lambda';
-import { decode } from 'utf8';
+import { Utf8Utils } from '../utils/utf8Utils';
 
 export const HTTP_SPAN = 'http';
 export const FUNCTION_SPAN = 'function';
@@ -233,7 +233,7 @@ export const getAwsServiceData = (requestData, responseData) => {
 
 export const decodeHttpBody = (httpBody: any, hasError: boolean): any | string => {
   if (isString(httpBody) && httpBody.length < getEventEntitySize(hasError)) {
-    return decode(httpBody);
+    return Utf8Utils.safeDecode(httpBody);
   }
   return httpBody;
 };

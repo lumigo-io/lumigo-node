@@ -5,6 +5,7 @@ import {
   isPruneTraceOff,
   isSendOnlyIfErrors,
   isString,
+  safeExecute,
   shouldScrubDomain,
   spanHasErrors,
 } from './utils';
@@ -33,7 +34,7 @@ export const sendSpans = async (spans: any[]): Promise<void> => {
     logger.debug('No Spans was sent, `SEND_ONLY_IF_ERROR` is on and no span has error');
     return;
   }
-  const reqBody = forgeAndScrubRequestBody(spans, getMaxRequestSize());
+  const reqBody = safeExecute(forgeAndScrubRequestBody)(spans, getMaxRequestSize());
 
   const roundTripStart = Date.now();
   if (reqBody) {
@@ -42,7 +43,7 @@ export const sendSpans = async (spans: any[]): Promise<void> => {
   const roundTripEnd = Date.now();
   const rtt = roundTripEnd - roundTripStart;
 
-  logSpans(rtt, spans);
+  safeExecute(logSpans)(rtt, spans);
 };
 
 export const shouldTrim = (spans, maxSendBytes: number): boolean => {
