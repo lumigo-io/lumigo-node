@@ -82,17 +82,15 @@ export class HttpSpanBuilder {
     };
   }
 
-  static parseHeaders = headers => payloadStringify(lowerCaseObjectKeys(headers));
+  static parseHeaders = headers => lowerCaseObjectKeys(headers);
 
   static parseBody = body => {
     if (!body) body = '';
-    return payloadStringify(body);
+    return body;
   };
 
   static addHeader = (headers, obj) => {
-    let newHeaders = JSON.parse(headers);
-    newHeaders = { ...newHeaders, ...obj };
-    return JSON.stringify(newHeaders);
+    return { ...headers, ...obj };
   };
 
   withSpanId = spanId => {
@@ -174,7 +172,7 @@ export class HttpSpanBuilder {
   };
 
   withNoResponse = () => {
-    this._span.info.httpInfo.response = {};
+    this._span.info.httpInfo.response = { truncated: false};
     return this;
   };
 

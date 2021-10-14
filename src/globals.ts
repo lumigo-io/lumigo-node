@@ -1,19 +1,24 @@
 import * as logger from './logger';
 import { GlobalDurationTimer } from './utils/globalDurationTimer';
 import { LambdaContext } from './types/aws/awsEnvironment';
+import { getJSONBase64Size, getMaxRequestSize, spanHasErrors } from './utils';
 const MAX_TAGS = 50;
 const MAX_TAG_KEY_LEN = 50;
 const MAX_TAG_VALUE_LEN = 70;
 const ADD_TAG_ERROR_MSG_PREFIX = 'Skipping addExecutionTag: Unable to add tag';
-export const DEFAULT_MAX_SIZE_FOR_REQUEST = 1000 * 1000;
+export const DEFAULT_MAX_SIZE_FOR_REQUEST = 1024 * 500;
 export const DEFAULT_TRACER_TIMEOUT = 500;
 
 export const SpansContainer = (() => {
   let spansToSend = {};
-
+  let totalSize = 0;
   const addSpan = (span) => {
-    spansToSend[span.id] = span;
-    logger.debug('Span created', span);
+    // Memory optimization
+    if (spanHasErrors(span) || getMaxRequestSize() > totalSize) {
+      spansToSend[span.id] = span;
+      totalSize += getJSONBase64Size(span);
+      logger.debug('Span created', span);
+    }
   };
   const getSpans = () => Object.values(spansToSend);
   const getSpanById = (spanId) => spansToSend[spanId];

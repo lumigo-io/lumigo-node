@@ -8,12 +8,10 @@ import {
   getAWSEnvironment,
   isAwsService,
   parseErrorObject,
-  shouldScrubDomain,
   getInvokedArn,
   getInvokedVersion,
   EXECUTION_TAGS_KEY,
   getEventEntitySize,
-  safeGet,
   isString,
 } from '../utils';
 import {
@@ -30,13 +28,12 @@ import { TracerGlobals, ExecutionTags } from '../globals';
 import { getEventInfo } from '../events';
 import { getSkipScrubPath, parseEvent } from '../parsers/eventParser';
 import * as logger from '../logger';
-import { keyToOmitRegexes, payloadStringify, prune } from '../utils/payloadStringify';
+import { payloadStringify, prune } from '../utils/payloadStringify';
 import { HttpInfo } from '../types/spans/httpSpan';
 import { BasicSpan, SpanInfo } from '../types/spans/basicSpan';
 import { FunctionSpan } from '../types/spans/functionSpan';
 import { Context } from 'aws-lambda';
 import { decode } from 'utf8';
-import untruncateJson from '../tools/untrancateJson';
 
 export const HTTP_SPAN = 'http';
 export const FUNCTION_SPAN = 'function';
@@ -233,14 +230,6 @@ export const getAwsServiceData = (requestData, responseData) => {
       return awsParser(requestData, responseData);
   }
 };
-const isJsonContent = (payload: any, headers: Object) => {
-  return isString(payload) && headers['content-type'] === 'application/json';
-};
-
-export const isContainingSecrets = (body: string): boolean => {
-  const regexes = keyToOmitRegexes();
-  return regexes.some((regex) => regex.test(body));
-};
 
 export const decodeHttpBody = (httpBody: any, hasError: boolean): any | string => {
   if (isString(httpBody) && httpBody.length < getEventEntitySize(hasError)) {
@@ -249,51 +238,11 @@ export const decodeHttpBody = (httpBody: any, hasError: boolean): any | string =
   return httpBody;
 };
 
-const isErrorResponse = (response: any) => safeGet(response, ['statusCode'], 200) >= 400;
-
-function scrub(payload, headers, sizeLimit: number): string {
-  if (isJsonContent(payload, headers) && isContainingSecrets(payload)) {
-    if (!(payload.length < sizeLimit)) {
-      payload = untruncateJson(payload);
-    }
-    return payloadStringify(JSON.parse(payload), sizeLimit);
-  } else {
-    return payloadStringify(payload, sizeLimit);
-  }
-}
-
-export const getHttpInfo = (requestData, responseData): HttpInfo => {
-  const isError = isErrorResponse(responseData);
-  const sizeLimit = getEventEntitySize(isError);
+export const getHttpInfo = (requestData, responseData, truncated = false): HttpInfo => {
   const { host } = requestData;
-  try {
-    const request = Object.assign({}, requestData);
-    const response = Object.assign({}, responseData);
-    if (
-      shouldScrubDomain(host) ||
-      (request.host && shouldScrubDomain(request.host)) ||
-      (response.host && shouldScrubDomain(response.host))
-    ) {
-      request.body = 'The data is not available';
-      response.body = 'The data is not available';
-      delete request.headers;
-      delete response.headers;
-      delete request.uri;
-    } else {
-      if (response.body) response.body = scrub(response.body, response.headers, sizeLimit);
-      request.body = scrub(decodeHttpBody(request.body, isError), request.headers, sizeLimit);
-      request.headers = payloadStringify(request.headers, sizeLimit);
-      if (response.headers) response.headers = payloadStringify(response.headers, sizeLimit);
-    }
-    return { host, request, response };
-  } catch (e) {
-    logger.warn('Failed to scrub & stringify http data', e.message);
-    return {
-      host,
-      request: payloadStringify(requestData, sizeLimit),
-      response: payloadStringify(responseData, sizeLimit),
-    };
-  }
+  const request = Object.assign({}, requestData);
+  const response = Object.assign({ truncated }, responseData);
+  return { host, request, response };
 };
 
 export const getBasicChildSpan = (transactionId, awsRequestId, spanId, spanType) => {
@@ -321,7 +270,8 @@ export const getHttpSpan = (
   awsRequestId,
   randomRequestId,
   requestData,
-  responseData = null
+  responseData = null,
+  truncated = false
 ) => {
   let serviceData = {};
   try {
@@ -335,7 +285,7 @@ export const getHttpSpan = (
   const { awsServiceData, spanId } = serviceData;
 
   const prioritizedSpanId = getHttpSpanId(randomRequestId, spanId);
-  const httpInfo = getHttpInfo(requestData, responseData);
+  const httpInfo = getHttpInfo(requestData, responseData, truncated);
 
   const basicHttpSpan = getBasicChildSpan(
     transactionId,
