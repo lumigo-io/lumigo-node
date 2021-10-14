@@ -21,7 +21,7 @@ service: aws-nodejs # NOTE: update this with your service name
 
 provider:
   name: aws
-  runtime: nodejs12.x
+  runtime: nodejs10.x
   env:
     LUMIGO_DEBUG: TRUE
 
@@ -51,35 +51,8 @@ provider:
 #    - exclude-me-dir/**
 
 functions:
-  dynamodb-function:
-    handler: dynamodb.handler
-    environment:
-      LUMIGO_CONNECTION_TIMEOUT: 3000
-  mongodb-4_1_2-function:
-    environment:
-      LUMIGO_CONNECTION_TIMEOUT: 3000
-    timeout: 30
-    handler: mongodb.handler
-  mysql-function:
-    environment:
-      LUMIGO_CONNECTION_TIMEOUT: 3000
-    timeout: 30
-    handler: mysql.handler
-  mysql2-function:
-    environment:
-      LUMIGO_CONNECTION_TIMEOUT: 3000
-    timeout: 30
-    handler: mysql2.handler
-  redis-function:
-    environment:
-      LUMIGO_CONNECTION_TIMEOUT: 3000
-    timeout: 30
-    handler: redis.handler
-  sequelize-function:
-    environment:
-      LUMIGO_CONNECTION_TIMEOUT: 3000
-    timeout: 30
-    handler: sequelize.handler
+  test-function:
+    handler: index.handler
 
 
 #    The following are a few example events you can configure
