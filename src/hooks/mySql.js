@@ -25,12 +25,12 @@ const createResultHook = (currentSpan) => (args) => {
 };
 
 function extractQueryFromArg(arg) {
-  if(isObject(arg)){
-    return arg['sql'] || "unknown"
-  } else if(isString(arg)) {
+  if (isObject(arg)) {
+    return arg['sql'] || 'unknown';
+  } else if (isString(arg)) {
     return arg;
   } else {
-    return "unknown"
+    return 'unknown';
   }
 }
 

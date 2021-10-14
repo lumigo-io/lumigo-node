@@ -1,4 +1,10 @@
-import { isSwitchedOff, isAwsEnvironment, isLambdaWrapped, setLambdaWrapped, safeExecute } from '../utils';
+import {
+  isSwitchedOff,
+  isAwsEnvironment,
+  isLambdaWrapped,
+  setLambdaWrapped,
+  safeExecute,
+} from '../utils';
 import { hookMongoDb } from './mongodb';
 import { hookRedis } from './redis';
 import { hookPg } from './pg';
