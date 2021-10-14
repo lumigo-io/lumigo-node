@@ -1,7 +1,7 @@
 import { safeRequire } from '../utils/requireUtils';
 import * as logger from '../logger';
 import { hook } from '../extender';
-import { getRandomId } from '../utils';
+import { getRandomId, isObject } from '../utils';
 import { SpansContainer, TracerGlobals } from '../globals';
 import { extendSqlSpan, createSqlSpan } from '../spans/sqlSpan';
 import { payloadStringify } from '../utils/payloadStringify';
@@ -24,10 +24,18 @@ const createResultHook = (currentSpan) => (args) => {
   SpansContainer.addSpan(extendedSpan);
 };
 
+function extractQueryFromArg(arg) {
+  if (isObject(arg)) {
+    return arg['sql'] || 'unknown';
+  } else {
+    return arg;
+  }
+}
+
 function queryBeforeHook(args, extenderContext) {
   const awsRequestId = TracerGlobals.getHandlerInputs().context.awsRequestId;
   const transactionId = getCurrentTransactionId();
-  const query = args[0];
+  const query = extractQueryFromArg(args[0]);
   const values = Array.isArray(args[1]) ? args[1] : [];
   const connectionParameters = this.config;
 

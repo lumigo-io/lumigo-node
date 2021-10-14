@@ -314,6 +314,10 @@ export function isString(x: any): x is string {
   return Object.prototype.toString.call(x) === '[object String]';
 }
 
+export function isObject(a: any): a is object {
+  return !!a && a.constructor === Object;
+}
+
 export const LUMIGO_MAX_ENTRY_SIZE = 2048;
 
 export const getEventEntitySize = (hasError = false) => {
