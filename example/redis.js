@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 const Redis = require('ioredis');
 const redis = new Redis(
-  'redis://:p12869d74239d911d50952b9f8346ff1c78c453d5a1867e45e2627c359694e244@ec2-54-88-120-4.compute-1.amazonaws.com:22270',
+  'url',
   {
     tls: {
       rejectUnauthorized: false,

@@ -9,8 +9,7 @@ const lumigo = require('@lumigo/tracer')({
   edgeHost: 'tracer-edge.internal-monitoring.golumigo.com',
 });
 
-const uri =
-  'mongodb+srv://dbUser:lumigoFree@cluster0.obd2g.mongodb.net/myFirstDatabase?retryWrites=true&w=majority';
+const uri = 'uri';
 const client = new MongoClient(uri);
 const handler = async () => {
   await client.connect();

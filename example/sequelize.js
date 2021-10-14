@@ -7,8 +7,8 @@ const lumigo = require('@lumigo/tracer')({
   debug,
   edgeHost: 'tracer-edge.internal-monitoring.golumigo.com',
 });
-const connection = new Sequelize("cd78s0fhvb2w82i9", "ubgeb9bo2cfatukc", "eqey4j86qz7ro086", {
-  host: 'nnsgluut5mye50or.cbetxkdyhwsb.us-east-1.rds.amazonaws.com',
+const connection = new Sequelize("host", "user", "password", {
+  host: 'host',
   dialect: 'mysql',
   "dialectOptions": {
     "decimalNumbers": true

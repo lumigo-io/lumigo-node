@@ -12,10 +12,10 @@ const lumigo = require('@lumigo/tracer')({
 async function mysqlFunction() {
 
   var connection = mysql.createConnection({
-    host: 'nnsgluut5mye50or.cbetxkdyhwsb.us-east-1.rds.amazonaws.com',
-    user: 'ubgeb9bo2cfatukc',
-    password: 'eqey4j86qz7ro086',
-    database: 'cd78s0fhvb2w82i9',
+    host: 'host',
+    user: 'user',
+    password: 'password',
+    database: 'database',
   });
 
   const results = await connection.promise().query("SELECT * FROM customers");
