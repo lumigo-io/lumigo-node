@@ -1,7 +1,7 @@
 import { safeRequire } from '../utils/requireUtils';
 import * as logger from '../logger';
 import { hook } from '../extender';
-import { getRandomId, isObject, isString } from '../utils';
+import { getRandomId, isObject } from '../utils';
 import { SpansContainer, TracerGlobals } from '../globals';
 import { extendSqlSpan, createSqlSpan } from '../spans/sqlSpan';
 import { payloadStringify } from '../utils/payloadStringify';
@@ -27,10 +27,8 @@ const createResultHook = (currentSpan) => (args) => {
 function extractQueryFromArg(arg) {
   if (isObject(arg)) {
     return arg['sql'] || 'unknown';
-  } else if (isString(arg)) {
-    return arg;
   } else {
-    return 'unknown';
+    return arg;
   }
 }
 
