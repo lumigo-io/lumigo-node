@@ -29,7 +29,6 @@ async function mysqlFunction() {
 }
 
 const handler = async () => {
-  mysqlFunction();
+  await mysqlFunction();
 };
-
 exports.handler = lumigo.trace(handler);

@@ -21,7 +21,6 @@ service: aws-nodejs # NOTE: update this with your service name
 
 provider:
   name: aws
-  region: us-west-2
   runtime: nodejs12.x
   env:
     LUMIGO_DEBUG: TRUE
@@ -76,6 +75,11 @@ functions:
       LUMIGO_CONNECTION_TIMEOUT: 3000
     timeout: 30
     handler: redis.handler
+  sequelize-function:
+    environment:
+      LUMIGO_CONNECTION_TIMEOUT: 3000
+    timeout: 30
+    handler: sequelize.handler
 
 
 #    The following are a few example events you can configure
