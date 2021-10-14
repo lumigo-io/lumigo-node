@@ -8,6 +8,7 @@ import {
   safeExecute,
   recursiveGetKey,
   md5Hash,
+  isObject,
   safeGet,
   isDebug,
   DEFAULT_CONNECTION_TIMEOUT,
@@ -69,6 +70,16 @@ describe('utils', () => {
       version: '1.2.3',
     });
   });
+
+  test('isObject', ()=>{
+    expect(isObject([])).toEqual(false)
+    expect(isObject(true)).toEqual(false)
+    expect(isObject(undefined)).toEqual(false)
+    expect(isObject(null)).toEqual(false)
+    expect(isObject(43)).toEqual(false)
+    expect(isObject("text")).toEqual(false)
+    expect(isObject({})).toEqual(true)
+  })
 
   test('getTraceId', () => {
     const awsXAmznTraceId =
