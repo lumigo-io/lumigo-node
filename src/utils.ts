@@ -341,6 +341,10 @@ export const parseErrorObject = (err) => ({
   stacktrace: err && err.stack,
 });
 
+export function isObject(a: any): a is object {
+  return !!a && a.constructor === Object;
+}
+
 export const lowerCaseObjectKeys = (o) =>
   o ? Object.keys(o).reduce((c, k) => ((c[k.toLowerCase()] = o[k]), c), {}) : {};
 
