@@ -461,13 +461,13 @@ export const parseJsonFromEnvVar = (envVar, warnClient = false): {} | undefined 
   return undefined;
 };
 
-export const safeExecute = (
+export function safeExecute<T>(
   callback: Function,
   message: string = 'Error in Lumigo tracer',
   logLevel: string = logger.LOG_LEVELS.WARNING,
-  defaultReturn: any = undefined
-): Function =>
-  function (...args) {
+  defaultReturn: T = undefined
+): Function {
+  return function (...args) {
     try {
       return callback.apply(this, args);
     } catch (err) {
@@ -475,6 +475,7 @@ export const safeExecute = (
       return defaultReturn;
     }
   };
+}
 
 export const recursiveGetKey = (event, keyToSearch) => {
   return recursiveGetKeyByDepth(event, keyToSearch, recursiveGetKeyDepth());
