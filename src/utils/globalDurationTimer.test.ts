@@ -13,7 +13,7 @@ describe('GlobalDurationTimer', () => {
     await timeout(10);
     GlobalDurationTimer.stop();
 
-    expect(GlobalDurationTimer.isTimePassed(150)).toBeFalsy();
+    expect(GlobalDurationTimer.isTimePassed(200)).toBeFalsy();
     expect(GlobalDurationTimer.isTimePassed(10)).toBeTruthy();
     expect(GlobalDurationTimer.isTimePassed()).toBeFalsy();
   });
@@ -29,7 +29,7 @@ describe('GlobalDurationTimer', () => {
     await a.a();
     await timeout(10);
     await a.a();
-    expect(GlobalDurationTimer.isTimePassed(150)).toBeFalsy();
+    expect(GlobalDurationTimer.isTimePassed(200)).toBeFalsy();
     expect(GlobalDurationTimer.isTimePassed(10)).toBeTruthy();
   });
 
