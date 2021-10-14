@@ -5,8 +5,13 @@
   "license": "MIT",
   "private": true,
   "dependencies": {
+    "@lumigo/tracer": "file:../lumigo-node-d_exmaple.tgz",
     "aws-sdk": "^2.501.0",
     "axios": "^0.19.0",
-    "@lumigo/tracer": "file:../lumigo-node-d_exmaple.tgz"
+    "ioredis": "^4.27.11",
+    "mongodb": "3.6.12",
+    "mysql": "^2.18.1",
+    "mysql2": "^2.3.0",
+    "sequelize": "^6.7.0"
   }
 }
