@@ -11,6 +11,7 @@ import {
   safeGet,
   isDebug,
   DEFAULT_CONNECTION_TIMEOUT,
+  isObject,
 } from './utils';
 import { TracerGlobals } from './globals';
 import crypto from 'crypto';
@@ -90,6 +91,16 @@ describe('utils', () => {
     expect(() => utils.getTraceId('a=b;c=d;e=f')).toThrow(
       "Either Root, Parent or Sampled weren't found in traceId."
     );
+  });
+
+  test('isObject', () => {
+    expect(isObject([])).toEqual(false);
+    expect(isObject(true)).toEqual(false);
+    expect(isObject(undefined)).toEqual(false);
+    expect(isObject(null)).toEqual(false);
+    expect(isObject(43)).toEqual(false);
+    expect(isObject('text')).toEqual(false);
+    expect(isObject({})).toEqual(true);
   });
 
   test('getPatchedTraceId', () => {
