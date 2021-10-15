@@ -200,7 +200,7 @@ workflows:
             ignore: master
         requires:
         - test
-    - deploy-beta:
+    - deploy:
         filters:
           branches:
             only: master
