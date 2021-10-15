@@ -82,7 +82,7 @@ describe('HttpSpansAgent', () => {
     //no Error throwed
   });
 
-  const testTimeout = 500; //in MS
+  const testTimeout = 700; //in MS
   test(
     'postSpans - reject connection timout',
     async () => {
