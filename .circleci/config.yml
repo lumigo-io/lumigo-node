@@ -5,8 +5,7 @@
 
 # How can I convert V2.1 to V2? Write the file in V2.1, run it in CircleCI and click "Configuration".
 
-version: 2
-commands:
+version: 2.1
 
 jobs:
   test:
@@ -17,8 +16,8 @@ jobs:
         username: lumigo
         password: $DOCKERHUB_PASSWORD
     environment:
-    - TZ: Asia/Jerusalem
-    - NODE_OPTIONS: --max_old_space_size=1500
+      TZ: Asia/Jerusalem
+      NODE_OPTIONS: --max_old_space_size=1500
     resource_class: medium+
     steps:
     - checkout
@@ -49,68 +48,6 @@ jobs:
     - store_artifacts:
         path: coverage
         prefix: coverage
-  integration-test:
-    working_directory: ~/lumigo-node
-    docker:
-    - image: lumigo/ci:latest
-      auth:
-        username: lumigo
-        password: $DOCKERHUB_PASSWORD
-    environment:
-      - TZ: Asia/Jerusalem
-      - NODE_OPTIONS: --max_old_space_size=4096
-    resource_class: medium+      
-    steps:
-    - run:
-        command: |
-          mkdir ~/.ssh/ && echo -e "Host github.com\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
-          cd ..
-          git clone git@github.com:lumigo-io/common-resources.git
-    - run:
-        command: |
-          cd ..
-          git clone git@github.com:lumigo-io/utils.git
-    - run:
-        command: |
-          cd ..
-          git clone git@github.com:lumigo-io/larn.git
-    - checkout
-    - run:
-        name: deploy env
-        command: ./scripts/ci_deploy.sh
-    - run:
-        name: npm i
-        command: cd ../integration-tests && npm i
-    - run:
-        name: recursive-install
-        command: sudo npm install -g recursive-install
-    - run: cd ../integration-tests && git rev-parse HEAD > ../commits && cd ../python_tracer && git rev-parse HEAD >> ../commits &&  cd ../lumigo-node && git rev-parse HEAD >> ../commits &&  cd ../java-tracer && git rev-parse HEAD >> ../commits
-    - restore_cache:
-        keys:
-          - IT-{{ .Branch }}-{{ checksum "../commits" }}
-    - run: cd ../integration-tests && ./scripts/parallel_prepare_env.sh
-    - run: cd ../integration-tests && ./scripts/parallel_deploy.sh --spec node
-    - save_cache:
-        key: IT-{{ .Branch }}-{{ checksum "../commits" }}
-        paths:
-          - ../integration-tests/.env
-          - ../integration-tests/.env2
-          - ../integration-tests/.env3
-          - ../integration-tests/.deployment_finished.env
-          - ../integration-tests/.deployment_finished.env2
-          - ../integration-tests/.deployment_finished.env3 
-    - run:
-        name: run tests
-        command: cd ../integration-tests && export CURRENT_REPO=lumigo-node && export testNode=true && npm run test-parallel
-        no_output_timeout: 30m
-    - store_test_results:
-          path: ../integration-tests/src/test/test-results
-    - persist_to_workspace:
-        root: ../
-        paths:
-          - envs/
-          - stack/
-          - .aws/
   deploy-beta:
     working_directory: ~/lumigo-node
     docker:
@@ -120,7 +57,7 @@ jobs:
         password: $DOCKERHUB_PASSWORD
     resource_class: medium+
     environment:
-    - TZ: Asia/Jerusalem
+      TZ: Asia/Jerusalem
     steps:
     - run:
         command: |
@@ -149,44 +86,7 @@ jobs:
     - run:
         name: deploy beta to npm + release with delay
         command: ./scripts/bd_to_beta.sh
-  deploy:
-    working_directory: ~/lumigo-node
-    docker:
-    - image: lumigo/ci:latest
-      auth:
-        username: lumigo
-        password: $DOCKERHUB_PASSWORD
-    environment:
-    - TZ: Asia/Jerusalem
-    resource_class: medium+
-    steps:
-    - run:
-        command: |
-          mkdir ~/.ssh/ && echo -e "Host github.com\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
-          cd ..
-          git clone git@github.com:lumigo-io/common-resources.git
-    - run:
-        command: |
-          cd ..
-          git clone git@github.com:lumigo-io/utils.git
-    - run:
-        command: |
-          cd ..
-          git clone git@github.com:lumigo-io/larn.git
-    - checkout
-    - run:
-        name: Check if tagged
-        command: |
-          tags=$(git tag -l --points-at HEAD)
-          echo "Tags $tags"
-          if [[ ! -z "$tags" ]]
-          then
-            echo "A tagged commit, skip..."
-            circleci step halt
-          fi
-    - run:
-        name: deploy to npm + lambda layer
-        command: ./scripts/bd_to_prod.sh
+
 workflows:
   test-deploy:
     jobs:
@@ -194,14 +94,21 @@ workflows:
         filters:
           branches:
             ignore: master
-    - integration-test:
+    - lumigo-orb/be-deploy:
         filters:
           branches:
             ignore: master
         requires:
-        - test
+          - test
+    - lumigo-orb/integration-test:
+        deploy_spec: node
+        tests_spec: testNode
+        filters:
+          branches:
+            ignore: master
+        requires:
+          - lumigo-orb/be-deploy
     - deploy-beta:
         filters:
           branches:
             only: master
-  version: 2
