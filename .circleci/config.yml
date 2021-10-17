@@ -7,6 +7,9 @@
 
 version: 2.1
 
+orbs:
+  lumigo-orb: lumigo/lumigo-orb@volatile
+
 jobs:
   test:
     working_directory: ~/lumigo-node
