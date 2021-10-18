@@ -3,8 +3,11 @@ import { TracerGlobals } from './globals';
 import * as reporter from './reporter';
 import * as utils from './utils';
 import { AxiosMocker } from '../testUtils/axiosMocker';
-import { getEventEntitySize, getJSONBase64Size } from './utils';
+import { getEventEntitySize, getJSONBase64Size, setDebug } from './utils';
 import { encode } from 'utf8';
+import { sendSpans } from './reporter';
+import { isAwsContext } from './guards/awsGuards';
+import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
 
 describe('reporter', () => {
   test('sendSingleSpan', async () => {
@@ -584,5 +587,24 @@ describe('reporter', () => {
 
   test('forgeRequestBody - empty list', async () => {
     expect(reporter.forgeAndScrubRequestBody([], 100)).toEqual(undefined);
+  });
+
+  test(`sendSpans -> handle errors in forgeAndScrubRequestBody`, async () => {
+    setDebug();
+    // @ts-ignore
+    await sendSpans({});
+    //Test that no error is raised
+
+    const logs = ConsoleWritesForTesting.getLogs();
+    expect(logs).toEqual([
+      {
+        msg: '#LUMIGO# - WARNING - "Error in Lumigo tracer"',
+        obj: '"resultSpans.forEach is not a function"',
+      },
+      {
+        msg: '#LUMIGO# - WARNING - "Error in Lumigo tracer"',
+        obj: '"spans.map is not a function"',
+      },
+    ]);
   });
 });

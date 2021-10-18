@@ -85,6 +85,22 @@ describe('mySql', () => {
     });
   });
 
+  test('v2 -> hook -> object query (text: string, callback: Function) -> success', (done) => {
+    const client = createHookedMySqlV2Client();
+
+    client.query({ sql: 'SELECT * from users' }, () => {
+      const spans = SpansContainer.getSpans();
+      expect(spans).toEqual([
+        createBaseBuilderFromSpan(spans[0])
+          .withQuery('SELECT * from users')
+          .withConnectionParameters(DUMMY_OPTIONS)
+          .withResponse(createExpectedResponse())
+          .build(),
+      ]);
+      done();
+    });
+  });
+
   test('v2 -> hook -> query (text: string, callback: Function) -> fail', (done) => {
     const error = new Error('DuumyError');
     const client = createHookedMySqlV2Client({ error });
