@@ -22,12 +22,12 @@
   },
   "dependencies": {
     "agentkeepalive": "^4.1.4",
-    "axios": "0.21.1",
+    "axios": "^0.23.0",
     "shimmer": "1.2.1",
     "utf8": "^3.0.0"
   },
   "devDependencies": {
-    "@babel/cli": "^7.14.5",
+    "@babel/cli": "^7.15.7",
     "@babel/core": "^7.14.5",
     "@babel/plugin-proposal-class-properties": "^7.14.5",
     "@babel/plugin-proposal-decorators": "^7.14.5",
@@ -47,7 +47,7 @@
     "axios-mock-adapter": "^1.19.0",
     "babel-eslint": "^10.1.0",
     "codecov": "^3.8.2",
-    "eslint": "^5.16.0",
+    "eslint": "^8.0.1",
     "eslint-config-prettier": "^4.3.0",
     "eslint-plugin-jest": "^22.21.0",
     "eslint-plugin-prettier": "^3.4.0",
@@ -55,7 +55,7 @@
     "husky": "^2.4.1",
     "jest": "^27.0.4",
     "jest-each": "^26.6.2",
-    "jest-junit": "^6.4.0",
+    "jest-junit": "^13.0.0",
     "mockdate": "^2.0.5",
     "mongo-mock": "^4.0.0",
     "prettier": "^2.3.1",
