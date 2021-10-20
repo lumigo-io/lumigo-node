@@ -597,10 +597,10 @@ describe('reporter', () => {
 
     const logs = ConsoleWritesForTesting.getLogs();
     expect(logs.length).toEqual(2);
-    expect(logs[0].msg).toEqual( '#LUMIGO# - WARNING - "Error in Lumigo tracer"');
-    expect(logs[1].msg).toEqual( '#LUMIGO# - WARNING - "Error in Lumigo tracer"');
-    expect(JSON.parse(logs[0].obj).message).toEqual("resultSpans.forEach is not a function");
-    expect(JSON.parse(logs[1].obj).message).toEqual("spans.map is not a function");
+    expect(logs[0].msg).toEqual('#LUMIGO# - WARNING - "Error in Lumigo tracer"');
+    expect(logs[1].msg).toEqual('#LUMIGO# - WARNING - "Error in Lumigo tracer"');
+    expect(JSON.parse(logs[0].obj).message).toEqual('resultSpans.forEach is not a function');
+    expect(JSON.parse(logs[1].obj).message).toEqual('spans.map is not a function');
     expect(JSON.parse(logs[0].obj).stack).toBeTruthy();
     expect(JSON.parse(logs[1].obj).stack).toBeTruthy();
   });
