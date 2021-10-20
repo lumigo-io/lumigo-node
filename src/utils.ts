@@ -482,7 +482,7 @@ export function safeExecute<T>(
     try {
       return callback.apply(this, args);
     } catch (err) {
-      logger.log(logLevel, message, err.message);
+      logger.log(logLevel, message, err);
       return defaultReturn;
     }
   };
