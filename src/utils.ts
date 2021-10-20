@@ -438,13 +438,20 @@ export const getJSONBase64Size = (obj) => {
 };
 
 export const parseQueryParams = (queryParams) => {
-  if (typeof queryParams !== 'string') return {};
-  let obj = {};
-  // @ts-ignore
-  queryParams.replace(/([^=&]+)=([^&]*)/g, (m, key, value) => {
-    obj[decodeURIComponent(key)] = decodeURIComponent(value);
-  });
-  return obj;
+  return safeExecute(
+    () => {
+      if (typeof queryParams !== 'string') return {};
+      let obj = {};
+      // @ts-ignore
+      queryParams.replace(/([^=&]+)=([^&]*)/g, (m, key, value) => {
+        obj[decodeURIComponent(key)] = decodeURIComponent(value);
+      });
+      return obj;
+    },
+    'Failed to parse query params',
+    logger.LOG_LEVELS.WARNING,
+    {}
+  )();
 };
 
 const domainScrubbers = () =>

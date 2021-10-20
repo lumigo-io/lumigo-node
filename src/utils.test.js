@@ -524,7 +524,7 @@ describe('utils', () => {
     expect(utils.parseJsonFromEnvVar('TEST_STR')).toEqual('TEST');
     expect(utils.parseJsonFromEnvVar('TEST_NUM')).toEqual(1);
     expect(utils.parseJsonFromEnvVar('TEST_ARRAY')).toEqual([1, '1']);
-    expect(utils.parseJsonFromEnvVar('TEST_OBJECT')).toEqual({ '1': '1' });
+    expect(utils.parseJsonFromEnvVar('TEST_OBJECT')).toEqual({ 1: '1' });
   });
 
   test('parseJsonFromEnvVar -> not fail on error', () => {
@@ -828,6 +828,12 @@ describe('utils', () => {
 
     expect(action).toEqual('Publish');
     expect(notFound).toEqual(undefined);
+  });
+
+  test('parseQueryParams invalid URI', () => {
+    const queryParams = 'a=%E0%A4%A';
+    const parsed = parseQueryParams(queryParams);
+    expect(parsed).toEqual({});
   });
 
   test('parseQueryParams -> no success flow', () => {
