@@ -602,6 +602,6 @@ describe('reporter', () => {
     expect(JSON.parse(logs[0].obj).message).toEqual("resultSpans.forEach is not a function");
     expect(JSON.parse(logs[1].obj).message).toEqual("spans.map is not a function");
     expect(JSON.parse(logs[0].obj).stack).toBeTruthy();
-    expect(JSON.parse(logs[1].obj).message).toBeTruthy();
+    expect(JSON.parse(logs[1].obj).stack).toBeTruthy();
   });
 });
