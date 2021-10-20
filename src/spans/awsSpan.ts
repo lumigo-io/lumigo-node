@@ -280,6 +280,7 @@ export const getHttpSpan = (
     }
   } catch (e) {
     logger.warn('Failed to parse aws service data', e);
+    logger.warn('getHttpSpan args', {requestData, responseData, truncated});
   }
   // @ts-ignore
   const { awsServiceData, spanId } = serviceData;

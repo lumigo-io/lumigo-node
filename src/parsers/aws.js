@@ -1,4 +1,4 @@
-import { md5Hash, parseQueryParams, removeDuplicates, safeGet } from '../utils';
+import { md5Hash, parseQueryParams, removeDuplicates, safeExecute, safeGet } from '../utils';
 import { traverse } from '../tools/xmlToJson';
 import * as logger from '../logger';
 
@@ -67,7 +67,9 @@ export const snsParser = (requestData, responseData) => {
   if (!responseData) return {};
   const { body: reqBody } = requestData;
   const { body: resBody } = responseData;
-  const parsedRequestBody = reqBody ? parseQueryParams(reqBody) : undefined;
+  const parsedRequestBody = reqBody
+    ? safeExecute(() => parseQueryParams, `failed to parse query params`)(reqBody)
+    : undefined;
   const parsedResponseBody = resBody ? traverse(resBody) : undefined;
   const resourceName = parsedRequestBody ? parsedRequestBody['TopicArn'] : undefined;
   const messageId = parsedResponseBody
