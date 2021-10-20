@@ -314,6 +314,15 @@ describe('aws parser', () => {
     });
   });
 
+  test('sqsParser -> empty request', () => {
+    const result = aws.sqsParser({}, {});
+    expect(result).toEqual({
+      awsServiceData: {
+        messageId: null,
+      },
+    });
+  });
+
   test('sqsParser -> not success and return default values', () => {
     const requestData = {
       path: '/',
