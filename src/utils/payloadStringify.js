@@ -34,7 +34,7 @@ export const keyToOmitRegexes = () => {
 export const prune = (str, maxLength) => {
   let toPrune = str;
   if (!isString(toPrune)) {
-    logger.warn('Prune was called on a non-string object', typeof toPrune);
+    logger.warn('Prune was called on a non-string object', toPrune);
     toPrune = '';
   }
   return toPrune.substr(0, maxLength);
