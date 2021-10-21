@@ -97,7 +97,7 @@ export const apigwParser = (requestData, responseData) => {
 
 export const eventBridgeParser = (requestData, responseData) => {
   const { body: reqBody } = requestData;
-  const { body: resBody } = responseData;
+  const { body: resBody } = responseData || {};
   const reqBodyJSON = (!!reqBody && JSON.parse(reqBody)) || {};
   const resBodyJSON = (!!resBody && JSON.parse(resBody)) || {};
   const resourceNames = reqBodyJSON.Entries
