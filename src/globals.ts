@@ -11,14 +11,16 @@ export const DEFAULT_TRACER_TIMEOUT = 500;
 
 export const SpansContainer = (() => {
   let spansToSend = {};
-  let totalSize = 0;
+  let currentSpansSize = 0;
   const addSpan = (span) => {
     // Memory optimization
-    if (spanHasErrors(span) || getMaxRequestSize() > totalSize) {
+    if (spanHasErrors(span) || getMaxRequestSize() > currentSpansSize) {
       spansToSend[span.id] = span;
-      totalSize += getJSONBase64Size(span);
+      currentSpansSize += getJSONBase64Size(span);
       logger.debug('Span created', span);
+      return true;
     }
+    return false;
   };
   const getSpans = () => Object.values(spansToSend);
   const getSpanById = (spanId) => spansToSend[spanId];
@@ -30,7 +32,10 @@ export const SpansContainer = (() => {
     }
     delete spansToSend[oldId];
   };
-  const clearSpans = () => (spansToSend = {});
+  const clearSpans = () => {
+    currentSpansSize = 0;
+    spansToSend = {};
+  };
 
   return { addSpan, getSpanById, getSpans, clearSpans, changeSpanId };
 })();
@@ -152,6 +157,7 @@ export const TracerGlobals = (() => {
         (process.env['LUMIGO_MAX_SIZE_FOR_REQUEST']
           ? parseInt(process.env.LUMIGO_MAX_SIZE_FOR_REQUEST)
           : DEFAULT_MAX_SIZE_FOR_REQUEST),
+      currentRequestSize: 0,
     });
 
   const getTracerInputs = () => tracerInputs;
