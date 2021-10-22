@@ -157,7 +157,6 @@ export const TracerGlobals = (() => {
         (process.env['LUMIGO_MAX_SIZE_FOR_REQUEST']
           ? parseInt(process.env.LUMIGO_MAX_SIZE_FOR_REQUEST)
           : DEFAULT_MAX_SIZE_FOR_REQUEST),
-      currentRequestSize: 0,
     });
 
   const getTracerInputs = () => tracerInputs;
