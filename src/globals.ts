@@ -19,6 +19,8 @@ export const SpansContainer = (() => {
       currentSpansSize += getJSONBase64Size(span);
       logger.debug('Span created', span);
       return true;
+    } else{
+      logger.debug(`Tracer reached max size [${currentSpansSize}/${getMaxRequestSize()}] skipping`);
     }
     return false;
   };
