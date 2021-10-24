@@ -270,7 +270,7 @@ export const getHttpSpan = (
   awsRequestId,
   randomRequestId,
   requestData,
-  responseData = null,
+  responseData = {},
   truncated = false
 ) => {
   let serviceData = {};
