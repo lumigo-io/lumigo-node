@@ -111,7 +111,7 @@ export const eventBridgeParser = (requestData, responseData) => {
 };
 
 export const sqsParser = (requestData, responseData) => {
-  const { body: reqBody } = requestData || {};
+  const { body: reqBody } = requestData;
   const { body: resBody } = responseData || {};
   const parsedReqBody = reqBody ? parseQueryParams(reqBody) : undefined;
   const parsedResBody = resBody ? traverse(resBody) : undefined;

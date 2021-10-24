@@ -315,7 +315,7 @@ describe('aws parser', () => {
   });
 
   test('sqsParser -> empty request', () => {
-    const result = aws.sqsParser({}, {});
+    const result = aws.sqsParser({}, null);
     expect(result).toEqual({
       awsServiceData: {
         messageId: null,
