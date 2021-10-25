@@ -1,6 +1,6 @@
 import * as globals from './globals';
 import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
-import { DEFAULT_MAX_SIZE_FOR_REQUEST, TracerGlobals } from './globals';
+import { DEFAULT_MAX_SIZE_FOR_REQUEST } from './globals';
 import { getMaxRequestSize } from './utils';
 
 describe('globals', () => {
@@ -10,40 +10,6 @@ describe('globals', () => {
     globals.SpansContainer.addSpan(span1);
     globals.SpansContainer.addSpan(span2);
     expect(globals.SpansContainer.getSpans()).toEqual([span1, span2]);
-    globals.SpansContainer.clearSpans();
-    expect(globals.SpansContainer.getSpans()).toEqual([]);
-  });
-
-  test('SpansContainer - use tracerInputs limit size', () => {
-    TracerGlobals.setTracerInputs({ maxSizeForRequest: 24 });
-    const spans = [
-      { id: 'a', c: 'd' },
-      { id: 'b', g: 'h' },
-    ];
-    globals.SpansContainer.addSpan(spans[0]);
-    globals.SpansContainer.addSpan(spans[1]);
-    expect(globals.SpansContainer.getSpans()).toEqual([spans[0]]);
-    globals.SpansContainer.clearSpans();
-    expect(globals.SpansContainer.getSpans()).toEqual([]);
-  });
-
-  test('SpansContainer - use tracerInputs limit size with errors', () => {
-    TracerGlobals.setTracerInputs({ maxSizeForRequest: 55 });
-    const spans = [
-      { id: 'a', c: 'd' },
-      { id: 'b', g: 'h' },
-      { id: 'c', g: 'h' },
-      { id: 'd', error: 'h' },
-      { id: 'e', error: 'h' },
-      { id: 'f', error: 'h' },
-    ];
-    globals.SpansContainer.addSpan(spans[0]);
-    globals.SpansContainer.addSpan(spans[1]);
-    globals.SpansContainer.addSpan(spans[2]);
-    globals.SpansContainer.addSpan(spans[3]);
-    globals.SpansContainer.addSpan(spans[4]);
-    globals.SpansContainer.addSpan(spans[5]);
-    expect(globals.SpansContainer.getSpans()).toEqual([spans[0], spans[1], spans[3]]);
     globals.SpansContainer.clearSpans();
     expect(globals.SpansContainer.getSpans()).toEqual([]);
   });

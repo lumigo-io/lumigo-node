@@ -34,7 +34,7 @@ export const sendSpans = async (spans: any[]): Promise<void> => {
     logger.debug('No Spans was sent, `SEND_ONLY_IF_ERROR` is on and no span has error');
     return;
   }
-  const reqBody = safeExecute(scrubAndStringify)(spans);
+  const reqBody = safeExecute(forgeAndScrubRequestBody)(spans, getMaxRequestSize());
 
   const roundTripStart = Date.now();
   if (reqBody) {
@@ -70,8 +70,8 @@ function scrub(payload: any, headers: any, sizeLimit: number, truncated = false)
 }
 
 // We muted the spans itself to keep the memory footprint of the tracer to a minimum
-export const scrubAndStringify = (spans): string | undefined => {
-  spans.forEach((span) => {
+function scrubSpans(resultSpans: any[]) {
+  resultSpans.forEach((span) => {
     if (span.info?.httpInfo) {
       const { request, response, host } = span.info.httpInfo;
       if (
@@ -108,5 +108,30 @@ export const scrubAndStringify = (spans): string | undefined => {
       }
     }
   });
+}
+
+// We muted the spans itself to keep the memory footprint of the tracer to a minimum
+export const forgeAndScrubRequestBody = (spans, maxSendBytes): string | undefined => {
+  const start = new Date().getTime();
+  const originalSize = spans.length;
+  if (!isPruneTraceOff() && shouldTrim(spans, maxSendBytes)) {
+    logger.debug(
+      `Starting trim spans [${spans.length}] bigger than: [${maxSendBytes}] before send`
+    );
+
+    const functionEndSpan = spans.pop();
+    spans.sort((a, b) => (spanHasErrors(a) ? -1 : spanHasErrors(b) ? 1 : 0));
+    let totalSize = getJSONBase64Size(functionEndSpan) + getJSONBase64Size(spans);
+    while (totalSize > maxSendBytes && spans.length > 0)
+      totalSize -= getJSONBase64Size(spans.pop());
+    spans.push(functionEndSpan);
+  }
+  scrubSpans(spans);
+  if (originalSize - spans.length > 0) {
+    logger.debug(`Trimmed spans due to size`);
+  }
+  logger.debug(
+    `Filtered [${spans.length - spans.length}] spans out, Took: [${new Date().getTime() - start}ms]`
+  );
   return spans.length > 0 ? JSON.stringify(spans) : undefined;
 };

@@ -524,7 +524,7 @@ describe('utils', () => {
     expect(utils.parseJsonFromEnvVar('TEST_STR')).toEqual('TEST');
     expect(utils.parseJsonFromEnvVar('TEST_NUM')).toEqual(1);
     expect(utils.parseJsonFromEnvVar('TEST_ARRAY')).toEqual([1, '1']);
-    expect(utils.parseJsonFromEnvVar('TEST_OBJECT')).toEqual({ 1: '1' });
+    expect(utils.parseJsonFromEnvVar('TEST_OBJECT')).toEqual({ '1': '1' });
   });
 
   test('parseJsonFromEnvVar -> not fail on error', () => {
