@@ -14,9 +14,10 @@ export const SpansContainer = (() => {
   let currentSpansSize = 0;
   const addSpan = (span) => {
     // Memory optimization
-    if (spanHasErrors(span) || getMaxRequestSize() > currentSpansSize) {
+    const currentSpanSize = getJSONBase64Size(span);
+    if (spanHasErrors(span) || getMaxRequestSize() >= currentSpansSize + currentSpanSize) {
       spansToSend[span.id] = span;
-      currentSpansSize += getJSONBase64Size(span);
+      currentSpansSize += currentSpanSize;
       logger.debug('Span created', span);
       return true;
     } else {
