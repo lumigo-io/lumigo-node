@@ -1,6 +1,7 @@
 import * as globals from './globals';
 import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
 import { DEFAULT_MAX_SIZE_FOR_REQUEST } from './globals';
+import { getMaxRequestSize } from './utils';
 
 describe('globals', () => {
   test('SpansContainer - simple flow', () => {
@@ -48,6 +49,21 @@ describe('globals', () => {
 
     expect(globals.SpansContainer.getSpans()).toEqual([]);
     expect(spans).toEqual([span1]);
+  });
+
+  test('SpansContainer - cleanning the request size limiter', () => {
+    const span1 = { a: 'b', c: 'd', id: '1' };
+    for (let i = 0; i < getMaxRequestSize(); i++) {
+      globals.SpansContainer.addSpan(span1);
+    }
+    let didAdd = globals.SpansContainer.addSpan(span1);
+    expect(didAdd).toBeFalsy();
+
+    globals.SpansContainer.clearSpans();
+
+    didAdd = globals.SpansContainer.addSpan(span1);
+    expect(didAdd).toBeTruthy();
+    expect(globals.SpansContainer.getSpans()).toEqual([span1]);
   });
 
   test('GlobalTimer - simple flow', (done) => {
