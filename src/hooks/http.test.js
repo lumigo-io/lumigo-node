@@ -640,7 +640,6 @@ describe('http hook', () => {
     utils.setTimeoutTimerDisabled();
     const handlerInputs = new HandlerInputesBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
-    process.env._X_AMZN_TRACE_ID = undefined;
     const requestData = HttpSpanBuilder.getDefaultData(HttpSpanBuilder.DEFAULT_REQUEST_DATA);
     const responseData = {
       truncated: false,
