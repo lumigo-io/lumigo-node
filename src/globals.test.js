@@ -28,17 +28,21 @@ describe('globals', () => {
   });
 
   test('SpansContainer - use tracerInputs limit size with errors', () => {
-    TracerGlobals.setTracerInputs({ maxSizeForRequest: 50 });
+    TracerGlobals.setTracerInputs({ maxSizeForRequest: 55 });
     const spans = [
       { id: 'a', c: 'd' },
       { id: 'b', g: 'h' },
       { id: 'c', g: 'h' },
       { id: 'd', error: 'h' },
+      { id: 'e', error: 'h' },
+      { id: 'f', error: 'h' },
     ];
     globals.SpansContainer.addSpan(spans[0]);
     globals.SpansContainer.addSpan(spans[1]);
     globals.SpansContainer.addSpan(spans[2]);
     globals.SpansContainer.addSpan(spans[3]);
+    globals.SpansContainer.addSpan(spans[4]);
+    globals.SpansContainer.addSpan(spans[5]);
     expect(globals.SpansContainer.getSpans()).toEqual([spans[0], spans[1], spans[3]]);
     globals.SpansContainer.clearSpans();
     expect(globals.SpansContainer.getSpans()).toEqual([]);

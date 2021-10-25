@@ -9,22 +9,40 @@ const ADD_TAG_ERROR_MSG_PREFIX = 'Skipping addExecutionTag: Unable to add tag';
 export const DEFAULT_MAX_SIZE_FOR_REQUEST = 1024 * 500;
 export const DEFAULT_TRACER_TIMEOUT = 500;
 
+function shouldAddErrorSpan(
+  span,
+  spanSize: number,
+  currentSpansSize: number,
+  maxSizeWithErrors: number
+) {
+  return spanHasErrors(span) && spanSize + currentSpansSize < maxSizeWithErrors;
+}
+
+function shouldAddSpan(maxRequestSize: number, currentSpansSize: number, spanSize: number) {
+  return maxRequestSize >= currentSpansSize + spanSize;
+}
+
 export const SpansContainer = (() => {
   let spansToSend = {};
   let currentSpansSize = 0;
+
   const addSpan = (span) => {
+    const maxRequestSize = getMaxRequestSize();
+    const maxSizeWithErrors = maxRequestSize * 1.5;
     // Memory optimization
-    const currentSpanSize = getJSONBase64Size(span);
-    if (spanHasErrors(span) || getMaxRequestSize() >= currentSpansSize + currentSpanSize) {
+    const spanSize = getJSONBase64Size(span);
+    if (
+      shouldAddErrorSpan(span, spanSize, currentSpansSize, maxSizeWithErrors) ||
+      shouldAddSpan(maxRequestSize, currentSpansSize, spanSize)
+    ) {
       spansToSend[span.id] = span;
-      currentSpansSize += currentSpanSize;
+      currentSpansSize += spanSize;
       logger.debug('Span created', span);
       return true;
     } else {
-      logger.debug(
-        `Tracer reached max size [${currentSpansSize}/${getMaxRequestSize()}] skipping`,
-        { span }
-      );
+      logger.debug(`Tracer reached max size [${currentSpansSize}/${maxRequestSize}] skipping`, {
+        span,
+      });
     }
     return false;
   };
