@@ -830,6 +830,12 @@ describe('utils', () => {
     expect(notFound).toEqual(undefined);
   });
 
+  test('parseQueryParams invalid URI', () => {
+    const queryParams = 'a=%E0%A4%A';
+    const parsed = parseQueryParams(queryParams);
+    expect(parsed).toEqual({});
+  });
+
   test('parseQueryParams -> no success flow', () => {
     const invalid = parseQueryParams('invalid-url')['Action'];
     const notFound = parseQueryParams(undefined)['Actionsss'];

@@ -314,6 +314,15 @@ describe('aws parser', () => {
     });
   });
 
+  test('sqsParser -> empty request', () => {
+    const result = aws.sqsParser({}, null);
+    expect(result).toEqual({
+      awsServiceData: {
+        messageId: null,
+      },
+    });
+  });
+
   test('sqsParser -> not success and return default values', () => {
     const requestData = {
       path: '/',
@@ -373,6 +382,46 @@ describe('aws parser', () => {
       awsServiceData: {
         resourceNames: ['test', 'test2'],
         messageIds: ['1-2-3-4', '6-7-8-9'],
+      },
+    });
+  });
+
+  test('eventBridgeParser -> with response null', () => {
+    const requestData = {
+      host: 'events.us-west-2.amazonaws.com',
+      body: JSON.stringify({
+        Entries: [
+          {
+            Source: 'source_lambda',
+            Resources: [],
+            DetailType: 'string',
+            Detail: '{"a": 1}',
+            EventBusName: 'test',
+          },
+          {
+            Source: 'source_lambda',
+            Resources: [],
+            DetailType: 'string',
+            Detail: '{"a": 2}',
+            EventBusName: 'test',
+          },
+          {
+            Source: 'source_lambda',
+            Resources: [],
+            DetailType: 'string',
+            Detail: '{"a": 3}',
+            EventBusName: 'test2',
+          },
+        ],
+      }),
+    };
+    const responseData = null;
+
+    const result = aws.eventBridgeParser(requestData, responseData);
+
+    expect(result).toEqual({
+      awsServiceData: {
+        resourceNames: ['test', 'test2'],
       },
     });
   });
