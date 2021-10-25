@@ -615,10 +615,32 @@ describe('http hook', () => {
     expect(Http.httpRequestArguments([url, callback])).toEqual(expected1);
   });
 
+  test('wrapHttpLib - missing _X_AMZN_TRACE_ID', () => {
+    utils.setTimeoutTimerDisabled();
+    const handlerInputs = new HandlerInputesBuilder().build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
+    process.env._X_AMZN_TRACE_ID = undefined;
+    const requestData = HttpSpanBuilder.getDefaultData(HttpSpanBuilder.DEFAULT_REQUEST_DATA);
+    const responseData = {
+      truncated: false,
+      statusCode: 200,
+      body: 'OK',
+    };
+
+    Http.wrapHttpLib(HttpsMocker);
+
+    const req = HttpsMocker.request(requestData, () => {});
+    HttpsScenarioBuilder.appendNextResponse(req, responseData.body);
+
+    const spans = SpansContainer.getSpans();
+    expect(spans).toEqual([]);
+  });
+
   test('wrapHttpLib - simple flow', () => {
     utils.setTimeoutTimerDisabled();
     const handlerInputs = new HandlerInputesBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
+    process.env._X_AMZN_TRACE_ID = undefined;
     const requestData = HttpSpanBuilder.getDefaultData(HttpSpanBuilder.DEFAULT_REQUEST_DATA);
     const responseData = {
       truncated: false,
