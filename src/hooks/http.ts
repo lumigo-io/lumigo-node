@@ -12,11 +12,7 @@ import {
   isValidAlias,
   lowerCaseObjectKeys,
 } from '../utils';
-import {
-  extractBodyFromEmitSocketEvent,
-  extractBodyFromEndFunc,
-  extractBodyFromWriteFunc,
-} from './httpUtils';
+import { extractBodyFromEmitSocketEvent, extractBodyFromWriteOrEndFunc } from './httpUtils';
 import { getCurrentTransactionId, getHttpInfo, getHttpSpan } from '../spans/awsSpan';
 import { URL } from 'url';
 import { SpansContainer, TracerGlobals } from '../globals';
@@ -51,15 +47,9 @@ export class Http {
     return function (args) {
       GlobalDurationTimer.start();
       if (isEmptyString(requestData.body)) {
-        const body = extractBodyFromEndFunc(args);
+        const body = extractBodyFromWriteOrEndFunc(args);
         if (body) {
-          if (body instanceof Buffer) {
-            requestData.body += body.toString('utf-8', 0, getEventEntitySize(false));
-          } else if (typeof body == 'string') {
-            requestData.body += body.substr(0, getEventEntitySize(false));
-          } else {
-            logger.warn('httpRequestEndWrapper with unexpected body type', typeof body);
-          }
+          requestData.body += body.substr(0, getEventEntitySize(false));
         }
         if (currentSpan) currentSpan.info.httpInfo = getHttpInfo(requestData, {});
       }
@@ -223,7 +213,7 @@ export class Http {
     return function (args) {
       GlobalDurationTimer.start();
       if (isEmptyString(requestData.body)) {
-        const body = extractBodyFromWriteFunc(args);
+        const body = extractBodyFromWriteOrEndFunc(args);
         if (body) {
           requestData.body += body;
           if (currentSpan) currentSpan.info.httpInfo = getHttpInfo(requestData, {});
