@@ -29,11 +29,11 @@ export const hook = (module, funcName, options = {}, shimmerLib = shimmer) => {
 
 export const hookPromise = (originalPromise, options) => {
   const { thenHandler = noop, catchHandler = noop } = options;
-  const safeThenHandler = safeExecute(thenHandler, `thenHandler of  fail`);
+  const safeThenHandler = safeExecute(thenHandler, `thenHandler of fail`);
   const safeCatchHandler = safeExecute(catchHandler, `catchHandler of fail`);
   const errorHandler = async (err) => {
     safeCatchHandler(err);
     throw err;
   };
-  originalPromise.then(safeThenHandler).catch(errorHandler);
+  return originalPromise.then(safeThenHandler).catch(errorHandler);
 };

@@ -4,6 +4,7 @@ import { hookRedis } from './redis';
 import { HandlerInputesBuilder } from '../../testUtils/handlerInputesBuilder';
 import { RedisSpanBuilder } from '../../testUtils/redisSpanBuilder';
 import { createRedisSpan } from '../spans/redisSpan';
+import { Redis } from '../../testUtils/ioredisMocker';
 
 const noop = () => {};
 
@@ -32,6 +33,26 @@ describe('redis', () => {
       .withStarted(spans[0].started)
       .withEnded(spans[0].ended)
       .withConnectionOptions(dummyConnectionOptions)
+      .withRequestCommand('set')
+      .withRequestArgs('["Key","Value"]')
+      .withResponse(`"OK"`)
+      .build();
+    expect(spans).toEqual([expectedSpan]);
+  });
+
+  test('hook ioredis -> simple flow', async () => {
+    const connectionOptions = 'tracer-test-cluster.1meza6.ng.0001.usw1.cache.amazonaws.com';
+    const redisClient = new Redis(connectionOptions);
+    hookRedis(Redis);
+
+    await redisClient.set('Key', 'Value');
+
+    const spans = SpansContainer.getSpans();
+    const expectedSpan = new RedisSpanBuilder()
+      .withId(spans[0].id)
+      .withStarted(spans[0].started)
+      .withEnded(spans[0].ended)
+      .withConnectionOptions(connectionOptions)
       .withRequestCommand('set')
       .withRequestArgs('["Key","Value"]')
       .withResponse(`"OK"`)

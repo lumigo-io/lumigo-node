@@ -18,7 +18,7 @@ const handleResult = (currentSpan, result, error) => {
 
 const createCallbackHandler = (redisSpan) => (args) => {
   const [error, result] = args;
-  handleResult(redisSpan, result, error)
+  handleResult(redisSpan, result, error);
 };
 
 function sendCommandBeforeHook(args) {
@@ -52,6 +52,7 @@ function sendCommandBeforeHook(args) {
       beforeHook: createCallbackHandler(span),
     });
   }
+  // ioredis
   if (command.promise) {
     hookPromise(command.promise, {
       thenHandler: (args) => {
