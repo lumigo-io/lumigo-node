@@ -145,12 +145,13 @@ export class Http {
 
   @GlobalDurationTimer.timedSync()
   static httpBeforeRequestWrapper(args, extenderContext) {
+    extenderContext.isTracedDisabled = true;
     // @ts-ignore
     const { awsRequestId } = TracerGlobals.getHandlerInputs().context;
     const transactionId = getCurrentTransactionId();
-    extenderContext.isTracedDisabled = true;
     extenderContext.awsRequestId = awsRequestId;
     extenderContext.transactionId = transactionId;
+    extenderContext.isTracedDisabled = false;
 
     const { url, options } = Http.httpRequestArguments(args);
     const { headers } = options || {};

@@ -279,7 +279,8 @@ export const getHttpSpan = (
       serviceData = getAwsServiceData(requestData, responseData);
     }
   } catch (e) {
-    logger.warn('Failed to parse aws service data', e.message);
+    logger.warn('Failed to parse aws service data', e);
+    logger.warn('getHttpSpan args', { requestData, responseData });
   }
   // @ts-ignore
   const { awsServiceData, spanId } = serviceData;
@@ -303,7 +304,7 @@ export const getHttpSpan = (
   try {
     service = getServiceType(requestData.host);
   } catch (e) {
-    logger.warn('Failed to get service type', e.message);
+    logger.warn('Failed to get service type', e);
   }
 
   const { started, ended } = getHttpSpanTimings(requestData, responseData);
