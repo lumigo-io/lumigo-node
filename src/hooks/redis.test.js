@@ -75,7 +75,7 @@ describe('redis', () => {
         .withId(spans[0].id)
         .withStarted(spans[0].started)
         .withEnded(spans[0].ended)
-        .withError("\"Bad data\"")
+        .withError('"Bad data"')
         .withConnectionOptions(connectionOptions)
         .withRequestCommand('set')
         .withRequestArgs('["Key","Value"]')
