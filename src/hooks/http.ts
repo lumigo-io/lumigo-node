@@ -53,7 +53,13 @@ export class Http {
       if (isEmptyString(requestData.body)) {
         const body = extractBodyFromEndFunc(args);
         if (body) {
-          requestData.body += body.substr(0, getEventEntitySize(false));
+          if (body instanceof Buffer) {
+            requestData.body += body.toString('utf-8', 0, getEventEntitySize(false));
+          } else if (typeof body == 'string') {
+            requestData.body += body.substr(0, getEventEntitySize(false));
+          } else {
+            logger.warn('httpRequestEndWrapper with unexpected body type', typeof body);
+          }
         }
         if (currentSpan) currentSpan.info.httpInfo = getHttpInfo(requestData, {});
       }
