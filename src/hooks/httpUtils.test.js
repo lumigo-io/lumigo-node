@@ -1,6 +1,6 @@
 import {
   extractBodyFromEmitSocketEvent,
-  extractBodyFromWriteFunc,
+  extractBodyFromWriteOrEndFunc,
   isValidHttpRequestBody,
 } from './httpUtils';
 
@@ -44,55 +44,55 @@ describe('httpUtils', () => {
     expect(result).toEqual(undefined);
   });
 
-  test('extractBodyFromWriteFunc -> simple flow -> write(str)', () => {
+  test('extractBodyFromWriteOrEndFunc -> simple flow -> write(str)', () => {
     const firstArg = 'BODY';
 
-    const result = extractBodyFromWriteFunc([firstArg]);
+    const result = extractBodyFromWriteOrEndFunc([firstArg]);
 
     expect(result).toEqual(firstArg);
   });
 
-  test('extractBodyFromWriteFunc -> simple flow -> write(Buffer)', () => {
+  test('extractBodyFromWriteOrEndFunc -> simple flow -> write(Buffer)', () => {
     const firstArg = Buffer.from('BODY');
 
-    const result = extractBodyFromWriteFunc([firstArg]);
+    const result = extractBodyFromWriteOrEndFunc([firstArg]);
 
     expect(result).toEqual('BODY');
   });
 
-  test('extractBodyFromWriteFunc -> simple flow -> write(Buffer, encoding)', () => {
+  test('extractBodyFromWriteOrEndFunc -> simple flow -> write(Buffer, encoding)', () => {
     const firstArg = 'BODY';
     const secArg = 'base64';
 
-    const result = extractBodyFromWriteFunc([firstArg, secArg]);
+    const result = extractBodyFromWriteOrEndFunc([firstArg, secArg]);
 
     expect(result).toEqual('Qk9EWQ==');
   });
 
-  test('extractBodyFromWriteFunc -> simple flow -> write(Buffer, encoding, callback)', () => {
+  test('extractBodyFromWriteOrEndFunc -> simple flow -> write(Buffer, encoding, callback)', () => {
     const firstArg = Buffer.from('BODY');
     const secArg = 'base64';
     const thirdArg = () => {};
 
-    const result = extractBodyFromWriteFunc([firstArg, secArg, thirdArg]);
+    const result = extractBodyFromWriteOrEndFunc([firstArg, secArg, thirdArg]);
 
     expect(result).toEqual('BODY');
   });
 
-  test('extractBodyFromWriteFunc -> simple flow -> write(Buffer, callback)', () => {
+  test('extractBodyFromWriteOrEndFunc -> simple flow -> write(Buffer, callback)', () => {
     const firstArg = Buffer.from('BODY');
     const secArg = () => {};
 
-    const result = extractBodyFromWriteFunc([firstArg, secArg]);
+    const result = extractBodyFromWriteOrEndFunc([firstArg, secArg]);
 
     expect(result).toEqual('BODY');
   });
 
-  test('extractBodyFromWriteFunc -> simple flow -> write(str, callback)', () => {
+  test('extractBodyFromWriteOrEndFunc -> simple flow -> write(str, callback)', () => {
     const firstArg = 'BODY';
     const secArg = () => {};
 
-    const result = extractBodyFromWriteFunc([firstArg, secArg]);
+    const result = extractBodyFromWriteOrEndFunc([firstArg, secArg]);
 
     expect(result).toEqual('BODY');
   });
