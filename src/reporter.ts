@@ -102,7 +102,9 @@ function scrubSpans(resultSpans: any[]) {
             sizeLimit
           );
         }
-        span.info.httpInfo.request.headers = payloadStringify(request.headers, sizeLimit);
+        if (span.info?.httpInfo?.request?.headers) {
+          span.info.httpInfo.request.headers = payloadStringify(request.headers, sizeLimit);
+        }
         if (response?.headers)
           span.info.httpInfo.response.headers = payloadStringify(response.headers, sizeLimit);
       }
