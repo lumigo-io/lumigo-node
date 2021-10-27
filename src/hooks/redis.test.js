@@ -4,6 +4,7 @@ import { hookRedis } from './redis';
 import { HandlerInputesBuilder } from '../../testUtils/handlerInputesBuilder';
 import { RedisSpanBuilder } from '../../testUtils/redisSpanBuilder';
 import { createRedisSpan } from '../spans/redisSpan';
+import { Ioredis } from '../../testUtils/ioredisMocker';
 
 const noop = () => {};
 
@@ -37,6 +38,50 @@ describe('redis', () => {
       .withResponse(`"OK"`)
       .build();
     expect(spans).toEqual([expectedSpan]);
+  });
+
+  test('hook ioredis -> simple flow', async () => {
+    const connectionOptions = 'tracer-test-cluster.1meza6.ng.0001.usw1.cache.amazonaws.com';
+    hookRedis(Ioredis);
+    const redisClient = new Ioredis(connectionOptions);
+
+    await redisClient.set('Key', 'Value');
+
+    const spans = SpansContainer.getSpans();
+    const expectedSpan = new RedisSpanBuilder()
+      .withId(spans[0].id)
+      .withStarted(spans[0].started)
+      .withEnded(spans[0].ended)
+      .withConnectionOptions(connectionOptions)
+      .withRequestCommand('set')
+      .withRequestArgs('["Key","Value"]')
+      .withResponse(`"OK"`)
+      .build();
+    expect(spans).toEqual([expectedSpan]);
+  });
+
+  test('hook ioredis -> rejects', async () => {
+    const connectionOptions = 'tracer-test-cluster.1meza6.ng.0001.usw1.cache.amazonaws.com';
+    hookRedis(Ioredis);
+    const redisClient = new Ioredis(connectionOptions, {
+      shouldFail: true,
+    });
+
+    try {
+      await redisClient.set('Key', 'Value');
+    } catch (e) {
+      const spans = SpansContainer.getSpans();
+      const expectedSpan = new RedisSpanBuilder()
+        .withId(spans[0].id)
+        .withStarted(spans[0].started)
+        .withEnded(spans[0].ended)
+        .withError('"Bad data"')
+        .withConnectionOptions(connectionOptions)
+        .withRequestCommand('set')
+        .withRequestArgs('["Key","Value"]')
+        .build();
+      expect(spans).toEqual([expectedSpan]);
+    }
   });
 
   test('hook redis -> not ready', async () => {

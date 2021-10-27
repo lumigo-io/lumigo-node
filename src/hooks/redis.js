@@ -1,20 +1,24 @@
 import { safeRequire } from '../utils/requireUtils';
-import { hook } from '../extender';
+import { hook, hookPromise } from '../extender';
 import { getRandomId } from '../utils';
 import { createRedisSpan, extendRedisSpan } from '../spans/redisSpan';
 import { SpansContainer, TracerGlobals } from '../globals';
 import * as logger from '../logger';
 import { getCurrentTransactionId } from '../spans/awsSpan';
 
-const createCallbackHandler = (redisSpan) => (args) => {
+const handleResult = (currentSpan, result, error) => {
   const ended = Date.now();
-  const [error, result] = args;
-  const span = extendRedisSpan(redisSpan, {
+  const span = extendRedisSpan(currentSpan, {
     ended,
     error,
     result,
   });
   SpansContainer.addSpan(span);
+};
+
+const createCallbackHandler = (redisSpan) => (args) => {
+  const [error, result] = args;
+  handleResult(redisSpan, result, error);
 };
 
 function sendCommandBeforeHook(args) {
@@ -43,17 +47,36 @@ function sendCommandBeforeHook(args) {
     }
   );
   SpansContainer.addSpan(span);
-
-  hook(command, 'callback', {
-    beforeHook: createCallbackHandler(span),
-  });
+  if (command.callback) {
+    hook(command, 'callback', {
+      beforeHook: createCallbackHandler(span),
+    });
+  }
+  // ioredis
+  if (command.promise) {
+    hookPromise(command.promise, {
+      thenHandler: (args) => {
+        handleResult(span, args);
+      },
+      catchHandler: (args) => {
+        handleResult(span, null, args);
+      },
+    });
+  }
 }
 
 export const hookRedis = (redisLib) => {
   const redis = redisLib || safeRequire('redis');
-  if (redis) {
+  if (redis && redis.RedisClient) {
     logger.info('Starting to instrument Redis');
     hook(redis.RedisClient.prototype, 'internal_send_command', {
+      beforeHook: sendCommandBeforeHook,
+    });
+  }
+  const ioredis = redisLib || safeRequire('ioredis');
+  if (ioredis && ioredis.prototype?.sendCommand) {
+    logger.info('Starting to instrument ioredis');
+    hook(ioredis.prototype, 'sendCommand', {
       beforeHook: sendCommandBeforeHook,
     });
   }
