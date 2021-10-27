@@ -35,5 +35,5 @@ export const hookPromise = (originalPromise, options) => {
     safeCatchHandler(err);
     throw err;
   };
-  return originalPromise.then(safeThenHandler).catch(errorHandler);
+  originalPromise.then(safeThenHandler).catch(errorHandler);
 };
