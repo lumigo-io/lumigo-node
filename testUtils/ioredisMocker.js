@@ -1,4 +1,4 @@
-export function Redis(path, options) {
+export function Ioredis(path, options) {
   this.path = path;
   this.options = options || {};
   // eslint-disable-next-line camelcase
@@ -20,6 +20,6 @@ export function Redis(path, options) {
   };
 }
 
-Redis.prototype.sendCommand = async function (args) {
+Ioredis.prototype.sendCommand = async function (args) {
   return await args.promise;
 };

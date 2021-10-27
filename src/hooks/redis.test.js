@@ -4,7 +4,7 @@ import { hookRedis } from './redis';
 import { HandlerInputesBuilder } from '../../testUtils/handlerInputesBuilder';
 import { RedisSpanBuilder } from '../../testUtils/redisSpanBuilder';
 import { createRedisSpan } from '../spans/redisSpan';
-import { Redis } from '../../testUtils/ioredisMocker';
+import { Ioredis } from '../../testUtils/ioredisMocker';
 
 const noop = () => {};
 
@@ -42,8 +42,8 @@ describe('redis', () => {
 
   test('hook ioredis -> simple flow', async () => {
     const connectionOptions = 'tracer-test-cluster.1meza6.ng.0001.usw1.cache.amazonaws.com';
-    hookRedis(Redis);
-    const redisClient = new Redis(connectionOptions);
+    hookRedis(Ioredis);
+    const redisClient = new Ioredis(connectionOptions);
 
     await redisClient.set('Key', 'Value');
 
@@ -62,8 +62,8 @@ describe('redis', () => {
 
   test('hook ioredis -> rejects', async () => {
     const connectionOptions = 'tracer-test-cluster.1meza6.ng.0001.usw1.cache.amazonaws.com';
-    hookRedis(Redis);
-    const redisClient = new Redis(connectionOptions, {
+    hookRedis(Ioredis);
+    const redisClient = new Ioredis(connectionOptions, {
       shouldFail: true,
     });
 
