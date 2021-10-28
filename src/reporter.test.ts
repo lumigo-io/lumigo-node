@@ -605,6 +605,8 @@ describe('reporter', () => {
           httpInfo: {},
         },
       },
+      { info: {} },
+      { },
       {
         info: {
           host: 'host',
@@ -618,7 +620,7 @@ describe('reporter', () => {
       },
     ];
     scrubSpans(spans);
-    expect(spans.length).toEqual(3);
+    expect(spans.length).toEqual(spans.length);
   });
 
   test(`sendSpans -> handle errors in forgeAndScrubRequestBody`, async () => {
