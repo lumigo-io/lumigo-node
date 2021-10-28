@@ -5,7 +5,7 @@ import * as utils from './utils';
 import { AxiosMocker } from '../testUtils/axiosMocker';
 import { getEventEntitySize, getJSONBase64Size, setDebug } from './utils';
 import { encode } from 'utf8';
-import { sendSpans } from './reporter';
+import { scrubSpans, sendSpans } from './reporter';
 import { isAwsContext } from './guards/awsGuards';
 import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
 
@@ -587,6 +587,38 @@ describe('reporter', () => {
 
   test('forgeRequestBody - empty list', async () => {
     expect(reporter.forgeAndScrubRequestBody([], 100)).toEqual(undefined);
+  });
+
+  test('scrubSpans missing http fields', () => {
+    const spans = [
+      {
+        info: {
+          httpInfo: {
+            host: 'host',
+            request: {},
+            response: {},
+          },
+        },
+      },
+      {
+        info: {
+          httpInfo: {},
+        },
+      },
+      {
+        info: {
+          host: 'host',
+          request: {
+            body: '',
+          },
+          response: {
+            headers: {},
+          },
+        },
+      },
+    ];
+    scrubSpans(spans);
+    expect(spans.length).toEqual(3);
   });
 
   test(`sendSpans -> handle errors in forgeAndScrubRequestBody`, async () => {
