@@ -606,7 +606,7 @@ describe('reporter', () => {
         },
       },
       { info: {} },
-      { },
+      {},
       {
         info: {
           host: 'host',
