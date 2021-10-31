@@ -676,7 +676,7 @@ describe('reporter', () => {
       { info: { httpInfo: { request: {}, response: {} } } },
     ];
     const spans = [...beforeScrub];
-    scrubSpans([...beforeScrub]);
+    scrubSpans(spans);
 
     expect(spans).toEqual(beforeScrub);
     shouldScrubDomainMock.mockReset();
