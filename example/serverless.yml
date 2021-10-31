@@ -21,7 +21,7 @@ service: aws-nodejs # NOTE: update this with your service name
 
 provider:
   name: aws
-  runtime: nodejs10.x
+  runtime: nodejs12.x
   env:
     LUMIGO_DEBUG: TRUE
 
@@ -30,7 +30,7 @@ provider:
       Action:
         - "lambda:InvokeFunction"
         - "lambda:InvokeAsync"
-        - "dynamodb:PutItem"
+        - "dynamodb:*"
         - "sns:*"
         - "sqs:*"
         - "s3:*"
@@ -51,8 +51,56 @@ provider:
 #    - exclude-me-dir/**
 
 functions:
-  test-function:
-    handler: index.handler
+  dynamodb-function:
+    handler: dynamodb.handler
+    environment:
+      LUMIGO_CONNECTION_TIMEOUT: 3000
+  dynamodb-function-with-middy:
+    handler: dynamodb-with-middy.handler
+    environment:
+      LUMIGO_CONNECTION_TIMEOUT: 3000
+  dynamodb-function-with-middy-no-tracer:
+    handler: dynamodb-with-middy-no-tracer.handler
+    environment:
+      LUMIGO_CONNECTION_TIMEOUT: 3000
+#  mongodb-4_1_2-function:
+#    environment:
+#      LUMIGO_CONNECTION_TIMEOUT: 3000
+#    timeout: 30
+#    handler: mongodb.handler
+#  mysql-function:
+#    environment:
+#      LUMIGO_CONNECTION_TIMEOUT: 3000
+#    timeout: 30
+#    handler: mysql.handler
+#  mysql2-function:
+#    environment:
+#      LUMIGO_CONNECTION_TIMEOUT: 3000
+#    timeout: 30
+#    handler: mysql2.handler
+  redis-function:
+    environment:
+      LUMIGO_CONNECTION_TIMEOUT: 3000
+    timeout: 30
+    handler: redis.handler
+#  sequelize-function:
+#    environment:
+#      LUMIGO_CONNECTION_TIMEOUT: 3000
+#    timeout: 30
+#    handler: sequelize.handler
+resources:
+  Resources:
+    TestTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: test-table
+        BillingMode: PAY_PER_REQUEST
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
 
 
 #    The following are a few example events you can configure
