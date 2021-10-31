@@ -623,6 +623,26 @@ describe('reporter', () => {
     expect(spans.length).toEqual(spans.length);
   });
 
+  test('scrubSpans missing http fields (stepFunction)', () => {
+    const spans = [
+      {
+        info: {
+          traceId: {
+            Root: 'Root',
+            Parent: 'Parent',
+            Sampled: '0',
+            transactionId: 'transactionId',
+          },
+          httpInfo: { host: 'StepFunction' },
+          resourceName: 'StepFunction',
+          messageId: 'messageId',
+        },
+      },
+    ];
+    scrubSpans(spans);
+    expect(spans.length).toEqual(spans.length);
+  });
+
   test(`sendSpans -> handle errors in forgeAndScrubRequestBody`, async () => {
     setDebug();
     // @ts-ignore
