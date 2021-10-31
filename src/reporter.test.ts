@@ -595,26 +595,46 @@ describe('reporter', () => {
         info: {
           httpInfo: {
             host: 'host',
-            request: {},
-            response: {},
+            request: {}, // missing body and headers
+            response: {}, // missing body and headers
           },
         },
       },
       {
         info: {
+          // missing request and response and host
           httpInfo: {},
         },
       },
-      { info: {} },
-      {},
+      { info: {} }, // missing httpInfo
+      {}, // missing info
       {
         info: {
-          host: 'host',
-          request: {
-            body: '',
+          httpInfo: {
+            host: 'host',
+            // missing headers
+            request: {
+              body: '',
+            },
+            // missing body
+            response: {
+              headers: {},
+            },
           },
-          response: {
-            headers: {},
+        },
+      },
+      {
+        info: {
+          httpInfo: {
+            // missing host
+            request: {
+              body: '',
+              headers: {},
+            },
+            response: {
+              body: '',
+              headers: {},
+            },
           },
         },
       },
