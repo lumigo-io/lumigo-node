@@ -107,11 +107,21 @@ const scrubSpan = (span) => {
         span.info.httpInfo.response.headers = payloadStringify(response.headers, sizeLimit);
     }
   }
+  return span;
 };
 
 // We muted the spans itself to keep the memory footprint of the tracer to a minimum
 export function scrubSpans(resultSpans: any[]) {
-  resultSpans.forEach((span) => safeExecute(scrubSpan, 'Failed to scrub span')(span));
+  let from = 0,
+    to = 0;
+  while (from < resultSpans.length) {
+    if (safeExecute(scrubSpan, 'Failed to scrub span')(resultSpans[from])) {
+      resultSpans[to] = resultSpans[from];
+      to++;
+    }
+    from++;
+  }
+  resultSpans.length = to;
 }
 
 // We muted the spans itself to keep the memory footprint of the tracer to a minimum

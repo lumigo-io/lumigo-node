@@ -664,21 +664,69 @@ describe('reporter', () => {
 
   test('scrubSpans should not fail after throwing an error', () => {
     const shouldScrubDomainMock = jest
-      .spyOn(utils, 'shouldScrubDomain')
-      .mockReturnValueOnce(true)
-      .mockReturnValueOnce(true)
+      .spyOn(utils, 'spanHasErrors')
+      .mockReturnValueOnce(false)
+      .mockReturnValueOnce(false)
       .mockImplementationOnce(() => {
         throw new Error('Error');
       });
     const beforeScrub = [
-      { info: { httpInfo: { request: { host: 'StepFunction' }, response: {} } } },
-      { info: { httpInfo: { request: {}, response: { body: 'body' } } } },
-      { info: { httpInfo: { request: {}, response: {} } } },
+      {
+        id: '1',
+        info: {
+          httpInfo: {
+            request: { host: 'StepFunction' },
+            response: {
+              headers: { 'content-type': 'json' },
+              body: JSON.stringify({ secret: '1234' }),
+            },
+          },
+        },
+      },
+      { id: '2', info: { httpInfo: { request: {}, response: { body: 'body' } } } },
+      {
+        id: '3',
+        info: {
+          httpInfo: {
+            request: {},
+            response: {
+              headers: { 'content-type': 'json' },
+              body: JSON.stringify({ secret: '1234' }),
+            },
+          },
+        },
+      },
     ];
     const spans = [...beforeScrub];
     scrubSpans(spans);
 
-    expect(spans).toEqual(beforeScrub);
+    expect(spans).toEqual([
+      {
+        id: '1',
+        info: {
+          httpInfo: {
+            request: {
+              host: 'StepFunction',
+            },
+            response: {
+              headers: '{"content-type":"json"}',
+              body: '{"secret":"****"}',
+            },
+          },
+        },
+      },
+      {
+        id: '2',
+        info: {
+          httpInfo: {
+            request: {},
+            response: {
+              body: '"body"',
+            },
+          },
+        },
+      },
+    ]);
     shouldScrubDomainMock.mockReset();
   });
 
@@ -689,12 +737,12 @@ describe('reporter', () => {
     //Test that no error is raised
 
     const logs = ConsoleWritesForTesting.getLogs();
-    expect(logs.length).toEqual(2);
-    expect(logs[0].msg).toEqual('#LUMIGO# - WARNING - "Error in Lumigo tracer"');
-    expect(logs[1].msg).toEqual('#LUMIGO# - WARNING - "Error in Lumigo tracer"');
-    expect(JSON.parse(logs[0].obj).message).toEqual('resultSpans.forEach is not a function');
-    expect(JSON.parse(logs[1].obj).message).toEqual('spans.map is not a function');
-    expect(JSON.parse(logs[0].obj).stack).toBeTruthy();
-    expect(JSON.parse(logs[1].obj).stack).toBeTruthy();
+    expect(logs.length).toEqual(3);
+    expect(logs[0].msg).toEqual('#LUMIGO# - DEBUG - "Filtered [NaN] spans out"');
+    expect(logs[1].msg.startsWith('#LUMIGO# - DEBUG - "Filtering and scrubbing, Took: [')).toEqual(
+      true
+    );
+    expect(logs[2].msg).toEqual('#LUMIGO# - WARNING - "Error in Lumigo tracer"');
+    expect(JSON.parse(logs[2].obj).stack).toBeTruthy();
   });
 });
