@@ -111,12 +111,7 @@ const scrubSpan = (span) => {
 };
 
 export function scrubSpans(resultSpans: any[]) {
-  const toFilterOutAfterFailedScrub = [];
-  resultSpans.forEach((span) => {
-    if (!safeExecute(scrubSpan, 'Failed to scrub span', logger.LOG_LEVELS.WARNING)(span))
-      toFilterOutAfterFailedScrub.push(span.id);
-  });
-  return resultSpans.filter((s) => !toFilterOutAfterFailedScrub.includes(s.id));
+  return resultSpans.filter((span) => safeExecute(scrubSpan, 'Failed to scrub span')(span));
 }
 
 // We muted the spans itself to keep the memory footprint of the tracer to a minimum
