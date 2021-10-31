@@ -663,20 +663,23 @@ describe('reporter', () => {
   });
 
   test('scrubSpans should not fail after throwing an error', () => {
-    jest
+    const shouldScrubDomainMock = jest
       .spyOn(utils, 'shouldScrubDomain')
       .mockReturnValueOnce(true)
       .mockReturnValueOnce(true)
       .mockImplementationOnce(() => {
         throw new Error('Error');
       });
-    const spans = [
-      { info: { httpInfo: { request: {}, response: {} } } },
-      { info: { httpInfo: { request: {}, response: {} } } },
+    const spansArr = [
+      { info: { httpInfo: { request: { host: 'StepFunction' }, response: {} } } },
+      { info: { httpInfo: { request: {}, response: { body: 'body' } } } },
       { info: { httpInfo: { request: {}, response: {} } } },
     ];
+    const spans = [...spansArr];
     scrubSpans(spans);
-    expect(spans.length).toEqual(spans.length);
+
+    expect(spans).toEqual(spansArr);
+    shouldScrubDomainMock.mockReset();
   });
 
   test(`sendSpans -> handle errors in forgeAndScrubRequestBody`, async () => {
