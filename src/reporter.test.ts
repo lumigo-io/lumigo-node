@@ -6,7 +6,6 @@ import { AxiosMocker } from '../testUtils/axiosMocker';
 import { getEventEntitySize, getJSONBase64Size, setDebug } from './utils';
 import { encode } from 'utf8';
 import { scrubSpans, sendSpans } from './reporter';
-import { isAwsContext } from './guards/awsGuards';
 import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
 
 describe('reporter', () => {
@@ -658,6 +657,23 @@ describe('reporter', () => {
           messageId: 'messageId',
         },
       },
+    ];
+    scrubSpans(spans);
+    expect(spans.length).toEqual(spans.length);
+  });
+
+  test('scrubSpans should not fail after throwing an error', () => {
+    jest
+      .spyOn(utils, 'shouldScrubDomain')
+      .mockReturnValueOnce(true)
+      .mockReturnValueOnce(true)
+      .mockImplementationOnce(() => {
+        throw new Error('Error');
+      });
+    const spans = [
+      { info: { httpInfo: { request: {}, response: {} } } },
+      { info: { httpInfo: { request: {}, response: {} } } },
+      { info: { httpInfo: { request: {}, response: {} } } },
     ];
     scrubSpans(spans);
     expect(spans.length).toEqual(spans.length);

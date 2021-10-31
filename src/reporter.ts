@@ -69,47 +69,49 @@ function scrub(payload: any, headers: any, sizeLimit: number, truncated = false)
   }
 }
 
+const scrubSpan = (span) => {
+  if (span.info?.httpInfo) {
+    const { request, response, host } = span.info.httpInfo;
+    if (
+      (response && request && shouldScrubDomain(host)) ||
+      (request?.host && shouldScrubDomain(request.host)) ||
+      (response?.host && shouldScrubDomain(response.host))
+    ) {
+      request.body = 'The data is not available';
+      response.body = 'The data is not available';
+      delete request.headers;
+      delete response.headers;
+      delete request.uri;
+    } else {
+      const isError = spanHasErrors(span);
+      const sizeLimit = getEventEntitySize(isError);
+      if (span.info.httpInfo.response?.body) {
+        span.info.httpInfo.response.body = scrub(
+          decodeHttpBody(response.body, isError),
+          response.headers,
+          sizeLimit,
+          span.info.httpInfo.response.truncated
+        );
+      }
+      if (span.info.httpInfo.request?.body) {
+        span.info.httpInfo.request.body = scrub(
+          decodeHttpBody(request.body, isError),
+          request.headers,
+          sizeLimit
+        );
+      }
+      if (span.info.httpInfo.request?.headers) {
+        span.info.httpInfo.request.headers = payloadStringify(request.headers, sizeLimit);
+      }
+      if (response?.headers)
+        span.info.httpInfo.response.headers = payloadStringify(response.headers, sizeLimit);
+    }
+  }
+};
+
 // We muted the spans itself to keep the memory footprint of the tracer to a minimum
 export function scrubSpans(resultSpans: any[]) {
-  resultSpans.forEach((span) => {
-    if (span.info?.httpInfo) {
-      const { request, response, host } = span.info.httpInfo;
-      if (
-        shouldScrubDomain(host) ||
-        (request?.host && shouldScrubDomain(request.host)) ||
-        (response?.host && shouldScrubDomain(response.host))
-      ) {
-        request.body = 'The data is not available';
-        response.body = 'The data is not available';
-        delete request.headers;
-        delete response.headers;
-        delete request.uri;
-      } else {
-        const isError = spanHasErrors(span);
-        const sizeLimit = getEventEntitySize(isError);
-        if (span.info.httpInfo.response?.body) {
-          span.info.httpInfo.response.body = scrub(
-            decodeHttpBody(response.body, isError),
-            response.headers,
-            sizeLimit,
-            span.info.httpInfo.response.truncated
-          );
-        }
-        if (span.info.httpInfo.request?.body) {
-          span.info.httpInfo.request.body = scrub(
-            decodeHttpBody(request.body, isError),
-            request.headers,
-            sizeLimit
-          );
-        }
-        if (span.info.httpInfo.request?.headers) {
-          span.info.httpInfo.request.headers = payloadStringify(request.headers, sizeLimit);
-        }
-        if (response?.headers)
-          span.info.httpInfo.response.headers = payloadStringify(response.headers, sizeLimit);
-      }
-    }
-  });
+  resultSpans.forEach((span) => safeExecute(scrubSpan, 'Failed to scrub span')(span));
 }
 
 // We muted the spans itself to keep the memory footprint of the tracer to a minimum
