@@ -19,8 +19,7 @@ export const NUMBER_OF_SPANS_IN_REPORT_OPTIMIZATION = 200;
 export const sendSingleSpan = async (span) => sendSpans([span]);
 
 export const logSpans = (rtt: number, spans): void => {
-  const spanIds = spans.map((span) => span.id);
-  logger.debug(`Spans sent [${rtt}ms]`, spanIds);
+  logger.debug(`Spans sent [${rtt}ms]`, spans);
 };
 
 export const isSpansContainsErrors = (spans): boolean => {
@@ -112,6 +111,7 @@ function scrubSpans(resultSpans: any[]) {
 // We muted the spans itself to keep the memory footprint of the tracer to a minimum
 export const forgeAndScrubRequestBody = (spans, maxSendBytes): string | undefined => {
   const start = new Date().getTime();
+  const beforeLength = spans.length;
   const originalSize = spans.length;
   if (!isPruneTraceOff() && shouldTrim(spans, maxSendBytes)) {
     logger.debug(
@@ -130,7 +130,7 @@ export const forgeAndScrubRequestBody = (spans, maxSendBytes): string | undefine
     logger.debug(`Trimmed spans due to size`);
   }
   logger.debug(
-    `Filtered [${spans.length - spans.length}] spans out, Took: [${new Date().getTime() - start}ms]`
+    `Filtered [${beforeLength - spans.length}] and scrubbed spans out, Took: [${new Date().getTime() - start}ms]`
   );
   return spans.length > 0 ? JSON.stringify(spans) : undefined;
 };
