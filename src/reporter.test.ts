@@ -591,31 +591,31 @@ describe('reporter', () => {
   test('scrubSpans missing http fields', () => {
     const spans = [
       {
+        // span without request and response bodies and headers
         info: {
           httpInfo: {
             host: 'host',
-            request: {}, // missing body and headers
-            response: {}, // missing body and headers
+            request: {},
+            response: {},
           },
         },
       },
       {
+        // missing request and response and host
         info: {
-          // missing request and response and host
           httpInfo: {},
         },
       },
       { info: {} }, // missing httpInfo
       {}, // missing info
       {
+        // missing headers in request and body in response
         info: {
           httpInfo: {
             host: 'host',
-            // missing headers
             request: {
               body: '',
             },
-            // missing body
             response: {
               headers: {},
             },
@@ -623,9 +623,9 @@ describe('reporter', () => {
         },
       },
       {
+        // missing host
         info: {
           httpInfo: {
-            // missing host
             request: {
               body: '',
               headers: {},
@@ -671,6 +671,10 @@ describe('reporter', () => {
       .mockImplementationOnce(() => {
         throw new Error('Error');
       });
+    const spanWithoutSecrets = {
+      id: '2',
+      info: { httpInfo: { request: {}, response: { body: 'body' } } },
+    };
     const beforeScrub = [
       {
         id: '1',
@@ -684,7 +688,7 @@ describe('reporter', () => {
           },
         },
       },
-      { id: '2', info: { httpInfo: { request: {}, response: { body: 'body' } } } },
+      spanWithoutSecrets,
       {
         id: '3',
         info: {
@@ -713,17 +717,7 @@ describe('reporter', () => {
           },
         },
       },
-      {
-        id: '2',
-        info: {
-          httpInfo: {
-            request: {},
-            response: {
-              body: '"body"',
-            },
-          },
-        },
-      },
+      spanWithoutSecrets,
     ];
     expect(scrubSpans(beforeScrub)).toEqual(scrubbed);
     shouldScrubDomainMock.mockReset();

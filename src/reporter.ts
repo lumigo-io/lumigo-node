@@ -14,6 +14,7 @@ import { HttpSpansAgent } from './httpSpansAgent';
 import { payloadStringify } from './utils/payloadStringify';
 import { decodeHttpBody } from './spans/awsSpan';
 import untruncateJson from './tools/untrancateJson';
+import { BasicSpan } from './types/spans/basicSpan';
 export const NUMBER_OF_SPANS_IN_REPORT_OPTIMIZATION = 200;
 
 export const sendSingleSpan = async (span) => sendSpans([span]);
