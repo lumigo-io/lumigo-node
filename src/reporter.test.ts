@@ -670,15 +670,15 @@ describe('reporter', () => {
       .mockImplementationOnce(() => {
         throw new Error('Error');
       });
-    const spansArr = [
+    const beforeScrub = [
       { info: { httpInfo: { request: { host: 'StepFunction' }, response: {} } } },
       { info: { httpInfo: { request: {}, response: { body: 'body' } } } },
       { info: { httpInfo: { request: {}, response: {} } } },
     ];
-    const spans = [...spansArr];
-    scrubSpans(spans);
+    const spans = [...beforeScrub];
+    scrubSpans([...beforeScrub]);
 
-    expect(spans).toEqual(spansArr);
+    expect(spans).toEqual(beforeScrub);
     shouldScrubDomainMock.mockReset();
   });
 
