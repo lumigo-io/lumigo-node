@@ -19,7 +19,8 @@ export const NUMBER_OF_SPANS_IN_REPORT_OPTIMIZATION = 200;
 export const sendSingleSpan = async (span) => sendSpans([span]);
 
 export const logSpans = (rtt: number, spans): void => {
-  logger.debug(`Spans sent [${rtt}ms]`, spans);
+  const spanIds = spans.map((span) => span.id);
+  logger.debug(`Spans sent [${rtt}ms]`, spanIds);
 };
 
 export const isSpansContainsErrors = (spans): boolean => {
@@ -133,7 +134,9 @@ export const forgeAndScrubRequestBody = (spans, maxSendBytes): string | undefine
     logger.debug(`Trimmed spans due to size`);
   }
   logger.debug(
-    `Filtered [${beforeLength - spans.length}] and scrubbed spans out, Took: [${new Date().getTime() - start}ms]`
+    `Filtered [${beforeLength - spans.length}] and scrubbed spans out, Took: [${
+      new Date().getTime() - start
+    }ms]`
   );
   return spans.length > 0 ? JSON.stringify(spans) : undefined;
 };
