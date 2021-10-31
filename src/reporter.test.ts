@@ -658,8 +658,9 @@ describe('reporter', () => {
         },
       },
     ];
+    const resultSpans = [...spans];
     scrubSpans(spans);
-    expect(spans.length).toEqual(spans.length);
+    expect(spans).toEqual(resultSpans);
   });
 
   test('scrubSpans should not fail after throwing an error', () => {
