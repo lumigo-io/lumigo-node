@@ -68,6 +68,7 @@ function scrub(payload: any, headers: any, sizeLimit: number, truncated = false)
   }
 }
 
+// We muted the spans itself to keep the memory footprint of the tracer to a minimum
 function scrubSpans(resultSpans: any[]) {
   resultSpans.forEach((span) => {
     if (span.info?.httpInfo) {

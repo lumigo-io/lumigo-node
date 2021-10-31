@@ -12,11 +12,7 @@ import {
   isValidAlias,
   lowerCaseObjectKeys,
 } from '../utils';
-import {
-  extractBodyFromEmitSocketEvent,
-  extractBodyFromEndFunc,
-  extractBodyFromWriteFunc,
-} from './httpUtils';
+import { extractBodyFromEmitSocketEvent, extractBodyFromWriteOrEndFunc } from './httpUtils';
 import { getCurrentTransactionId, getHttpInfo, getHttpSpan } from '../spans/awsSpan';
 import { URL } from 'url';
 import { SpansContainer, TracerGlobals } from '../globals';
@@ -51,7 +47,7 @@ export class Http {
     return function (args) {
       GlobalDurationTimer.start();
       if (isEmptyString(requestData.body)) {
-        const body = extractBodyFromEndFunc(args);
+        const body = extractBodyFromWriteOrEndFunc(args);
         if (body) {
           requestData.body += body.substr(0, getEventEntitySize(false));
         }
@@ -145,12 +141,13 @@ export class Http {
 
   @GlobalDurationTimer.timedSync()
   static httpBeforeRequestWrapper(args, extenderContext) {
+    extenderContext.isTracedDisabled = true;
     // @ts-ignore
     const { awsRequestId } = TracerGlobals.getHandlerInputs().context;
     const transactionId = getCurrentTransactionId();
-    extenderContext.isTracedDisabled = true;
     extenderContext.awsRequestId = awsRequestId;
     extenderContext.transactionId = transactionId;
+    extenderContext.isTracedDisabled = false;
 
     const { url, options } = Http.httpRequestArguments(args);
     const { headers } = options || {};
@@ -216,7 +213,7 @@ export class Http {
     return function (args) {
       GlobalDurationTimer.start();
       if (isEmptyString(requestData.body)) {
-        const body = extractBodyFromWriteFunc(args);
+        const body = extractBodyFromWriteOrEndFunc(args);
         if (body) {
           requestData.body += body;
           if (currentSpan) currentSpan.info.httpInfo = getHttpInfo(requestData, {});
