@@ -23,7 +23,6 @@ export const OMITTING_KEYS_REGEXES = [
   'Signature',
   'Credential',
   'Authorization',
-  'authorization',
 ];
 export const LUMIGO_EVENT_KEY = '_lumigo';
 export const STEP_FUNCTION_UID_KEY = 'step_function_uid';

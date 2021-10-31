@@ -133,10 +133,8 @@ export const forgeAndScrubRequestBody = (spans, maxSendBytes): string | undefine
   if (originalSize - spans.length > 0) {
     logger.debug(`Trimmed spans due to size`);
   }
-  logger.debug(
-    `Filtered [${beforeLength - spans.length}] and scrubbed spans out, Took: [${
-      new Date().getTime() - start
-    }ms]`
-  );
+
+  logger.debug(`Filtered [${beforeLength - spans.length}] spans out`);
+  logger.debug(`Filtering and scrubbing, Took: [${new Date().getTime() - start}ms]`);
   return spans.length > 0 ? JSON.stringify(spans) : undefined;
 };
