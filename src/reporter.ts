@@ -69,7 +69,7 @@ function scrub(payload: any, headers: any, sizeLimit: number, truncated = false)
 }
 
 // We muted the spans itself to keep the memory footprint of the tracer to a minimum
-function scrubSpans(resultSpans: any[]) {
+export function scrubSpans(resultSpans: any[]) {
   resultSpans.forEach((span) => {
     if (span.info?.httpInfo) {
       const { request, response, host } = span.info.httpInfo;
@@ -101,7 +101,9 @@ function scrubSpans(resultSpans: any[]) {
             sizeLimit
           );
         }
-        span.info.httpInfo.request.headers = payloadStringify(request.headers, sizeLimit);
+        if (span.info.httpInfo.request?.headers) {
+          span.info.httpInfo.request.headers = payloadStringify(request.headers, sizeLimit);
+        }
         if (response?.headers)
           span.info.httpInfo.response.headers = payloadStringify(response.headers, sizeLimit);
       }
