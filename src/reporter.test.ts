@@ -698,10 +698,7 @@ describe('reporter', () => {
         },
       },
     ];
-    const spans = [...beforeScrub];
-    scrubSpans(spans);
-
-    expect(spans).toEqual([
+    const scrubbed = [
       {
         id: '1',
         info: {
@@ -727,7 +724,8 @@ describe('reporter', () => {
           },
         },
       },
-    ]);
+    ];
+    expect(scrubSpans(beforeScrub)).toEqual(scrubbed);
     shouldScrubDomainMock.mockReset();
   });
 
@@ -738,12 +736,12 @@ describe('reporter', () => {
     //Test that no error is raised
 
     const logs = ConsoleWritesForTesting.getLogs();
-    expect(logs.length).toEqual(3);
-    expect(logs[0].msg).toEqual('#LUMIGO# - DEBUG - "Filtered [NaN] spans out"');
-    expect(logs[1].msg.startsWith('#LUMIGO# - DEBUG - "Filtering and scrubbing, Took: [')).toEqual(
-      true
-    );
-    expect(logs[2].msg).toEqual('#LUMIGO# - WARNING - "Error in Lumigo tracer"');
-    expect(JSON.parse(logs[2].obj).stack).toBeTruthy();
+    expect(logs.length).toEqual(2);
+    expect(logs[0].msg).toEqual('#LUMIGO# - WARNING - "Error in Lumigo tracer"');
+    expect(logs[1].msg).toEqual('#LUMIGO# - WARNING - "Error in Lumigo tracer"');
+    expect(JSON.parse(logs[0].obj).message).toEqual('resultSpans.forEach is not a function');
+    expect(JSON.parse(logs[1].obj).message).toEqual('spans.map is not a function');
+    expect(JSON.parse(logs[0].obj).stack).toBeTruthy();
+    expect(JSON.parse(logs[1].obj).stack).toBeTruthy();
   });
 });

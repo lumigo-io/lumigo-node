@@ -110,18 +110,13 @@ const scrubSpan = (span) => {
   return span;
 };
 
-// We muted the spans itself to keep the memory footprint of the tracer to a minimum
 export function scrubSpans(resultSpans: any[]) {
-  let from = 0,
-    to = 0;
-  while (from < resultSpans.length) {
-    if (safeExecute(scrubSpan, 'Failed to scrub span')(resultSpans[from])) {
-      resultSpans[to] = resultSpans[from];
-      to++;
-    }
-    from++;
-  }
-  resultSpans.length = to;
+  const toFilterOutAfterFailedScrub = [];
+  resultSpans.forEach((span) => {
+    if (!safeExecute(scrubSpan, 'Failed to scrub span', logger.LOG_LEVELS.WARNING)(span))
+      toFilterOutAfterFailedScrub.push(span.id);
+  });
+  return resultSpans.filter((s) => !toFilterOutAfterFailedScrub.includes(s.id));
 }
 
 // We muted the spans itself to keep the memory footprint of the tracer to a minimum
@@ -141,7 +136,7 @@ export const forgeAndScrubRequestBody = (spans, maxSendBytes): string | undefine
       totalSize -= getJSONBase64Size(spans.pop());
     spans.push(functionEndSpan);
   }
-  scrubSpans(spans);
+  spans = scrubSpans(spans);
   if (originalSize - spans.length > 0) {
     logger.debug(`Trimmed spans due to size`);
   }
