@@ -14,6 +14,7 @@ import { HttpSpansAgent } from './httpSpansAgent';
 import { payloadStringify } from './utils/payloadStringify';
 import { decodeHttpBody } from './spans/awsSpan';
 import untruncateJson from './tools/untrancateJson';
+import { BasicSpan } from './types/spans/basicSpan';
 export const NUMBER_OF_SPANS_IN_REPORT_OPTIMIZATION = 200;
 
 export const sendSingleSpan = async (span) => sendSpans([span]);
@@ -69,50 +70,55 @@ function scrub(payload: any, headers: any, sizeLimit: number, truncated = false)
   }
 }
 
-// We muted the spans itself to keep the memory footprint of the tracer to a minimum
-function scrubSpans(resultSpans: any[]) {
-  resultSpans.forEach((span) => {
-    if (span.info?.httpInfo) {
-      const { request, response, host } = span.info.httpInfo;
-      if (
-        shouldScrubDomain(host) ||
-        (request?.host && shouldScrubDomain(request.host)) ||
-        (response?.host && shouldScrubDomain(response.host))
-      ) {
-        request.body = 'The data is not available';
-        response.body = 'The data is not available';
-        delete request.headers;
-        delete response.headers;
-        delete request.uri;
-      } else {
-        const isError = spanHasErrors(span);
-        const sizeLimit = getEventEntitySize(isError);
-        if (span.info?.httpInfo?.response?.body) {
-          span.info.httpInfo.response.body = scrub(
-            decodeHttpBody(response.body, isError),
-            response.headers,
-            sizeLimit,
-            span.info.httpInfo.response.truncated
-          );
-        }
-        if (span.info?.httpInfo?.request?.body) {
-          span.info.httpInfo.request.body = scrub(
-            decodeHttpBody(request.body, isError),
-            request.headers,
-            sizeLimit
-          );
-        }
-        span.info.httpInfo.request.headers = payloadStringify(request.headers, sizeLimit);
-        if (response?.headers)
-          span.info.httpInfo.response.headers = payloadStringify(response.headers, sizeLimit);
+const scrubSpan = (span) => {
+  if (span.info?.httpInfo) {
+    const { request, response, host } = span.info.httpInfo;
+    if (
+      (response && request && shouldScrubDomain(host)) ||
+      (request?.host && shouldScrubDomain(request.host)) ||
+      (response?.host && shouldScrubDomain(response.host))
+    ) {
+      request.body = 'The data is not available';
+      response.body = 'The data is not available';
+      delete request.headers;
+      delete response.headers;
+      delete request.uri;
+    } else {
+      const isError = spanHasErrors(span);
+      const sizeLimit = getEventEntitySize(isError);
+      if (span.info.httpInfo.response?.body) {
+        span.info.httpInfo.response.body = scrub(
+          decodeHttpBody(response.body, isError),
+          response.headers,
+          sizeLimit,
+          span.info.httpInfo.response.truncated
+        );
       }
+      if (span.info.httpInfo.request?.body) {
+        span.info.httpInfo.request.body = scrub(
+          decodeHttpBody(request.body, isError),
+          request.headers,
+          sizeLimit
+        );
+      }
+      if (span.info.httpInfo.request?.headers) {
+        span.info.httpInfo.request.headers = payloadStringify(request.headers, sizeLimit);
+      }
+      if (response?.headers)
+        span.info.httpInfo.response.headers = payloadStringify(response.headers, sizeLimit);
     }
-  });
+  }
+  return span;
+};
+
+export function scrubSpans(resultSpans: any[]) {
+  return resultSpans.filter((span) => safeExecute(scrubSpan, 'Failed to scrub span')(span));
 }
 
 // We muted the spans itself to keep the memory footprint of the tracer to a minimum
 export const forgeAndScrubRequestBody = (spans, maxSendBytes): string | undefined => {
   const start = new Date().getTime();
+  const beforeLength = spans.length;
   const originalSize = spans.length;
   if (!isPruneTraceOff() && shouldTrim(spans, maxSendBytes)) {
     logger.debug(
@@ -126,12 +132,12 @@ export const forgeAndScrubRequestBody = (spans, maxSendBytes): string | undefine
       totalSize -= getJSONBase64Size(spans.pop());
     spans.push(functionEndSpan);
   }
-  scrubSpans(spans);
+  spans = scrubSpans(spans);
   if (originalSize - spans.length > 0) {
     logger.debug(`Trimmed spans due to size`);
   }
-  logger.debug(
-    `Filtered [${spans.length - spans.length}] spans out, Took: [${new Date().getTime() - start}ms]`
-  );
+
+  logger.debug(`Filtered [${beforeLength - spans.length}] spans out`);
+  logger.debug(`Filtering and scrubbing, Took: [${new Date().getTime() - start}ms]`);
   return spans.length > 0 ? JSON.stringify(spans) : undefined;
 };
