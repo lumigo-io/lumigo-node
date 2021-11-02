@@ -88,4 +88,8 @@ describe('neo4j', () => {
     ]);
     expect(foundError).toBeTruthy();
   });
+
+  test('hook -> run (text: string, params: object) -> unstructured error', async () => {
+  //   TODO
+  });
 });
