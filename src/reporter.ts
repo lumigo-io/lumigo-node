@@ -38,7 +38,7 @@ export const sendSpans = async (spans: any[]): Promise<void> => {
   const reqBody = safeExecute(forgeAndScrubRequestBody)(spans, getMaxRequestSize());
 
   if (reqBody) {
-  const roundTripStart = Date.now();
+    const roundTripStart = Date.now();
     await HttpSpansAgent.postSpans(reqBody);
     const roundTripEnd = Date.now();
     const rtt = roundTripEnd - roundTripStart;
@@ -46,8 +46,8 @@ export const sendSpans = async (spans: any[]): Promise<void> => {
     safeExecute(logSpans)(rtt, spans);
   } else if (spans.length > 0) {
     logger.warn('Request body was falsy, spans: ', { spans });
-  } else{
-    logger.warn("Send spans got 0 spans");
+  } else {
+    logger.warn('Send spans got 0 spans');
   }
 };
 
@@ -141,6 +141,10 @@ export const forgeAndScrubRequestBody = (spans, maxSendBytes): string | undefine
   spans = scrubSpans(spans);
 
   const result = spans.length > 0 ? JSON.stringify(spans) : undefined;
-  logger.debug(`Forging and scrubbing, Took: [${new Date().getTime() - start}ms], Returning: [${spans.length}] spans`);
+  logger.debug(
+    `Forging and scrubbing, Took: [${new Date().getTime() - start}ms], Returning: [${
+      spans.length
+    }] spans`
+  );
   return result;
 };
