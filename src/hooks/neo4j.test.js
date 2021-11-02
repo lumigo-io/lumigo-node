@@ -96,14 +96,20 @@ describe('neo4j', () => {
     const response = createMockedResponse(query, params);
     const client = createHookedNeo4jSession({ response });
     const createNeo4jSpanMock = jest
-      .spyOn(neo4jSpan, 'createNeo4jSpan')
+      .spyOn(neo4jSpan, 'extendNeo4jSpan')
       .mockImplementation(() => {
-        throw new Error('Error');
+        throw new Error('Cannot set property \'error\' of undefined');
       });
 
     await client.run(query, params);
     const spans = SpansContainer.getSpans();
-    expect(spans).toEqual([]);
+    expect(spans).toEqual([
+      createBaseBuilderFromSpan(spans[0])
+        .withConnectionParameters(DUMMY_OPTIONS)
+        .withQuery(query)
+        .withParams(payloadStringify(params))
+        .build(),
+    ]);
     createNeo4jSpanMock.mockReset();
   });
 });
