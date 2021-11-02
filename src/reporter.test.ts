@@ -731,8 +731,6 @@ describe('reporter', () => {
 
     const logs = ConsoleWritesForTesting.getLogs();
     expect(logs.length).toEqual(2);
-    expect(logs[0].msg).toEqual('#LUMIGO# - WARNING - "Error in Lumigo tracer"');
-    expect(logs[1].msg).toEqual('#LUMIGO# - WARNING - "Send spans got 0 spans"');
     expect(JSON.parse(logs[0].obj).message).toEqual('resultSpans.filter is not a function');
     expect(JSON.parse(logs[0].obj).stack).toBeTruthy();
   });
