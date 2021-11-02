@@ -60,13 +60,13 @@ const createErrorHook = (currentSpan, error) => {
 function queryAfterHook(args, originalFnResult, extenderContext) {
   const { currentSpan } = extenderContext;
   hookPromise(originalFnResult, {
-      thenHandler: (args) => {
-        createResultHook(currentSpan, args);
-      },
-      catchHandler: (error) => {
-        createErrorHook(currentSpan, error);
-      },
-    });
+    thenHandler: (args) => {
+      createResultHook(currentSpan, args);
+    },
+    catchHandler: (error) => {
+      createErrorHook(currentSpan, error);
+    },
+  });
 }
 
 export const hookNeo4j = (neo4JClient = null) => {
