@@ -37,14 +37,18 @@ export const sendSpans = async (spans: any[]): Promise<void> => {
   }
   const reqBody = safeExecute(forgeAndScrubRequestBody)(spans, getMaxRequestSize());
 
-  const roundTripStart = Date.now();
   if (reqBody) {
+  const roundTripStart = Date.now();
     await HttpSpansAgent.postSpans(reqBody);
-  }
-  const roundTripEnd = Date.now();
-  const rtt = roundTripEnd - roundTripStart;
+    const roundTripEnd = Date.now();
+    const rtt = roundTripEnd - roundTripStart;
 
-  safeExecute(logSpans)(rtt, spans);
+    safeExecute(logSpans)(rtt, spans);
+  } else if (spans.length > 0) {
+    logger.warn('Request body was falsy, spans: ', { spans });
+  } else{
+    logger.warn("Send spans got 0 spans");
+  }
 };
 
 export const shouldTrim = (spans, maxSendBytes: number): boolean => {
@@ -118,7 +122,6 @@ export function scrubSpans(resultSpans: any[]) {
 // We muted the spans itself to keep the memory footprint of the tracer to a minimum
 export const forgeAndScrubRequestBody = (spans, maxSendBytes): string | undefined => {
   const start = new Date().getTime();
-  const beforeLength = spans.length;
   const originalSize = spans.length;
   if (!isPruneTraceOff() && shouldTrim(spans, maxSendBytes)) {
     logger.debug(
@@ -131,13 +134,13 @@ export const forgeAndScrubRequestBody = (spans, maxSendBytes): string | undefine
     while (totalSize > maxSendBytes && spans.length > 0)
       totalSize -= getJSONBase64Size(spans.pop());
     spans.push(functionEndSpan);
+    if (originalSize - spans.length > 0) {
+      logger.debug(`Filtered [${originalSize - spans.length}] spans out`);
+    }
   }
   spans = scrubSpans(spans);
-  if (originalSize - spans.length > 0) {
-    logger.debug(`Trimmed spans due to size`);
-  }
 
-  logger.debug(`Filtered [${beforeLength - spans.length}] spans out`);
-  logger.debug(`Filtering and scrubbing, Took: [${new Date().getTime() - start}ms]`);
-  return spans.length > 0 ? JSON.stringify(spans) : undefined;
+  const result = spans.length > 0 ? JSON.stringify(spans) : undefined;
+  logger.debug(`Forging and scrubbing, Took: [${new Date().getTime() - start}ms], Returning: [${spans.length}] spans`);
+  return result;
 };
