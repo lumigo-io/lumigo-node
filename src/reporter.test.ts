@@ -5,8 +5,7 @@ import * as utils from './utils';
 import { AxiosMocker } from '../testUtils/axiosMocker';
 import { getEventEntitySize, getJSONBase64Size, setDebug } from './utils';
 import { encode } from 'utf8';
-import { sendSpans } from './reporter';
-import { isAwsContext } from './guards/awsGuards';
+import { scrubSpans, sendSpans } from './reporter';
 import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
 
 describe('reporter', () => {
@@ -589,6 +588,141 @@ describe('reporter', () => {
     expect(reporter.forgeAndScrubRequestBody([], 100)).toEqual(undefined);
   });
 
+  test('scrubSpans missing http fields', () => {
+    const spans = [
+      {
+        // span without request and response bodies and headers
+        info: {
+          httpInfo: {
+            host: 'host',
+            request: {},
+            response: {},
+          },
+        },
+      },
+      {
+        // missing request and response and host
+        info: {
+          httpInfo: {},
+        },
+      },
+      { info: {} }, // missing httpInfo
+      {}, // missing info
+      {
+        // missing headers in request and body in response
+        info: {
+          httpInfo: {
+            host: 'host',
+            request: {
+              body: '',
+            },
+            response: {
+              headers: {},
+            },
+          },
+        },
+      },
+      {
+        // missing host
+        info: {
+          httpInfo: {
+            request: {
+              body: '',
+              headers: {},
+            },
+            response: {
+              body: '',
+              headers: {},
+            },
+          },
+        },
+      },
+    ];
+    scrubSpans(spans);
+    expect(spans.length).toEqual(spans.length);
+  });
+
+  test('scrubSpans missing http fields (stepFunction)', () => {
+    const spans = [
+      {
+        info: {
+          traceId: {
+            Root: 'Root',
+            Parent: 'Parent',
+            Sampled: '0',
+            transactionId: 'transactionId',
+          },
+          httpInfo: { host: 'StepFunction' },
+          resourceName: 'StepFunction',
+          messageId: 'messageId',
+        },
+      },
+    ];
+    const resultSpans = [...spans];
+    scrubSpans(spans);
+    expect(spans).toEqual(resultSpans);
+  });
+
+  test('scrubSpans should not fail after throwing an error', () => {
+    const shouldScrubDomainMock = jest
+      .spyOn(utils, 'spanHasErrors')
+      .mockReturnValueOnce(false)
+      .mockReturnValueOnce(false)
+      .mockImplementationOnce(() => {
+        throw new Error('Error');
+      });
+    const spanWithoutSecrets = {
+      id: '2',
+      info: { httpInfo: { request: {}, response: { body: 'body' } } },
+    };
+    const beforeScrub = [
+      {
+        id: '1',
+        info: {
+          httpInfo: {
+            request: { host: 'StepFunction' },
+            response: {
+              headers: { 'content-type': 'json' },
+              body: JSON.stringify({ secret: '1234' }),
+            },
+          },
+        },
+      },
+      spanWithoutSecrets,
+      {
+        id: '3',
+        info: {
+          httpInfo: {
+            request: {},
+            response: {
+              headers: { 'content-type': 'json' },
+              body: JSON.stringify({ secret: '1234' }),
+            },
+          },
+        },
+      },
+    ];
+    const scrubbed = [
+      {
+        id: '1',
+        info: {
+          httpInfo: {
+            request: {
+              host: 'StepFunction',
+            },
+            response: {
+              headers: '{"content-type":"json"}',
+              body: '{"secret":"****"}',
+            },
+          },
+        },
+      },
+      spanWithoutSecrets,
+    ];
+    expect(scrubSpans(beforeScrub)).toEqual(scrubbed);
+    shouldScrubDomainMock.mockReset();
+  });
+
   test(`sendSpans -> handle errors in forgeAndScrubRequestBody`, async () => {
     setDebug();
     // @ts-ignore
@@ -599,7 +733,7 @@ describe('reporter', () => {
     expect(logs.length).toEqual(2);
     expect(logs[0].msg).toEqual('#LUMIGO# - WARNING - "Error in Lumigo tracer"');
     expect(logs[1].msg).toEqual('#LUMIGO# - WARNING - "Error in Lumigo tracer"');
-    expect(JSON.parse(logs[0].obj).message).toEqual('resultSpans.forEach is not a function');
+    expect(JSON.parse(logs[0].obj).message).toEqual('resultSpans.filter is not a function');
     expect(JSON.parse(logs[1].obj).message).toEqual('spans.map is not a function');
     expect(JSON.parse(logs[0].obj).stack).toBeTruthy();
     expect(JSON.parse(logs[1].obj).stack).toBeTruthy();
