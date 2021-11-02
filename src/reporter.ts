@@ -43,10 +43,8 @@ export const sendSpans = async (spans: any[]): Promise<void> => {
     const rtt = roundTripEnd - roundTripStart;
 
     safeExecute(logSpans)(rtt, spans);
-  } else if (spans.length > 0) {
-    logger.warn('Request body was falsy, spans: ', { spans });
   } else {
-    logger.warn('Send spans got 0 spans');
+    logger.warn('Request body was falsy, spans: ', { spans });
   }
 };
 
