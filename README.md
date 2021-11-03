@@ -43,7 +43,7 @@ const lumigo = require('@lumigo/tracer')({ token: 'YOUR-TOKEN-HERE' })
 const myHandler = async (event, context, callback) => { ... }
 
 exports.handler = lumigo.trace(myHandler)
-~~~ 
+~~~
 
 * Your function is now fully instrumented
 
