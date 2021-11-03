@@ -5,6 +5,7 @@ import { Neo4jSpanBuilder } from '../../testUtils/neo4jSpanBuilder';
 import { payloadStringify } from '../utils/payloadStringify';
 import { NEO4J_SPAN } from '../spans/awsSpan';
 import { hookNeo4j } from './neo4j';
+import * as neo4jSpan from '../../src/spans/neo4jSpan';
 
 const DUMMY_OPTIONS = {
   mode: 'READ',
@@ -87,5 +88,26 @@ describe('neo4j', () => {
         .build(),
     ]);
     expect(foundError).toBeTruthy();
+  });
+
+  test('hook -> run (text: string, params: object) -> unstructured error', async () => {
+    const query = 'MATCH (u:User {id: $id}) RETURN u';
+    const params = { id: '2fce6d1c-b060-4e3c-860a-9d6b3f01504f' };
+    const response = createMockedResponse(query, params);
+    const client = createHookedNeo4jSession({ response });
+    const createNeo4jSpanMock = jest.spyOn(neo4jSpan, 'extendNeo4jSpan').mockImplementation(() => {
+      throw new Error("Cannot set property 'error' of undefined");
+    });
+
+    await client.run(query, params);
+    const spans = SpansContainer.getSpans();
+    expect(spans).toEqual([
+      createBaseBuilderFromSpan(spans[0])
+        .withConnectionParameters(DUMMY_OPTIONS)
+        .withQuery(query)
+        .withParams(payloadStringify(params))
+        .build(),
+    ]);
+    createNeo4jSpanMock.mockReset();
   });
 });
