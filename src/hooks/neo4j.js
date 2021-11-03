@@ -1,6 +1,6 @@
 import { safeRequire } from '../utils/requireUtils';
 import * as logger from '../logger';
-import { hook } from '../extender';
+import { hook, hookPromise } from '../extender';
 import { getRandomId } from '../utils';
 import { SpansContainer, TracerGlobals } from '../globals';
 import { extendNeo4jSpan, createNeo4jSpan } from '../spans/neo4jSpan';
@@ -37,7 +37,7 @@ function queryBeforeHook(args, extenderContext) {
   extenderContext.currentSpan = span;
 }
 
-const createResultHook = (currentSpan) => (originalResult) => {
+const createResultHook = (currentSpan, originalResult) => {
   const ended = Date.now();
   const extendedSpan = extendNeo4jSpan(currentSpan, {
     ended,
@@ -48,7 +48,7 @@ const createResultHook = (currentSpan) => (originalResult) => {
   SpansContainer.addSpan(extendedSpan);
 };
 
-const createErrorHook = (currentSpan) => (error) => {
+const createErrorHook = (currentSpan, error) => {
   const ended = Date.now();
   const extendedSpan = extendNeo4jSpan(currentSpan, {
     ended,
@@ -59,7 +59,14 @@ const createErrorHook = (currentSpan) => (error) => {
 
 function queryAfterHook(args, originalFnResult, extenderContext) {
   const { currentSpan } = extenderContext;
-  originalFnResult.then(createResultHook(currentSpan)).catch(createErrorHook(currentSpan));
+  hookPromise(originalFnResult, {
+    thenHandler: (args) => {
+      createResultHook(currentSpan, args);
+    },
+    catchHandler: (error) => {
+      createErrorHook(currentSpan, error);
+    },
+  });
 }
 
 export const hookNeo4j = (neo4JClient = null) => {
