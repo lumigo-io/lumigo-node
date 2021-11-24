@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "agentkeepalive": "^4.1.4",
-    "axios": "0.24.0",
+    "axios": "0.21.1",
     "shimmer": "1.2.1",
     "utf8": "^3.0.0"
   },
