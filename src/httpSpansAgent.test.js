@@ -16,7 +16,7 @@ describe('HttpSpansAgent', () => {
 
     const requests = AxiosMocker.getAxiosMocker().history.post;
     expect(requests.length).toEqual(1);
-    expect(JSON.parse(requests[0].data)).toEqual(reqBody);
+    expect(requests[0].data).toEqual(reqBody);
     expect(requests[0].headers).toEqual({
       Accept: 'application/json, text/plain, */*',
       'Content-Type': 'application/json',
@@ -38,7 +38,7 @@ describe('HttpSpansAgent', () => {
 
     const requests = AxiosMocker.getAxiosMocker().history.post;
     expect(requests.length).toEqual(1);
-    expect(JSON.parse(requests[0].data)).toEqual(reqBody);
+    expect(requests[0].data).toEqual(reqBody);
     expect(requests[0].headers).toEqual({
       Accept: 'application/json, text/plain, */*',
       'Content-Type': 'application/json',
