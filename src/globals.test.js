@@ -1,6 +1,6 @@
 import * as globals from './globals';
 import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
-import { DEFAULT_MAX_SIZE_FOR_REQUEST } from './globals';
+import { DEFAULT_MAX_SIZE_FOR_REQUEST, MAX_TRACER_ADDED_DURATION_ALLOWED } from './globals';
 import { getMaxRequestSize } from './utils';
 
 describe('globals', () => {
@@ -234,6 +234,7 @@ describe('globals', () => {
       edgeHost,
       switchOff,
       isStepFunction,
+      lambdaTimeout: MAX_TRACER_ADDED_DURATION_ALLOWED,
       maxSizeForRequest,
     });
     globals.TracerGlobals.clearTracerInputs();
@@ -241,6 +242,7 @@ describe('globals', () => {
       token: '',
       debug: false,
       edgeHost: '',
+      lambdaTimeout: MAX_TRACER_ADDED_DURATION_ALLOWED,
       switchOff: false,
       isStepFunction: false,
       maxSizeForRequest: DEFAULT_MAX_SIZE_FOR_REQUEST,
@@ -280,6 +282,7 @@ describe('globals', () => {
       edgeHost,
       switchOff,
       isStepFunction: false,
+      lambdaTimeout: MAX_TRACER_ADDED_DURATION_ALLOWED,
       maxSizeForRequest: DEFAULT_MAX_SIZE_FOR_REQUEST,
     });
   });

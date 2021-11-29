@@ -481,19 +481,25 @@ describe('utils', () => {
   });
 
   test('getTracerMaxDurationTimeout -> default value', () => {
-    expect(utils.getTracerMaxDurationTimeout()).toEqual(500);
+    expect(utils.getTracerMaxDurationTimeout()).toEqual(750);
   });
 
   test('getTracerMaxDurationTimeout -> Max value', () => {
     const inputs = new HandlerInputesBuilder().withTimeout(6000000).build();
     TracerGlobals.setHandlerInputs(inputs);
-    expect(utils.getTracerMaxDurationTimeout()).toEqual(500);
+    expect(utils.getTracerMaxDurationTimeout()).toEqual(750);
   });
 
-  test('getTracerMaxDurationTimeout -> max(20%,500) of the run time', () => {
+  test('getTracerMaxDurationTimeout -> min value', () => {
     const inputs = new HandlerInputesBuilder().withTimeout(1000).build();
     TracerGlobals.setHandlerInputs(inputs);
-    expect(utils.getTracerMaxDurationTimeout()).toEqual(500);
+    expect(utils.getTracerMaxDurationTimeout()).toEqual(200);
+  });
+
+  test('getTracerMaxDurationTimeout -> in between', () => {
+    const inputs = new HandlerInputesBuilder().withTimeout(2000).build();
+    TracerGlobals.setHandlerInputs(inputs);
+    expect(utils.getTracerMaxDurationTimeout()).toEqual(400);
   });
 
   test('setSwitchOff', () => {

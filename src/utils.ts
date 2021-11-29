@@ -1,4 +1,8 @@
-import { MAX_TRACER_ADDED_DURATION_ALLOWED, TracerGlobals } from './globals';
+import {
+  MAX_TRACER_ADDED_DURATION_ALLOWED,
+  MIN_TRACER_ADDED_DURATION_ALLOWED,
+  TracerGlobals,
+} from './globals';
 import * as crypto from 'crypto';
 import * as logger from './logger';
 import { sortify } from './tools/jsonSortify';
@@ -198,7 +202,10 @@ export const getTracerMaxDurationTimeout = (): number => {
   if (process.env[TRACER_TIMEOUT_FLAG]) return parseFloat(process.env[TRACER_TIMEOUT_FLAG]);
   const { context } = TracerGlobals.getHandlerInputs();
   if (isAwsContext(context)) {
-    return Math.min(TracerGlobals.getLambdaTimeout() / 5, MAX_TRACER_ADDED_DURATION_ALLOWED);
+    return Math.max(
+      Math.min(TracerGlobals.getLambdaTimeout() / 5, MAX_TRACER_ADDED_DURATION_ALLOWED),
+      MIN_TRACER_ADDED_DURATION_ALLOWED
+    );
   }
   return MAX_TRACER_ADDED_DURATION_ALLOWED;
 };

@@ -7,7 +7,8 @@ const MAX_TAG_KEY_LEN = 50;
 const MAX_TAG_VALUE_LEN = 70;
 const ADD_TAG_ERROR_MSG_PREFIX = 'Skipping addExecutionTag: Unable to add tag';
 export const DEFAULT_MAX_SIZE_FOR_REQUEST = 1024 * 500;
-export const MAX_TRACER_ADDED_DURATION_ALLOWED = 500;
+export const MAX_TRACER_ADDED_DURATION_ALLOWED = 750;
+export const MIN_TRACER_ADDED_DURATION_ALLOWED = 200;
 
 export const SpansContainer = (() => {
   let spansToSend = {};
@@ -119,8 +120,6 @@ export const TracerGlobals = (() => {
     context: {},
   };
 
-  let lambdaTimeout = MAX_TRACER_ADDED_DURATION_ALLOWED;
-
   const tracerInputs = {
     token: '',
     debug: false,
@@ -128,13 +127,22 @@ export const TracerGlobals = (() => {
     switchOff: false,
     isStepFunction: false,
     maxSizeForRequest: DEFAULT_MAX_SIZE_FOR_REQUEST,
+    lambdaTimeout: MAX_TRACER_ADDED_DURATION_ALLOWED,
   };
 
-  const setHandlerInputs = ({ event, context }) => Object.assign(handlerInputs, { event, context });
+  const setHandlerInputs = ({ event, context }) => {
+    Object.assign(tracerInputs, {
+      lambdaTimeout: context?.getRemainingTimeInMillis
+        ? context.getRemainingTimeInMillis()
+        : MAX_TRACER_ADDED_DURATION_ALLOWED,
+    });
+    return Object.assign(handlerInputs, {
+      event,
+      context,
+    });
+  };
 
-  const setLambdaTimeout = (timeout: number) => (lambdaTimeout = timeout);
-
-  const getLambdaTimeout = () => lambdaTimeout;
+  const getLambdaTimeout = () => tracerInputs.lambdaTimeout;
 
   const getHandlerInputs = (): { event: {}; context: LambdaContext | {} } => handlerInputs;
 
@@ -147,12 +155,14 @@ export const TracerGlobals = (() => {
     switchOff = false,
     stepFunction = false,
     maxSizeForRequest = null,
+    lambdaTimeout = MAX_TRACER_ADDED_DURATION_ALLOWED,
   }) =>
     Object.assign(tracerInputs, {
       token: token || process.env.LUMIGO_TRACER_TOKEN,
       debug: debug,
       edgeHost: edgeHost || process.env.LUMIGO_TRACER_HOST,
       switchOff: switchOff,
+      lambdaTimeout: lambdaTimeout,
       isStepFunction:
         stepFunction ||
         !!(
@@ -182,7 +192,6 @@ export const TracerGlobals = (() => {
     getTracerInputs,
     setTracerInputs,
     setHandlerInputs,
-    setLambdaTimeout,
     getHandlerInputs,
     getLambdaTimeout,
     clearTracerInputs,

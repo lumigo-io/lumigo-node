@@ -39,7 +39,6 @@ const setupTimeoutTimer = () => {
   const { context } = TracerGlobals.getHandlerInputs();
   if (isAwsContext(context)) {
     const { remainingTimeInMillis } = getContextInfo(context);
-    TracerGlobals.setLambdaTimeout(remainingTimeInMillis);
     const timeoutBuffer = getTimeoutTimerBuffer();
     const minDuration = getTimeoutMinDuration();
     if (timeoutBuffer < remainingTimeInMillis && remainingTimeInMillis >= minDuration) {
@@ -206,6 +205,7 @@ export const trace =
         edgeHost,
         switchOff,
         stepFunction,
+        lambdaTimeout: context.getRemainingTimeInMillis(),
       });
     } catch (err) {
       logger.warn('Failed to start tracer', err);
