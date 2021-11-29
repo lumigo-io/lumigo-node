@@ -72,6 +72,11 @@ export const getTracerInfo = (): { name: string; version: string } => {
 };
 
 export const getTraceId = (awsXAmznTraceId) => {
+  const { context } = TracerGlobals.getHandlerInputs();
+  if (!isAwsContext(context)) {
+    setSwitchOff();
+    return;
+  }
   if (!awsXAmznTraceId) {
     throw new Error('Missing _X_AMZN_TRACE_ID in Lambda Env Vars.');
   }

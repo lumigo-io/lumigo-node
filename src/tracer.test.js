@@ -16,11 +16,13 @@ import { AxiosMocker } from '../testUtils/axiosMocker';
 jest.mock('./hooks/http');
 import { Http } from './hooks/http';
 import { getFunctionSpan } from './spans/awsSpan';
+import * as awsGuards from './guards/awsGuards';
 
 const TOKEN = 't_10faa5e13e7844aaa1234';
 
 describe('tracer', () => {
   const spies = {};
+  spies.awsGuards = jest.spyOn(awsGuards, 'isAwsContext').mockImplementation(() => true);
   spies.isSwitchedOff = jest.spyOn(utils, 'isSwitchedOff');
   spies.setSwitchOff = jest.spyOn(utils, 'setSwitchOff');
   spies.isAwsEnvironment = jest.spyOn(utils, 'isAwsEnvironment');
