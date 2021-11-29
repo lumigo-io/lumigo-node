@@ -202,7 +202,11 @@ describe('globals', () => {
 
   test('TracerGlobals', () => {
     const event = { a: 'b', c: 'd' };
-    const context = { e: 'f', g: 'h' };
+    const context = {
+      e: 'f',
+      g: 'h',
+      getRemainingTimeInMillis: () => MAX_TRACER_ADDED_DURATION_ALLOWED,
+    };
     globals.TracerGlobals.setHandlerInputs({ event, context });
     expect(globals.TracerGlobals.getHandlerInputs()).toEqual({
       event,
@@ -257,7 +261,11 @@ describe('globals', () => {
     const span1 = { a: 'b', c: 'd' };
     const span2 = { e: 'f', g: 'h' };
     const event = { a: 'b', c: 'd' };
-    const context = { e: 'f', g: 'h' };
+    const context = {
+      e: 'f',
+      g: 'h',
+      getRemainingTimeInMillis: () => MAX_TRACER_ADDED_DURATION_ALLOWED,
+    };
 
     globals.SpansContainer.addSpan(span1);
     globals.SpansContainer.addSpan(span2);

@@ -132,9 +132,7 @@ export const TracerGlobals = (() => {
 
   const setHandlerInputs = ({ event, context }) => {
     Object.assign(tracerInputs, {
-      lambdaTimeout: context?.getRemainingTimeInMillis
-        ? context.getRemainingTimeInMillis()
-        : MAX_TRACER_ADDED_DURATION_ALLOWED,
+      lambdaTimeout: context.getRemainingTimeInMillis(),
     });
     return Object.assign(handlerInputs, {
       event,
