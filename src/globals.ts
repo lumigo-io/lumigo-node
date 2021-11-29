@@ -118,6 +118,9 @@ export const TracerGlobals = (() => {
     event: {},
     context: {},
   };
+
+  let lambdaTimeout = DEFAULT_TRACER_TIMEOUT;
+
   const tracerInputs = {
     token: '',
     debug: false,
@@ -128,6 +131,10 @@ export const TracerGlobals = (() => {
   };
 
   const setHandlerInputs = ({ event, context }) => Object.assign(handlerInputs, { event, context });
+
+  const setLambdaTimeout = (timeout: number) => (lambdaTimeout = timeout);
+
+  const getLambdaTimeout = () => lambdaTimeout;
 
   const getHandlerInputs = (): { event: {}; context: LambdaContext | {} } => handlerInputs;
 
@@ -175,7 +182,9 @@ export const TracerGlobals = (() => {
     getTracerInputs,
     setTracerInputs,
     setHandlerInputs,
+    setLambdaTimeout,
     getHandlerInputs,
+    getLambdaTimeout,
     clearTracerInputs,
     clearHandlerInputs,
   };
