@@ -490,7 +490,7 @@ describe('utils', () => {
     expect(utils.getTracerMaxDurationTimeout()).toEqual(500);
   });
 
-  test('getTracerMaxDurationTimeout -> max(20%,350) of the run time', () => {
+  test('getTracerMaxDurationTimeout -> max(20%,500) of the run time', () => {
     const inputs = new HandlerInputesBuilder().withTimeout(1000).build();
     TracerGlobals.setHandlerInputs(inputs);
     expect(utils.getTracerMaxDurationTimeout()).toEqual(500);
