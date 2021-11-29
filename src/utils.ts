@@ -198,7 +198,7 @@ export const getTracerMaxDurationTimeout = (): number => {
   if (process.env[TRACER_TIMEOUT_FLAG]) return parseFloat(process.env[TRACER_TIMEOUT_FLAG]);
   const { context } = TracerGlobals.getHandlerInputs();
   if (isAwsContext(context)) {
-    return Math.max(TracerGlobals.getLambdaTimeout() / 5, DEFAULT_TRACER_TIMEOUT);
+    return Math.min(TracerGlobals.getLambdaTimeout() / 5, DEFAULT_TRACER_TIMEOUT);
   }
   return DEFAULT_TRACER_TIMEOUT;
 };
