@@ -12,6 +12,7 @@ import {
   isDebug,
   DEFAULT_CONNECTION_TIMEOUT,
   isObject,
+  isSwitchedOff,
 } from './utils';
 import { MAX_TRACER_ADDED_DURATION_ALLOWED, TracerGlobals } from './globals';
 import crypto from 'crypto';
@@ -70,6 +71,13 @@ describe('utils', () => {
       name: '@lumigo/tracerMock',
       version: '1.2.3',
     });
+  });
+
+  test('getTraceId no aws context', () => {
+    jest.spyOn(awsGuards, 'isAwsContext').mockImplementation(() => false);
+    let traceId = utils.getTraceId(null);
+    expect(traceId).toEqual(undefined);
+    expect(isSwitchedOff()).toEqual(true);
   });
 
   test('getTraceId', () => {
