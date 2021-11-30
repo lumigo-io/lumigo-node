@@ -1,7 +1,7 @@
 import * as awsSpan from './awsSpan';
 import { EXECUTION_TAGS_KEY, getEventEntitySize, parseErrorObject } from '../utils';
 import MockDate from 'mockdate';
-import { TracerGlobals } from '../globals';
+import { MAX_TRACER_ADDED_DURATION_ALLOWED, TracerGlobals } from '../globals';
 import * as awsParsers from '../parsers/aws';
 import * as utils from '../utils';
 import { payloadStringify } from '../utils/payloadStringify';
@@ -228,7 +228,12 @@ describe('awsSpan', () => {
 
   test('getEndFunctionSpan', () => {
     const event = { a: 'b', c: 'd' };
-    TracerGlobals.setHandlerInputs({ event });
+    TracerGlobals.setHandlerInputs({
+      event,
+      context: {
+        getRemainingTimeInMillis: () => MAX_TRACER_ADDED_DURATION_ALLOWED,
+      },
+    });
 
     const functionSpan1 = {
       account: '985323015126',

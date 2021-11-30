@@ -205,6 +205,7 @@ export const trace =
         edgeHost,
         switchOff,
         stepFunction,
+        lambdaTimeout: context.getRemainingTimeInMillis(),
       });
     } catch (err) {
       logger.warn('Failed to start tracer', err);

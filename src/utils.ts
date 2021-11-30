@@ -1,4 +1,8 @@
-import { TracerGlobals } from './globals';
+import {
+  MAX_TRACER_ADDED_DURATION_ALLOWED,
+  MIN_TRACER_ADDED_DURATION_ALLOWED,
+  TracerGlobals,
+} from './globals';
 import * as crypto from 'crypto';
 import * as logger from './logger';
 import { sortify } from './tools/jsonSortify';
@@ -31,7 +35,6 @@ export const DEFAULT_GET_KEY_DEPTH = 3;
 export const EXECUTION_TAGS_KEY = 'lumigo_execution_tags_no_scrub';
 export const DEFAULT_TIMEOUT_MIN_DURATION = 2000;
 export const DEFAULT_CONNECTION_TIMEOUT = 300;
-export const DEFAULT_TRACER_MAX_DURATION_TIMEOUT = 500;
 
 const REQUEST_TIMEOUT_FLAG_MS = 'LUMIGO_REQUEST_TIMEOUT_MS';
 export const getRequestTimeout = () => {
@@ -199,10 +202,12 @@ export const getTracerMaxDurationTimeout = (): number => {
   if (process.env[TRACER_TIMEOUT_FLAG]) return parseFloat(process.env[TRACER_TIMEOUT_FLAG]);
   const { context } = TracerGlobals.getHandlerInputs();
   if (isAwsContext(context)) {
-    const { remainingTimeInMillis } = getContextInfo(context);
-    return Math.min(DEFAULT_TRACER_MAX_DURATION_TIMEOUT, remainingTimeInMillis / 5);
+    return Math.max(
+      Math.min(TracerGlobals.getLambdaTimeout() / 5, MAX_TRACER_ADDED_DURATION_ALLOWED),
+      MIN_TRACER_ADDED_DURATION_ALLOWED
+    );
   }
-  return DEFAULT_TRACER_MAX_DURATION_TIMEOUT;
+  return MAX_TRACER_ADDED_DURATION_ALLOWED;
 };
 
 export const getAgentKeepAlive = () => {

@@ -10,7 +10,12 @@ import {
 } from '../../testUtils/httpsMocker';
 
 import * as utils from '../utils';
-import { clearGlobals, SpansContainer, TracerGlobals } from '../globals';
+import {
+  clearGlobals,
+  MAX_TRACER_ADDED_DURATION_ALLOWED,
+  SpansContainer,
+  TracerGlobals,
+} from '../globals';
 import { HandlerInputesBuilder } from '../../testUtils/handlerInputesBuilder';
 import { getCurrentTransactionId } from '../spans/awsSpan';
 import { Http } from './http';
@@ -877,6 +882,7 @@ describe('http hook', () => {
       event: {},
       context: {
         invokedFunctionArn: 'arn:aws:lambda:region:account:function:name:alias',
+        getRemainingTimeInMillis: () => MAX_TRACER_ADDED_DURATION_ALLOWED,
       },
     });
     process.env['LUMIGO_VALID_ALIASES'] = '["wrong"]';

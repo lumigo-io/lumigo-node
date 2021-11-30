@@ -6,7 +6,7 @@ import * as globals from './globals';
 import * as reporter from './reporter';
 import * as awsSpan from './spans/awsSpan';
 import * as logger from './logger';
-import { TracerGlobals } from './globals';
+import { MAX_TRACER_ADDED_DURATION_ALLOWED, TracerGlobals } from './globals';
 import { setSwitchOff, STEP_FUNCTION_UID_KEY } from './utils';
 import { LUMIGO_EVENT_KEY } from './utils';
 import { HandlerInputesBuilder } from '../testUtils/handlerInputesBuilder';
@@ -555,14 +555,20 @@ describe('tracer', () => {
     });
     spies.getCurrentTransactionId.mockReturnValueOnce('123');
 
-    TracerGlobals.setHandlerInputs({ event: { a: 1 } });
+    TracerGlobals.setHandlerInputs({
+      event: { a: 1 },
+      context: { getRemainingTimeInMillis: () => MAX_TRACER_ADDED_DURATION_ALLOWED },
+    });
     SpansContainer.addSpan({ transactionId: '123', id: '1' });
     SpansContainer.addSpan({ transactionId: '123', id: '2' });
     await tracer.sendEndTraceSpans({ id: '1_started' }, { err: null, data: null });
     expect(spies.warnClient).not.toHaveBeenCalled();
     expect(TracerGlobals.getHandlerInputs().event).toEqual({});
 
-    TracerGlobals.setHandlerInputs({ event: { a: 1 } });
+    TracerGlobals.setHandlerInputs({
+      event: { a: 1 },
+      context: { getRemainingTimeInMillis: () => MAX_TRACER_ADDED_DURATION_ALLOWED },
+    });
     SpansContainer.clearSpans();
     SpansContainer.addSpan({
       transactionId: '123',
@@ -575,7 +581,10 @@ describe('tracer', () => {
     expect(spies.warnClient).not.toHaveBeenCalled();
     expect(TracerGlobals.getHandlerInputs().event).toEqual({});
 
-    TracerGlobals.setHandlerInputs({ event: { a: 1 } });
+    TracerGlobals.setHandlerInputs({
+      event: { a: 1 },
+      context: { getRemainingTimeInMillis: () => MAX_TRACER_ADDED_DURATION_ALLOWED },
+    });
     SpansContainer.clearSpans();
     SpansContainer.addSpan({ transactionId: '123', id: '1', reporterAwsRequestId: '2' });
     SpansContainer.addSpan({ transactionId: '456', id: '2' });
