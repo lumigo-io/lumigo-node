@@ -19,7 +19,6 @@ import {
 import { HandlerInputesBuilder } from '../../testUtils/handlerInputesBuilder';
 import { getCurrentTransactionId } from '../spans/awsSpan';
 import { Http } from './http';
-import * as awsGuards from '../guards/awsGuards';
 
 describe('http hook', () => {
   process.env['AWS_REGION'] = 'us-east-x';
@@ -28,11 +27,9 @@ describe('http hook', () => {
 
   const spies = {};
   spies.shimmer = jest.spyOn(shimmer, 'wrap');
-  spies.awsGuards = jest.spyOn(awsGuards, 'isAwsContext').mockImplementation(() => true);
 
   beforeEach(() => {
     spies.shimmer.mockClear();
-    spies.awsGuards.mockClear();
     shimmer.unwrap(HttpsMocker, 'request');
   });
 

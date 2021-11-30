@@ -8,7 +8,6 @@ import { payloadStringify } from '../utils/payloadStringify';
 import { decodeHttpBody, HTTP_SPAN } from './awsSpan';
 import { HandlerInputesBuilder } from '../../testUtils/handlerInputesBuilder';
 import { encode } from 'utf8';
-import * as awsGuards from '../guards/awsGuards';
 
 const exampleApiGatewayEvent = require('../../testUtils/testdata/events/apigw-request.json');
 
@@ -16,7 +15,7 @@ jest.mock('../parsers/aws');
 describe('awsSpan', () => {
   const spies = {};
   spies['isWarm'] = jest.spyOn(utils, 'isWarm');
-  spies.awsGuards = jest.spyOn(awsGuards, 'isAwsContext').mockImplementation(() => true);
+
   beforeEach(() => {
     const awsEnv = {
       LAMBDA_TASK_ROOT: '/var/task',

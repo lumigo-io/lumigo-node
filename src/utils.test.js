@@ -12,7 +12,6 @@ import {
   isDebug,
   DEFAULT_CONNECTION_TIMEOUT,
   isObject,
-  isSwitchedOff,
 } from './utils';
 import { MAX_TRACER_ADDED_DURATION_ALLOWED, TracerGlobals } from './globals';
 import crypto from 'crypto';
@@ -24,7 +23,6 @@ import * as globals from './globals';
 import { removeDuplicates } from './utils';
 import * as logger from './logger';
 import { HandlerInputesBuilder } from '../testUtils/handlerInputesBuilder';
-import * as awsGuards from './guards/awsGuards';
 
 describe('utils', () => {
   const spies = {};
@@ -73,13 +71,6 @@ describe('utils', () => {
     });
   });
 
-  test('getTraceId no aws context', () => {
-    jest.spyOn(awsGuards, 'isAwsContext').mockImplementation(() => false);
-    let traceId = utils.getTraceId(null);
-    expect(traceId).toEqual(undefined);
-    expect(isSwitchedOff()).toEqual(true);
-  });
-
   test('getTraceId', () => {
     const awsXAmznTraceId =
       'Root=1-5b1d2450-6ac46730d346cad0e53f89d0;Parent=59fa1aeb03c2ec1f;Sampled=1';
@@ -89,7 +80,6 @@ describe('utils', () => {
       Sampled: '1',
       transactionId: '6ac46730d346cad0e53f89d0',
     };
-    jest.spyOn(awsGuards, 'isAwsContext').mockImplementation(() => true);
     expect(utils.getTraceId(awsXAmznTraceId)).toEqual(expected);
 
     expect(() => utils.getTraceId(null)).toThrow('Missing _X_AMZN_TRACE_ID in Lambda Env Vars.');
@@ -118,7 +108,7 @@ describe('utils', () => {
       'Root=1-5b1d2450-6ac46730d346cad0e53f89d0;Parent=59fa1aeb03c2ec1f;Sampled=1';
     const expectedRoot = 'Root=1';
     const expectedSuffix = '6ac46730d346cad0e53f89d0;Parent=59fa1aeb03c2ec1f;Sampled=1';
-    jest.spyOn(awsGuards, 'isAwsContext').mockImplementationOnce(() => true);
+
     const result = utils.getPatchedTraceId(awsXAmznTraceId);
 
     const [resultRoot, resultTime, resultSuffix] = result.split('-');
@@ -548,7 +538,7 @@ describe('utils', () => {
     expect(utils.parseJsonFromEnvVar('TEST_STR')).toEqual('TEST');
     expect(utils.parseJsonFromEnvVar('TEST_NUM')).toEqual(1);
     expect(utils.parseJsonFromEnvVar('TEST_ARRAY')).toEqual([1, '1']);
-    expect(utils.parseJsonFromEnvVar('TEST_OBJECT')).toEqual({ 1: '1' });
+    expect(utils.parseJsonFromEnvVar('TEST_OBJECT')).toEqual({ '1': '1' });
   });
 
   test('parseJsonFromEnvVar -> not fail on error', () => {
