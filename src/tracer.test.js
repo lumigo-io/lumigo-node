@@ -45,6 +45,15 @@ describe('tracer', () => {
     await expect(tracer.startTrace()).resolves.toBeUndefined();
   });
 
+  test('startTrace - not aws context (should mot send any spans)', async () => {
+    process.env['LAMBDA_RUNTIME_DIR'] = 'TRUE';
+    const { event, context } = new HandlerInputesBuilder().build();
+    const functionSpan = getFunctionSpan(event, context);
+    await tracer.startTrace(functionSpan);
+    const requests = AxiosMocker.getRequests();
+    expect(requests.length).toEqual(0);
+  });
+
   test('startTrace - simple flow', async () => {
     new EnvironmentBuilder().awsEnvironment().applyEnv();
 
