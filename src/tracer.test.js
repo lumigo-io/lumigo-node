@@ -45,7 +45,7 @@ describe('tracer', () => {
     await expect(tracer.startTrace()).resolves.toBeUndefined();
   });
 
-  test('startTrace - not aws context', async () => {
+  test('startTrace - not aws context (should mot send any spans)', async () => {
     process.env['LAMBDA_RUNTIME_DIR'] = 'TRUE';
     const { event, context } = new HandlerInputesBuilder().build();
     const functionSpan = getFunctionSpan(event, context);
