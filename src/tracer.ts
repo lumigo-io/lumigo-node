@@ -54,9 +54,9 @@ const setupTimeoutTimer = () => {
 
 export const startTrace = async (functionSpan) => {
   try {
-    if (!isSwitchedOff() && isAwsEnvironment()) {
+    const handlerInputs = TracerGlobals.getHandlerInputs();
+    if (!isSwitchedOff() && isAwsEnvironment() && isAwsContext(handlerInputs.context)) {
       const tracerInputs = TracerGlobals.getTracerInputs();
-      const handlerInputs = TracerGlobals.getHandlerInputs();
       const { host, path } = getEdgeUrl();
       logger.debug('Tracer started', {
         tracerInputs,
@@ -121,7 +121,7 @@ export function promisifyUserHandler(
   userHandler,
   event,
   context
-): Promise<{ err: any; data: any; type: string }> {
+): Promise<{ err: any, data: any, type: string }> {
   return new Promise((resolve) => {
     try {
       const result = userHandler(event, context, callbackResolver(resolve));
