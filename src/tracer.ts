@@ -121,7 +121,7 @@ export function promisifyUserHandler(
   userHandler,
   event,
   context
-): Promise<{ err: any, data: any, type: string }> {
+): Promise<{ err: any; data: any; type: string }> {
   return new Promise((resolve) => {
     try {
       const result = userHandler(event, context, callbackResolver(resolve));
