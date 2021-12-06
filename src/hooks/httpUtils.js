@@ -22,11 +22,19 @@ export const extractBodyFromEmitSocketEvent = (socketEventArgs) => {
 
 export const extractBodyFromWriteOrEndFunc = (writeEventArgs) => {
   return safeExecute(() => {
-    if (isValidHttpRequestBody(writeEventArgs[0])) {
+    const firstEventArg = writeEventArgs[0];
+    const eventEntitySize = getEventEntitySize(false);
+    if (isValidHttpRequestBody(firstEventArg)) {
       const encoding = isEncodingType(writeEventArgs[1]) ? writeEventArgs[1] : 'utf8';
-      return typeof writeEventArgs[0] === 'string'
-        ? Buffer(writeEventArgs[0]).toString(encoding)
-        : writeEventArgs[0].toString().substr(0, getEventEntitySize(false));
+      const firstEventArgAsString = firstEventArg.toString();
+      return [
+        typeof firstEventArg === 'string'
+          ? Buffer(firstEventArg).toString(encoding)
+          : firstEventArgAsString.substr(0, eventEntitySize),
+        firstEventArgAsString.length > eventEntitySize,
+      ];
+    } else {
+      return [undefined, false];
     }
   })();
 };

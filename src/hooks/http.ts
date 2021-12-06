@@ -47,11 +47,11 @@ export class Http {
     return function (args) {
       GlobalDurationTimer.start();
       if (isEmptyString(requestData.body)) {
-        const body = extractBodyFromWriteOrEndFunc(args);
+        const [body, truncated] = extractBodyFromWriteOrEndFunc(args);
         if (body) {
           requestData.body += body.substr(0, getEventEntitySize(false));
         }
-        if (currentSpan) currentSpan.info.httpInfo = getHttpInfo(requestData, {});
+        if (currentSpan) currentSpan.info.httpInfo = getHttpInfo(requestData, {}, truncated);
       }
       GlobalDurationTimer.stop();
     };
@@ -213,10 +213,10 @@ export class Http {
     return function (args) {
       GlobalDurationTimer.start();
       if (isEmptyString(requestData.body)) {
-        const body = extractBodyFromWriteOrEndFunc(args);
+        const [body, truncated] = extractBodyFromWriteOrEndFunc(args);
         if (body) {
           requestData.body += body;
-          if (currentSpan) currentSpan.info.httpInfo = getHttpInfo(requestData, {});
+          if (currentSpan) currentSpan.info.httpInfo = getHttpInfo(requestData, {}, truncated);
         }
       }
       GlobalDurationTimer.stop();

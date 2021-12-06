@@ -11,7 +11,7 @@ import * as logger from '../logger';
 
 const nativeTypes = ['string', 'bigint', 'number', 'undefined', 'boolean'];
 const SCRUBBED_TEXT = '****';
-const TRUNCATED_TEXT = '...[too long]';
+export const TRUNCATED_TEXT = '...[too long]';
 
 const isNativeType = (obj) => nativeTypes.includes(typeof obj);
 
