@@ -11,7 +11,7 @@ This is [`@lumigo/tracer`](https://), Lumigo's Node.js agent for distributed tra
 Supported NodeJS runtimes: 8.10, 10.x, 12.x, 14.x
 
  
-## Usage
+## Usage 
 
 The `@lumigo/tracer` package allows you to pursue automated metric gathering through Lambda Layers, automated metric gathering and instrumentation through the Serverless framework, or manual metric creation and implementation.
 
