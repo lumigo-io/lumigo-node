@@ -26,12 +26,11 @@ export const extractBodyFromWriteOrEndFunc = (writeEventArgs) => {
     const eventEntitySize = getEventEntitySize(false);
     if (isValidHttpRequestBody(firstEventArg)) {
       const encoding = isEncodingType(writeEventArgs[1]) ? writeEventArgs[1] : 'utf8';
-      const firstEventArgAsString = firstEventArg.toString();
       return [
         typeof firstEventArg === 'string'
           ? Buffer(firstEventArg).toString(encoding)
-          : firstEventArgAsString.substr(0, eventEntitySize),
-        firstEventArgAsString.length > eventEntitySize,
+          : firstEventArg.toString().substr(0, eventEntitySize),
+        firstEventArg.toString().length > eventEntitySize,
       ];
     } else {
       return [undefined, false];
