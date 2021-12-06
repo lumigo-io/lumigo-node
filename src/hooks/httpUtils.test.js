@@ -105,7 +105,7 @@ describe('httpUtils', () => {
   });
 
   test('extractBodyFromWriteOrEndFunc -> long firstArg should be truncated', () => {
-    const firstArg = '#'.repeat(getEventEntitySize(false)) + '#';
+    const firstArg = Buffer('#'.repeat(getEventEntitySize(false)) + '#');
     const secArg = () => {};
 
     const result = extractBodyFromWriteOrEndFunc([firstArg, secArg]);

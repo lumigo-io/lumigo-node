@@ -22,14 +22,13 @@ export const extractBodyFromEmitSocketEvent = (socketEventArgs) => {
 
 export const extractBodyFromWriteOrEndFunc = (writeEventArgs) => {
   return safeExecute(() => {
-    const firstEventArg = writeEventArgs[0];
-    const eventEntitySize = getEventEntitySize(false);
-    if (isValidHttpRequestBody(firstEventArg)) {
+    if (isValidHttpRequestBody(writeEventArgs[0])) {
+      const eventEntitySize = getEventEntitySize(false);
       const encoding = isEncodingType(writeEventArgs[1]) ? writeEventArgs[1] : 'utf8';
-      if (firstEventArg === 'string') {
-        return [Buffer(firstEventArg).toString(encoding), false];
+      if (typeof writeEventArgs[0] === 'string') {
+        return [Buffer(writeEventArgs[0]).toString(encoding), false];
       } else {
-        const firstEventArgAsString = firstEventArg.toString();
+        const firstEventArgAsString = writeEventArgs[0].toString();
         return [
           firstEventArgAsString.substr(0, eventEntitySize),
           firstEventArgAsString.length > eventEntitySize,
