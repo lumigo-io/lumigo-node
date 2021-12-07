@@ -48,10 +48,9 @@ export class Http {
       GlobalDurationTimer.start();
       if (isEmptyString(requestData.body)) {
         const [body, truncated] = extractBodyFromWriteOrEndFunc(args);
-        if (body) {
-          requestData.body += body.substr(0, getEventEntitySize(false));
-        }
-        if (currentSpan) currentSpan.info.httpInfo = getHttpInfo(requestData, {}, truncated);
+        if (body) requestData.body += body;
+        requestData.truncated = truncated;
+        if (currentSpan) currentSpan.info.httpInfo = getHttpInfo(requestData, {});
       }
       GlobalDurationTimer.stop();
     };
@@ -127,6 +126,7 @@ export class Http {
     const uri = `${host}${path}`;
 
     return {
+      truncated: false,
       path,
       port,
       uri,
@@ -216,7 +216,8 @@ export class Http {
         const [body, truncated] = extractBodyFromWriteOrEndFunc(args);
         if (body) {
           requestData.body += body;
-          if (currentSpan) currentSpan.info.httpInfo = getHttpInfo(requestData, {}, truncated);
+          requestData.truncated = truncated;
+          if (currentSpan) currentSpan.info.httpInfo = getHttpInfo(requestData, {});
         }
       }
       GlobalDurationTimer.stop();
@@ -295,8 +296,7 @@ export class Http {
           awsRequestId,
           requestRandomId,
           requestData,
-          responseData,
-          truncated
+          Object.assign({ truncated }, responseData)
         );
         if (httpSpan.id !== requestRandomId) {
           // In Http case, one of our parser decide to change the spanId for async connection
@@ -346,7 +346,9 @@ export class Http {
         if (isEmptyString(requestData.body)) {
           const body = extractBodyFromEmitSocketEvent(args[1]);
           if (body) {
-            requestData.body += body.substr(0, getEventEntitySize(false));
+            const eventEntitySize = getEventEntitySize(false);
+            requestData.body += body.substr(0, eventEntitySize);
+            requestData.truncated = eventEntitySize < requestData.body.length;
             if (currentSpan) currentSpan.info.httpInfo = getHttpInfo(requestData, {});
           }
         }

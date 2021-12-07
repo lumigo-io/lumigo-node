@@ -287,6 +287,7 @@ describe('reporter', () => {
             httpInfo: {
               host: 'your.mind.com',
               request: {
+                truncated: false,
                 host: 'your.mind.com',
                 headers: {
                   Tyler: 'Durden',
@@ -311,6 +312,7 @@ describe('reporter', () => {
             httpInfo: {
               host: 'your.mind.com',
               request: {
+                truncated: false,
                 body: '{"secret":"****"}',
                 headers: '{"Tyler":"Durden","secretKey":"****","content-type":"application/json"}',
                 host: 'your.mind.com',
@@ -330,7 +332,61 @@ describe('reporter', () => {
       const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize));
       expect(actual).toEqual(expected);
     });
+    test('forgeAndScrubRequestBody long request', () => {
+      let manyA = 'a'.repeat(88);
+      let manyManyA = 'a'.repeat(1268);
+      const dummyEnd = 'dummyEnd';
+      const spans = [
+        {
+          info: {
+            httpInfo: {
+              host: 'your.mind.com',
+              request: {
+                truncated: true,
+                host: 'your.mind.com',
+                headers: {
+                  Tyler: 'Durden',
+                  secretKey: 'lumigo',
+                  'content-type': 'application/json',
+                },
+                body: `{"a":"${manyA}","b":"${manyA}","key":"${manyA}","password":"${manyA}","e":"${manyA}","secret":"${manyA}","f":"${manyA}","g":"${manyA}","h":"${manyManyA}"`,
+              },
+              response: {
+                truncated: false,
+                headers: { Peter: 'Parker', 'content-type': 'application/json' },
+                body: '{"secret": "secret"}',
+              },
+            },
+          },
+        },
+        { dummyEnd },
+      ];
+      const expected = [
+        {
+          info: {
+            httpInfo: {
+              host: 'your.mind.com',
+              request: {
+                truncated: true,
+                body: `{"a":"${manyA}","b":"${manyA}","key":"****","password":"****","e":"${manyA}","secret":"****","f":"${manyA}","g":"${manyA}","h":"${manyManyA}"}`,
+                headers: '{"Tyler":"Durden","secretKey":"****","content-type":"application/json"}',
+                host: 'your.mind.com',
+              },
+              response: {
+                truncated: false,
+                body: '{"secret":"****"}',
+                headers: '{"Peter":"Parker","content-type":"application/json"}',
+              },
+            },
+          },
+        },
+        { dummyEnd },
+      ];
+      const expectedResultSize = getJSONBase64Size(spans);
 
+      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize));
+      expect(actual).toEqual(expected);
+    });
     test('forgeAndScrubRequestBody short response', () => {
       const dummyEnd = 'dummyEnd';
       const spans = [
