@@ -23,7 +23,7 @@ export const extractBodyFromEmitSocketEvent = (socketEventArgs) => {
 export const extractBodyFromWriteOrEndFunc = (writeEventArgs) => {
   return safeExecute(() => {
     if (isValidHttpRequestBody(writeEventArgs[0])) {
-      const eventEntitySize = getEventEntitySize(false);
+      const eventEntitySize = getEventEntitySize(true);
       const encoding = isEncodingType(writeEventArgs[1]) ? writeEventArgs[1] : 'utf8';
       let asString = '';
       if (typeof writeEventArgs[0] === 'string') {

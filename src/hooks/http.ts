@@ -345,10 +345,12 @@ export class Http {
       if (args[0] === 'socket') {
         if (isEmptyString(requestData.body)) {
           const body = extractBodyFromEmitSocketEvent(args[1]);
-          if (body) {
-            const eventEntitySize = getEventEntitySize(false);
-            requestData.body += body.substr(0, eventEntitySize);
-            requestData.truncated = eventEntitySize < requestData.body.length;
+          if (body && !requestData.truncated) {
+            const eventEntitySize = getEventEntitySize(true);
+            requestData.body += body;
+            const truncated = eventEntitySize < requestData.body.length;
+            if (truncated) requestData.body = requestData.body.substr(0, eventEntitySize);
+            requestData.truncated = truncated;
             if (currentSpan) currentSpan.info.httpInfo = getHttpInfo(requestData, {});
           }
         }
