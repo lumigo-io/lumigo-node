@@ -447,10 +447,17 @@ export const parseQueryParams = (queryParams) => {
     () => {
       if (typeof queryParams !== 'string') return {};
       let obj = {};
-      // @ts-ignore
-      queryParams.replace(/([^=&]+)=([^&]*)/g, (m, key, value) => {
-        obj[decodeURIComponent(key)] = decodeURIComponent(value);
-      });
+      queryParams.replace(
+        /([^=&]+)=([^&]*)/g,
+        // @ts-ignore
+        safeExecute(
+          (m, key, value) => {
+            obj[decodeURIComponent(key)] = decodeURIComponent(value);
+          },
+          'Failed to parse a specific key in parseQueryParams',
+          logger.LOG_LEVELS.DEBUG
+        )
+      );
       return obj;
     },
     'Failed to parse query params',

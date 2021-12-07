@@ -314,6 +314,28 @@ describe('aws parser', () => {
     });
   });
 
+  test('sqsParser -> truncated body', () => {
+    const queueUrl = 'https://sqs.us-west-2.amazonaws.com/33/random-queue-test';
+    const encodedQueueUrl = encodeURIComponent(queueUrl);
+    const requestData = {
+      host: 'sqs.us-west-2.amazonaws.com',
+      body: `QueueUrl=${encodedQueueUrl}&DelaySeconds=1%...[too long]`,
+      method: 'POST',
+      headers: {
+        host: 'sqs.us-west-2.amazonaws.com',
+      },
+    };
+
+    const result = aws.sqsParser(requestData, {});
+
+    expect(result).toEqual({
+      awsServiceData: {
+        resourceName: queueUrl,
+        messageId: null,
+      },
+    });
+  });
+
   test('sqsParser -> empty request', () => {
     const result = aws.sqsParser({}, null);
     expect(result).toEqual({
