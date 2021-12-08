@@ -47,13 +47,22 @@ export class Http {
     return function (args) {
       GlobalDurationTimer.start();
       if (isEmptyString(requestData.body)) {
-        const [body, truncated] = extractBodyFromWriteOrEndFunc(args);
-        if (body) requestData.body += body;
-        requestData.truncated = truncated;
-        if (currentSpan) currentSpan.info.httpInfo = getHttpInfo(requestData, {});
+        const body = extractBodyFromWriteOrEndFunc(args);
+        Http.aggregateRequestBodyToSpan(body, requestData, currentSpan);
       }
       GlobalDurationTimer.stop();
     };
+  }
+
+  static aggregateRequestBodyToSpan(body, requestData, currentSpan) {
+    if (body && !requestData.truncated) {
+      const eventEntitySize = getEventEntitySize(true);
+      requestData.body += body;
+      const truncated = eventEntitySize < requestData.body.length;
+      if (truncated) requestData.body = requestData.body.substr(0, eventEntitySize);
+      requestData.truncated = truncated;
+      if (currentSpan) currentSpan.info.httpInfo = getHttpInfo(requestData, {});
+    }
   }
 
   @GlobalDurationTimer.timedSync()
@@ -213,12 +222,8 @@ export class Http {
     return function (args) {
       GlobalDurationTimer.start();
       if (isEmptyString(requestData.body)) {
-        const [body, truncated] = extractBodyFromWriteOrEndFunc(args);
-        if (body) {
-          requestData.body += body;
-          requestData.truncated = truncated;
-          if (currentSpan) currentSpan.info.httpInfo = getHttpInfo(requestData, {});
-        }
+        const body = extractBodyFromWriteOrEndFunc(args);
+        Http.aggregateRequestBodyToSpan(body, requestData, currentSpan);
       }
       GlobalDurationTimer.stop();
     };
@@ -345,14 +350,7 @@ export class Http {
       if (args[0] === 'socket') {
         if (isEmptyString(requestData.body)) {
           const body = extractBodyFromEmitSocketEvent(args[1]);
-          if (body && !requestData.truncated) {
-            const eventEntitySize = getEventEntitySize(true);
-            requestData.body += body;
-            const truncated = eventEntitySize < requestData.body.length;
-            if (truncated) requestData.body = requestData.body.substr(0, eventEntitySize);
-            requestData.truncated = truncated;
-            if (currentSpan) currentSpan.info.httpInfo = getHttpInfo(requestData, {});
-          }
+          Http.aggregateRequestBodyToSpan(body, requestData, currentSpan);
         }
       }
       GlobalDurationTimer.stop();

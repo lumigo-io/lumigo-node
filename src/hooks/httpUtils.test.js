@@ -3,7 +3,6 @@ import {
   extractBodyFromWriteOrEndFunc,
   isValidHttpRequestBody,
 } from './httpUtils';
-import { getEventEntitySize } from '../utils';
 
 describe('httpUtils', () => {
   test('extractBodyFromSocketEvent -> outputData flow', () => {
@@ -50,8 +49,7 @@ describe('httpUtils', () => {
 
     const result = extractBodyFromWriteOrEndFunc([firstArg]);
 
-    expect(result[0]).toEqual('BODY');
-    expect(result[1]).toEqual(false);
+    expect(result).toEqual(firstArg);
   });
 
   test('extractBodyFromWriteOrEndFunc -> simple flow -> write(Buffer)', () => {
@@ -59,8 +57,7 @@ describe('httpUtils', () => {
 
     const result = extractBodyFromWriteOrEndFunc([firstArg]);
 
-    expect(result[0]).toEqual('BODY');
-    expect(result[1]).toEqual(false);
+    expect(result).toEqual('BODY');
   });
 
   test('extractBodyFromWriteOrEndFunc -> simple flow -> write(Buffer, encoding)', () => {
@@ -69,8 +66,7 @@ describe('httpUtils', () => {
 
     const result = extractBodyFromWriteOrEndFunc([firstArg, secArg]);
 
-    expect(result[0]).toEqual('Qk9EWQ==');
-    expect(result[1]).toEqual(false);
+    expect(result).toEqual('Qk9EWQ==');
   });
 
   test('extractBodyFromWriteOrEndFunc -> simple flow -> write(Buffer, encoding, callback)', () => {
@@ -80,8 +76,7 @@ describe('httpUtils', () => {
 
     const result = extractBodyFromWriteOrEndFunc([firstArg, secArg, thirdArg]);
 
-    expect(result[0]).toEqual('BODY');
-    expect(result[1]).toEqual(false);
+    expect(result).toEqual('BODY');
   });
 
   test('extractBodyFromWriteOrEndFunc -> simple flow -> write(Buffer, callback)', () => {
@@ -90,8 +85,7 @@ describe('httpUtils', () => {
 
     const result = extractBodyFromWriteOrEndFunc([firstArg, secArg]);
 
-    expect(result[0]).toEqual('BODY');
-    expect(result[1]).toEqual(false);
+    expect(result).toEqual('BODY');
   });
 
   test('extractBodyFromWriteOrEndFunc -> simple flow -> write(str, callback)', () => {
@@ -100,16 +94,7 @@ describe('httpUtils', () => {
 
     const result = extractBodyFromWriteOrEndFunc([firstArg, secArg]);
 
-    expect(result[0]).toEqual('BODY');
-    expect(result[1]).toEqual(false);
-  });
-
-  test('extractBodyFromWriteOrEndFunc -> long firstArg should be truncated', () => {
-    const firstArg = Buffer('#'.repeat(getEventEntitySize(true)) + '#');
-    const secArg = () => {};
-
-    const result = extractBodyFromWriteOrEndFunc([firstArg, secArg]);
-    expect(result[1]).toEqual(true);
+    expect(result).toEqual('BODY');
   });
 
   test('isValidHttpRequestBody - simple flow', () => {
