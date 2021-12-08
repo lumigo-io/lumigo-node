@@ -92,6 +92,96 @@ describe('http hook', () => {
     });
   });
 
+  test('aggregateRequestBodyToSpan ->  happy flow', () => {
+    const currentSpan = {
+      info: {
+        httpInfo: {},
+      },
+    };
+    Http.aggregateRequestBodyToSpan(
+      'a',
+      {
+        body: 'a',
+        host: 'host',
+      },
+      currentSpan
+    );
+    expect(currentSpan).toEqual({
+      info: {
+        httpInfo: {
+          host: 'host',
+          request: {
+            body: 'aa',
+            host: 'host',
+            truncated: false,
+          },
+          response: {},
+        },
+      },
+    });
+  });
+
+  test('aggregateRequestBodyToSpan ->  should truncate body', () => {
+    const currentSpan = {
+      info: {
+        httpInfo: {},
+      },
+    };
+    Http.aggregateRequestBodyToSpan(
+      'a',
+      {
+        body: 'a',
+        host: 'host',
+      },
+      currentSpan,
+      1
+    );
+    expect(currentSpan).toEqual({
+      info: {
+        httpInfo: {
+          host: 'host',
+          request: {
+            body: 'a',
+            host: 'host',
+            truncated: true,
+          },
+          response: {},
+        },
+      },
+    });
+  });
+
+  test('aggregateRequestBodyToSpan ->  already truncated', () => {
+    const currentSpan = {
+      info: {
+        httpInfo: {},
+      },
+    };
+    Http.aggregateRequestBodyToSpan(
+      'a',
+      {
+        body: 'a',
+        host: 'host',
+        truncated: true,
+      },
+      currentSpan,
+      100
+    );
+    expect(currentSpan).toEqual({
+      info: {
+        httpInfo: {
+          host: 'host',
+          request: {
+            body: 'a',
+            host: 'host',
+            truncated: true,
+          },
+          response: {},
+        },
+      },
+    });
+  });
+
   test('httpRequestEmitBeforeHookWrapper -> not crashed on bad data', () => {
     const requestData = {
       body: '',
