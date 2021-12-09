@@ -20,7 +20,7 @@ const isNativeType = (obj) => nativeTypes.includes(typeof obj);
 const keyToRegexes = (
   regexesList = OMITTING_KEYS_REGEXES,
   backwardCompRegexEnvVarName = LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP,
-  envDefinedRegexes = LUMIGO_SECRET_MASKING_REGEX
+  regexesEnvVarName = LUMIGO_SECRET_MASKING_REGEX
 ) => {
   if (process.env[backwardCompRegex]) {
     const parseResponse = parseJsonFromEnvVar(backwardCompRegex, true);
