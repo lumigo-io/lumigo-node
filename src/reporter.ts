@@ -61,12 +61,12 @@ function scrub(payload: any, headers: any, sizeLimit: number, truncated = false)
   try {
     if (isJsonContent(payload, headers)) {
       if (truncated) payload = untruncateJson(payload);
-      return payloadStringify(JSON.parse(payload), sizeLimit);
+      return payloadStringify(JSON.parse(payload), sizeLimit, null, truncated);
     } else {
-      return payloadStringify(payload, sizeLimit);
+      return payloadStringify(payload, sizeLimit, truncated);
     }
   } catch (e) {
-    return payloadStringify(payload, sizeLimit);
+    return payloadStringify(payload, sizeLimit, truncated);
   }
 }
 

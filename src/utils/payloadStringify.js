@@ -88,7 +88,8 @@ const getItemsInPath = safeExecute(
 export const payloadStringify = (
   payload,
   maxPayloadSize = getEventEntitySize(),
-  skipScrubPath = null
+  skipScrubPath = null,
+  truncated = false
 ) => {
   let totalSize = 0;
   let refsFound = [];
@@ -135,7 +136,7 @@ export const payloadStringify = (
       isPruned = true;
     }
   });
-  if (result && isPruned) {
+  if (result && (isPruned || truncated)) {
     result = result.replace(/,null/g, '');
     result = result.concat(TRUNCATED_TEXT);
   }
