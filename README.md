@@ -114,4 +114,4 @@ Execution tags are subject to the following limitations:
 ### Scrubbing Limitations:
 Secrets scrubbing are subject to the following limitations:
 
-* support only json data secrets scrubbing
+* support only json data secrets scrubbing 
