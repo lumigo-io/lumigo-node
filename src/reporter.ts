@@ -98,7 +98,8 @@ const scrubSpan = (span) => {
         span.info.httpInfo.request.body = scrub(
           decodeHttpBody(request.body, isError),
           request.headers,
-          sizeLimit
+          sizeLimit,
+          span.info.httpInfo.request.truncated
         );
       }
       if (span.info.httpInfo.request?.headers) {

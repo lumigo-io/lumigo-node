@@ -238,10 +238,10 @@ export const decodeHttpBody = (httpBody: any, hasError: boolean): any | string =
   return httpBody;
 };
 
-export const getHttpInfo = (requestData, responseData, truncated = false): HttpInfo => {
+export const getHttpInfo = (requestData, responseData): HttpInfo => {
   const { host } = requestData;
   const request = Object.assign({}, requestData);
-  const response = Object.assign({ truncated }, responseData);
+  const response = Object.assign({}, responseData);
   return { host, request, response };
 };
 
@@ -270,8 +270,7 @@ export const getHttpSpan = (
   awsRequestId,
   randomRequestId,
   requestData,
-  responseData = {},
-  truncated = false
+  responseData = { truncated: false }
 ) => {
   let serviceData = {};
   try {
@@ -286,7 +285,7 @@ export const getHttpSpan = (
   const { awsServiceData, spanId } = serviceData;
 
   const prioritizedSpanId = getHttpSpanId(randomRequestId, spanId);
-  const httpInfo = getHttpInfo(requestData, responseData, truncated);
+  const httpInfo = getHttpInfo(requestData, responseData);
 
   const basicHttpSpan = getBasicChildSpan(
     transactionId,

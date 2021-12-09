@@ -1,4 +1,4 @@
-import { getEventEntitySize, isEncodingType, safeExecute } from '../utils';
+import { isEncodingType, safeExecute } from '../utils';
 
 export const isValidHttpRequestBody = (reqBody) =>
   !!(reqBody && (typeof reqBody === 'string' || reqBody instanceof Buffer));
@@ -26,7 +26,7 @@ export const extractBodyFromWriteOrEndFunc = (writeEventArgs) => {
       const encoding = isEncodingType(writeEventArgs[1]) ? writeEventArgs[1] : 'utf8';
       return typeof writeEventArgs[0] === 'string'
         ? Buffer(writeEventArgs[0]).toString(encoding)
-        : writeEventArgs[0].toString().substr(0, getEventEntitySize(false));
+        : writeEventArgs[0].toString();
     }
   })();
 };

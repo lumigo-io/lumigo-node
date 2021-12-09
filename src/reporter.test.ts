@@ -277,9 +277,8 @@ describe('reporter', () => {
       expect(actual).toEqual(expected);
     });
 
-    test('forgeAndScrubRequestBody long response', () => {
-      let manyA = 'a'.repeat(88);
-      let manyManyA = 'a'.repeat(1268);
+    test('forgeAndScrubRequestBody truncated response', () => {
+      const value = 'a'.repeat(10);
       const dummyEnd = 'dummyEnd';
       const spans = [
         {
@@ -287,6 +286,7 @@ describe('reporter', () => {
             httpInfo: {
               host: 'your.mind.com',
               request: {
+                truncated: false,
                 host: 'your.mind.com',
                 headers: {
                   Tyler: 'Durden',
@@ -298,7 +298,7 @@ describe('reporter', () => {
               response: {
                 truncated: true,
                 headers: { Peter: 'Parker', 'content-type': 'application/json' },
-                body: `{"a":"${manyA}","b":"${manyA}","key":"${manyA}","password":"${manyA}","e":"${manyA}","secret":"${manyA}","f":"${manyA}","g":"${manyA}","h":"${manyManyA}"`,
+                body: `{"a":"${value}","b":"${value}","key":"${value}","password":"${value}","e":"${value}","secret":"${value}","f":"${value}","g":"${value}","h":`,
               },
             },
           },
@@ -311,13 +311,124 @@ describe('reporter', () => {
             httpInfo: {
               host: 'your.mind.com',
               request: {
+                truncated: false,
                 body: '{"secret":"****"}',
                 headers: '{"Tyler":"Durden","secretKey":"****","content-type":"application/json"}',
                 host: 'your.mind.com',
               },
               response: {
                 truncated: true,
-                body: `{"a":"${manyA}","b":"${manyA}","key":"****","password":"****","e":"${manyA}","secret":"****","f":"${manyA}","g":"${manyA}","h":"${manyManyA}"}`,
+                body: `{"a":"${value}","b":"${value}","key":"****","password":"****","e":"${value}","secret":"****","f":"${value}","g":"${value}"}`,
+                headers: '{"Peter":"Parker","content-type":"application/json"}',
+              },
+            },
+          },
+        },
+        { dummyEnd },
+      ];
+      const expectedResultSize = getJSONBase64Size(spans);
+
+      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize));
+      expect(actual).toEqual(expected);
+    });
+    test('forgeAndScrubRequestBody long response', () => {
+      const value = 'a'.repeat(10);
+      const long = 'a'.repeat(getEventEntitySize(true));
+      const shorter = 'a'.repeat(getEventEntitySize());
+      const dummyEnd = 'dummyEnd';
+      const spans = [
+        {
+          info: {
+            httpInfo: {
+              host: 'your.mind.com',
+              request: {
+                truncated: false,
+                host: 'your.mind.com',
+                headers: {
+                  Tyler: 'Durden',
+                  secretKey: 'lumigo',
+                  'content-type': 'application/json',
+                },
+                body: '{"secret": "secret"}',
+              },
+              response: {
+                truncated: false,
+                headers: { Peter: 'Parker', 'content-type': 'application/json' },
+                body: `{"key":"${value}","password":"${value}","e":"${value}","secret":"${value}","f":"${value}","g":"${value}","h":"${long}"}`,
+              },
+            },
+          },
+        },
+        { dummyEnd },
+      ];
+      const expected = [
+        {
+          info: {
+            httpInfo: {
+              host: 'your.mind.com',
+              request: {
+                truncated: false,
+                body: '{"secret":"****"}',
+                headers: '{"Tyler":"Durden","secretKey":"****","content-type":"application/json"}',
+                host: 'your.mind.com',
+              },
+              response: {
+                truncated: false,
+                body: `{"key":"****","password":"****","e":"${value}","secret":"****","f":"${value}","g":"${value}","h":"${shorter}"}...[too long]`,
+                headers: '{"Peter":"Parker","content-type":"application/json"}',
+              },
+            },
+          },
+        },
+        { dummyEnd },
+      ];
+      const expectedResultSize = getJSONBase64Size(spans);
+
+      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize));
+      expect(actual).toEqual(expected);
+    });
+    test('forgeAndScrubRequestBody truncated request', () => {
+      const value = 'a'.repeat(10);
+      const dummyEnd = 'dummyEnd';
+      const spans = [
+        {
+          info: {
+            httpInfo: {
+              host: 'your.mind.com',
+              request: {
+                truncated: true,
+                host: 'your.mind.com',
+                headers: {
+                  Tyler: 'Durden',
+                  secretKey: 'lumigo',
+                  'content-type': 'application/json',
+                },
+                body: `{"key":"${value}","password":"${value}","e":"${value}","secret":"${value}","f":"${value}","g":"${value}","h":`,
+              },
+              response: {
+                truncated: false,
+                headers: { Peter: 'Parker', 'content-type': 'application/json' },
+                body: '{"secret": "secret"}',
+              },
+            },
+          },
+        },
+        { dummyEnd },
+      ];
+      const expected = [
+        {
+          info: {
+            httpInfo: {
+              host: 'your.mind.com',
+              request: {
+                truncated: true,
+                body: `{"key":"****","password":"****","e":"${value}","secret":"****","f":"${value}","g":"${value}"}`,
+                headers: '{"Tyler":"Durden","secretKey":"****","content-type":"application/json"}',
+                host: 'your.mind.com',
+              },
+              response: {
+                truncated: false,
+                body: '{"secret":"****"}',
                 headers: '{"Peter":"Parker","content-type":"application/json"}',
               },
             },
@@ -331,6 +442,62 @@ describe('reporter', () => {
       expect(actual).toEqual(expected);
     });
 
+    test('forgeAndScrubRequestBody long request', () => {
+      const value = 'a'.repeat(10);
+      const long = 'a'.repeat(getEventEntitySize(true));
+      const shorter = 'a'.repeat(getEventEntitySize());
+      const dummyEnd = 'dummyEnd';
+      const spans = [
+        {
+          info: {
+            httpInfo: {
+              host: 'your.mind.com',
+              request: {
+                truncated: false,
+                host: 'your.mind.com',
+                headers: {
+                  Tyler: 'Durden',
+                  secretKey: 'lumigo',
+                  'content-type': 'application/json',
+                },
+                body: `{"key":"${value}","password":"${value}","e":"${value}","secret":"${value}","f":"${value}","g":"${value}","h":"${long}"}`,
+              },
+              response: {
+                truncated: false,
+                headers: { Peter: 'Parker', 'content-type': 'application/json' },
+                body: '{"secret": "secret"}',
+              },
+            },
+          },
+        },
+        { dummyEnd },
+      ];
+      const expected = [
+        {
+          info: {
+            httpInfo: {
+              host: 'your.mind.com',
+              request: {
+                truncated: false,
+                body: `{"key":"****","password":"****","e":"${value}","secret":"****","f":"${value}","g":"${value}","h":"${shorter}"}...[too long]`,
+                headers: '{"Tyler":"Durden","secretKey":"****","content-type":"application/json"}',
+                host: 'your.mind.com',
+              },
+              response: {
+                truncated: false,
+                body: '{"secret":"****"}',
+                headers: '{"Peter":"Parker","content-type":"application/json"}',
+              },
+            },
+          },
+        },
+        { dummyEnd },
+      ];
+      const expectedResultSize = getJSONBase64Size(spans);
+
+      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize));
+      expect(actual).toEqual(expected);
+    });
     test('forgeAndScrubRequestBody short response', () => {
       const dummyEnd = 'dummyEnd';
       const spans = [

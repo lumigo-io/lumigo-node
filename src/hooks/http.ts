@@ -48,13 +48,25 @@ export class Http {
       GlobalDurationTimer.start();
       if (isEmptyString(requestData.body)) {
         const body = extractBodyFromWriteOrEndFunc(args);
-        if (body) {
-          requestData.body += body.substr(0, getEventEntitySize(false));
-        }
-        if (currentSpan) currentSpan.info.httpInfo = getHttpInfo(requestData, {});
+        Http.aggregateRequestBodyToSpan(body, requestData, currentSpan, getEventEntitySize(true));
       }
       GlobalDurationTimer.stop();
     };
+  }
+
+  static aggregateRequestBodyToSpan(
+    body,
+    requestData,
+    currentSpan,
+    maxSize = getEventEntitySize(true)
+  ) {
+    if (body && !requestData.truncated) {
+      requestData.body += body;
+      const truncated = maxSize < requestData.body.length;
+      if (truncated) requestData.body = requestData.body.substr(0, maxSize);
+      requestData.truncated = truncated;
+    }
+    if (currentSpan) currentSpan.info.httpInfo = getHttpInfo(requestData, {});
   }
 
   @GlobalDurationTimer.timedSync()
@@ -127,6 +139,7 @@ export class Http {
     const uri = `${host}${path}`;
 
     return {
+      truncated: false,
       path,
       port,
       uri,
@@ -214,10 +227,7 @@ export class Http {
       GlobalDurationTimer.start();
       if (isEmptyString(requestData.body)) {
         const body = extractBodyFromWriteOrEndFunc(args);
-        if (body) {
-          requestData.body += body;
-          if (currentSpan) currentSpan.info.httpInfo = getHttpInfo(requestData, {});
-        }
+        Http.aggregateRequestBodyToSpan(body, requestData, currentSpan, getEventEntitySize(true));
       }
       GlobalDurationTimer.stop();
     };
@@ -295,8 +305,7 @@ export class Http {
           awsRequestId,
           requestRandomId,
           requestData,
-          responseData,
-          truncated
+          Object.assign({ truncated }, responseData)
         );
         if (httpSpan.id !== requestRandomId) {
           // In Http case, one of our parser decide to change the spanId for async connection
@@ -345,10 +354,7 @@ export class Http {
       if (args[0] === 'socket') {
         if (isEmptyString(requestData.body)) {
           const body = extractBodyFromEmitSocketEvent(args[1]);
-          if (body) {
-            requestData.body += body.substr(0, getEventEntitySize(false));
-            if (currentSpan) currentSpan.info.httpInfo = getHttpInfo(requestData, {});
-          }
+          Http.aggregateRequestBodyToSpan(body, requestData, currentSpan, getEventEntitySize(true));
         }
       }
       GlobalDurationTimer.stop();

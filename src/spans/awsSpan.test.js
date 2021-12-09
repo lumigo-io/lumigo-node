@@ -647,12 +647,14 @@ describe('awsSpan', () => {
       host: 'your.mind.com',
       headers: { Tyler: 'Durden' },
       body: 'the first rule of fight club',
+      truncated: false,
       sendTime,
     };
     const responseData = {
       headers: { Peter: 'Parker' },
       body: 'Well, Tony is dead.',
       statusCode: 200,
+      truncated: false,
       receivedTime,
     };
     const expected = {
@@ -663,6 +665,7 @@ describe('awsSpan', () => {
         httpInfo: {
           host: 'your.mind.com',
           request: {
+            truncated: false,
             body: 'the first rule of fight club',
             headers: { Tyler: 'Durden' },
             host: 'your.mind.com',

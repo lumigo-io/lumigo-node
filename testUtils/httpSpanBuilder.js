@@ -51,6 +51,7 @@ export class HttpSpanBuilder {
         httpInfo: {
           host: HttpSpanBuilder.DEFAULT_HOST,
           request: {
+            truncated: false,
             body: '"the first rule of fight club"',
             headers: '{"Tyler":"Durden"}',
             host: HttpSpanBuilder.DEFAULT_HOST,
@@ -119,7 +120,7 @@ export class HttpSpanBuilder {
   };
 
   withRequest = request => {
-    this._span.info.httpInfo.request = { ...request };
+    this._span.info.httpInfo.request = { ...request, truncated: false };
     this._span.info.httpInfo.request.headers = HttpSpanBuilder.parseHeaders(
       this._span.info.httpInfo.request.headers
     );

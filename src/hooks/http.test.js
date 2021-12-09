@@ -66,6 +66,7 @@ describe('http hook', () => {
 
     expect(requestData).toEqual({
       body: 'HTTP BODY2',
+      truncated: false,
     });
   });
 
@@ -87,6 +88,97 @@ describe('http hook', () => {
 
     expect(requestData).toEqual({
       body: 'HTTP BODY2',
+      truncated: false,
+    });
+  });
+
+  test('aggregateRequestBodyToSpan ->  happy flow', () => {
+    const currentSpan = {
+      info: {
+        httpInfo: {},
+      },
+    };
+    Http.aggregateRequestBodyToSpan(
+      'a',
+      {
+        body: 'a',
+        host: 'host',
+      },
+      currentSpan
+    );
+    expect(currentSpan).toEqual({
+      info: {
+        httpInfo: {
+          host: 'host',
+          request: {
+            body: 'aa',
+            host: 'host',
+            truncated: false,
+          },
+          response: {},
+        },
+      },
+    });
+  });
+
+  test('aggregateRequestBodyToSpan ->  should truncate body', () => {
+    const currentSpan = {
+      info: {
+        httpInfo: {},
+      },
+    };
+    Http.aggregateRequestBodyToSpan(
+      'a',
+      {
+        body: 'a',
+        host: 'host',
+      },
+      currentSpan,
+      1
+    );
+    expect(currentSpan).toEqual({
+      info: {
+        httpInfo: {
+          host: 'host',
+          request: {
+            body: 'a',
+            host: 'host',
+            truncated: true,
+          },
+          response: {},
+        },
+      },
+    });
+  });
+
+  test('aggregateRequestBodyToSpan ->  already truncated', () => {
+    const currentSpan = {
+      info: {
+        httpInfo: {},
+      },
+    };
+    Http.aggregateRequestBodyToSpan(
+      'a',
+      {
+        body: 'a',
+        host: 'host',
+        truncated: true,
+      },
+      currentSpan,
+      100
+    );
+    expect(currentSpan).toEqual({
+      info: {
+        httpInfo: {
+          host: 'host',
+          request: {
+            body: 'a',
+            host: 'host',
+            truncated: true,
+          },
+          response: {},
+        },
+      },
     });
   });
 
@@ -119,7 +211,7 @@ describe('http hook', () => {
     const wrapper = Http.httpRequestWriteBeforeHookWrapper(requestData);
     wrapper([firstArg]);
 
-    expect(requestData).toEqual({ body: 'BODY' });
+    expect(requestData).toEqual({ body: 'BODY', truncated: false });
   });
 
   test('httpRequestWriteBeforeHookWrapper -> simple flow -> write(Buffer)', () => {
@@ -131,7 +223,7 @@ describe('http hook', () => {
 
     wrapper([firstArg]);
 
-    expect(requestData).toEqual({ body: 'BODY' });
+    expect(requestData).toEqual({ body: 'BODY', truncated: false });
   });
 
   test('httpRequestWriteBeforeHookWrapper -> simple flow -> write(Buffer, encoding)', () => {
@@ -145,7 +237,7 @@ describe('http hook', () => {
     const wrapper = Http.httpRequestWriteBeforeHookWrapper(requestData);
     wrapper([firstArg, secArg]);
 
-    expect(requestData).toEqual({ body: 'Qk9EWQ==' });
+    expect(requestData).toEqual({ body: 'Qk9EWQ==', truncated: false });
   });
 
   test('httpRequestWriteBeforeHookWrapper -> simple flow -> write(Buffer, encoding, callback)', () => {
@@ -160,7 +252,7 @@ describe('http hook', () => {
     const wrapper = Http.httpRequestWriteBeforeHookWrapper(requestData);
     wrapper([firstArg, secArg, thirdArg]);
 
-    expect(requestData).toEqual({ body: 'BODY' });
+    expect(requestData).toEqual({ body: 'BODY', truncated: false });
   });
 
   test('httpRequestWriteBeforeHookWrapper -> simple flow -> write(Buffer, callback)', () => {
@@ -174,7 +266,7 @@ describe('http hook', () => {
     const wrapper = Http.httpRequestWriteBeforeHookWrapper(requestData);
     wrapper([firstArg, secArg]);
 
-    expect(requestData).toEqual({ body: 'BODY' });
+    expect(requestData).toEqual({ body: 'BODY', truncated: false });
   });
 
   test('httpRequestWriteBeforeHookWrapper -> simple flow -> write(str, callback)', () => {
@@ -188,7 +280,7 @@ describe('http hook', () => {
     const wrapper = Http.httpRequestWriteBeforeHookWrapper(requestData);
     wrapper([firstArg, secArg]);
 
-    expect(requestData).toEqual({ body: 'BODY' });
+    expect(requestData).toEqual({ body: 'BODY', truncated: false });
   });
 
   test('httpRequestWriteBeforeHookWrapper -> not override body', () => {
@@ -257,6 +349,7 @@ describe('http hook', () => {
       path: '/api/where/is/satoshi',
       uri: 'asdf1.com/api/where/is/satoshi',
       method: 'POST',
+      truncated: false,
       headers: expectedHeaders,
       sendTime,
       body: '',
@@ -275,6 +368,7 @@ describe('http hook', () => {
       host: 'asdf.io',
       method: 'POST',
       path: '/yo.php',
+      truncated: false,
       uri: 'asdf.io/yo.php',
       port: '1234',
       protocol: 'https:',
@@ -289,6 +383,7 @@ describe('http hook', () => {
     const testData = {
       randomId: 'DummyRandomId',
       requestData: {
+        truncated: false,
         a: 'request',
         sendTime: 1,
         host: 'your.mind.com',
@@ -346,6 +441,7 @@ describe('http hook', () => {
       requestData: {
         a: 'request',
         sendTime: 1,
+        truncated: false,
         host: 'your.mind.com',
         headers: { host: 'your.mind.com' },
         body: '',
@@ -398,6 +494,7 @@ describe('http hook', () => {
     const testData = {
       randomId: 'DummyRandomId',
       requestData: {
+        truncated: false,
         a: 'request',
         sendTime: 1,
         host: 'lambda.amazonaws.com',
@@ -537,7 +634,7 @@ describe('http hook', () => {
     const callback = jest.fn();
     Http.httpRequestEndWrapper(requestData)([data, encoding, callback]);
 
-    expect(requestData).toEqual({ body: body });
+    expect(requestData).toEqual({ body: body, truncated: false });
   });
 
   test('httpRequestArguments -> no arguments', () => {
