@@ -22,13 +22,13 @@ const keyToRegexes = (
   backwardCompRegexEnvVarName = LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP,
   regexesEnvVarName = LUMIGO_SECRET_MASKING_REGEX
 ) => {
-  if (process.env[backwardCompRegex]) {
-    const parseResponse = parseJsonFromEnvVar(backwardCompRegex, true);
+  if (process.env[backwardCompRegexEnvVarName]) {
+    const parseResponse = parseJsonFromEnvVar(backwardCompRegexEnvVarName, true);
     if (parseResponse) {
       regexesList = parseResponse;
     }
-  } else if (process.env[envDefinedRegexes]) {
-    const parseResponse = parseJsonFromEnvVar(envDefinedRegexes, true);
+  } else if (process.env[regexesEnvVarName]) {
+    const parseResponse = parseJsonFromEnvVar(regexesEnvVarName, true);
     if (parseResponse) {
       regexesList = parseResponse;
     }
@@ -93,7 +93,7 @@ export const payloadStringify = (
   let totalSize = 0;
   let refsFound = [];
   const secretsRegexes = keyToOmitRegexes();
-  const whitelistRegexes = WhitelistKeysRegexes();
+  const whitelistRegexes = whitelistKeysRegexes();
   const secretItemsToSkipScrubbing = new Set(getItemsInPath(payload, skipScrubPath));
 
   let isPruned = false;
