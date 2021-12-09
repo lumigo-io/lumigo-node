@@ -40,7 +40,7 @@ export const keyToOmitRegexes = () => {
   return keyToRegexes();
 };
 
-export const WhitelistKeysRegexes = () => {
+export const whitelistKeysRegexes = () => {
   return keyToRegexes(WHITELIST_KEYS_REGEXES, null, LUMIGO_WHITELIST_KEYS_REGEXES);
 };
 
