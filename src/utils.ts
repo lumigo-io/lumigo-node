@@ -30,8 +30,6 @@ export const OMITTING_KEYS_REGEXES = [
   'Authorization',
 ];
 
-// example for whitelist expressions: "'.*KeyConditionExpression.*', '.*ExclusiveStartKey.*'"
-export const WHITELIST_KEYS_REGEXES = [];
 export const LUMIGO_EVENT_KEY = '_lumigo';
 export const STEP_FUNCTION_UID_KEY = 'step_function_uid';
 export const GET_KEY_DEPTH_ENV_KEY = 'LUMIGO_KEY_DEPTH';

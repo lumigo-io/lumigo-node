@@ -5,7 +5,6 @@ import {
   OMITTING_KEYS_REGEXES,
   parseJsonFromEnvVar,
   isString,
-  WHITELIST_KEYS_REGEXES,
   LUMIGO_WHITELIST_KEYS_REGEXES,
 } from '../utils';
 import { safeExecute } from '../utils';
@@ -41,7 +40,7 @@ export const keyToOmitRegexes = () => {
 };
 
 export const whitelistKeysRegexes = () => {
-  return keyToRegexes(WHITELIST_KEYS_REGEXES, null, LUMIGO_WHITELIST_KEYS_REGEXES);
+  return keyToRegexes([], null, LUMIGO_WHITELIST_KEYS_REGEXES);
 };
 
 export const prune = (str, maxLength) => {
