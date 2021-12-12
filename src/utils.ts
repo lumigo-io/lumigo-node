@@ -16,6 +16,7 @@ export const LUMIGO_DEFAULT_DOMAIN_SCRUBBERS =
   '["secretsmanager.*.amazonaws.com", "ssm.*.amazonaws.com", "kms.*.amazonaws.com", "sts..*amazonaws.com"]';
 export const LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP = 'LUMIGO_BLACKLIST_REGEX';
 export const LUMIGO_SECRET_MASKING_REGEX = 'LUMIGO_SECRET_MASKING_REGEX';
+export const LUMIGO_WHITELIST_KEYS_REGEXES = 'LUMIGO_WHITELIST_KEYS_REGEXES';
 export const OMITTING_KEYS_REGEXES = [
   '.*pass.*',
   '.*key.*',
@@ -28,6 +29,8 @@ export const OMITTING_KEYS_REGEXES = [
   'Credential',
   'Authorization',
 ];
+
+export const WHITELIST_KEYS_REGEXES = ['.*KeyConditionExpression.*', '.*ExclusiveStartKey.*'];
 export const LUMIGO_EVENT_KEY = '_lumigo';
 export const STEP_FUNCTION_UID_KEY = 'step_function_uid';
 export const GET_KEY_DEPTH_ENV_KEY = 'LUMIGO_KEY_DEPTH';

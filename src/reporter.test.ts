@@ -318,7 +318,7 @@ describe('reporter', () => {
               },
               response: {
                 truncated: true,
-                body: `{"a":"${value}","b":"${value}","key":"****","password":"****","e":"${value}","secret":"****","f":"${value}","g":"${value}"}`,
+                body: `{"a":"${value}","b":"${value}","key":"****","password":"****","e":"${value}","secret":"****","f":"${value}","g":"${value}"}...[too long]`,
                 headers: '{"Peter":"Parker","content-type":"application/json"}',
               },
             },
@@ -331,6 +331,7 @@ describe('reporter', () => {
       const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize));
       expect(actual).toEqual(expected);
     });
+
     test('forgeAndScrubRequestBody long response', () => {
       const value = 'a'.repeat(10);
       const long = 'a'.repeat(getEventEntitySize(true));
@@ -387,6 +388,7 @@ describe('reporter', () => {
       const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize));
       expect(actual).toEqual(expected);
     });
+
     test('forgeAndScrubRequestBody truncated request', () => {
       const value = 'a'.repeat(10);
       const dummyEnd = 'dummyEnd';
@@ -422,7 +424,7 @@ describe('reporter', () => {
               host: 'your.mind.com',
               request: {
                 truncated: true,
-                body: `{"key":"****","password":"****","e":"${value}","secret":"****","f":"${value}","g":"${value}"}`,
+                body: `{"key":"****","password":"****","e":"${value}","secret":"****","f":"${value}","g":"${value}"}...[too long]`,
                 headers: '{"Tyler":"Durden","secretKey":"****","content-type":"application/json"}',
                 host: 'your.mind.com',
               },

@@ -220,6 +220,16 @@ describe('payloadStringify', () => {
     expect(result).toEqual(JSON.stringify({ o: { key: 'value', password: '****' } }));
   });
 
+  test('payloadStringify -> shoudnt scrub whitelist keys', () => {
+    const result = payloadStringify(
+      { ExclusiveStartKey: 'value', KeyConditionExpression: 'value' },
+      1024
+    );
+    expect(result).toEqual(
+      JSON.stringify({ ExclusiveStartKey: 'value', KeyConditionExpression: 'value' })
+    );
+  });
+
   test('payloadStringify -> skipScrubPath -> Nested items arent affected', () => {
     const result = payloadStringify({ o: { key: { password: 'value' } } }, 1024, ['o', 'key']);
     expect(result).toEqual(JSON.stringify({ o: { key: { password: '****' } } }));

@@ -5,6 +5,8 @@ import {
   OMITTING_KEYS_REGEXES,
   parseJsonFromEnvVar,
   isString,
+  WHITELIST_KEYS_REGEXES,
+  LUMIGO_WHITELIST_KEYS_REGEXES,
 } from '../utils';
 import { safeExecute } from '../utils';
 import * as logger from '../logger';
@@ -15,20 +17,31 @@ const TRUNCATED_TEXT = '...[too long]';
 
 const isNativeType = (obj) => nativeTypes.includes(typeof obj);
 
-export const keyToOmitRegexes = () => {
-  let regexesList = OMITTING_KEYS_REGEXES;
-  if (process.env[LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP]) {
-    const parseResponse = parseJsonFromEnvVar(LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP, true);
+const keyToRegexes = (
+  regexesList = OMITTING_KEYS_REGEXES,
+  backwardCompRegexEnvVarName = LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP,
+  regexesEnvVarName = LUMIGO_SECRET_MASKING_REGEX
+) => {
+  if (process.env[backwardCompRegexEnvVarName]) {
+    const parseResponse = parseJsonFromEnvVar(backwardCompRegexEnvVarName, true);
     if (parseResponse) {
       regexesList = parseResponse;
     }
-  } else if (process.env[LUMIGO_SECRET_MASKING_REGEX]) {
-    const parseResponse = parseJsonFromEnvVar(LUMIGO_SECRET_MASKING_REGEX, true);
+  } else if (process.env[regexesEnvVarName]) {
+    const parseResponse = parseJsonFromEnvVar(regexesEnvVarName, true);
     if (parseResponse) {
       regexesList = parseResponse;
     }
   }
   return regexesList.map((x) => new RegExp(x, 'i'));
+};
+
+export const keyToOmitRegexes = () => {
+  return keyToRegexes();
+};
+
+export const whitelistKeysRegexes = () => {
+  return keyToRegexes(WHITELIST_KEYS_REGEXES, null, LUMIGO_WHITELIST_KEYS_REGEXES);
 };
 
 export const prune = (str, maxLength) => {
@@ -40,7 +53,7 @@ export const prune = (str, maxLength) => {
   return toPrune.substr(0, maxLength);
 };
 
-const isSecretKey = (regexes, key) => {
+const keyContainsRegex = (regexes, key) => {
   if (!isNaN(key)) {
     //optimization for arrays
     return false;
@@ -75,11 +88,13 @@ const getItemsInPath = safeExecute(
 export const payloadStringify = (
   payload,
   maxPayloadSize = getEventEntitySize(),
-  skipScrubPath = null
+  skipScrubPath = null,
+  truncated = false
 ) => {
   let totalSize = 0;
   let refsFound = [];
-  const regexes = keyToOmitRegexes();
+  const secretsRegexes = keyToOmitRegexes();
+  const whitelistRegexes = whitelistKeysRegexes();
   const secretItemsToSkipScrubbing = new Set(getItemsInPath(payload, skipScrubPath));
 
   let isPruned = false;
@@ -93,7 +108,12 @@ export const payloadStringify = (
       secretItemsToSkipScrubbing.has(this);
     if (!(isObj && refsFound.includes(value))) {
       if (totalSize < maxPayloadSize) {
-        if (!shouldSkipSecretScrub && isSecretKey(regexes, key)) return SCRUBBED_TEXT;
+        if (
+          !shouldSkipSecretScrub &&
+          !keyContainsRegex(whitelistRegexes, key) &&
+          keyContainsRegex(secretsRegexes, key)
+        )
+          return SCRUBBED_TEXT;
         if (isNativeType(value)) {
           totalSize += getNativeVarSize(value);
         }
@@ -116,7 +136,7 @@ export const payloadStringify = (
       isPruned = true;
     }
   });
-  if (result && isPruned) {
+  if (result && (isPruned || truncated)) {
     result = result.replace(/,null/g, '');
     result = result.concat(TRUNCATED_TEXT);
   }
