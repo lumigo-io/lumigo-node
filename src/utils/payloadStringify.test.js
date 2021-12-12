@@ -233,6 +233,7 @@ describe('payloadStringify', () => {
     expect(result).toEqual(
       JSON.stringify({ ExclusiveStartKey: 'value', KeyConditionExpression: 'value' })
     );
+    process.env[LUMIGO_WHITELIST_KEYS_REGEXES] = undefined
   });
 
   test('payloadStringify -> skipScrubPath -> Nested items arent affected', () => {
