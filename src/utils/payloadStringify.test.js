@@ -225,7 +225,8 @@ describe('payloadStringify', () => {
   });
 
   test('payloadStringify -> shoudnt scrub whitelist keys', () => {
-    process.env[LUMIGO_WHITELIST_KEYS_REGEXES] = '[".*KeyConditionExpression.*", ".*ExclusiveStartKey.*"]';
+    process.env[LUMIGO_WHITELIST_KEYS_REGEXES] =
+      '[".*KeyConditionExpression.*", ".*ExclusiveStartKey.*"]';
     const result = payloadStringify(
       { ExclusiveStartKey: 'value', KeyConditionExpression: 'value' },
       1024
@@ -233,7 +234,7 @@ describe('payloadStringify', () => {
     expect(result).toEqual(
       JSON.stringify({ ExclusiveStartKey: 'value', KeyConditionExpression: 'value' })
     );
-    process.env[LUMIGO_WHITELIST_KEYS_REGEXES] = undefined
+    process.env[LUMIGO_WHITELIST_KEYS_REGEXES] = undefined;
   });
 
   test('payloadStringify -> skipScrubPath -> Nested items arent affected', () => {
