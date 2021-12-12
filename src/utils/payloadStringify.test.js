@@ -1,5 +1,9 @@
 import { payloadStringify, keyToOmitRegexes, prune } from './payloadStringify';
-import { LUMIGO_SECRET_MASKING_REGEX, LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP } from '../utils';
+import {
+  LUMIGO_SECRET_MASKING_REGEX,
+  LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP,
+  LUMIGO_WHITELIST_KEYS_REGEXES,
+} from '../utils';
 
 describe('payloadStringify', () => {
   test('payloadStringify -> simple flow -> object', () => {
@@ -221,6 +225,8 @@ describe('payloadStringify', () => {
   });
 
   test('payloadStringify -> shoudnt scrub whitelist keys', () => {
+    process.env[LUMIGO_WHITELIST_KEYS_REGEXES] =
+      '[".*KeyConditionExpression.*", ".*ExclusiveStartKey.*"]';
     const result = payloadStringify(
       { ExclusiveStartKey: 'value', KeyConditionExpression: 'value' },
       1024
@@ -228,6 +234,7 @@ describe('payloadStringify', () => {
     expect(result).toEqual(
       JSON.stringify({ ExclusiveStartKey: 'value', KeyConditionExpression: 'value' })
     );
+    process.env[LUMIGO_WHITELIST_KEYS_REGEXES] = undefined;
   });
 
   test('payloadStringify -> skipScrubPath -> Nested items arent affected', () => {
