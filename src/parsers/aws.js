@@ -129,6 +129,16 @@ export const sqsParser = (requestData, responseData) => {
         'MessageId',
       ],
       undefined
+    ) ||
+    safeGet(
+      parsedResBody,
+      [
+        'SendMessageBatchResponse',
+        'SendMessageBatchResult',
+        'SendMessageBatchResultEntry',
+        'MessageId',
+      ],
+      undefined
     );
   return { awsServiceData };
 };

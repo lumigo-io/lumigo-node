@@ -282,37 +282,42 @@ describe('aws parser', () => {
     });
   });
 
-  test('sqsParser -> happy flow', () => {
-    const queueUrl = 'https://sqs.us-west-2.amazonaws.com/33/random-queue-test';
-    const encodedQueueUrl = encodeURIComponent(queueUrl);
-    const requestData = {
-      path: '/',
-      port: 443,
-      host: 'sqs.us-west-2.amazonaws.com',
-      body: `Action=SendMessage&DelaySeconds=1&MessageBody=Some%20Message%20to%20SQS&QueueUrl=${encodedQueueUrl}`,
-      method: 'POST',
-      headers: {
-        'content-type': 'application/x-www-form-urlencoded; charset=utf-8',
-        'content-length': 172,
+  [
+    // send message single
+    '<?xml version="1.0"?><SendMessageResponse xmlns="http://queue.amazonaws.com/doc/2012-11-05/"><SendMessageResult><MessageId>85dc3997-b060-47bc-9d89-c754d7260dbd</MessageId><MD5OfMessageBody>c5cb6abef11b88049177473a73ed662f</MD5OfMessageBody></SendMessageResult><ResponseMetadata><RequestId>b6b5a045-23c6-5e3a-a54f-f7dd99f7b379</RequestId></ResponseMetadata></SendMessageResponse>',
+    // send message batch (with one record)
+    '<?xml version="1.0"?><SendMessageBatchResponse xmlns="http://queue.amazonaws.com/doc/2012-11-05/"><SendMessageBatchResult><SendMessageBatchResultEntry><Id>11dd068c-fb3c-43e8-a2ae-1a914780735f</Id><MessageId>85dc3997-b060-47bc-9d89-c754d7260dbd</MessageId><MD5OfMessageBody>c5cb6abef11b88049177473a73ed662f</MD5OfMessageBody></SendMessageBatchResultEntry></SendMessageBatchResult><ResponseMetadata><RequestId>b6b5a045-23c6-5e3a-a54f-f7dd99f7b379</RequestId></ResponseMetadata></SendMessageBatchResponse>',
+  ].map((responseDataBody) =>
+    test('sqsParser -> happy flow', () => {
+      const queueUrl = 'https://sqs.us-west-2.amazonaws.com/33/random-queue-test';
+      const encodedQueueUrl = encodeURIComponent(queueUrl);
+      const requestData = {
+        path: '/',
+        port: 443,
         host: 'sqs.us-west-2.amazonaws.com',
-        'x-amz-date': '20190730T082312Z',
-      },
-      protocol: 'https:',
-      sendTime: 1564474992235,
-    };
-    const responseData = {
-      body: '<?xml version="1.0"?><SendMessageResponse xmlns="http://queue.amazonaws.com/doc/2012-11-05/"><SendMessageResult><MessageId>85dc3997-b060-47bc-9d89-c754d7260dbd</MessageId><MD5OfMessageBody>c5cb6abef11b88049177473a73ed662f</MD5OfMessageBody></SendMessageResult><ResponseMetadata><RequestId>b6b5a045-23c6-5e3a-a54f-f7dd99f7b379</RequestId></ResponseMetadata></SendMessageResponse>',
-    };
+        body: `Action=SendMessage&DelaySeconds=1&MessageBody=Some%20Message%20to%20SQS&QueueUrl=${encodedQueueUrl}`,
+        method: 'POST',
+        headers: {
+          'content-type': 'application/x-www-form-urlencoded; charset=utf-8',
+          'content-length': 172,
+          host: 'sqs.us-west-2.amazonaws.com',
+          'x-amz-date': '20190730T082312Z',
+        },
+        protocol: 'https:',
+        sendTime: 1564474992235,
+      };
+      const responseData = { body: responseDataBody };
 
-    const result = aws.sqsParser(requestData, responseData);
+      const result = aws.sqsParser(requestData, responseData);
 
-    expect(result).toEqual({
-      awsServiceData: {
-        resourceName: queueUrl,
-        messageId: '85dc3997-b060-47bc-9d89-c754d7260dbd',
-      },
-    });
-  });
+      expect(result).toEqual({
+        awsServiceData: {
+          resourceName: queueUrl,
+          messageId: '85dc3997-b060-47bc-9d89-c754d7260dbd',
+        },
+      });
+    })
+  );
 
   test('sqsParser -> truncated body', () => {
     const queueUrl = 'https://sqs.us-west-2.amazonaws.com/33/random-queue-test';
