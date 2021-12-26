@@ -224,12 +224,16 @@ export const trace =
       return performPromisifyType(err, data, type, callback);
     }
     context.__wrappedByLumigo = true;
+    let pStartTrace = Promise.resolve();
+    let functionSpan;
+    if (!isSwitchedOff()) {
+      functionSpan = getFunctionSpan(event, context);
 
-    const functionSpan = getFunctionSpan(event, context);
+      await hookUnhandledRejection(functionSpan);
 
-    await hookUnhandledRejection(functionSpan);
+      pStartTrace = startTrace(functionSpan);
+    }
 
-    const pStartTrace = startTrace(functionSpan);
     const pUserHandler = promisifyUserHandler(userHandler, event, context);
 
     let [, handlerReturnValue] = await Promise.all([pStartTrace, pUserHandler]);
@@ -242,7 +246,7 @@ export const trace =
 
     const cleanedHandlerReturnValue = removeLumigoFromStacktrace(handlerReturnValue);
 
-    await endTrace(functionSpan, cleanedHandlerReturnValue);
+    if (!isSwitchedOff()) await endTrace(functionSpan, cleanedHandlerReturnValue);
     const { err, data, type } = cleanedHandlerReturnValue;
 
     return performPromisifyType(err, data, type, callback);

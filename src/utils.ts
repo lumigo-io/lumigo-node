@@ -256,7 +256,8 @@ export const isSwitchedOff = (): boolean =>
     () =>
       validateEnvVar(SWITCH_OFF_FLAG) ||
       TracerGlobals.getTracerInputs().switchOff ||
-      !isValidAlias()
+      !isValidAlias() ||
+      !process.env['_X_AMZN_TRACE_ID']
   )();
 
 export const isStepFunction = (): boolean =>
