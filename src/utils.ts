@@ -173,9 +173,8 @@ export const isAwsEnvironment = () =>
   !!(
     (
       process.env['LAMBDA_RUNTIME_DIR'] &&
-      !process.env['AWS_SAM_LOCAL'] && // This is SAM env var for is running locally
-      !process.env['IS_LOCAL']
-    ) // This is SLS env var for is running locally
+      !process.env['AWS_SAM_LOCAL'] && // local SAM
+      !process.env['IS_LOCAL']) // local SLS
   );
 
 export const getEnvVarAsList = (key: string, def: string[]): string[] => {
