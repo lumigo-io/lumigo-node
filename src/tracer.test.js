@@ -484,7 +484,6 @@ describe('tracer', () => {
 
   test('trace; async local lambda no aws _X_AMZN_TRACE_ID', async () => {
     delete process.env['_X_AMZN_TRACE_ID'];
-    delete process.env['PWD'];
     const token = TOKEN;
     const lumigoTracer = require('./index')({ token });
 
