@@ -482,7 +482,7 @@ describe('tracer', () => {
     expect(Http.hookHttp).toHaveBeenCalledTimes(1);
   });
 
-  test('trace; async local lambda no aws _X_AMZN_TRACE_ID', async () => {
+  test('trace; async local lambda no aws environment', async () => {
     delete process.env['_X_AMZN_TRACE_ID'];
     process.env['AWS_SAM_LOCAL'] = 'true';
     const token = TOKEN;
