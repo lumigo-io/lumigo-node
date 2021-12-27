@@ -171,9 +171,11 @@ const validateEnvVar = (envVar: string, value: string = 'TRUE'): boolean =>
 
 export const isAwsEnvironment = () =>
   !!(
-    process.env['LAMBDA_RUNTIME_DIR'] &&
-    !process.env['AWS_SAM_LOCAL'] && // This is SAM env var for is running locally
-    !process.env['IS_LOCAL'] // This is SLS env var for is running locally
+    (
+      process.env['LAMBDA_RUNTIME_DIR'] &&
+      !process.env['AWS_SAM_LOCAL'] && // This is SAM env var for is running locally
+      !process.env['IS_LOCAL']
+    ) // This is SLS env var for is running locally
   );
 
 export const getEnvVarAsList = (key: string, def: string[]): string[] => {
