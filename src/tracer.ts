@@ -197,13 +197,7 @@ export const trace =
   ({ token, debug, edgeHost, switchOff, stepFunction }) =>
   (userHandler) =>
   async (event, context, callback) => {
-    if (!isAwsEnvironment()) {
-      let handlerReturnValue = await promisifyUserHandler(userHandler, event, context);
-      handlerReturnValue = normalizeLambdaError(handlerReturnValue);
-      const cleanedHandlerReturnValue = removeLumigoFromStacktrace(handlerReturnValue);
-      const { err, data, type } = cleanedHandlerReturnValue;
-      return performPromisifyType(err, data, type, callback);
-    }
+    if (!isAwsEnvironment()) return userHandler(event, context, callback);
     try {
       TracerGlobals.setHandlerInputs({ event, context });
       TracerGlobals.setTracerInputs({
