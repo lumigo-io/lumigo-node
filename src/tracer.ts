@@ -54,7 +54,6 @@ const setupTimeoutTimer = () => {
 
 export const startTrace = async (functionSpan) => {
   try {
-    console.log('AAAAAAA');
     const handlerInputs = TracerGlobals.getHandlerInputs();
     if (!isSwitchedOff() && isAwsEnvironment() && isAwsContext(handlerInputs.context)) {
       const tracerInputs = TracerGlobals.getTracerInputs();
