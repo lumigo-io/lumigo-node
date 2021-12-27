@@ -54,7 +54,7 @@ const setupTimeoutTimer = () => {
 
 export const startTrace = async (functionSpan) => {
   try {
-    console.log("AAAAAAA");
+    console.log('AAAAAAA');
     const handlerInputs = TracerGlobals.getHandlerInputs();
     if (!isSwitchedOff() && isAwsEnvironment() && isAwsContext(handlerInputs.context)) {
       const tracerInputs = TracerGlobals.getTracerInputs();
@@ -198,7 +198,7 @@ export const trace =
   ({ token, debug, edgeHost, switchOff, stepFunction }) =>
   (userHandler) =>
   async (event, context, callback) => {
-    if(!isAwsEnvironment()) {
+    if (!isAwsEnvironment()) {
       let handlerReturnValue = await promisifyUserHandler(userHandler, event, context);
       handlerReturnValue = normalizeLambdaError(handlerReturnValue);
       const cleanedHandlerReturnValue = removeLumigoFromStacktrace(handlerReturnValue);
