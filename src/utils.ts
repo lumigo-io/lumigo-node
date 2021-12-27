@@ -172,7 +172,8 @@ const validateEnvVar = (envVar: string, value: string = 'TRUE'): boolean =>
 export const isAwsEnvironment = () =>
   !!(
     process.env['LAMBDA_RUNTIME_DIR'] &&
-    (process.env.LAMBDA_TASK_ROOT || process.env.AWS_EXECUTION_ENV)
+    !process.env['AWS_SAM_LOCAL'] &&
+    !process.env['IS_LOCAL']
   );
 
 export const getEnvVarAsList = (key: string, def: string[]): string[] => {
