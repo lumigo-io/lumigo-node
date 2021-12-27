@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 
-const token = 'XXX';
+const token = 't_dc07fcd5c58d47ffa2b7c';
 const debug = true;
 const lumigo = require('@lumigo/tracer')({ token, debug });
 

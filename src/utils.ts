@@ -169,7 +169,9 @@ const LUMIGO_STACK_PATTERNS = [
 const validateEnvVar = (envVar: string, value: string = 'TRUE'): boolean =>
   !!(process.env[envVar] && process.env[envVar].toUpperCase() === value.toUpperCase());
 
-export const isAwsEnvironment = () => !!process.env['LAMBDA_RUNTIME_DIR'];
+export const isAwsEnvironment = () => !!(process.env['LAMBDA_RUNTIME_DIR'] && process.env.PWD?.startsWith(
+  "/var/task"
+));
 
 export const getEnvVarAsList = (key: string, def: string[]): string[] => {
   if (process.env[key] != null) {
@@ -256,8 +258,7 @@ export const isSwitchedOff = (): boolean =>
     () =>
       validateEnvVar(SWITCH_OFF_FLAG) ||
       TracerGlobals.getTracerInputs().switchOff ||
-      !isValidAlias() ||
-      !process.env['_X_AMZN_TRACE_ID']
+      !isValidAlias()
   )();
 
 export const isStepFunction = (): boolean =>

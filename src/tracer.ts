@@ -54,6 +54,7 @@ const setupTimeoutTimer = () => {
 
 export const startTrace = async (functionSpan) => {
   try {
+    console.log("AAAAAAA");
     const handlerInputs = TracerGlobals.getHandlerInputs();
     if (!isSwitchedOff() && isAwsEnvironment() && isAwsContext(handlerInputs.context)) {
       const tracerInputs = TracerGlobals.getTracerInputs();
@@ -197,6 +198,13 @@ export const trace =
   ({ token, debug, edgeHost, switchOff, stepFunction }) =>
   (userHandler) =>
   async (event, context, callback) => {
+    if(!isAwsEnvironment()) {
+      let handlerReturnValue = await promisifyUserHandler(userHandler, event, context);
+      handlerReturnValue = normalizeLambdaError(handlerReturnValue);
+      const cleanedHandlerReturnValue = removeLumigoFromStacktrace(handlerReturnValue);
+      const { err, data, type } = cleanedHandlerReturnValue;
+      return performPromisifyType(err, data, type, callback);
+    }
     try {
       TracerGlobals.setHandlerInputs({ event, context });
       TracerGlobals.setTracerInputs({
@@ -224,16 +232,12 @@ export const trace =
       return performPromisifyType(err, data, type, callback);
     }
     context.__wrappedByLumigo = true;
-    let pStartTrace = Promise.resolve();
-    let functionSpan;
-    if (!isSwitchedOff()) {
-      functionSpan = getFunctionSpan(event, context);
 
-      await hookUnhandledRejection(functionSpan);
+    const functionSpan = getFunctionSpan(event, context);
 
-      pStartTrace = startTrace(functionSpan);
-    }
+    await hookUnhandledRejection(functionSpan);
 
+    const pStartTrace = startTrace(functionSpan);
     const pUserHandler = promisifyUserHandler(userHandler, event, context);
 
     let [, handlerReturnValue] = await Promise.all([pStartTrace, pUserHandler]);
@@ -246,7 +250,7 @@ export const trace =
 
     const cleanedHandlerReturnValue = removeLumigoFromStacktrace(handlerReturnValue);
 
-    if (!isSwitchedOff()) await endTrace(functionSpan, cleanedHandlerReturnValue);
+    await endTrace(functionSpan, cleanedHandlerReturnValue);
     const { err, data, type } = cleanedHandlerReturnValue;
 
     return performPromisifyType(err, data, type, callback);
