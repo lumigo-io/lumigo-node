@@ -162,7 +162,6 @@ describe('utils', () => {
     process.env = {};
     expect(utils.isAwsEnvironment()).toBe(false);
     process.env.LAMBDA_RUNTIME_DIR = 'BLA BLA';
-    process.env.PWD = '/var/task';
     expect(utils.isAwsEnvironment()).toBe(true);
   });
 

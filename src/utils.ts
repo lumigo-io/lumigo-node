@@ -170,7 +170,10 @@ const validateEnvVar = (envVar: string, value: string = 'TRUE'): boolean =>
   !!(process.env[envVar] && process.env[envVar].toUpperCase() === value.toUpperCase());
 
 export const isAwsEnvironment = () =>
-  !!(process.env['LAMBDA_RUNTIME_DIR'] && (process.env.LAMBDA_TASK_ROOT || process.env.AWS_EXECUTION_ENV));
+  !!(
+    process.env['LAMBDA_RUNTIME_DIR'] &&
+    (process.env.LAMBDA_TASK_ROOT || process.env.AWS_EXECUTION_ENV)
+  );
 
 export const getEnvVarAsList = (key: string, def: string[]): string[] => {
   if (process.env[key] != null) {
