@@ -482,6 +482,44 @@ describe('tracer', () => {
     expect(Http.hookHttp).toHaveBeenCalledTimes(1);
   });
 
+  ['AWS_SAM_LOCAL', 'IS_LOCAL'].forEach((localFramework) => {
+    test(`trace; async local lambda no aws environment [${localFramework}]`, async () => {
+      delete process.env['_X_AMZN_TRACE_ID'];
+      process.env[localFramework] = 'true';
+      const token = TOKEN;
+      const lumigoTracer = require('./index')({ token });
+
+      const { event, context } = new HandlerInputesBuilder().build();
+      const retVal = 'The Tracer Wars';
+
+      const userHandler5 = async (event, context) => {
+        return retVal;
+      };
+      await expect(lumigoTracer.trace(userHandler5)(event, context)).resolves.toEqual(retVal);
+
+      expect(Http.hookHttp).toHaveBeenCalledTimes(0);
+    });
+
+    test(`trace; local lambda no aws environment [${localFramework}]`, async () => {
+      delete process.env['_X_AMZN_TRACE_ID'];
+      process.env[localFramework] = 'true';
+      const token = TOKEN;
+      const lumigoTracer = require('./index')({ token });
+
+      const { event, context } = new HandlerInputesBuilder().build();
+      const retVal = 'The Tracer Wars';
+
+      const userHandler5 = (event, context, callback) => {
+        return retVal;
+      };
+      await expect(lumigoTracer.trace(userHandler5)(event, context, (res) => res)).resolves.toEqual(
+        retVal
+      );
+
+      expect(Http.hookHttp).toHaveBeenCalledTimes(0);
+    });
+  });
+
   test('trace; follow AWS stringify on the return value - happy flow', async () => {
     // According to node's runtime: var/runtime/RAPIDClient.js:134, AWS stringify the message.
     new EnvironmentBuilder().awsEnvironment().applyEnv();

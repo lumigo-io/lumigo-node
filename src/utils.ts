@@ -169,7 +169,12 @@ const LUMIGO_STACK_PATTERNS = [
 const validateEnvVar = (envVar: string, value: string = 'TRUE'): boolean =>
   !!(process.env[envVar] && process.env[envVar].toUpperCase() === value.toUpperCase());
 
-export const isAwsEnvironment = () => !!process.env['LAMBDA_RUNTIME_DIR'];
+export const isAwsEnvironment = () =>
+  !!(
+    process.env['LAMBDA_RUNTIME_DIR'] &&
+    !process.env['AWS_SAM_LOCAL'] && // local SAM
+    !process.env['IS_LOCAL']
+  ); // local SLS
 
 export const getEnvVarAsList = (key: string, def: string[]): string[] => {
   if (process.env[key] != null) {

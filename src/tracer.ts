@@ -197,6 +197,7 @@ export const trace =
   ({ token, debug, edgeHost, switchOff, stepFunction }) =>
   (userHandler) =>
   async (event, context, callback) => {
+    if (!isAwsEnvironment()) return userHandler(event, context, callback);
     try {
       TracerGlobals.setHandlerInputs({ event, context });
       TracerGlobals.setTracerInputs({
