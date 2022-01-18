@@ -61,6 +61,8 @@ jobs:
       - NODE_OPTIONS: --max_old_space_size=4096
     resource_class: medium+
     steps:
+    - setup_remote_docker:
+        version: 19.03.13
     - run:
         command: |
           mkdir ~/.ssh/ && echo -e "Host github.com\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
