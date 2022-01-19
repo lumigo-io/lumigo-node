@@ -1,5 +1,9 @@
 import { payloadStringify, keyToOmitRegexes, prune } from './payloadStringify';
-import { LUMIGO_SECRET_MASKING_REGEX, LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP } from '../utils';
+import {
+  LUMIGO_SECRET_MASKING_REGEX,
+  LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP,
+  LUMIGO_WHITELIST_KEYS_REGEXES,
+} from '../utils';
 
 describe('payloadStringify', () => {
   test('payloadStringify -> simple flow -> object', () => {
@@ -218,6 +222,19 @@ describe('payloadStringify', () => {
   test('payloadStringify -> skipScrubPath -> Doesnt affect other paths', () => {
     const result = payloadStringify({ o: { key: 'value', password: 'value' } }, 1024, ['o', 'key']);
     expect(result).toEqual(JSON.stringify({ o: { key: 'value', password: '****' } }));
+  });
+
+  test('payloadStringify -> shoudnt scrub whitelist keys', () => {
+    process.env[LUMIGO_WHITELIST_KEYS_REGEXES] =
+      '[".*KeyConditionExpression.*", ".*ExclusiveStartKey.*"]';
+    const result = payloadStringify(
+      { ExclusiveStartKey: 'value', KeyConditionExpression: 'value' },
+      1024
+    );
+    expect(result).toEqual(
+      JSON.stringify({ ExclusiveStartKey: 'value', KeyConditionExpression: 'value' })
+    );
+    process.env[LUMIGO_WHITELIST_KEYS_REGEXES] = undefined;
   });
 
   test('payloadStringify -> skipScrubPath -> Nested items arent affected', () => {

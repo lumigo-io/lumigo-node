@@ -54,9 +54,9 @@ const setupTimeoutTimer = () => {
 
 export const startTrace = async (functionSpan) => {
   try {
-    if (!isSwitchedOff() && isAwsEnvironment()) {
+    const handlerInputs = TracerGlobals.getHandlerInputs();
+    if (!isSwitchedOff() && isAwsEnvironment() && isAwsContext(handlerInputs.context)) {
       const tracerInputs = TracerGlobals.getTracerInputs();
-      const handlerInputs = TracerGlobals.getHandlerInputs();
       const { host, path } = getEdgeUrl();
       logger.debug('Tracer started', {
         tracerInputs,
@@ -197,6 +197,7 @@ export const trace =
   ({ token, debug, edgeHost, switchOff, stepFunction }) =>
   (userHandler) =>
   async (event, context, callback) => {
+    if (!isAwsEnvironment()) return userHandler(event, context, callback);
     try {
       TracerGlobals.setHandlerInputs({ event, context });
       TracerGlobals.setTracerInputs({
@@ -205,6 +206,7 @@ export const trace =
         edgeHost,
         switchOff,
         stepFunction,
+        lambdaTimeout: context.getRemainingTimeInMillis(),
       });
     } catch (err) {
       logger.warn('Failed to start tracer', err);

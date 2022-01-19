@@ -1,6 +1,7 @@
 import * as globals from './globals';
 import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
-import { DEFAULT_MAX_SIZE_FOR_REQUEST } from './globals';
+import { DEFAULT_MAX_SIZE_FOR_REQUEST, MAX_TRACER_ADDED_DURATION_ALLOWED } from './globals';
+import { getMaxRequestSize } from './utils';
 
 describe('globals', () => {
   test('SpansContainer - simple flow', () => {
@@ -48,6 +49,21 @@ describe('globals', () => {
 
     expect(globals.SpansContainer.getSpans()).toEqual([]);
     expect(spans).toEqual([span1]);
+  });
+
+  test('SpansContainer - cleanning the request size limiter', () => {
+    const span1 = { a: 'b', c: 'd', id: '1' };
+    for (let i = 0; i < getMaxRequestSize(); i++) {
+      globals.SpansContainer.addSpan(span1);
+    }
+    let didAdd = globals.SpansContainer.addSpan(span1);
+    expect(didAdd).toBeFalsy();
+
+    globals.SpansContainer.clearSpans();
+
+    didAdd = globals.SpansContainer.addSpan(span1);
+    expect(didAdd).toBeTruthy();
+    expect(globals.SpansContainer.getSpans()).toEqual([span1]);
   });
 
   test('GlobalTimer - simple flow', (done) => {
@@ -186,7 +202,11 @@ describe('globals', () => {
 
   test('TracerGlobals', () => {
     const event = { a: 'b', c: 'd' };
-    const context = { e: 'f', g: 'h' };
+    const context = {
+      e: 'f',
+      g: 'h',
+      getRemainingTimeInMillis: () => MAX_TRACER_ADDED_DURATION_ALLOWED,
+    };
     globals.TracerGlobals.setHandlerInputs({ event, context });
     expect(globals.TracerGlobals.getHandlerInputs()).toEqual({
       event,
@@ -218,6 +238,7 @@ describe('globals', () => {
       edgeHost,
       switchOff,
       isStepFunction,
+      lambdaTimeout: MAX_TRACER_ADDED_DURATION_ALLOWED,
       maxSizeForRequest,
     });
     globals.TracerGlobals.clearTracerInputs();
@@ -225,6 +246,7 @@ describe('globals', () => {
       token: '',
       debug: false,
       edgeHost: '',
+      lambdaTimeout: MAX_TRACER_ADDED_DURATION_ALLOWED,
       switchOff: false,
       isStepFunction: false,
       maxSizeForRequest: DEFAULT_MAX_SIZE_FOR_REQUEST,
@@ -239,7 +261,11 @@ describe('globals', () => {
     const span1 = { a: 'b', c: 'd' };
     const span2 = { e: 'f', g: 'h' };
     const event = { a: 'b', c: 'd' };
-    const context = { e: 'f', g: 'h' };
+    const context = {
+      e: 'f',
+      g: 'h',
+      getRemainingTimeInMillis: () => MAX_TRACER_ADDED_DURATION_ALLOWED,
+    };
 
     globals.SpansContainer.addSpan(span1);
     globals.SpansContainer.addSpan(span2);
@@ -264,6 +290,7 @@ describe('globals', () => {
       edgeHost,
       switchOff,
       isStepFunction: false,
+      lambdaTimeout: MAX_TRACER_ADDED_DURATION_ALLOWED,
       maxSizeForRequest: DEFAULT_MAX_SIZE_FOR_REQUEST,
     });
   });
@@ -302,7 +329,7 @@ describe('globals', () => {
   });
 
   test('ExecutionTags.addTag too long key', () => {
-    const key = 'k'.repeat(51);
+    const key = 'k'.repeat(71);
     globals.ExecutionTags.addTag(key, 'v0');
     expect(globals.ExecutionTags.getTags()).toEqual([]);
     expect(ConsoleWritesForTesting.getLogs()).toEqual([
@@ -318,19 +345,19 @@ describe('globals', () => {
     expect(globals.ExecutionTags.getTags()).toEqual([]);
     expect(ConsoleWritesForTesting.getLogs()).toEqual([
       {
-        msg: 'Lumigo Warning: Skipping addExecutionTag: Unable to add tag: value length should be between 1 and 50: k0 - ',
+        msg: 'Lumigo Warning: Skipping addExecutionTag: Unable to add tag: value length should be between 1 and 70: k0 - ',
         obj: undefined,
       },
     ]);
   });
 
   test('ExecutionTags.addTag too long value', () => {
-    const value = 'v'.repeat(51);
+    const value = 'v'.repeat(71);
     globals.ExecutionTags.addTag('k0', value);
     expect(globals.ExecutionTags.getTags()).toEqual([]);
     expect(ConsoleWritesForTesting.getLogs()).toEqual([
       {
-        msg: `Lumigo Warning: Skipping addExecutionTag: Unable to add tag: value length should be between 1 and 50: k0 - ${value}`,
+        msg: `Lumigo Warning: Skipping addExecutionTag: Unable to add tag: value length should be between 1 and 70: k0 - ${value}`,
         obj: undefined,
       },
     ]);

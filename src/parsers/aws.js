@@ -97,7 +97,7 @@ export const apigwParser = (requestData, responseData) => {
 
 export const eventBridgeParser = (requestData, responseData) => {
   const { body: reqBody } = requestData;
-  const { body: resBody } = responseData;
+  const { body: resBody } = responseData || {};
   const reqBodyJSON = (!!reqBody && JSON.parse(reqBody)) || {};
   const resBodyJSON = (!!resBody && JSON.parse(resBody)) || {};
   const resourceNames = reqBodyJSON.Entries
@@ -112,7 +112,7 @@ export const eventBridgeParser = (requestData, responseData) => {
 
 export const sqsParser = (requestData, responseData) => {
   const { body: reqBody } = requestData;
-  const { body: resBody } = responseData;
+  const { body: resBody } = responseData || {};
   const parsedReqBody = reqBody ? parseQueryParams(reqBody) : undefined;
   const parsedResBody = resBody ? traverse(resBody) : undefined;
   const resourceName = parsedReqBody ? parsedReqBody['QueueUrl'] : undefined;
@@ -126,6 +126,16 @@ export const sqsParser = (requestData, responseData) => {
         'SendMessageBatchResult',
         'SendMessageBatchResultEntry',
         0,
+        'MessageId',
+      ],
+      undefined
+    ) ||
+    safeGet(
+      parsedResBody,
+      [
+        'SendMessageBatchResponse',
+        'SendMessageBatchResult',
+        'SendMessageBatchResultEntry',
         'MessageId',
       ],
       undefined

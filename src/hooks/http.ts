@@ -12,11 +12,7 @@ import {
   isValidAlias,
   lowerCaseObjectKeys,
 } from '../utils';
-import {
-  extractBodyFromEmitSocketEvent,
-  extractBodyFromEndFunc,
-  extractBodyFromWriteFunc,
-} from './httpUtils';
+import { extractBodyFromEmitSocketEvent, extractBodyFromWriteOrEndFunc } from './httpUtils';
 import { getCurrentTransactionId, getHttpInfo, getHttpSpan } from '../spans/awsSpan';
 import { URL } from 'url';
 import { SpansContainer, TracerGlobals } from '../globals';
@@ -51,14 +47,26 @@ export class Http {
     return function (args) {
       GlobalDurationTimer.start();
       if (isEmptyString(requestData.body)) {
-        const body = extractBodyFromEndFunc(args);
-        if (body) {
-          requestData.body += body;
-        }
-        if (currentSpan) currentSpan.info.httpInfo = getHttpInfo(requestData, {});
+        const body = extractBodyFromWriteOrEndFunc(args);
+        Http.aggregateRequestBodyToSpan(body, requestData, currentSpan, getEventEntitySize(true));
       }
       GlobalDurationTimer.stop();
     };
+  }
+
+  static aggregateRequestBodyToSpan(
+    body,
+    requestData,
+    currentSpan,
+    maxSize = getEventEntitySize(true)
+  ) {
+    if (body && !requestData.truncated) {
+      requestData.body += body;
+      const truncated = maxSize < requestData.body.length;
+      if (truncated) requestData.body = requestData.body.substr(0, maxSize);
+      requestData.truncated = truncated;
+    }
+    if (currentSpan) currentSpan.info.httpInfo = getHttpInfo(requestData, {});
   }
 
   @GlobalDurationTimer.timedSync()
@@ -131,6 +139,7 @@ export class Http {
     const uri = `${host}${path}`;
 
     return {
+      truncated: false,
       path,
       port,
       uri,
@@ -145,12 +154,13 @@ export class Http {
 
   @GlobalDurationTimer.timedSync()
   static httpBeforeRequestWrapper(args, extenderContext) {
+    extenderContext.isTracedDisabled = true;
     // @ts-ignore
     const { awsRequestId } = TracerGlobals.getHandlerInputs().context;
     const transactionId = getCurrentTransactionId();
-    extenderContext.isTracedDisabled = true;
     extenderContext.awsRequestId = awsRequestId;
     extenderContext.transactionId = transactionId;
+    extenderContext.isTracedDisabled = false;
 
     const { url, options } = Http.httpRequestArguments(args);
     const { headers } = options || {};
@@ -195,7 +205,6 @@ export class Http {
     } = extenderContext;
     if (!isTracedDisabled) {
       const endWrapper = Http.httpRequestEndWrapper(requestData, currentSpan);
-      extender.hook(clientRequest, 'end', { beforeHook: endWrapper });
 
       const emitWrapper = Http.httpRequestEmitBeforeHookWrapper(
         transactionId,
@@ -204,9 +213,11 @@ export class Http {
         requestRandomId,
         currentSpan
       );
-      extender.hook(clientRequest, 'emit', { beforeHook: emitWrapper });
 
       const writeWrapper = Http.httpRequestWriteBeforeHookWrapper(requestData, currentSpan);
+
+      extender.hook(clientRequest, 'end', { beforeHook: endWrapper });
+      extender.hook(clientRequest, 'emit', { beforeHook: emitWrapper });
       extender.hook(clientRequest, 'write', { beforeHook: writeWrapper });
     }
   }
@@ -215,11 +226,8 @@ export class Http {
     return function (args) {
       GlobalDurationTimer.start();
       if (isEmptyString(requestData.body)) {
-        const body = extractBodyFromWriteFunc(args);
-        if (body) {
-          requestData.body += body;
-          if (currentSpan) currentSpan.info.httpInfo = getHttpInfo(requestData, {});
-        }
+        const body = extractBodyFromWriteOrEndFunc(args);
+        Http.aggregateRequestBodyToSpan(body, requestData, currentSpan, getEventEntitySize(true));
       }
       GlobalDurationTimer.stop();
     };
@@ -264,21 +272,32 @@ export class Http {
     response
   ) {
     let body = '';
-    const payloadSize = getEventEntitySize();
+    let maxPayloadSize = getEventEntitySize(true);
     return function (args) {
       GlobalDurationTimer.start();
       const receivedTime = new Date().getTime();
+      let truncated = false;
       const { headers, statusCode } = response;
-      if (args[0] === 'data') {
-        if (body.length + args[1].length <= payloadSize) {
-          body += args[1];
+      // add to body only if we didnt pass the max size
+      if (args[0] === 'data' && body.length < maxPayloadSize) {
+        let chunk = args[1].toString();
+        const allowedLengthToAdd = maxPayloadSize - body.length;
+        //if we reached or close to limit get only substring of the part to reach the limit
+        if (chunk.length > allowedLengthToAdd) {
+          truncated = true;
+          chunk = chunk.substr(0, allowedLengthToAdd);
         }
+        body += chunk;
       }
       if (args[0] === 'end') {
+        let maxSizeNoErrors = getEventEntitySize();
         const responseData = {
           statusCode,
           receivedTime,
-          body,
+          body:
+            statusCode < 400 && body.length > maxSizeNoErrors // if there are no errors cut the size to max allowed with no errors
+              ? body.substr(0, maxSizeNoErrors)
+              : body,
           headers: lowerCaseObjectKeys(headers),
         };
         const httpSpan = getHttpSpan(
@@ -286,7 +305,7 @@ export class Http {
           awsRequestId,
           requestRandomId,
           requestData,
-          responseData
+          Object.assign({ truncated }, responseData)
         );
         if (httpSpan.id !== requestRandomId) {
           // In Http case, one of our parser decide to change the spanId for async connection
@@ -320,10 +339,13 @@ export class Http {
     requestRandomId,
     currentSpan
   ) {
-    const oneTimerEmitResponseHandler = runOneTimeWrapper(
-      Http.createEmitResponseHandler(transactionId, awsRequestId, requestData, requestRandomId),
-      {}
+    const emitResponseHandler = Http.createEmitResponseHandler(
+      transactionId,
+      awsRequestId,
+      requestData,
+      requestRandomId
     );
+    const oneTimerEmitResponseHandler = runOneTimeWrapper(emitResponseHandler, {});
     return function (args) {
       GlobalDurationTimer.start();
       if (args[0] === 'response') {
@@ -332,10 +354,7 @@ export class Http {
       if (args[0] === 'socket') {
         if (isEmptyString(requestData.body)) {
           const body = extractBodyFromEmitSocketEvent(args[1]);
-          if (body) {
-            requestData.body += body;
-            if (currentSpan) currentSpan.info.httpInfo = getHttpInfo(requestData, {});
-          }
+          Http.aggregateRequestBodyToSpan(body, requestData, currentSpan, getEventEntitySize(true));
         }
       }
       GlobalDurationTimer.stop();

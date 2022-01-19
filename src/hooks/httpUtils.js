@@ -20,21 +20,13 @@ export const extractBodyFromEmitSocketEvent = (socketEventArgs) => {
   })();
 };
 
-export const extractBodyFromWriteFunc = (writeEventArgs) => {
+export const extractBodyFromWriteOrEndFunc = (writeEventArgs) => {
   return safeExecute(() => {
     if (isValidHttpRequestBody(writeEventArgs[0])) {
       const encoding = isEncodingType(writeEventArgs[1]) ? writeEventArgs[1] : 'utf8';
       return typeof writeEventArgs[0] === 'string'
         ? Buffer(writeEventArgs[0]).toString(encoding)
         : writeEventArgs[0].toString();
-    }
-  })();
-};
-
-export const extractBodyFromEndFunc = (endFuncArgs) => {
-  return safeExecute(() => {
-    if (isValidHttpRequestBody(endFuncArgs[0])) {
-      return endFuncArgs[0];
     }
   })();
 };

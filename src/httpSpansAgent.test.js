@@ -16,14 +16,14 @@ describe('HttpSpansAgent', () => {
 
     const requests = AxiosMocker.getAxiosMocker().history.post;
     expect(requests.length).toEqual(1);
-    expect(requests[0].data).toEqual(reqBody);
+    expect(JSON.parse(requests[0].data)).toEqual(reqBody);
     expect(requests[0].headers).toEqual({
       Accept: 'application/json, text/plain, */*',
       'Content-Type': 'application/json',
       Authorization: 't_xxx',
       'User-Agent': '@lumigo/tracerMock$1.2.3',
     });
-    expect(requests[0].timeout).toEqual(250);
+    expect(requests[0].timeout).toEqual(300);
     expect(requests[0].url).toEqual(url);
     expect(requests[0].httpsAgent).toBeUndefined();
   });
@@ -38,14 +38,14 @@ describe('HttpSpansAgent', () => {
 
     const requests = AxiosMocker.getAxiosMocker().history.post;
     expect(requests.length).toEqual(1);
-    expect(requests[0].data).toEqual(reqBody);
+    expect(JSON.parse(requests[0].data)).toEqual(reqBody);
     expect(requests[0].headers).toEqual({
       Accept: 'application/json, text/plain, */*',
       'Content-Type': 'application/json',
       Authorization: 't_xxx',
       'User-Agent': '@lumigo/tracerMock$1.2.3',
     });
-    expect(requests[0].timeout).toEqual(250);
+    expect(requests[0].timeout).toEqual(300);
     expect(requests[0].url).toEqual(url);
   });
 
@@ -82,7 +82,7 @@ describe('HttpSpansAgent', () => {
     //no Error throwed
   });
 
-  const testTimeout = 350; //in MS
+  const testTimeout = 700; //in MS
   test(
     'postSpans - reject connection timout',
     async () => {

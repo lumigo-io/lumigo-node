@@ -51,6 +51,7 @@ export class HttpSpanBuilder {
         httpInfo: {
           host: HttpSpanBuilder.DEFAULT_HOST,
           request: {
+            truncated: false,
             body: '"the first rule of fight club"',
             headers: '{"Tyler":"Durden"}',
             host: HttpSpanBuilder.DEFAULT_HOST,
@@ -82,17 +83,15 @@ export class HttpSpanBuilder {
     };
   }
 
-  static parseHeaders = headers => payloadStringify(lowerCaseObjectKeys(headers));
+  static parseHeaders = headers => lowerCaseObjectKeys(headers);
 
   static parseBody = body => {
     if (!body) body = '';
-    return payloadStringify(body);
+    return body;
   };
 
   static addHeader = (headers, obj) => {
-    let newHeaders = JSON.parse(headers);
-    newHeaders = { ...newHeaders, ...obj };
-    return JSON.stringify(newHeaders);
+    return { ...headers, ...obj };
   };
 
   withSpanId = spanId => {
@@ -121,7 +120,7 @@ export class HttpSpanBuilder {
   };
 
   withRequest = request => {
-    this._span.info.httpInfo.request = { ...request };
+    this._span.info.httpInfo.request = { ...request, truncated: false };
     this._span.info.httpInfo.request.headers = HttpSpanBuilder.parseHeaders(
       this._span.info.httpInfo.request.headers
     );
@@ -174,7 +173,7 @@ export class HttpSpanBuilder {
   };
 
   withNoResponse = () => {
-    this._span.info.httpInfo.response = {};
+    this._span.info.httpInfo.response = { truncated: false};
     return this;
   };
 

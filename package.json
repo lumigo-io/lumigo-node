@@ -1,6 +1,6 @@
 {
   "name": "@lumigo/tracer",
-  "version": "1.61.0",
+  "version": "1.67.3",
   "description": "Lumigo Tracer for Node.js v8.x / v10.x / v12.x Runtimes",
   "main": "dist/index.js",
   "repository": "git@github.com:lumigo-io/lumigo-node.git",
@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "agentkeepalive": "^4.1.4",
-    "axios": "0.21.1",
+    "axios": "0.24.0",
     "shimmer": "1.2.1",
     "utf8": "^3.0.0"
   },

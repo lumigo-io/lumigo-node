@@ -11,8 +11,9 @@ import {
   safeGet,
   isDebug,
   DEFAULT_CONNECTION_TIMEOUT,
+  isObject,
 } from './utils';
-import { TracerGlobals } from './globals';
+import { MAX_TRACER_ADDED_DURATION_ALLOWED, TracerGlobals } from './globals';
 import crypto from 'crypto';
 import { GET_KEY_DEPTH_ENV_KEY } from './utils';
 import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
@@ -90,6 +91,16 @@ describe('utils', () => {
     expect(() => utils.getTraceId('a=b;c=d;e=f')).toThrow(
       "Either Root, Parent or Sampled weren't found in traceId."
     );
+  });
+
+  test('isObject', () => {
+    expect(isObject([])).toEqual(false);
+    expect(isObject(true)).toEqual(false);
+    expect(isObject(undefined)).toEqual(false);
+    expect(isObject(null)).toEqual(false);
+    expect(isObject(43)).toEqual(false);
+    expect(isObject('text')).toEqual(false);
+    expect(isObject({})).toEqual(true);
   });
 
   test('getPatchedTraceId', () => {
@@ -248,6 +259,11 @@ describe('utils', () => {
     expect(utils.getConnectionTimeout()).toBe(600);
   });
 
+  test('getRequestTimeout => simple flow', () => {
+    process.env.LUMIGO_REQUEST_TIMEOUT_MS = '600';
+    expect(utils.getRequestTimeout()).toBe(600);
+  });
+
   test('getConnectionTimeout => default value', () => {
     expect(utils.getConnectionTimeout()).toBe(DEFAULT_CONNECTION_TIMEOUT);
   });
@@ -306,6 +322,7 @@ describe('utils', () => {
       event: {},
       context: {
         invokedFunctionArn: 'bad-format',
+        getRemainingTimeInMillis: () => MAX_TRACER_ADDED_DURATION_ALLOWED,
       },
     });
     expect(utils.getInvokedAliasOrNull()).toEqual(null);
@@ -326,6 +343,7 @@ describe('utils', () => {
       event: {},
       context: {
         invokedFunctionArn: 'arn:aws:lambda:region:account:function:name:alias',
+        getRemainingTimeInMillis: () => MAX_TRACER_ADDED_DURATION_ALLOWED,
       },
     });
     process.env['LUMIGO_VALID_ALIASES'] = '["wrong"]';
@@ -344,6 +362,7 @@ describe('utils', () => {
       event: {},
       context: {
         invokedFunctionArn: 'arn:aws:lambda:region:account:function:name:alias',
+        getRemainingTimeInMillis: () => MAX_TRACER_ADDED_DURATION_ALLOWED,
       },
     });
     process.env['LUMIGO_VALID_ALIASES'] = '["alias"]';
@@ -357,6 +376,7 @@ describe('utils', () => {
       event: {},
       context: {
         invokedFunctionArn: 'arn:aws:lambda:region:account:function:name:alias',
+        getRemainingTimeInMillis: () => MAX_TRACER_ADDED_DURATION_ALLOWED,
       },
     });
     expect(utils.getInvokedAliasOrNull()).toEqual('alias');
@@ -364,6 +384,7 @@ describe('utils', () => {
       event: {},
       context: {
         invokedFunctionArn: 'arn:aws:lambda:region:account:function:name',
+        getRemainingTimeInMillis: () => MAX_TRACER_ADDED_DURATION_ALLOWED,
       },
     });
     expect(utils.getInvokedAliasOrNull()).toEqual(null);
@@ -371,6 +392,7 @@ describe('utils', () => {
       event: {},
       context: {
         invokedFunctionArn: 'bad-arn',
+        getRemainingTimeInMillis: () => MAX_TRACER_ADDED_DURATION_ALLOWED,
       },
     });
     expect(utils.getInvokedAliasOrNull()).toEqual(null);
@@ -378,6 +400,7 @@ describe('utils', () => {
       event: {},
       context: {
         no: 'arn',
+        getRemainingTimeInMillis: () => MAX_TRACER_ADDED_DURATION_ALLOWED,
       },
     });
     expect(utils.getInvokedAliasOrNull()).toEqual(null);
@@ -390,6 +413,7 @@ describe('utils', () => {
       event: {},
       context: {
         invokedFunctionArn: 'arn:aws:lambda:region:account:function:name:currentAlias',
+        getRemainingTimeInMillis: () => MAX_TRACER_ADDED_DURATION_ALLOWED,
       },
     });
     process.env['LUMIGO_VALID_ALIASES'] = '[]';
@@ -465,19 +489,25 @@ describe('utils', () => {
   });
 
   test('getTracerMaxDurationTimeout -> default value', () => {
-    expect(utils.getTracerMaxDurationTimeout()).toEqual(500);
+    expect(utils.getTracerMaxDurationTimeout()).toEqual(750);
   });
 
   test('getTracerMaxDurationTimeout -> Max value', () => {
     const inputs = new HandlerInputesBuilder().withTimeout(6000000).build();
     TracerGlobals.setHandlerInputs(inputs);
-    expect(utils.getTracerMaxDurationTimeout()).toEqual(500);
+    expect(utils.getTracerMaxDurationTimeout()).toEqual(750);
   });
 
-  test('getTracerMaxDurationTimeout -> 20% of the run time', () => {
+  test('getTracerMaxDurationTimeout -> min value', () => {
     const inputs = new HandlerInputesBuilder().withTimeout(1000).build();
     TracerGlobals.setHandlerInputs(inputs);
     expect(utils.getTracerMaxDurationTimeout()).toEqual(200);
+  });
+
+  test('getTracerMaxDurationTimeout -> in between', () => {
+    const inputs = new HandlerInputesBuilder().withTimeout(2000).build();
+    TracerGlobals.setHandlerInputs(inputs);
+    expect(utils.getTracerMaxDurationTimeout()).toEqual(400);
   });
 
   test('setSwitchOff', () => {
@@ -612,6 +642,7 @@ describe('utils', () => {
         '    at a (/var/task/child.js:18:19)\n' +
         '    at childFn (/var/task/child.js:19:3)\n' +
         '    at r (/var/task/node_modules/@lumigo/tracer/dist/lumigo.js:1:11897)\n' +
+        '    at Object.normalizeLambdaError (/opt/nodejs/node_modules/@lumigo/tracer/dist/tracer.js:210:15)\n' +
         '    at new Promise (<anonymous>)\n' +
         '    at g (/var/task/node_modules/@lumigo/tracer/dist/lumigo.js:1:11852)\n' +
         '    at Runtime.handler (/var/task/node_modules/@lumigo/tracer/dist/lumigo.js:1:12385)\n' +
@@ -811,6 +842,12 @@ describe('utils', () => {
 
     expect(action).toEqual('Publish');
     expect(notFound).toEqual(undefined);
+  });
+
+  test('parseQueryParams invalid URI', () => {
+    const queryParams = 'a=%E0%A4%A';
+    const parsed = parseQueryParams(queryParams);
+    expect(parsed).toEqual({});
   });
 
   test('parseQueryParams -> no success flow', () => {

@@ -8,12 +8,10 @@ import {
   getAWSEnvironment,
   isAwsService,
   parseErrorObject,
-  shouldScrubDomain,
   getInvokedArn,
   getInvokedVersion,
   EXECUTION_TAGS_KEY,
   getEventEntitySize,
-  safeGet,
   isString,
 } from '../utils';
 import {
@@ -35,7 +33,7 @@ import { HttpInfo } from '../types/spans/httpSpan';
 import { BasicSpan, SpanInfo } from '../types/spans/basicSpan';
 import { FunctionSpan } from '../types/spans/functionSpan';
 import { Context } from 'aws-lambda';
-import { decode, encode } from 'utf8';
+import { Utf8Utils } from '../utils/utf8Utils';
 
 export const HTTP_SPAN = 'http';
 export const FUNCTION_SPAN = 'function';
@@ -233,48 +231,18 @@ export const getAwsServiceData = (requestData, responseData) => {
   }
 };
 
-export const getHttpInfo = (requestData, responseData): HttpInfo => {
-  const isError = isErrorResponse(responseData);
-  const sizeLimit = getEventEntitySize(isError);
-  const { host } = requestData;
-  try {
-    const request = Object.assign({}, requestData);
-    const response = Object.assign({}, responseData);
-
-    if (
-      shouldScrubDomain(host) ||
-      (request.host && shouldScrubDomain(request.host)) ||
-      (response.host && shouldScrubDomain(response.host))
-    ) {
-      request.body = 'The data is not available';
-      response.body = 'The data is not available';
-      delete request.headers;
-      delete response.headers;
-      delete request.uri;
-    } else {
-      request.headers = payloadStringify(request.headers, sizeLimit);
-      request.body = payloadStringify(decodeHttpBody(request.body, isError), sizeLimit);
-
-      if (response.headers) response.headers = payloadStringify(response.headers, sizeLimit);
-      if (response.body) response.body = payloadStringify(response.body, sizeLimit);
-    }
-
-    return { host, request, response };
-  } catch (e) {
-    logger.warn('Failed to scrub & stringify http data', e.message);
-    return {
-      host,
-      request: payloadStringify(requestData, sizeLimit),
-      response: payloadStringify(responseData, sizeLimit),
-    };
-  }
-};
-
 export const decodeHttpBody = (httpBody: any, hasError: boolean): any | string => {
   if (isString(httpBody) && httpBody.length < getEventEntitySize(hasError)) {
-    return decode(httpBody);
+    return Utf8Utils.safeDecode(httpBody);
   }
   return httpBody;
+};
+
+export const getHttpInfo = (requestData, responseData): HttpInfo => {
+  const { host } = requestData;
+  const request = Object.assign({}, requestData);
+  const response = Object.assign({}, responseData);
+  return { host, request, response };
 };
 
 export const getBasicChildSpan = (transactionId, awsRequestId, spanId, spanType) => {
@@ -297,14 +265,12 @@ export const getHttpSpanId = (randomRequestId, awsRequestId = null) => {
   return awsRequestId ? awsRequestId : randomRequestId;
 };
 
-const isErrorResponse = (response) => safeGet(response, ['statusCode'], 200) >= 400;
-
 export const getHttpSpan = (
   transactionId,
   awsRequestId,
   randomRequestId,
   requestData,
-  responseData = null
+  responseData = { truncated: false }
 ) => {
   let serviceData = {};
   try {
@@ -312,7 +278,8 @@ export const getHttpSpan = (
       serviceData = getAwsServiceData(requestData, responseData);
     }
   } catch (e) {
-    logger.warn('Failed to parse aws service data', e.message);
+    logger.warn('Failed to parse aws service data', e);
+    logger.warn('getHttpSpan args', { requestData, responseData });
   }
   // @ts-ignore
   const { awsServiceData, spanId } = serviceData;
@@ -336,7 +303,7 @@ export const getHttpSpan = (
   try {
     service = getServiceType(requestData.host);
   } catch (e) {
-    logger.warn('Failed to get service type', e.message);
+    logger.warn('Failed to get service type', e);
   }
 
   const { started, ended } = getHttpSpanTimings(requestData, responseData);

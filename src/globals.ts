@@ -1,19 +1,27 @@
 import * as logger from './logger';
 import { GlobalDurationTimer } from './utils/globalDurationTimer';
 import { LambdaContext } from './types/aws/awsEnvironment';
+import { getJSONBase64Size, getMaxRequestSize, spanHasErrors } from './utils';
 const MAX_TAGS = 50;
 const MAX_TAG_KEY_LEN = 50;
-const MAX_TAG_VALUE_LEN = 50;
+const MAX_TAG_VALUE_LEN = 70;
 const ADD_TAG_ERROR_MSG_PREFIX = 'Skipping addExecutionTag: Unable to add tag';
-export const DEFAULT_MAX_SIZE_FOR_REQUEST = 1000 * 1000;
-export const DEFAULT_TRACER_TIMEOUT = 500;
+export const DEFAULT_MAX_SIZE_FOR_REQUEST = 1024 * 500;
+export const MAX_TRACER_ADDED_DURATION_ALLOWED = 750;
+export const MIN_TRACER_ADDED_DURATION_ALLOWED = 200;
 
 export const SpansContainer = (() => {
   let spansToSend = {};
-
+  let currentSpansSize = 0;
   const addSpan = (span) => {
-    spansToSend[span.id] = span;
-    logger.debug('Span created', span);
+    // Memory optimization
+    if (spanHasErrors(span) || getMaxRequestSize() > currentSpansSize) {
+      spansToSend[span.id] = span;
+      currentSpansSize += getJSONBase64Size(span);
+      logger.debug('Span created', span);
+      return true;
+    }
+    return false;
   };
   const getSpans = () => Object.values(spansToSend);
   const getSpanById = (spanId) => spansToSend[spanId];
@@ -25,7 +33,10 @@ export const SpansContainer = (() => {
     }
     delete spansToSend[oldId];
   };
-  const clearSpans = () => (spansToSend = {});
+  const clearSpans = () => {
+    currentSpansSize = 0;
+    spansToSend = {};
+  };
 
   return { addSpan, getSpanById, getSpans, clearSpans, changeSpanId };
 })();
@@ -108,6 +119,7 @@ export const TracerGlobals = (() => {
     event: {},
     context: {},
   };
+
   const tracerInputs = {
     token: '',
     debug: false,
@@ -115,9 +127,20 @@ export const TracerGlobals = (() => {
     switchOff: false,
     isStepFunction: false,
     maxSizeForRequest: DEFAULT_MAX_SIZE_FOR_REQUEST,
+    lambdaTimeout: MAX_TRACER_ADDED_DURATION_ALLOWED,
   };
 
-  const setHandlerInputs = ({ event, context }) => Object.assign(handlerInputs, { event, context });
+  const setHandlerInputs = ({ event, context }) => {
+    Object.assign(tracerInputs, {
+      lambdaTimeout: context.getRemainingTimeInMillis(),
+    });
+    return Object.assign(handlerInputs, {
+      event,
+      context,
+    });
+  };
+
+  const getLambdaTimeout = () => tracerInputs.lambdaTimeout;
 
   const getHandlerInputs = (): { event: {}; context: LambdaContext | {} } => handlerInputs;
 
@@ -130,12 +153,14 @@ export const TracerGlobals = (() => {
     switchOff = false,
     stepFunction = false,
     maxSizeForRequest = null,
+    lambdaTimeout = MAX_TRACER_ADDED_DURATION_ALLOWED,
   }) =>
     Object.assign(tracerInputs, {
       token: token || process.env.LUMIGO_TRACER_TOKEN,
       debug: debug,
       edgeHost: edgeHost || process.env.LUMIGO_TRACER_HOST,
       switchOff: switchOff,
+      lambdaTimeout: lambdaTimeout,
       isStepFunction:
         stepFunction ||
         !!(
@@ -166,6 +191,7 @@ export const TracerGlobals = (() => {
     setTracerInputs,
     setHandlerInputs,
     getHandlerInputs,
+    getLambdaTimeout,
     clearTracerInputs,
     clearHandlerInputs,
   };

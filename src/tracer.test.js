@@ -6,7 +6,7 @@ import * as globals from './globals';
 import * as reporter from './reporter';
 import * as awsSpan from './spans/awsSpan';
 import * as logger from './logger';
-import { TracerGlobals } from './globals';
+import { MAX_TRACER_ADDED_DURATION_ALLOWED, TracerGlobals } from './globals';
 import { setSwitchOff, STEP_FUNCTION_UID_KEY } from './utils';
 import { LUMIGO_EVENT_KEY } from './utils';
 import { HandlerInputesBuilder } from '../testUtils/handlerInputesBuilder';
@@ -43,6 +43,15 @@ describe('tracer', () => {
     });
 
     await expect(tracer.startTrace()).resolves.toBeUndefined();
+  });
+
+  test('startTrace - not aws context (should mot send any spans)', async () => {
+    process.env['LAMBDA_RUNTIME_DIR'] = 'TRUE';
+    const { event, context } = new HandlerInputesBuilder().build();
+    const functionSpan = getFunctionSpan(event, context);
+    await tracer.startTrace(functionSpan);
+    const requests = AxiosMocker.getRequests();
+    expect(requests.length).toEqual(0);
   });
 
   test('startTrace - simple flow', async () => {
@@ -473,6 +482,44 @@ describe('tracer', () => {
     expect(Http.hookHttp).toHaveBeenCalledTimes(1);
   });
 
+  ['AWS_SAM_LOCAL', 'IS_LOCAL'].forEach((localFramework) => {
+    test(`trace; async local lambda no aws environment [${localFramework}]`, async () => {
+      delete process.env['_X_AMZN_TRACE_ID'];
+      process.env[localFramework] = 'true';
+      const token = TOKEN;
+      const lumigoTracer = require('./index')({ token });
+
+      const { event, context } = new HandlerInputesBuilder().build();
+      const retVal = 'The Tracer Wars';
+
+      const userHandler5 = async (event, context) => {
+        return retVal;
+      };
+      await expect(lumigoTracer.trace(userHandler5)(event, context)).resolves.toEqual(retVal);
+
+      expect(Http.hookHttp).toHaveBeenCalledTimes(0);
+    });
+
+    test(`trace; local lambda no aws environment [${localFramework}]`, async () => {
+      delete process.env['_X_AMZN_TRACE_ID'];
+      process.env[localFramework] = 'true';
+      const token = TOKEN;
+      const lumigoTracer = require('./index')({ token });
+
+      const { event, context } = new HandlerInputesBuilder().build();
+      const retVal = 'The Tracer Wars';
+
+      const userHandler5 = (event, context, callback) => {
+        return retVal;
+      };
+      await expect(lumigoTracer.trace(userHandler5)(event, context, (res) => res)).resolves.toEqual(
+        retVal
+      );
+
+      expect(Http.hookHttp).toHaveBeenCalledTimes(0);
+    });
+  });
+
   test('trace; follow AWS stringify on the return value - happy flow', async () => {
     // According to node's runtime: var/runtime/RAPIDClient.js:134, AWS stringify the message.
     new EnvironmentBuilder().awsEnvironment().applyEnv();
@@ -555,14 +602,20 @@ describe('tracer', () => {
     });
     spies.getCurrentTransactionId.mockReturnValueOnce('123');
 
-    TracerGlobals.setHandlerInputs({ event: { a: 1 } });
+    TracerGlobals.setHandlerInputs({
+      event: { a: 1 },
+      context: { getRemainingTimeInMillis: () => MAX_TRACER_ADDED_DURATION_ALLOWED },
+    });
     SpansContainer.addSpan({ transactionId: '123', id: '1' });
     SpansContainer.addSpan({ transactionId: '123', id: '2' });
     await tracer.sendEndTraceSpans({ id: '1_started' }, { err: null, data: null });
     expect(spies.warnClient).not.toHaveBeenCalled();
     expect(TracerGlobals.getHandlerInputs().event).toEqual({});
 
-    TracerGlobals.setHandlerInputs({ event: { a: 1 } });
+    TracerGlobals.setHandlerInputs({
+      event: { a: 1 },
+      context: { getRemainingTimeInMillis: () => MAX_TRACER_ADDED_DURATION_ALLOWED },
+    });
     SpansContainer.clearSpans();
     SpansContainer.addSpan({
       transactionId: '123',
@@ -575,7 +628,10 @@ describe('tracer', () => {
     expect(spies.warnClient).not.toHaveBeenCalled();
     expect(TracerGlobals.getHandlerInputs().event).toEqual({});
 
-    TracerGlobals.setHandlerInputs({ event: { a: 1 } });
+    TracerGlobals.setHandlerInputs({
+      event: { a: 1 },
+      context: { getRemainingTimeInMillis: () => MAX_TRACER_ADDED_DURATION_ALLOWED },
+    });
     SpansContainer.clearSpans();
     SpansContainer.addSpan({ transactionId: '123', id: '1', reporterAwsRequestId: '2' });
     SpansContainer.addSpan({ transactionId: '456', id: '2' });

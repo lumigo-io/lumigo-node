@@ -1,4 +1,8 @@
-import { TracerGlobals } from './globals';
+import {
+  MAX_TRACER_ADDED_DURATION_ALLOWED,
+  MIN_TRACER_ADDED_DURATION_ALLOWED,
+  TracerGlobals,
+} from './globals';
 import * as crypto from 'crypto';
 import * as logger from './logger';
 import { sortify } from './tools/jsonSortify';
@@ -12,6 +16,7 @@ export const LUMIGO_DEFAULT_DOMAIN_SCRUBBERS =
   '["secretsmanager.*.amazonaws.com", "ssm.*.amazonaws.com", "kms.*.amazonaws.com", "sts..*amazonaws.com"]';
 export const LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP = 'LUMIGO_BLACKLIST_REGEX';
 export const LUMIGO_SECRET_MASKING_REGEX = 'LUMIGO_SECRET_MASKING_REGEX';
+export const LUMIGO_WHITELIST_KEYS_REGEXES = 'LUMIGO_WHITELIST_KEYS_REGEXES';
 export const OMITTING_KEYS_REGEXES = [
   '.*pass.*',
   '.*key.*',
@@ -24,6 +29,7 @@ export const OMITTING_KEYS_REGEXES = [
   'Credential',
   'Authorization',
 ];
+
 export const LUMIGO_EVENT_KEY = '_lumigo';
 export const STEP_FUNCTION_UID_KEY = 'step_function_uid';
 export const GET_KEY_DEPTH_ENV_KEY = 'LUMIGO_KEY_DEPTH';
@@ -31,7 +37,12 @@ export const DEFAULT_GET_KEY_DEPTH = 3;
 export const EXECUTION_TAGS_KEY = 'lumigo_execution_tags_no_scrub';
 export const DEFAULT_TIMEOUT_MIN_DURATION = 2000;
 export const DEFAULT_CONNECTION_TIMEOUT = 300;
-export const DEFAULT_TRACER_MAX_DURATION_TIMEOUT = 500;
+
+const REQUEST_TIMEOUT_FLAG_MS = 'LUMIGO_REQUEST_TIMEOUT_MS';
+export const getRequestTimeout = () => {
+  if (process.env[REQUEST_TIMEOUT_FLAG_MS]) return parseInt(process.env[REQUEST_TIMEOUT_FLAG_MS]);
+  return 300;
+};
 
 export const getContextInfo = (context: LambdaContext): ContextInfo => {
   const remainingTimeInMillis = context.getRemainingTimeInMillis();
@@ -150,11 +161,20 @@ const IS_STEP_FUNCTION_FLAG = 'LUMIGO_STEP_FUNCTION';
 const SCRUB_KNOWN_SERVICES_FLAG = 'LUMIGO_SCRUB_KNOWN_SERVICES';
 const LUMIGO_LOG_PREFIX = '[LUMIGO_LOG]';
 const LUMIGO_LOG_PREFIX_FLAG = 'LUMIGO_LOG_PREFIX';
+const LUMIGO_STACK_PATTERNS = [
+  new RegExp('/dist/lumigo.js:', 'i'),
+  new RegExp('/node_modules/@lumigo/tracer/', 'i'),
+];
 
 const validateEnvVar = (envVar: string, value: string = 'TRUE'): boolean =>
   !!(process.env[envVar] && process.env[envVar].toUpperCase() === value.toUpperCase());
 
-export const isAwsEnvironment = () => !!process.env['LAMBDA_RUNTIME_DIR'];
+export const isAwsEnvironment = () =>
+  !!(
+    process.env['LAMBDA_RUNTIME_DIR'] &&
+    !process.env['AWS_SAM_LOCAL'] && // local SAM
+    !process.env['IS_LOCAL']
+  ); // local SLS
 
 export const getEnvVarAsList = (key: string, def: string[]): string[] => {
   if (process.env[key] != null) {
@@ -189,10 +209,12 @@ export const getTracerMaxDurationTimeout = (): number => {
   if (process.env[TRACER_TIMEOUT_FLAG]) return parseFloat(process.env[TRACER_TIMEOUT_FLAG]);
   const { context } = TracerGlobals.getHandlerInputs();
   if (isAwsContext(context)) {
-    const { remainingTimeInMillis } = getContextInfo(context);
-    return Math.min(DEFAULT_TRACER_MAX_DURATION_TIMEOUT, remainingTimeInMillis / 5);
+    return Math.max(
+      Math.min(TracerGlobals.getLambdaTimeout() / 5, MAX_TRACER_ADDED_DURATION_ALLOWED),
+      MIN_TRACER_ADDED_DURATION_ALLOWED
+    );
   }
-  return DEFAULT_TRACER_MAX_DURATION_TIMEOUT;
+  return MAX_TRACER_ADDED_DURATION_ALLOWED;
 };
 
 export const getAgentKeepAlive = () => {
@@ -331,6 +353,10 @@ export const parseErrorObject = (err) => ({
   stacktrace: err && err.stack,
 });
 
+export function isObject(a: any): a is object {
+  return !!a && a.constructor === Object;
+}
+
 export const lowerCaseObjectKeys = (o) =>
   o ? Object.keys(o).reduce((c, k) => ((c[k.toLowerCase()] = o[k]), c), {}) : {};
 
@@ -360,6 +386,10 @@ export const isAwsService = (host, responseData = undefined): boolean => {
   );
 };
 
+const isLumigoStackTrace = (input) => {
+  return LUMIGO_STACK_PATTERNS.some((word) => word.test(input));
+};
+
 export const removeLumigoFromStacktrace = (handleReturnValue) => {
   // Note: this function was copied to the auto-instrument-handler. Keep them both up to date.
   try {
@@ -370,8 +400,7 @@ export const removeLumigoFromStacktrace = (handleReturnValue) => {
     const { stack } = err;
     const stackArr = stack.split('\n');
 
-    const pattern = '/dist/lumigo.js:';
-    const cleanedStack = stackArr.filter((v) => !v.includes(pattern));
+    const cleanedStack = stackArr.filter((v) => !isLumigoStackTrace(v));
 
     err.stack = cleanedStack.join('\n');
 
@@ -405,7 +434,7 @@ export const spanHasErrors = (span) =>
       span.info.httpInfo &&
       span.info.httpInfo.response &&
       span.info.httpInfo.response.statusCode &&
-      span.info.httpInfo.response.statusCode > 400)
+      span.info.httpInfo.response.statusCode >= 400)
   );
 
 export const getEdgeUrl = (): EdgeUrl => {
@@ -421,13 +450,27 @@ export const getJSONBase64Size = (obj) => {
 };
 
 export const parseQueryParams = (queryParams) => {
-  if (typeof queryParams !== 'string') return {};
-  let obj = {};
-  // @ts-ignore
-  queryParams.replace(/([^=&]+)=([^&]*)/g, (m, key, value) => {
-    obj[decodeURIComponent(key)] = decodeURIComponent(value);
-  });
-  return obj;
+  return safeExecute(
+    () => {
+      if (typeof queryParams !== 'string') return {};
+      let obj = {};
+      queryParams.replace(
+        /([^=&]+)=([^&]*)/g,
+        // @ts-ignore
+        safeExecute(
+          (m, key, value) => {
+            obj[decodeURIComponent(key)] = decodeURIComponent(value);
+          },
+          'Failed to parse a specific key in parseQueryParams',
+          logger.LOG_LEVELS.DEBUG
+        )
+      );
+      return obj;
+    },
+    'Failed to parse query params',
+    logger.LOG_LEVELS.WARNING,
+    {}
+  )();
 };
 
 const domainScrubbers = () =>
@@ -448,20 +491,21 @@ export const parseJsonFromEnvVar = (envVar, warnClient = false): {} | undefined 
   return undefined;
 };
 
-export const safeExecute = (
+export function safeExecute<T>(
   callback: Function,
   message: string = 'Error in Lumigo tracer',
   logLevel: string = logger.LOG_LEVELS.WARNING,
-  defaultReturn: any = undefined
-): Function =>
-  function (...args) {
+  defaultReturn: T = undefined
+): Function {
+  return function (...args) {
     try {
       return callback.apply(this, args);
     } catch (err) {
-      logger.log(logLevel, message, err.message);
+      logger.log(logLevel, message, err);
       return defaultReturn;
     }
   };
+}
 
 export const recursiveGetKey = (event, keyToSearch) => {
   return recursiveGetKeyByDepth(event, keyToSearch, recursiveGetKeyDepth());

@@ -10,7 +10,12 @@ import {
 } from '../../testUtils/httpsMocker';
 
 import * as utils from '../utils';
-import { clearGlobals, SpansContainer, TracerGlobals } from '../globals';
+import {
+  clearGlobals,
+  MAX_TRACER_ADDED_DURATION_ALLOWED,
+  SpansContainer,
+  TracerGlobals,
+} from '../globals';
 import { HandlerInputesBuilder } from '../../testUtils/handlerInputesBuilder';
 import { getCurrentTransactionId } from '../spans/awsSpan';
 import { Http } from './http';
@@ -61,6 +66,7 @@ describe('http hook', () => {
 
     expect(requestData).toEqual({
       body: 'HTTP BODY2',
+      truncated: false,
     });
   });
 
@@ -82,6 +88,97 @@ describe('http hook', () => {
 
     expect(requestData).toEqual({
       body: 'HTTP BODY2',
+      truncated: false,
+    });
+  });
+
+  test('aggregateRequestBodyToSpan ->  happy flow', () => {
+    const currentSpan = {
+      info: {
+        httpInfo: {},
+      },
+    };
+    Http.aggregateRequestBodyToSpan(
+      'a',
+      {
+        body: 'a',
+        host: 'host',
+      },
+      currentSpan
+    );
+    expect(currentSpan).toEqual({
+      info: {
+        httpInfo: {
+          host: 'host',
+          request: {
+            body: 'aa',
+            host: 'host',
+            truncated: false,
+          },
+          response: {},
+        },
+      },
+    });
+  });
+
+  test('aggregateRequestBodyToSpan ->  should truncate body', () => {
+    const currentSpan = {
+      info: {
+        httpInfo: {},
+      },
+    };
+    Http.aggregateRequestBodyToSpan(
+      'a',
+      {
+        body: 'a',
+        host: 'host',
+      },
+      currentSpan,
+      1
+    );
+    expect(currentSpan).toEqual({
+      info: {
+        httpInfo: {
+          host: 'host',
+          request: {
+            body: 'a',
+            host: 'host',
+            truncated: true,
+          },
+          response: {},
+        },
+      },
+    });
+  });
+
+  test('aggregateRequestBodyToSpan ->  already truncated', () => {
+    const currentSpan = {
+      info: {
+        httpInfo: {},
+      },
+    };
+    Http.aggregateRequestBodyToSpan(
+      'a',
+      {
+        body: 'a',
+        host: 'host',
+        truncated: true,
+      },
+      currentSpan,
+      100
+    );
+    expect(currentSpan).toEqual({
+      info: {
+        httpInfo: {
+          host: 'host',
+          request: {
+            body: 'a',
+            host: 'host',
+            truncated: true,
+          },
+          response: {},
+        },
+      },
     });
   });
 
@@ -114,7 +211,7 @@ describe('http hook', () => {
     const wrapper = Http.httpRequestWriteBeforeHookWrapper(requestData);
     wrapper([firstArg]);
 
-    expect(requestData).toEqual({ body: 'BODY' });
+    expect(requestData).toEqual({ body: 'BODY', truncated: false });
   });
 
   test('httpRequestWriteBeforeHookWrapper -> simple flow -> write(Buffer)', () => {
@@ -126,7 +223,7 @@ describe('http hook', () => {
 
     wrapper([firstArg]);
 
-    expect(requestData).toEqual({ body: 'BODY' });
+    expect(requestData).toEqual({ body: 'BODY', truncated: false });
   });
 
   test('httpRequestWriteBeforeHookWrapper -> simple flow -> write(Buffer, encoding)', () => {
@@ -140,7 +237,7 @@ describe('http hook', () => {
     const wrapper = Http.httpRequestWriteBeforeHookWrapper(requestData);
     wrapper([firstArg, secArg]);
 
-    expect(requestData).toEqual({ body: 'Qk9EWQ==' });
+    expect(requestData).toEqual({ body: 'Qk9EWQ==', truncated: false });
   });
 
   test('httpRequestWriteBeforeHookWrapper -> simple flow -> write(Buffer, encoding, callback)', () => {
@@ -155,7 +252,7 @@ describe('http hook', () => {
     const wrapper = Http.httpRequestWriteBeforeHookWrapper(requestData);
     wrapper([firstArg, secArg, thirdArg]);
 
-    expect(requestData).toEqual({ body: 'BODY' });
+    expect(requestData).toEqual({ body: 'BODY', truncated: false });
   });
 
   test('httpRequestWriteBeforeHookWrapper -> simple flow -> write(Buffer, callback)', () => {
@@ -169,7 +266,7 @@ describe('http hook', () => {
     const wrapper = Http.httpRequestWriteBeforeHookWrapper(requestData);
     wrapper([firstArg, secArg]);
 
-    expect(requestData).toEqual({ body: 'BODY' });
+    expect(requestData).toEqual({ body: 'BODY', truncated: false });
   });
 
   test('httpRequestWriteBeforeHookWrapper -> simple flow -> write(str, callback)', () => {
@@ -183,7 +280,7 @@ describe('http hook', () => {
     const wrapper = Http.httpRequestWriteBeforeHookWrapper(requestData);
     wrapper([firstArg, secArg]);
 
-    expect(requestData).toEqual({ body: 'BODY' });
+    expect(requestData).toEqual({ body: 'BODY', truncated: false });
   });
 
   test('httpRequestWriteBeforeHookWrapper -> not override body', () => {
@@ -252,6 +349,7 @@ describe('http hook', () => {
       path: '/api/where/is/satoshi',
       uri: 'asdf1.com/api/where/is/satoshi',
       method: 'POST',
+      truncated: false,
       headers: expectedHeaders,
       sendTime,
       body: '',
@@ -270,6 +368,7 @@ describe('http hook', () => {
       host: 'asdf.io',
       method: 'POST',
       path: '/yo.php',
+      truncated: false,
       uri: 'asdf.io/yo.php',
       port: '1234',
       protocol: 'https:',
@@ -284,6 +383,7 @@ describe('http hook', () => {
     const testData = {
       randomId: 'DummyRandomId',
       requestData: {
+        truncated: false,
         a: 'request',
         sendTime: 1,
         host: 'your.mind.com',
@@ -292,6 +392,7 @@ describe('http hook', () => {
       },
       responseData: {
         statusCode: 200,
+        truncated: false,
         receivedTime: 895179612345,
         headers: { X: 'Y', z: 'A' },
         body: 'SomeResponse',
@@ -330,13 +431,70 @@ describe('http hook', () => {
       .withRequest(testData.requestData)
       .withHost(testData.requestData.host)
       .build();
+    const actual = SpansContainer.getSpans();
+    expect(actual).toEqual([expectedHttpSpan]);
+  });
+  test('createEmitResponseHandler - add big span simple flow', () => {
+    const transactionId = HttpSpanBuilder.DEFAULT_TRANSACTION_ID;
+    const testData = {
+      randomId: 'DummyRandomId',
+      requestData: {
+        a: 'request',
+        sendTime: 1,
+        truncated: false,
+        host: 'your.mind.com',
+        headers: { host: 'your.mind.com' },
+        body: '',
+      },
+      responseData: {
+        truncated: false,
+        statusCode: 200,
+        receivedTime: 895179612345,
+        headers: { X: 'Y', z: 'A' },
+        body: 'start' + 'a'.repeat(10000),
+      },
+    };
+    const handlerInputs = new HandlerInputesBuilder()
+      .withAwsRequestId('DummyParentId')
+      .withInvokedFunctionArn('arn:aws:l:region:335722316285:function:dummy-func')
+      .build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
+
+    let responseEmitter = new EventEmitter();
+    responseEmitter = Object.assign(responseEmitter, testData.responseData);
+
+    MockDate.set(testData.responseData.receivedTime);
+
+    Http.createEmitResponseHandler(
+      transactionId,
+      'DummyParentId2',
+      testData.requestData,
+      testData.randomId
+    )(responseEmitter);
+
+    responseEmitter.emit('data', 'start');
+    responseEmitter.emit('data', 'a'.repeat(10000));
+    responseEmitter.emit('end');
+
+    const expectedHttpSpan = new HttpSpanBuilder()
+      .withSpanId(testData.randomId)
+      .withParentId('DummyParentId2')
+      .withReporterAwsRequestId('DummyParentId')
+      .withInvokedArn('arn:aws:l:region:335722316285:function:dummy-func')
+      .withEnded(testData.responseData.receivedTime)
+      .withStarted(1)
+      .withAccountId('335722316285')
+      .withResponse({ ...testData.responseData, body: 'start' + 'a'.repeat(2043) })
+      .withRequest(testData.requestData)
+      .withHost(testData.requestData.host)
+      .build();
     expect(SpansContainer.getSpans()).toEqual([expectedHttpSpan]);
   });
-
   test('createEmitResponseHandler - change request id from headers', () => {
     const testData = {
       randomId: 'DummyRandomId',
       requestData: {
+        truncated: false,
         a: 'request',
         sendTime: 1,
         host: 'lambda.amazonaws.com',
@@ -345,6 +503,7 @@ describe('http hook', () => {
         body: '',
       },
       responseData: {
+        truncated: false,
         statusCode: 200,
         receivedTime: 895179612345,
         headers: { X: 'Y', z: 'A', 'x-amzn-requestid': 'newSpanId' },
@@ -413,6 +572,7 @@ describe('http hook', () => {
         body: '',
       },
       responseData: {
+        truncated: false,
         statusCode: 200,
         receivedTime: 895179612345,
         headers: { X: 'Y', z: 'A' },
@@ -474,7 +634,7 @@ describe('http hook', () => {
     const callback = jest.fn();
     Http.httpRequestEndWrapper(requestData)([data, encoding, callback]);
 
-    expect(requestData).toEqual({ body: body });
+    expect(requestData).toEqual({ body: body, truncated: false });
   });
 
   test('httpRequestArguments -> no arguments', () => {
@@ -557,12 +717,34 @@ describe('http hook', () => {
     expect(Http.httpRequestArguments([url, callback])).toEqual(expected1);
   });
 
+  test('wrapHttpLib - missing _X_AMZN_TRACE_ID', () => {
+    utils.setTimeoutTimerDisabled();
+    const handlerInputs = new HandlerInputesBuilder().build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
+    process.env._X_AMZN_TRACE_ID = undefined;
+    const requestData = HttpSpanBuilder.getDefaultData(HttpSpanBuilder.DEFAULT_REQUEST_DATA);
+    const responseData = {
+      truncated: false,
+      statusCode: 200,
+      body: 'OK',
+    };
+
+    Http.wrapHttpLib(HttpsMocker);
+
+    const req = HttpsMocker.request(requestData, () => {});
+    HttpsScenarioBuilder.appendNextResponse(req, responseData.body);
+
+    const spans = SpansContainer.getSpans();
+    expect(spans).toEqual([]);
+  });
+
   test('wrapHttpLib - simple flow', () => {
     utils.setTimeoutTimerDisabled();
     const handlerInputs = new HandlerInputesBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
     const requestData = HttpSpanBuilder.getDefaultData(HttpSpanBuilder.DEFAULT_REQUEST_DATA);
     const responseData = {
+      truncated: false,
       statusCode: 200,
       body: 'OK',
     };
@@ -616,6 +798,7 @@ describe('http hook', () => {
     TracerGlobals.setHandlerInputs(handlerInputs);
     const requestData = HttpSpanBuilder.getDefaultData(HttpSpanBuilder.DEFAULT_REQUEST_DATA);
     const responseData = {
+      truncated: false,
       statusCode: 200,
       body: 'OK',
     };
@@ -748,6 +931,7 @@ describe('http hook', () => {
     TracerGlobals.setHandlerInputs(handlerInputs);
     const requestData = HttpSpanBuilder.getDefaultData(HttpSpanBuilder.DEFAULT_REQUEST_DATA);
     const responseData = {
+      truncated: false,
       statusCode: 200,
       body: 'OK',
     };
@@ -795,6 +979,7 @@ describe('http hook', () => {
       event: {},
       context: {
         invokedFunctionArn: 'arn:aws:lambda:region:account:function:name:alias',
+        getRemainingTimeInMillis: () => MAX_TRACER_ADDED_DURATION_ALLOWED,
       },
     });
     process.env['LUMIGO_VALID_ALIASES'] = '["wrong"]';
@@ -820,6 +1005,7 @@ describe('http hook', () => {
     requestData.a = a;
 
     const responseData = {
+      truncated: false,
       statusCode: 200,
       body: 'OK',
     };
