@@ -59,7 +59,7 @@ jobs:
     environment:
       - TZ: Asia/Jerusalem
       - NODE_OPTIONS: --max_old_space_size=4096
-    resource_class: medium+      
+    resource_class: medium+
     steps:
     - run:
         command: |
@@ -98,7 +98,7 @@ jobs:
           - ../integration-tests/.env3
           - ../integration-tests/.deployment_finished.env
           - ../integration-tests/.deployment_finished.env2
-          - ../integration-tests/.deployment_finished.env3 
+          - ../integration-tests/.deployment_finished.env3
     - setup_remote_docker:
         version: 19.03.13
     - run:
