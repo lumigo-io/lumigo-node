@@ -75,8 +75,6 @@ jobs:
           cd ..
           git clone git@github.com:lumigo-io/larn.git
     - checkout
-    - setup_remote_docker:
-        version: 19.03.13
     - run:
         name: deploy env
         command: ./scripts/ci_deploy.sh
@@ -101,6 +99,8 @@ jobs:
           - ../integration-tests/.deployment_finished.env
           - ../integration-tests/.deployment_finished.env2
           - ../integration-tests/.deployment_finished.env3
+    - setup_remote_docker:
+        version: 19.03.13
     - run:
         name: run tests
         command: cd ../integration-tests && export CURRENT_REPO=lumigo-node && export testNode=true && npm run test-parallel
