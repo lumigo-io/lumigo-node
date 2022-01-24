@@ -384,14 +384,14 @@ describe('globals', () => {
 
     globals.ExecutionTags.autoTagEvent({
       key1: 'value1',
-      key2: 'value2',
+      key2: 2,
       key3: 'value3',
       other: 'other',
     });
     const result = globals.ExecutionTags.getTags();
     expect(result).toEqual([
       { key: 'key1', value: 'value1' },
-      { key: 'key2', value: 'value2' },
+      { key: 'key2', value: '2' },
     ]);
 
     process.env = { ...oldEnv };
