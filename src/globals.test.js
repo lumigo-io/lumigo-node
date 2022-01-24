@@ -370,11 +370,30 @@ describe('globals', () => {
   });
 
   test('ExecutionTags.addTag catch exception', () => {
-    jest.spyOn(global, 'String').mockImplementation(() => {
+    jest.spyOn(global, 'String').mockImplementationOnce(() => {
       throw new Error();
     });
     globals.ExecutionTags.addTag('throw', 'exception');
     // No exception.
     expect(globals.ExecutionTags.getTags()).toEqual([]);
+  });
+
+  test('autoTagEvent', () => {
+    const oldEnv = Object.assign({}, process.env);
+    process.env = { LUMIGO_AUTO_TAG: 'key1,key2' };
+
+    globals.ExecutionTags.autoTagEvent({
+      key1: 'value1',
+      key2: 'value2',
+      key3: 'value3',
+      other: 'other',
+    });
+    const result = globals.ExecutionTags.getTags();
+    expect(result).toEqual([
+      { key: 'key1', value: 'value1' },
+      { key: 'key2', value: 'value2' },
+    ]);
+
+    process.env = { ...oldEnv };
   });
 });

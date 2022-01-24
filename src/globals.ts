@@ -1,7 +1,7 @@
 import * as logger from './logger';
 import { GlobalDurationTimer } from './utils/globalDurationTimer';
 import { LambdaContext } from './types/aws/awsEnvironment';
-import { getJSONBase64Size, getMaxRequestSize, spanHasErrors } from './utils';
+import { getAutoTagKeys, getJSONBase64Size, getMaxRequestSize, spanHasErrors } from './utils';
 const MAX_TAGS = 50;
 const MAX_TAG_KEY_LEN = 50;
 const MAX_TAG_VALUE_LEN = 70;
@@ -111,7 +111,11 @@ export const ExecutionTags = (() => {
   // @ts-ignore
   const clear = () => (global.tags = []);
 
-  return { addTag, getTags, clear, validateTag };
+  const autoTagEvent = (event) => {
+    getAutoTagKeys().forEach((key) => event[key] && addTag(key, event[key]));
+  };
+
+  return { addTag, getTags, clear, validateTag, autoTagEvent };
 })();
 
 export const TracerGlobals = (() => {

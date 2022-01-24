@@ -37,6 +37,7 @@ export const DEFAULT_GET_KEY_DEPTH = 3;
 export const EXECUTION_TAGS_KEY = 'lumigo_execution_tags_no_scrub';
 export const DEFAULT_TIMEOUT_MIN_DURATION = 2000;
 export const DEFAULT_CONNECTION_TIMEOUT = 300;
+export const DEFAULT_AUTO_TAG_KEY = 'LUMIGO_AUTO_TAG';
 
 const REQUEST_TIMEOUT_FLAG_MS = 'LUMIGO_REQUEST_TIMEOUT_MS';
 export const getRequestTimeout = () => {
@@ -557,3 +558,8 @@ export const isEmptyString = (str): boolean =>
 
 // @ts-ignore
 export const removeDuplicates = (arr) => Array.from(new Set(arr));
+
+export const getAutoTagKeys = (): string[] =>
+  safeExecute(() => {
+    return (process.env.LUMIGO_AUTO_TAG || DEFAULT_AUTO_TAG_KEY).split(',');
+  })() || [DEFAULT_AUTO_TAG_KEY];
