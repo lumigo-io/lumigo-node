@@ -20,7 +20,7 @@ import {
   isSpanIsFromAnotherInvocation,
 } from './spans/awsSpan';
 import { sendSingleSpan, sendSpans } from './reporter';
-import { clearGlobals, GlobalTimer, SpansContainer, TracerGlobals } from './globals';
+import { clearGlobals, GlobalTimer, SpansContainer, TracerGlobals, ExecutionTags } from './globals';
 import * as logger from './logger';
 import { Http } from './hooks/http';
 import { runOneTimeWrapper } from './utils/functionUtils';
@@ -208,6 +208,7 @@ export const trace =
         stepFunction,
         lambdaTimeout: context.getRemainingTimeInMillis(),
       });
+      ExecutionTags.autoTagEvent(event);
     } catch (err) {
       logger.warn('Failed to start tracer', err);
     }

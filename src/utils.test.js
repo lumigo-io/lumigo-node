@@ -12,6 +12,7 @@ import {
   isDebug,
   DEFAULT_CONNECTION_TIMEOUT,
   isObject,
+  DEFAULT_AUTO_TAG_KEY,
 } from './utils';
 import { MAX_TRACER_ADDED_DURATION_ALLOWED, TracerGlobals } from './globals';
 import crypto from 'crypto';
@@ -1006,5 +1007,23 @@ describe('utils', () => {
 
   test('removeDuplicates empty list', () => {
     expect(removeDuplicates([])).toEqual([]);
+  });
+
+  test('getAutoTagKeys', () => {
+    const oldEnv = Object.assign({}, process.env);
+
+    // default tags
+    process.env = {};
+    expect(utils.getAutoTagKeys()).toEqual([DEFAULT_AUTO_TAG_KEY]);
+
+    // error in parse
+    process.env = { LUMIGO_AUTO_TAG: null };
+    expect(utils.getAutoTagKeys()).toEqual([DEFAULT_AUTO_TAG_KEY]);
+
+    // happy flow
+    process.env = { LUMIGO_AUTO_TAG: 'key1,key2' };
+    expect(utils.getAutoTagKeys()).toEqual(['key1', 'key2']);
+
+    process.env = { ...oldEnv };
   });
 });

@@ -29,6 +29,7 @@ describe('tracer', () => {
   spies.getEndFunctionSpan = jest.spyOn(awsSpan, 'getEndFunctionSpan');
   spies.getCurrentTransactionId = jest.spyOn(awsSpan, 'getCurrentTransactionId');
   spies.clearGlobals = jest.spyOn(globals, 'clearGlobals');
+  spies.autoTagEvent = jest.spyOn(globals.ExecutionTags, 'autoTagEvent');
   spies.warnClient = jest.spyOn(logger, 'warnClient');
   spies.logWarn = jest.spyOn(logger, 'warn');
 
@@ -461,6 +462,22 @@ describe('tracer', () => {
     );
 
     expect(Http.hookHttp).toHaveBeenCalledTimes(1);
+  });
+
+  test('trace; auto tag - happy flow ', async () => {
+    const token = TOKEN;
+    const lumigoTracer = require('./index')({ token });
+    expect(spies.warnClient).toHaveBeenCalledTimes(0);
+    expect(spies.setSwitchOff).not.toHaveBeenCalled();
+
+    const { context } = new HandlerInputesBuilder().build();
+
+    const userHandler4 = async (event, context, callback) => {
+      return {};
+    };
+    await lumigoTracer.trace(userHandler4)({ key1: 'aaa' }, context, jest.fn());
+
+    expect(spies.autoTagEvent).toBeCalledWith({ key1: 'aaa' });
   });
 
   test('trace; async rejected', async () => {
