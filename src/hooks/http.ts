@@ -68,8 +68,8 @@ export class Http {
   ) {
     let serviceData: AwsServiceData = {};
     if (body && !requestData.truncated) {
-      serviceData = getAwsServiceData({ ...requestData, body }, null);
       requestData.body += body;
+      serviceData = getAwsServiceData(requestData, null);
       const truncated = maxSize < requestData.body.length;
       if (truncated) requestData.body = requestData.body.substr(0, maxSize);
       requestData.truncated = truncated;
