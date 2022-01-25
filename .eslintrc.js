@@ -1,5 +1,5 @@
 module.exports = {
-  parser: 'babel-eslint',
+  parser: '@babel/eslint-parser',
   extends: ['eslint:recommended', 'prettier'],
   plugins: ['jest'],
   rules: {
