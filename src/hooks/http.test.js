@@ -121,6 +121,60 @@ describe('http hook', () => {
     });
   });
 
+  test('aggregateRequestBodyToSpan ->  missing resource name on span and adding it on end event', () => {
+    const currentSpan = {
+      info: {
+        resourceName: '',
+        httpInfo: {},
+      },
+    };
+    Http.aggregateRequestBodyToSpan(
+      JSON.stringify({
+        TableName: 'test-table',
+        Item: {
+          id: {
+            S: '5590.195458064029',
+          },
+          message: {
+            S: 'DummyMessage',
+          },
+        },
+      }),
+      {
+        truncated: false,
+        uri: 'dynamodb.us-east-1.amazonaws.com/',
+        host: 'dynamodb.us-east-1.amazonaws.com',
+        headers: {
+          'x-amz-target': 'DynamoDB_20120810.PutItem',
+          host: 'dynamodb.us-east-1.amazonaws.com',
+        },
+        body: '',
+      },
+      currentSpan
+    );
+    expect(currentSpan).toEqual({
+      info: {
+        resourceName: 'test-table',
+        httpInfo: {
+          host: 'dynamodb.us-east-1.amazonaws.com',
+          request: {
+            truncated: false,
+            uri: 'dynamodb.us-east-1.amazonaws.com/',
+            host: 'dynamodb.us-east-1.amazonaws.com',
+            headers: {
+              'x-amz-target': 'DynamoDB_20120810.PutItem',
+              host: 'dynamodb.us-east-1.amazonaws.com',
+            },
+            body: '{"TableName":"test-table","Item":{"id":{"S":"5590.195458064029"},"message":{"S":"DummyMessage"}}}',
+          },
+          response: {},
+        },
+        dynamodbMethod: 'PutItem',
+        messageId: '546fb5c2a83410ebeba6a7c9b1324a04',
+      },
+    });
+  });
+
   test('aggregateRequestBodyToSpan ->  should truncate body', () => {
     const currentSpan = {
       info: {

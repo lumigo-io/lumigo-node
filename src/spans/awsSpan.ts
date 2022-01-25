@@ -194,7 +194,7 @@ export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
 
 export const AWS_PARSED_SERVICES = ['dynamodb', 'sns', 'lambda', 'sqs', 'kinesis', 'events'];
 
-export const getAwsServiceFromHost = (host) => {
+export const getAwsServiceFromHost = (host = '') => {
   const service = host.split('.')[0];
   if (AWS_PARSED_SERVICES.includes(service)) {
     return service;
@@ -207,7 +207,14 @@ export const getAwsServiceFromHost = (host) => {
 export const getServiceType = (host) =>
   isAwsService(host) ? getAwsServiceFromHost(host) : EXTERNAL_SERVICE;
 
-export const getAwsServiceData = (requestData, responseData) => {
+export type AwsServiceData = {
+  awsServiceData?: {
+    [key: string]: any;
+  };
+  messageId?: string;
+  [key: string]: any;
+};
+export const getAwsServiceData = (requestData, responseData): AwsServiceData => {
   const { host } = requestData;
   const awsService = getAwsServiceFromHost(host);
 

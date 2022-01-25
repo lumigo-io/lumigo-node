@@ -13,7 +13,13 @@ import {
   lowerCaseObjectKeys,
 } from '../utils';
 import { extractBodyFromEmitSocketEvent, extractBodyFromWriteOrEndFunc } from './httpUtils';
-import { getCurrentTransactionId, getHttpInfo, getHttpSpan } from '../spans/awsSpan';
+import {
+  AwsServiceData,
+  getAwsServiceData,
+  getCurrentTransactionId,
+  getHttpInfo,
+  getHttpSpan,
+} from '../spans/awsSpan';
 import { URL } from 'url';
 import { SpansContainer, TracerGlobals } from '../globals';
 import * as logger from '../logger';
@@ -60,13 +66,20 @@ export class Http {
     currentSpan,
     maxSize = getEventEntitySize(true)
   ) {
+    let serviceData: AwsServiceData = {};
     if (body && !requestData.truncated) {
+      serviceData = getAwsServiceData({ ...requestData, body }, null);
       requestData.body += body;
       const truncated = maxSize < requestData.body.length;
       if (truncated) requestData.body = requestData.body.substr(0, maxSize);
       requestData.truncated = truncated;
     }
-    if (currentSpan) currentSpan.info.httpInfo = getHttpInfo(requestData, {});
+    if (currentSpan) {
+      currentSpan.info.httpInfo = getHttpInfo(requestData, {});
+      Object.assign(currentSpan.info, {
+        ...serviceData.awsServiceData,
+      });
+    }
   }
 
   @GlobalDurationTimer.timedSync()
