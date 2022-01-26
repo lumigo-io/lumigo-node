@@ -138,8 +138,8 @@ describe('http hook', () => {
           'x-amz-target': 'DynamoDB_20120810.PutItem',
           host: 'dynamodb.us-east-1.amazonaws.com',
         },
-        body:'{"TableName":"test-table"',
-        },
+        body: '{"TableName":"test-table"',
+      },
       currentSpan
     );
     expect(currentSpan).toEqual({
