@@ -82,6 +82,7 @@ export const apigwParser = (requestData, responseData) => {
   if (!responseData) return {};
   const baseData = awsParser(requestData, responseData);
   if (!baseData.awsServiceData) {
+    // @ts-ignore
     baseData.awsServiceData = {};
   }
 
@@ -117,6 +118,7 @@ export const sqsParser = (requestData, responseData) => {
   const parsedResBody = resBody ? traverse(resBody) : undefined;
   const resourceName = parsedReqBody ? parsedReqBody['QueueUrl'] : undefined;
   const awsServiceData = { resourceName };
+  // @ts-ignore
   awsServiceData.messageId =
     safeGet(parsedResBody, ['SendMessageResponse', 'SendMessageResult', 'MessageId'], undefined) ||
     safeGet(
@@ -157,9 +159,11 @@ export const kinesisParser = (requestData, responseData) => {
   const resourceName = (reqBodyJSON['StreamName'] && reqBodyJSON.StreamName) || undefined;
   const awsServiceData = { resourceName };
   if (resBodyJSON['SequenceNumber']) {
+    // @ts-ignore
     awsServiceData.messageId = resBodyJSON['SequenceNumber'];
   }
   if (Array.isArray(resBodyJSON['Records'])) {
+    // @ts-ignore
     awsServiceData.messageIds = resBodyJSON['Records']
       .map((r) => r['SequenceNumber'])
       .filter((x) => !!x);
