@@ -8,27 +8,13 @@ import {
 } from './utils';
 
 export const getTriggeredBy = (event) => {
-  if (event && event['Records']) {
-    // XXX Parses s3, sns, ses, kinesis, dynamodb event sources.
-    const { eventSource, EventSource } = event.Records[0];
-    const eventSourceStr = eventSource || EventSource;
-    if (eventSourceStr) {
-      // XXX AWS EventSources are formatted as "aws:$EVENT_SOURCE_NAME"
-      // See https://github.com/aws/aws-lambda-go/tree/master/events/testdata
-      // eslint-disable-next-line
-      const [_, eventSourceName] = eventSourceStr.split(':');
-      return eventSourceName;
-    }
+  const canDetectTriggerSourceFromEventRecords = event?.['Records']?.[0]?.['eventSource'] || event?.['Records']?.[0]?.['EventSource'];
+
+  if (canDetectTriggerSourceFromEventRecords) {
+    return extractEventSourceFromRecord(event['Records'][0]);
   }
 
-  if (
-    (event && event['httpMethod'] && event['requestContext'] && event['requestContext']['stage']) ||
-    (event &&
-      event['headers'] &&
-      event['version'] === '2.0' &&
-      event['requestContext'] &&
-      event['requestContext']['stage'])
-  ) {
+  if (isApiGatewayEvent(event)) {
     return 'apigw';
   }
 
@@ -45,6 +31,25 @@ export const getTriggeredBy = (event) => {
   }
 
   return 'invocation';
+};
+
+const extractEventSourceFromRecord = (eventRecord) => {
+  const { eventSource, EventSource } = eventRecord;
+  const eventSourceStr = eventSource || EventSource;
+
+  // AWS EventSources are formatted as "aws:$EVENT_SOURCE_NAME"
+  // See https://github.com/aws/aws-lambda-go/tree/master/events/testdata
+  // eslint-disable-next-line
+  const [_, eventSourceName] = eventSourceStr.split(':');
+
+  return eventSourceName;
+};
+
+export const isApiGatewayEvent = (event) => {
+  return (
+    (event?.['httpMethod'] && event?.['requestContext']?.['stage']) ||
+    (event?.['headers'] && event?.['version'] === '2.0' && event?.['requestContext']?.['stage'])
+  );
 };
 
 export const isAppSyncEvent = (event) => {
