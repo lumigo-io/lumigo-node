@@ -5,7 +5,10 @@
 
 # How can I convert V2.1 to V2? Write the file in V2.1, run it in CircleCI and click "Configuration".
 
-version: 2
+orbs:
+  node: circleci/node@5.0
+
+version: 2.1
 commands:
 
 jobs:
@@ -22,6 +25,8 @@ jobs:
     resource_class: medium+
     steps:
     - checkout
+    - node/install:
+        node-version: '16.13'
     - restore_cache:
         key: dependency-cache-{{ checksum "package.json" }}
     - run:
@@ -162,6 +167,8 @@ jobs:
     - TZ: Asia/Jerusalem
     resource_class: medium+
     steps:
+    - node/install:
+        node-version: '16.13'
     - run:
         command: |
           mkdir ~/.ssh/ && echo -e "Host github.com\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
