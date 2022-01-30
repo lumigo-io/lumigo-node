@@ -35,19 +35,18 @@
     "@babel/plugin-transform-typescript": "^7.14.5",
     "@babel/preset-env": "^7.14.5",
     "@babel/preset-typescript": "^7.14.5",
+    "@babel/eslint-parser": "^7.5.4",
     "@commitlint/cli": "^12.1.4",
     "@commitlint/config-conventional": "^12.1.4",
-    "@semantic-release/changelog": "^3.0.6",
-    "@semantic-release/git": "^7.0.18",
-    "@semantic-release/github": "^7.2.3",
+    "semantic-release": "^19.0.2",
     "@types/aws-lambda": "^8.10.77",
     "@types/jest": "^26.0.23",
     "@types/utf8": "^3.0.0",
     "aws-sdk": "^2.927.0",
     "axios-mock-adapter": "^1.19.0",
-    "babel-eslint": "^10.1.0",
+
     "codecov": "^3.8.2",
-    "eslint": "^5.16.0",
+    "eslint": "^8.7.0",
     "eslint-config-prettier": "^4.3.0",
     "eslint-plugin-jest": "^22.21.0",
     "eslint-plugin-prettier": "^3.4.0",
@@ -55,22 +54,11 @@
     "husky": "^2.4.1",
     "jest": "^27.0.4",
     "jest-each": "^26.6.2",
-    "jest-junit": "^6.4.0",
+    "jest-junit": "^13.0.0",
     "mockdate": "^2.0.5",
     "mongo-mock": "^4.0.0",
     "prettier": "^2.3.1",
-    "semantic-release": "^17.4.3",
     "typescript": "^4.3.2"
-  },
-  "release": {
-    "branch": "master",
-    "plugins": [
-      "@semantic-release/commit-analyzer",
-      "@semantic-release/release-notes-generator",
-      "@semantic-release/npm",
-      "@semantic-release/git",
-      "@semantic-release/github"
-    ]
   },
   "husky": {
     "hooks": {
