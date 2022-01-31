@@ -167,8 +167,6 @@ jobs:
     - TZ: Asia/Jerusalem
     resource_class: medium+
     steps:
-    - node/install:
-        node-version: '16.13'
     - run:
         command: |
           mkdir ~/.ssh/ && echo -e "Host github.com\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
