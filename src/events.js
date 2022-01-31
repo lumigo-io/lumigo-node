@@ -8,7 +8,8 @@ import {
 } from './utils';
 
 export const getTriggeredBy = (event) => {
-  const canDetectTriggerSourceFromEventRecords = event?.['Records']?.[0]?.['eventSource'] || event?.['Records']?.[0]?.['EventSource'];
+  const canDetectTriggerSourceFromEventRecords =
+    event?.['Records']?.[0]?.['eventSource'] || event?.['Records']?.[0]?.['EventSource'];
 
   if (canDetectTriggerSourceFromEventRecords) {
     return extractEventSourceFromRecord(event['Records'][0]);
@@ -190,4 +191,4 @@ export const getEventInfo = (event) => {
   const triggeredBy = getTriggeredBy(event);
   const eventData = safeExecute(() => getRelevantEventData(triggeredBy, event))() || {};
   return { ...eventData, triggeredBy };
-}; 
+};
