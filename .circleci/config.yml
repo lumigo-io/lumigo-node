@@ -181,8 +181,6 @@ jobs:
           cd ..
           git clone git@github.com:lumigo-io/larn.git
     - checkout
-    - node/install:
-        node-version: '16.13'
     - run:
         name: Check if tagged
         command: |
