@@ -190,4 +190,4 @@ export const getEventInfo = (event) => {
   const triggeredBy = getTriggeredBy(event);
   const eventData = safeExecute(() => getRelevantEventData(triggeredBy, event))() || {};
   return { ...eventData, triggeredBy };
-};
+}; 
