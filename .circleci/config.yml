@@ -167,8 +167,6 @@ jobs:
     - TZ: Asia/Jerusalem
     resource_class: medium+
     steps:
-    - node/install:
-        node-version: '16.13'
     - run:
         command: |
           mkdir ~/.ssh/ && echo -e "Host github.com\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
@@ -183,6 +181,8 @@ jobs:
           cd ..
           git clone git@github.com:lumigo-io/larn.git
     - checkout
+    - node/install:
+        node-version: '16.13'
     - run:
         name: Check if tagged
         command: |
