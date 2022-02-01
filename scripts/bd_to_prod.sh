@@ -9,6 +9,7 @@ setup_git() {
 
 echo "Update nodejs"
 curl -fsSL https://deb.nodesource.com/setup_16.x | sudo bash -
+sudo apt-get install -y nodejs
 
 echo "Install a project with a clean state"
 npm ci
