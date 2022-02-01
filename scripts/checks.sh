@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-npm run prepublishOnly
+npm run checks
