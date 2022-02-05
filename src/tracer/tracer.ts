@@ -42,6 +42,7 @@ export const trace =
   (userHandler: Handler) =>
   async (event, context, callback) => {
     if (!isAwsEnvironment()) return userHandler(event, context, callback);
+
     try {
       TracerGlobals.setHandlerInputs({ event, context });
       TracerGlobals.setTracerInputs({
@@ -97,7 +98,9 @@ export const trace =
 export const startTrace = async (functionSpan) => {
   try {
     const handlerInputs = TracerGlobals.getHandlerInputs();
-    if (!isSwitchedOff() && isAwsEnvironment() && isAwsContext(handlerInputs.context)) {
+
+    const shouldRunTracer = !isSwitchedOff() && isAwsEnvironment() && isAwsContext(handlerInputs.context)
+    if (shouldRunTracer) {
       const tracerInputs = TracerGlobals.getTracerInputs();
       const { host, path } = getEdgeUrl();
       logger.debug('Tracer started', {
