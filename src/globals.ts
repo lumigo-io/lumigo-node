@@ -1,8 +1,9 @@
-import * as logger from './logger';
 import { GlobalDurationTimer } from './utils/globalDurationTimer';
-import { LambdaContext } from './types/aws/awsEnvironment';
+import type { LambdaContext } from './types/aws/awsEnvironment';
+import type { TracerOptions } from './tracer/tracer-options.interface';
 import { getAutoTagKeys, getJSONBase64Size, getMaxRequestSize, spanHasErrors } from './utils';
-import { TracerOptions } from './tracer/tracer-options.interface';
+import * as logger from './logger';
+
 const MAX_TAGS = 50;
 const MAX_TAG_KEY_LEN = 50;
 const MAX_TAG_VALUE_LEN = 70;
