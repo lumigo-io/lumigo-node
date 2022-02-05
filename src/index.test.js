@@ -1,5 +1,5 @@
 /* eslint-disable */
-import * as tracer from './tracer/tracer';
+import * as tracer from './tracer';
 import * as utils from './utils';
 import { EXECUTION_TAGS_KEY } from './utils';
 import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
