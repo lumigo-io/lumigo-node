@@ -1,6 +1,6 @@
 import { GlobalDurationTimer } from './utils/globalDurationTimer';
 import type { LambdaContext } from './types/aws/awsEnvironment';
-import type { TracerOptions } from './tracer/tracer-options.interface';
+import type { TracerOptions } from './tracer';
 import { getAutoTagKeys, getJSONBase64Size, getMaxRequestSize, spanHasErrors } from './utils';
 import * as logger from './logger';
 

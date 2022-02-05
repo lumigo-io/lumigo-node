@@ -1,4 +1,4 @@
-import { MAX_ELEMENTS_IN_EXTRA } from './tracer/tracer';
+import { MAX_ELEMENTS_IN_EXTRA } from './tracer';
 import { ExecutionTags } from './globals';
 import { getLogPrefix } from './utils';
 
