@@ -22,7 +22,13 @@ import {
   isSpanIsFromAnotherInvocation,
 } from '../spans/awsSpan';
 import { sendSingleSpan, sendSpans } from '../reporter';
-import { clearGlobals, GlobalTimer, SpansContainer, TracerGlobals, ExecutionTags } from '../globals';
+import {
+  clearGlobals,
+  GlobalTimer,
+  SpansContainer,
+  TracerGlobals,
+  ExecutionTags,
+} from '../globals';
 import { Http } from '../hooks/http';
 import { runOneTimeWrapper } from '../utils/functionUtils';
 import { isAwsContext } from '../guards/awsGuards';
@@ -99,7 +105,8 @@ export const startTrace = async (functionSpan) => {
   try {
     const handlerInputs = TracerGlobals.getHandlerInputs();
 
-    const shouldRunTracer = !isSwitchedOff() && isAwsEnvironment() && isAwsContext(handlerInputs.context)
+    const shouldRunTracer =
+      !isSwitchedOff() && isAwsEnvironment() && isAwsContext(handlerInputs.context);
     if (shouldRunTracer) {
       const tracerInputs = TracerGlobals.getTracerInputs();
       const { host, path } = getEdgeUrl();
@@ -144,7 +151,6 @@ export const sendEndTraceSpans = async (functionSpan, handlerReturnValue) => {
 
 export const callbackResolver = (resolve) => (err, data) =>
   resolve({ err, data, type: HANDLER_CALLBACKED });
-
 
 export const isCallbacked = (handlerReturnValue) => {
   const { type } = handlerReturnValue;

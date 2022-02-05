@@ -1,7 +1,7 @@
 export interface TracerOptions {
   token?: string;
   debug?: boolean;
-  edgeHost?: string,
+  edgeHost?: string;
   switchOff?: boolean;
   stepFunction?: boolean;
   maxSizeForRequest?: number | null;
