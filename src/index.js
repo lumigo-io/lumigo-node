@@ -1,4 +1,4 @@
-import { trace } from './tracer/tracer';
+import { trace } from './tracer';
 import { safeExecute, setSwitchOff, setVerboseMode, isValidToken } from './utils';
 import * as LumigoLogger from './lumigoLogger';
 import { debug } from './logger';
