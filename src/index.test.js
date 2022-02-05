@@ -1,11 +1,11 @@
 /* eslint-disable */
-import * as tracer from './tracer';
+import * as tracer from './tracer/tracer';
 import * as utils from './utils';
 import { EXECUTION_TAGS_KEY } from './utils';
 import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
 import * as fsExtra from 'fs-extra';
 import { AxiosMocker } from '../testUtils/axiosMocker';
-import { MAX_ELEMENTS_IN_EXTRA } from './tracer';
+import { MAX_ELEMENTS_IN_EXTRA } from './tracer/tracer';
 import { HandlerInputesBuilder } from '../testUtils/handlerInputesBuilder';
 import { sleep } from '../testUtils/sleep';
 

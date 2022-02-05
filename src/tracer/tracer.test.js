@@ -1,21 +1,21 @@
 /* eslint-disable */
 import each from 'jest-each';
 import * as tracer from './tracer';
-import * as utils from './utils';
-import * as globals from './globals';
-import * as reporter from './reporter';
-import * as awsSpan from './spans/awsSpan';
-import * as logger from './logger';
-import { MAX_TRACER_ADDED_DURATION_ALLOWED, TracerGlobals } from './globals';
-import { setSwitchOff, STEP_FUNCTION_UID_KEY } from './utils';
-import { LUMIGO_EVENT_KEY } from './utils';
-import { HandlerInputesBuilder } from '../testUtils/handlerInputesBuilder';
-import { EnvironmentBuilder } from '../testUtils/environmentBuilder';
-import { SpansContainer } from './globals';
-import { AxiosMocker } from '../testUtils/axiosMocker';
-jest.mock('./hooks/http');
-import { Http } from './hooks/http';
-import { getFunctionSpan } from './spans/awsSpan';
+import * as utils from '../utils';
+import * as globals from '../globals';
+import * as reporter from '../reporter';
+import * as awsSpan from '../spans/awsSpan';
+import * as logger from '../logger';
+import { MAX_TRACER_ADDED_DURATION_ALLOWED, TracerGlobals } from '../globals';
+import { setSwitchOff, STEP_FUNCTION_UID_KEY } from '../utils';
+import { LUMIGO_EVENT_KEY } from '../utils';
+import { HandlerInputesBuilder } from '../../testUtils/handlerInputesBuilder';
+import { EnvironmentBuilder } from '../../testUtils/environmentBuilder';
+import { SpansContainer } from '../globals';
+import { AxiosMocker } from '../../testUtils/axiosMocker';
+jest.mock('../hooks/http');
+import { Http } from '../hooks/http';
+import { getFunctionSpan } from '../spans/awsSpan';
 
 const TOKEN = 't_10faa5e13e7844aaa1234';
 
@@ -341,7 +341,7 @@ describe('tracer', () => {
     });
   });
   each([['t_'], [''], ['10faa5e13e7844aaa1234']]).test('trace; invalid token [%s]', (token) => {
-    require('./index')({ token });
+    require('../index')({ token });
     expect(spies.warnClient).toBeCalledWith(
       'Invalid Token. Go to Lumigo Settings to get a valid token.'
     );
@@ -351,7 +351,7 @@ describe('tracer', () => {
 
   test('trace; no context', async () => {
     const token = TOKEN;
-    const lumigoTracer = require('./index')({ token });
+    const lumigoTracer = require('../index')({ token });
 
     const userHandler1 = async (event) => {
       return 'ok';
@@ -365,7 +365,7 @@ describe('tracer', () => {
 
   test('trace; non async callbacked', (done) => {
     const token = TOKEN;
-    const lumigoTracer = require('./index')({ token });
+    const lumigoTracer = require('../index')({ token });
 
     const retVal = 'The Tracer Wars';
     const userHandler1 = (event, context, callback) => callback(null, retVal);
@@ -385,8 +385,8 @@ describe('tracer', () => {
 
   test('trace; imported twice', (done) => {
     const token = TOKEN;
-    const lumigoTracer1 = require('./index')({ token });
-    const lumigoTracer2 = require('./index')({ token });
+    const lumigoTracer1 = require('../index')({ token });
+    const lumigoTracer2 = require('../index')({ token });
 
     const retVal = 'The Tracer Wars';
     const userHandler1 = (event, context, callback) => callback(null, retVal);
@@ -410,7 +410,7 @@ describe('tracer', () => {
 
   test('trace; non async throw error', async () => {
     const token = TOKEN;
-    const lumigoTracer = require('./index')({ token });
+    const lumigoTracer = require('../index')({ token });
 
     const { event, context } = new HandlerInputesBuilder().build();
 
@@ -445,7 +445,7 @@ describe('tracer', () => {
 
   test('trace; async resolved ', async () => {
     const token = TOKEN;
-    const lumigoTracer = require('./index')({ token });
+    const lumigoTracer = require('../index')({ token });
     expect(spies.warnClient).toHaveBeenCalledTimes(0);
     expect(spies.setSwitchOff).not.toHaveBeenCalled();
 
@@ -466,7 +466,7 @@ describe('tracer', () => {
 
   test('trace; auto tag - happy flow ', async () => {
     const token = TOKEN;
-    const lumigoTracer = require('./index')({ token });
+    const lumigoTracer = require('../index')({ token });
     expect(spies.warnClient).toHaveBeenCalledTimes(0);
     expect(spies.setSwitchOff).not.toHaveBeenCalled();
 
@@ -482,7 +482,7 @@ describe('tracer', () => {
 
   test('trace; async rejected', async () => {
     const token = TOKEN;
-    const lumigoTracer = require('./index')({ token });
+    const lumigoTracer = require('../index')({ token });
 
     const { event, context } = new HandlerInputesBuilder().build();
 
@@ -504,7 +504,7 @@ describe('tracer', () => {
       delete process.env['_X_AMZN_TRACE_ID'];
       process.env[localFramework] = 'true';
       const token = TOKEN;
-      const lumigoTracer = require('./index')({ token });
+      const lumigoTracer = require('../index')({ token });
 
       const { event, context } = new HandlerInputesBuilder().build();
       const retVal = 'The Tracer Wars';
@@ -521,7 +521,7 @@ describe('tracer', () => {
       delete process.env['_X_AMZN_TRACE_ID'];
       process.env[localFramework] = 'true';
       const token = TOKEN;
-      const lumigoTracer = require('./index')({ token });
+      const lumigoTracer = require('../index')({ token });
 
       const { event, context } = new HandlerInputesBuilder().build();
       const retVal = 'The Tracer Wars';
@@ -544,7 +544,7 @@ describe('tracer', () => {
     TracerGlobals.setHandlerInputs(handlerInputs);
     const { context } = new HandlerInputesBuilder().build();
 
-    const lumigoTracer = require('./index')({
+    const lumigoTracer = require('../index')({
       token: TOKEN,
     });
 
@@ -566,7 +566,7 @@ describe('tracer', () => {
     TracerGlobals.setHandlerInputs(handlerInputs);
     const { context } = new HandlerInputesBuilder().build();
 
-    const lumigoTracer = require('./index')({
+    const lumigoTracer = require('../index')({
       token: TOKEN,
     });
 
@@ -594,7 +594,7 @@ describe('tracer', () => {
     TracerGlobals.setHandlerInputs(handlerInputs);
     const { context } = new HandlerInputesBuilder().build();
 
-    const lumigoTracer = require('./index')({
+    const lumigoTracer = require('../index')({
       token: TOKEN,
     });
 
@@ -659,7 +659,7 @@ describe('tracer', () => {
 
   test('can not wrap twice', async () => {
     const token = TOKEN;
-    const lumigoTracer = require('./index')({ token });
+    const lumigoTracer = require('../index')({ token });
 
     const { event, context } = new HandlerInputesBuilder().build();
 
