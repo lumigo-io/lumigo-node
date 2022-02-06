@@ -8,7 +8,7 @@
 orbs:
   node: circleci/node@5.0
 
-version: 2.1
+version: 2
 commands:
 
 jobs:
@@ -25,8 +25,6 @@ jobs:
     resource_class: medium+
     steps:
     - checkout
-    - node/install:
-        node-version: '16.13'
     - restore_cache:
         key: dependency-cache-{{ checksum "package.json" }}
     - run:
