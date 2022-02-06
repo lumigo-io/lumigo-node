@@ -1,5 +1,4 @@
 import { isEncodingType, safeExecute } from '../utils';
-import { hasOwnProperty } from '../utils/functionUtils';
 
 export const isValidHttpRequestBody = (reqBody) =>
   !!(reqBody && (typeof reqBody === 'string' || reqBody instanceof Buffer));
@@ -9,9 +8,9 @@ export const extractBodyFromEmitSocketEvent = (socketEventArgs) => {
     if (socketEventArgs && socketEventArgs._httpMessage && socketEventArgs._httpMessage._hasBody) {
       const httpMessage = socketEventArgs._httpMessage;
       let lines = [];
-      if (hasOwnProperty(httpMessage, 'outputData')) {
+      if (httpMessage.hasOwnProperty('outputData')) {
         lines = httpMessage.outputData[0].data.split('\n');
-      } else if (hasOwnProperty(httpMessage, 'output')) {
+      } else if (httpMessage.hasOwnProperty('output')) {
         lines = httpMessage.output[0].split('\n');
       }
       if (lines.length > 0) {
