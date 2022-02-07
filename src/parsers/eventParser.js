@@ -1,6 +1,5 @@
 import * as logger from '../logger';
 import { getEnvVarAsList, isScrubKnownServicesOn } from '../utils';
-import { hasOwnProperty } from '../utils/functionUtils';
 
 const API_GW_KEYS_ORDER = getEnvVarAsList('LUMIGO_API_GW_KEYS_ORDER', [
   'version',
@@ -194,19 +193,19 @@ export const parseS3Event = (event) => {
   for (const rec of event['Records']) {
     const newS3RecordEvent = {};
     for (const key of S3_KEYS_ORDER) {
-      if (hasOwnProperty(rec, key) != null) {
+      if (rec.hasOwnProperty(key) != null) {
         newS3RecordEvent[key] = rec[key];
       }
     }
-    if (hasOwnProperty(rec, 's3')) {
+    if (rec.hasOwnProperty('s3')) {
       newS3RecordEvent.s3 = {};
-      if (hasOwnProperty(rec.s3, 'bucket')) {
+      if (rec.s3.hasOwnProperty('bucket')) {
         newS3RecordEvent.s3.bucket = {};
         for (const key of S3_BUCKET_KEYS_ORDER) {
           newS3RecordEvent.s3.bucket[key] = rec.s3.bucket[key];
         }
       }
-      if (hasOwnProperty(rec.s3, 'object')) {
+      if (rec.s3.hasOwnProperty('object')) {
         newS3RecordEvent.s3.object = {};
         for (const key of S3_OBJECT_KEYS_ORDER) {
           newS3RecordEvent.s3.object[key] = rec.s3.object[key];
@@ -226,14 +225,14 @@ export const parseCloudfrontEvent = (event) => {
     const cfRecord = rec['cf'] || {};
     const newCloudfrontRecordEvent = { cf: {} };
     for (const key of CLOUDFRONT_KEYS_ORDER) {
-      if (hasOwnProperty(cfRecord, key) != null) {
+      if (cfRecord.hasOwnProperty(key) != null) {
         newCloudfrontRecordEvent.cf[key] = cfRecord[key];
       }
     }
-    if (hasOwnProperty(cfRecord, 'request')) {
+    if (cfRecord.hasOwnProperty('request')) {
       newCloudfrontRecordEvent.cf.request = {};
       for (const key of CLOUDFRONT_REQUEST_KEYS_ORDER) {
-        if (hasOwnProperty(cfRecord.request, key)) {
+        if (cfRecord.request.hasOwnProperty(key)) {
           newCloudfrontRecordEvent.cf.request[key] = cfRecord.request[key];
         }
       }
