@@ -8,6 +8,3 @@ export const runOneTimeWrapper = (func: Function, context: any = undefined): Fun
     }
   };
 };
-
-export const hasOwnProperty = (object: any, property: string): boolean =>
-  Object.prototype.hasOwnProperty.call(object, property);
