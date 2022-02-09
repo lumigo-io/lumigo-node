@@ -1,5 +1,5 @@
 /* eslint-disable */
-import * as tracer from './tracer/tracer';
+import tracer from './tracer';
 import * as utils from './utils';
 import { EXECUTION_TAGS_KEY } from './utils';
 import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
@@ -259,36 +259,33 @@ describe('index', () => {
     // No exception.
   });
 
-  test('init tracer', () => {
+  test('should be able to init tracer with the provided params.', () => {
     const retVal = 1234;
     spies.trace.mockReturnValueOnce(retVal);
 
-    const token = 'DEADBEEF';
     const debug = false;
     const edgeHost = 'zarathustra.com';
-    const verbose = true;
 
-    const lumigo1 = require('./index')({ token, edgeHost, verbose });
+    const lumigo1 = require('./index')({ token: TOKEN, edgeHost });
     expect(lumigo1.trace).toEqual(retVal);
     expect(spies.trace).toHaveBeenCalledWith({
       debug,
-      token,
+      token: TOKEN,
       edgeHost,
       switchOff: false,
       eventFilter: {},
       stepFunction: false,
     });
-    expect(spies.setVerboseMode).toHaveBeenCalled();
     spies.trace.mockClear();
     spies.trace.mockReturnValueOnce(retVal);
     const lumigo2 = require('./index')({
-      token,
+      token: TOKEN,
       switchOff: true,
     });
     expect(lumigo2.trace).toEqual(retVal);
     expect(spies.trace).toHaveBeenCalledWith({
       debug,
-      token,
+      token: TOKEN,
       edgeHost: undefined,
       switchOff: true,
       eventFilter: {},
