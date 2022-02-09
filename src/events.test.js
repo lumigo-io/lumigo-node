@@ -20,6 +20,7 @@ const exampleApiGatewayEventWithoutHost = require('../testUtils/testdata/events/
 const exampleEventBridgeEvent = require('../testUtils/testdata/events/event-bridge-event.json');
 const exampleAppSyncEvent = require('../testUtils/testdata/events/appsync-event.json');
 const exampleAppSyncSecondEvent = require('../testUtils/testdata/events/appsync-second-event.json');
+const exampleEmptySqsEvent = require('../testUtils/testdata/events/empty-sqs-event.json');
 
 describe('events', () => {
   test('getTriggeredBy', () => {
@@ -34,6 +35,7 @@ describe('events', () => {
     expect(events.getTriggeredBy(exampleAppSyncEvent)).toEqual('appsync');
     expect(events.getTriggeredBy(exampleAppSyncSecondEvent)).toEqual('appsync');
     expect(events.getTriggeredBy(exampleUnsupportedEvent)).toEqual('invocation');
+    expect(events.getTriggeredBy(exampleEmptySqsEvent)).toEqual('invocation');
   });
 
   test('getApiGatewayData', () => {
