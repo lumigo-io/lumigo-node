@@ -12,11 +12,8 @@ import { sleep } from '../testUtils/sleep';
 const TOKEN = 't_10faa5e13e7844aaa1234';
 
 describe('index', () => {
-  var spies = {};
-  jest.mock('./tracer', () => ({
-    ...jest.requireActual('./tracer'),
-    trace: (spies.trace = jest.fn()),
-  }));
+  const spies = {};
+  spies.trace = jest.spyOn(tracer, 'trace');
   spies.setSwitchOff = jest.spyOn(utils, 'setSwitchOff');
   spies.setVerboseMode = jest.spyOn(utils, 'setVerboseMode');
 
