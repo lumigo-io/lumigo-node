@@ -43,7 +43,7 @@ export const MAX_ELEMENTS_IN_EXTRA = 10;
 export const LEAK_MESSAGE =
   'Execution leak detected. More information is available in: https://docs.lumigo.io/docs/execution-leak-detected';
 
-export const trace =
+export let trace =
   ({ token, debug, edgeHost, switchOff, stepFunction }: TracerOptions) =>
   (userHandler: Handler) =>
   async (event, context, callback) => {

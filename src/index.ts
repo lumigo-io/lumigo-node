@@ -17,11 +17,10 @@ const defaultOptions: Partial<TracerOptions> = {
 };
 
 module.exports = function (options?: TracerOptions) {
-  const traceOptions =  {
+  const traceOptions = {
     ...defaultOptions,
     ...options,
-  }
-
+  };
 
   traceOptions?.verbose && setVerboseMode();
   traceOptions?.switchOff && setSwitchOff();

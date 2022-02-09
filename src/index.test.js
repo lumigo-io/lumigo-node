@@ -1,5 +1,5 @@
 /* eslint-disable */
-import tracer from './tracer';
+import * as tracer from './tracer';
 import * as utils from './utils';
 import { EXECUTION_TAGS_KEY } from './utils';
 import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
@@ -12,8 +12,11 @@ import { sleep } from '../testUtils/sleep';
 const TOKEN = 't_10faa5e13e7844aaa1234';
 
 describe('index', () => {
-  const spies = {};
-  spies.trace = jest.spyOn(tracer, 'trace');
+  var spies = {};
+  jest.mock('./tracer', () => ({
+    ...jest.requireActual('./tracer'),
+    trace: (spies.trace = jest.fn()),
+  }));
   spies.setSwitchOff = jest.spyOn(utils, 'setSwitchOff');
   spies.setVerboseMode = jest.spyOn(utils, 'setVerboseMode');
 
