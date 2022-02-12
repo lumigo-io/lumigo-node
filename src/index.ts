@@ -1,4 +1,4 @@
-import { trace, TracerOptions } from './tracer';
+import { trace, Tracer, TracerOptions } from './tracer';
 import { safeExecute, setSwitchOff, setVerboseMode, isValidToken } from './utils';
 import * as LumigoLogger from './lumigoLogger';
 import { debug } from './logger';
@@ -6,7 +6,6 @@ import { ExecutionTags } from './globals';
 import startHooks from './hooks';
 import { HttpSpansAgent } from './httpSpansAgent';
 import * as logger from './logger';
-import { Tracer } from './tracer/tracer.interface';
 
 debug('Tracer imported');
 
@@ -49,5 +48,12 @@ const assertValidToken = <LumigoToken = string | null>(token: LumigoToken): Lumi
 
   return token;
 };
+
+Object.assign(module.exports, {
+  addExecutionTag: ExecutionTags.addTag,
+  info: LumigoLogger.info,
+  warn: LumigoLogger.warn,
+  error: LumigoLogger.error,
+});
 
 export default init;
