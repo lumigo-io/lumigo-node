@@ -34,6 +34,7 @@ import { runOneTimeWrapper } from '../utils/functionUtils';
 import { isAwsContext } from '../guards/awsGuards';
 import * as logger from '../logger';
 import type { TracerOptions } from './tracer-options.interface';
+import { TraceOptions } from './trace-options.type';
 
 export const HANDLER_CALLBACKED = 'handler_callbacked';
 export const ASYNC_HANDLER_RESOLVED = 'async_handler_resolved';
@@ -44,9 +45,9 @@ export const LEAK_MESSAGE =
   'Execution leak detected. More information is available in: https://docs.lumigo.io/docs/execution-leak-detected';
 
 export let trace =
-  ({ token, debug, edgeHost, switchOff, stepFunction }: TracerOptions) =>
+  ({ token, debug, edgeHost, switchOff, stepFunction }: TraceOptions) =>
   (userHandler: Handler) =>
-  async (event, context, callback) => {
+  async (event, context, callback): Promise<Handler> => {
     if (!isAwsEnvironment()) return userHandler(event, context, callback);
 
     try {
@@ -250,7 +251,7 @@ const logLeakedSpans = (allSpans) => {
   });
 };
 
-const performPromisifyType = (err, data, type, callback) => {
+const performPromisifyType = (err, data, type, callback): Handler => {
   switch (type) {
     case HANDLER_CALLBACKED:
       callback(err, data);
