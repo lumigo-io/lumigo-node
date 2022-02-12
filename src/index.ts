@@ -17,7 +17,7 @@ const defaultOptions: Partial<TracerOptions> = {
   eventFilter: {},
 };
 
-export function init(options?: TracerOptions): Tracer  {
+export function init(options?: TracerOptions): Tracer {
   const traceOptions = {
     ...defaultOptions,
     ...options,
