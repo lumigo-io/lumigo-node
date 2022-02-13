@@ -1,26 +1,24 @@
-const lumigo = require('@lumigo/tracer');
+/* eslint-disable no-console */
 
-const lumigoToken = "123";
+const token = 'XXX';
+const debug = true;
+const lumigo = require('@lumigo/tracer')({ token, debug });
 
-const trace = (callback) => {
-  if (process.env.isRunningTests) return callback;
-  if (lumigoToken == null) {
-    console.warn(
-      `Attempted to trace the function, however, there is no 'LUMIGO_TOKEN' environment variable. Did you add it?
-      Proceeding without tracing this function.`,
-    );
+const AWS = require('aws-sdk');
 
-    return callback;
-  }
-
-  console.log(lumigo);
-
-  return lumigo({
-    token: lumigoToken
-  })
-};
-
-
-trace(()=>{
-
-})
+const handler = async () => {
+  const dynamodb = new AWS.DynamoDB();
+  const params = {
+    TableName: 'test-table',
+    Item: {
+      id: { S: JSON.stringify(Math.random() * 10000) },
+      message: { S: 'DummyMessage' },
+    },
+  };
+  await dynamodb
+    .putItem(params)
+    .promise()
+    .catch(e => {
+      console.log('Error while putting record into DDB', e);
+    });
+  return 'OK';
