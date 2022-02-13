@@ -7,7 +7,6 @@
     "moduleResolution": "node",
     "experimentalDecorators": true,
     "resolveJsonModule": true,
-    "esModuleInterop": false
   },
   "include": ["./src/**/*"],
   "exclude": ["**/*.test.js", "**/*.test.ts", "__mocks__", "./testUtils"]
