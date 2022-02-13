@@ -22,5 +22,6 @@ const handler = async () => {
       console.log('Error while putting record into DDB', e);
     });
   return 'OK';
+}
 
 exports.handler = lumigo.trace(handler);
