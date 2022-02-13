@@ -265,12 +265,13 @@ describe('index', () => {
 
     const debug = false;
     const edgeHost = 'zarathustra.com';
+    const token = TOKEN;
 
-    const lumigo1 = require('./index')({ token: TOKEN, edgeHost });
+    const lumigo1 = require('./index')({ token, edgeHost });
     expect(lumigo1.trace).toEqual(retVal);
     expect(spies.trace).toHaveBeenCalledWith({
       debug,
-      token: TOKEN,
+      token,
       edgeHost,
       switchOff: false,
       eventFilter: {},
@@ -279,13 +280,13 @@ describe('index', () => {
     spies.trace.mockClear();
     spies.trace.mockReturnValueOnce(retVal);
     const lumigo2 = require('./index')({
-      token: TOKEN,
+      token,
       switchOff: true,
     });
     expect(lumigo2.trace).toEqual(retVal);
     expect(spies.trace).toHaveBeenCalledWith({
       debug,
-      token: TOKEN,
+      token,
       edgeHost: undefined,
       switchOff: true,
       eventFilter: {},
