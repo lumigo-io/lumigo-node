@@ -1,8 +1,9 @@
-const lumigo = require('@lumigo/tracer');
+import * as lumigo from '@lumigo/tracer';
+import { Handler } from 'aws-lambda';
 
 const lumigoToken = "123";
 
-const trace = (callback) => {
+export const trace = (callback: Handler) => {
   if (process.env.isRunningTests) return callback;
   if (lumigoToken == null) {
     console.warn(
@@ -13,11 +14,7 @@ const trace = (callback) => {
     return callback;
   }
 
-  console.log(lumigo);
-
-  return lumigo({
-    token: lumigoToken
-  })
+  return lumigo.initTracer({ token: lumigoToken }).trace(callback);
 };
 
 

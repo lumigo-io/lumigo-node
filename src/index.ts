@@ -16,7 +16,7 @@ const defaultOptions: Partial<TracerOptions> = {
   eventFilter: {},
 };
 
-function init(options?: TracerOptions): Tracer {
+function initTracer (options?: TracerOptions): Tracer {
   const traceOptions = {
     ...defaultOptions,
     ...options,
@@ -49,10 +49,13 @@ const assertValidToken = <LumigoToken = string | null>(token: LumigoToken): Lumi
   return token;
 };
 
-module.exports = init;
+
+module.exports = initTracer
 Object.assign(module.exports, {
   addExecutionTag: ExecutionTags.addTag,
   info: LumigoLogger.info,
   warn: LumigoLogger.warn,
   error: LumigoLogger.error,
+  initTracer
 });
+

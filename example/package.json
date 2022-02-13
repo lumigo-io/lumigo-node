@@ -5,8 +5,12 @@
   "license": "MIT",
   "private": true,
   "dependencies": {
+    "@lumigo/tracer": "file:../lumigo-node-d_exmaple.tgz",
     "aws-sdk": "^2.501.0",
     "axios": "^0.19.0",
-    "@lumigo/tracer": "file:../lumigo-node-d_exmaple.tgz"
+    "ts-node": "^9.1.1",
+    "npm": "^8.4.1",
+    "@types/node": "^11.13.0",
+    "serverless-plugin-typescript": "^2.1.1"
   }
 }
