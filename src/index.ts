@@ -1,13 +1,12 @@
 import { trace, Tracer, TracerOptions } from './tracer';
 import { safeExecute, setSwitchOff, setVerboseMode, isValidToken } from './utils';
-import * as LumigoLogger from './lumigoLogger';
-import { debug } from './logger';
 import { ExecutionTags } from './globals';
 import startHooks from './hooks';
 import { HttpSpansAgent } from './httpSpansAgent';
 import * as logger from './logger';
+import * as LumigoLogger from './lumigoLogger'
 
-debug('Tracer imported');
+logger.debug('Tracer imported');
 
 const defaultOptions: Partial<TracerOptions> = {
   switchOff: false,
@@ -16,7 +15,7 @@ const defaultOptions: Partial<TracerOptions> = {
   eventFilter: {},
 };
 
-function initTracer(options?: TracerOptions): Tracer {
+export function initTracer(options?: TracerOptions): Tracer {
   const traceOptions = {
     ...defaultOptions,
     ...options,
@@ -49,11 +48,9 @@ const assertValidToken = <LumigoToken = string | null>(token: LumigoToken): Lumi
   return token;
 };
 
+export {info, warn, error} from './lumigoLogger';
+export const addExecutionTag = ExecutionTags.addTag
+export default initTracer;
+
 module.exports = initTracer;
-Object.assign(module.exports, {
-  addExecutionTag: ExecutionTags.addTag,
-  info: LumigoLogger.info,
-  warn: LumigoLogger.warn,
-  error: LumigoLogger.error,
-  initTracer,
-});
+
