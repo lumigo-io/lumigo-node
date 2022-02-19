@@ -4,7 +4,7 @@ import { ExecutionTags } from './globals';
 import startHooks from './hooks';
 import { HttpSpansAgent } from './httpSpansAgent';
 import * as logger from './logger';
-import * as LumigoLogger from './lumigoLogger'
+import * as LumigoLogger from './lumigoLogger';
 
 logger.debug('Tracer imported');
 
@@ -49,7 +49,7 @@ const assertValidToken = <LumigoToken = string | null>(token: LumigoToken): Lumi
 };
 
 // for index.d.ts to be generated properly
-export {info, warn, error} from './lumigoLogger'
+export { info, warn, error } from './lumigoLogger';
 export default initTracer;
 export const addExecutionTag = ExecutionTags.addTag;
 export { initTracer };
