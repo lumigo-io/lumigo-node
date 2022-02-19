@@ -11,4 +11,3 @@
   "include": ["./src/**/*"],
   "exclude": ["**/*.test.js", "**/*.test.ts", "__mocks__", "./testUtils"]
 }
-
