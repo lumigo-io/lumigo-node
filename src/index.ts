@@ -48,8 +48,18 @@ const assertValidToken = <LumigoToken = string | null>(token: LumigoToken): Lumi
   return token;
 };
 
-export {info, warn, error} from './lumigoLogger';
-export const addExecutionTag = ExecutionTags.addTag
-export { initTracer };
+// for index.d.ts to be generated properly
+export {info, warn, error} from './lumigoLogger'
 export default initTracer;
+export const addExecutionTag = ExecutionTags.addTag;
+export { initTracer };
 
+// for backward compatibility
+module.exports = initTracer;
+Object.assign(module.exports, {
+  addExecutionTag,
+  info: LumigoLogger.info,
+  warn: LumigoLogger.warn,
+  error: LumigoLogger.error,
+  initTracer,
+});
