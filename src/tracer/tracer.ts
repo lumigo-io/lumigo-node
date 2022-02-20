@@ -33,7 +33,6 @@ import { Http } from '../hooks/http';
 import { runOneTimeWrapper } from '../utils/functionUtils';
 import { isAwsContext } from '../guards/awsGuards';
 import * as logger from '../logger';
-import type { TracerOptions } from './tracer-options.interface';
 import { TraceOptions } from './trace-options.type';
 
 export const HANDLER_CALLBACKED = 'handler_callbacked';
