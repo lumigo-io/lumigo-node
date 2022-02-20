@@ -12,7 +12,6 @@ const defaultOptions: Partial<TracerOptions> = {
   switchOff: false,
   stepFunction: false,
   debug: false,
-  eventFilter: {},
 };
 
 function initTracer(options?: TracerOptions): Tracer {

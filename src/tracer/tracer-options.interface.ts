@@ -7,5 +7,4 @@ export interface TracerOptions {
   maxSizeForRequest?: number | null;
   lambdaTimeout?: number;
   verbose?: boolean;
-  eventFilter?: Record<string, any>; // for backward compatibility
 }

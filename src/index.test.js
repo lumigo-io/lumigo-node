@@ -274,7 +274,6 @@ describe('index', () => {
       token,
       edgeHost,
       switchOff: false,
-      eventFilter: {},
       stepFunction: false,
     });
     spies.trace.mockClear();
@@ -289,7 +288,6 @@ describe('index', () => {
       token,
       edgeHost: undefined,
       switchOff: true,
-      eventFilter: {},
       stepFunction: false,
     });
     expect(spies.setSwitchOff).toHaveBeenCalled();
@@ -311,7 +309,6 @@ describe('index', () => {
       debug,
       edgeHost,
       switchOff: false,
-      eventFilter: {},
       stepFunction: false,
     });
   });
