@@ -1,4 +1,4 @@
-import type { Handler } from 'aws-lambda';
+import type { Callback, Context, Handler } from 'aws-lambda';
 
 import {
   getContextInfo,
@@ -47,7 +47,7 @@ export const LEAK_MESSAGE =
 export const trace =
   ({ token, debug, edgeHost, switchOff, stepFunction }: TraceOptions) =>
   (userHandler: Handler) =>
-  async (event, context, callback): Promise<Handler> => {
+  async <Event = any>(event: Event, context?: Context, callback?: Callback): Promise<Handler> => {
     if (!isAwsEnvironment()) return userHandler(event, context, callback);
 
     try {
