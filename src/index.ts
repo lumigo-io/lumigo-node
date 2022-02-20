@@ -53,6 +53,7 @@ export { info, warn, error } from './lumigoLogger';
 export default initTracer;
 export const addExecutionTag = ExecutionTags.addTag;
 export { initTracer };
+export type { Tracer, TracerOptions };
 
 // for backward compatibility
 module.exports = initTracer;
