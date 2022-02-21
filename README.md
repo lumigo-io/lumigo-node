@@ -28,22 +28,43 @@ The `@lumigo/tracer` package allows you to pursue automated metric gathering thr
 
 To manually configure Lumigo in your Lambda functions:
 
-* First, install the `@lumigo/tracer` package using NPM:
+* First, install the `@lumigo/tracer` package using your preferred package manager:
 
- npm: 
 ~~~bash
 $ npm i @lumigo/tracer
+# or
+$ yarn add @lumigo/tracer
 ~~~
     
-* Next, wrap your `handler` in lumigo's `trace` function (note: replace `YOUR-TOKEN-HERE` with your Lumigo API token):
+* Next, wrap your `handler` in Lumigo's `trace` function (note: replace `YOUR-TOKEN-HERE` with your Lumigo API token):
 
 ~~~js
+// javascript
 const lumigo = require('@lumigo/tracer')({ token: 'YOUR-TOKEN-HERE' })
 
 const myHandler = async (event, context, callback) => { ... }
 
 exports.handler = lumigo.trace(myHandler)
 ~~~
+
+~~~typescript
+// typescript
+import lumigo from '@lumigo/tracer';
+
+const myHandler = async (event, context, callback) => { ... }
+
+exports.handler = lumigo({ token: 'YOUR-TOKEN-HERE' }).trace(myHandler)
+~~~
+
+##### Note:
+For Typescript users, you must add the following to your `tsconfig.json` file:
+~~~json
+{
+  ...,
+  "esModuleInterop": true,  
+}
+~~~
+[read more about it here](https://www.typescriptlang.org/tsconfig#esModuleInterop)
 
 * Your function is now fully instrumented
 

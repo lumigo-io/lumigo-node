@@ -1,6 +1,6 @@
 {
   "name": "@lumigo/tracer",
-  "version": "1.69.1",
+  "version": "1.70.0",
   "description": "Lumigo Tracer for Node.js v8.x / v10.x / v12.x Runtimes",
   "main": "dist/index.js",
   "repository": "git@github.com:lumigo-io/lumigo-node.git",
@@ -59,7 +59,7 @@
     "mockdate": "^2.0.5",
     "mongo-mock": "^4.0.0",
     "prettier": "^2.3.1",
-    "semantic-release": "^17.4.3",
+    "semantic-release": "^19.0.2",
     "typescript": "^4.3.2"
   },
   "release": {
