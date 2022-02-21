@@ -1,7 +1,9 @@
-import * as logger from './logger';
 import { GlobalDurationTimer } from './utils/globalDurationTimer';
-import { LambdaContext } from './types/aws/awsEnvironment';
+import type { LambdaContext } from './types/aws/awsEnvironment';
+import type { TracerOptions } from './tracer';
 import { getAutoTagKeys, getJSONBase64Size, getMaxRequestSize, spanHasErrors } from './utils';
+import * as logger from './logger';
+
 const MAX_TAGS = 50;
 const MAX_TAG_KEY_LEN = 50;
 const MAX_TAG_VALUE_LEN = 70;
@@ -158,7 +160,7 @@ export const TracerGlobals = (() => {
     stepFunction = false,
     maxSizeForRequest = null,
     lambdaTimeout = MAX_TRACER_ADDED_DURATION_ALLOWED,
-  }) =>
+  }: TracerOptions) =>
     Object.assign(tracerInputs, {
       token: token || process.env.LUMIGO_TRACER_TOKEN,
       debug: debug,

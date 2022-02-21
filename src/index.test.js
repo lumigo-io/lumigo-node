@@ -1,5 +1,5 @@
 /* eslint-disable */
-import * as tracer from './tracer';
+import * as tracer from './tracer/tracer';
 import * as utils from './utils';
 import { EXECUTION_TAGS_KEY } from './utils';
 import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
@@ -24,8 +24,8 @@ describe('index', () => {
   test('execution tags - 2 versions of tracer - layer and manual', async () => {
     jest.setTimeout(15000);
     const originDirPath = __dirname;
-    const dupDirPath = `${originDirPath}Dup'`;
-    const layerPath = `${dupDirPath}/index.js`;
+    const dupDirPath = `${originDirPath}Dup`;
+    const layerPath = `${dupDirPath}/index.ts`;
 
     const { context } = new HandlerInputesBuilder().build();
     const callback = jest.fn();
@@ -259,26 +259,23 @@ describe('index', () => {
     // No exception.
   });
 
-  test('init tracer', () => {
+  test('should be able to init tracer with the provided params.', () => {
     const retVal = 1234;
     spies.trace.mockReturnValueOnce(retVal);
 
-    const token = 'DEADBEEF';
     const debug = false;
     const edgeHost = 'zarathustra.com';
-    const verbose = true;
+    const token = TOKEN;
 
-    const lumigo1 = require('./index')({ token, edgeHost, verbose });
+    const lumigo1 = require('./index')({ token, edgeHost });
     expect(lumigo1.trace).toEqual(retVal);
     expect(spies.trace).toHaveBeenCalledWith({
       debug,
       token,
       edgeHost,
       switchOff: false,
-      eventFilter: {},
       stepFunction: false,
     });
-    expect(spies.setVerboseMode).toHaveBeenCalled();
     spies.trace.mockClear();
     spies.trace.mockReturnValueOnce(retVal);
     const lumigo2 = require('./index')({
@@ -291,7 +288,6 @@ describe('index', () => {
       token,
       edgeHost: undefined,
       switchOff: true,
-      eventFilter: {},
       stepFunction: false,
     });
     expect(spies.setSwitchOff).toHaveBeenCalled();
@@ -313,7 +309,6 @@ describe('index', () => {
       debug,
       edgeHost,
       switchOff: false,
-      eventFilter: {},
       stepFunction: false,
     });
   });
