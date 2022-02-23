@@ -114,7 +114,10 @@ export const ExecutionTags = (() => {
   const clear = () => (global.tags = []);
 
   const autoTagEvent = (event) => {
-    getAutoTagKeys().forEach((key) => event[key] && addTag(key, event[key]));
+    getAutoTagKeys().forEach((key) => {
+      const value = key.split('.').reduce((obj, innerKey) => obj && obj[innerKey], event);
+      value && addTag(key, value);
+    });
   };
 
   return { addTag, getTags, clear, validateTag, autoTagEvent };

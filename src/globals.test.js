@@ -396,4 +396,53 @@ describe('globals', () => {
 
     process.env = { ...oldEnv };
   });
+
+  test('autoTagEvent nested', () => {
+    const oldEnv = Object.assign({}, process.env);
+    process.env = { LUMIGO_AUTO_TAG: 'key1.key2' };
+
+    // only outer key
+    globals.ExecutionTags.autoTagEvent({
+      key1: 'value1',
+      key2: 2,
+      key3: 'value3',
+      other: 'other',
+    });
+    let result = globals.ExecutionTags.getTags();
+    expect(result).toEqual([]);
+
+    // no key at all
+    globals.ExecutionTags.autoTagEvent({
+      key2: 2,
+      key3: 'value3',
+      other: 'other',
+    });
+    result = globals.ExecutionTags.getTags();
+    expect(result).toEqual([]);
+
+    // happy flow
+    globals.ExecutionTags.autoTagEvent({
+      key1: { key2: 'value' },
+      key3: 'value3',
+    });
+    result = globals.ExecutionTags.getTags();
+    expect(result).toEqual([{ key: 'key1.key2', value: 'value' }]);
+    globals.ExecutionTags.clear();
+
+    // happy flow - two nested
+    process.env = { LUMIGO_AUTO_TAG: 'key1.key2,key3.key4' };
+    globals.ExecutionTags.autoTagEvent({
+      key1: { key2: 'value' },
+      key3: { key4: 'value2' },
+      key5: '1',
+    });
+    result = globals.ExecutionTags.getTags();
+    expect(result).toEqual([
+      { key: 'key1.key2', value: 'value' },
+      { key: 'key3.key4', value: 'value2' },
+    ]);
+    globals.ExecutionTags.clear();
+
+    process.env = { ...oldEnv };
+  });
 });
