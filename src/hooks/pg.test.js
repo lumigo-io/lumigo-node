@@ -4,6 +4,7 @@ import { SpansContainer, TracerGlobals } from '../globals';
 import { HandlerInputesBuilder } from '../../testUtils/handlerInputesBuilder';
 import { SqlSpanBuilder } from '../../testUtils/sqlSpanBuilder';
 import { payloadStringify } from '../utils/payloadStringify';
+// import { safeExecute } from '../utils';
 
 const DUMMY_PG_OPTIONS = {
   host: 'database-1.us-west-1.rds.amazonaws.com',
@@ -135,8 +136,30 @@ describe('pg', () => {
   });
 
   test('hookPg -> query (text: string, callback: Function) => void -> success', (done) => {
-    const client = createHookedPgClient();
+    const client = createHookedPgClient({
+      activeQuery: {},
+    });
 
+    const testFunc = () => {
+      const spans = SpansContainer.getSpans();
+      expect(spans).toEqual([
+        createBaseBuilderFromSpan(spans[0])
+          .withQuery('SELECT * from users')
+          .withConnectionParameters(DUMMY_PG_OPTIONS)
+          .withResponse(createExpectedResponse())
+          .build(),
+      ]);
+      done();
+    };
+
+    client.query('SELECT * from users', testFunc);
+  });
+
+  test('hookPg no activeQuery but with activeQueue -> query (text: string, callback: Function) => void -> success', (done) => {
+    const client = createHookedPgClient({
+      queryQueue: [],
+      activeQuery: undefined,
+    });
     const testFunc = () => {
       const spans = SpansContainer.getSpans();
       expect(spans).toEqual([
@@ -154,7 +177,7 @@ describe('pg', () => {
 
   test('hookPg -> query (text: string, callback: Function) => void -> error', (done) => {
     const error = new Error('RandomError');
-    const client = createHookedPgClient({ error });
+    const client = createHookedPgClient({ error, activeQuery: {} });
 
     const testFunc = (err) => {
       const spans = SpansContainer.getSpans();
@@ -173,7 +196,9 @@ describe('pg', () => {
   });
 
   test('hookPg -> query (text: string, values: Array, callback: Function) => void -> success', (done) => {
-    const client = createHookedPgClient();
+    const client = createHookedPgClient({
+      activeQuery: {},
+    });
 
     const testFunc = () => {
       const spans = SpansContainer.getSpans();
