@@ -68,9 +68,8 @@ function queryAfterHook(args, originalFnResult, extenderContext) {
           createSpanFromPgResponse(currentSpan, error, result);
         },
       });
-    } else {
-      logger.warn('No active query found, Not instrumenting pg response!');
     }
+    !activeQuery && logger.warn('No active query found, Not instrumenting pg response!');
   } else {
     if (originalFnResult instanceof Promise) {
       originalFnResult.then(
