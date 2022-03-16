@@ -51,7 +51,7 @@ const createSpanFromPgResponse = (currentSpan, error, result) => {
 };
 
 function findActiveQuery(queryQueue = [], cb) {
-  let filtered = queryQueue.filter(activeQuery => activeQuery.callback === cb);
+  let filtered = queryQueue.filter((activeQuery) => activeQuery.callback === cb);
   return filtered.length > 0 ? filtered[0] : undefined;
 }
 
@@ -59,9 +59,9 @@ function queryAfterHook(args, originalFnResult, extenderContext) {
   // If the query function doesn't receive a callback, it will return a Promise
   const { currentSpan } = extenderContext;
   if (args[1] instanceof Function || args[2] instanceof Function) {
-    const callback =  args[1] instanceof Function ? args[1] : args[2];
+    const callback = args[1] instanceof Function ? args[1] : args[2];
     let activeQuery = this.activeQuery || findActiveQuery(this.queryQueue, callback);
-    if(activeQuery){
+    if (activeQuery) {
       hook(activeQuery, 'callback', {
         beforeHook: (args) => {
           const [error, result] = args;
