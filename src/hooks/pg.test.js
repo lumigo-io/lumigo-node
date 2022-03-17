@@ -4,7 +4,6 @@ import { SpansContainer, TracerGlobals } from '../globals';
 import { HandlerInputesBuilder } from '../../testUtils/handlerInputesBuilder';
 import { SqlSpanBuilder } from '../../testUtils/sqlSpanBuilder';
 import { payloadStringify } from '../utils/payloadStringify';
-// import { safeExecute } from '../utils';
 
 const DUMMY_PG_OPTIONS = {
   host: 'database-1.us-west-1.rds.amazonaws.com',
