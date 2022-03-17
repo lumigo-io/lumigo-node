@@ -51,8 +51,7 @@ const createSpanFromPgResponse = (currentSpan, error, result) => {
 };
 
 function findActiveQuery(queryQueue = [], cb) {
-  let filtered = queryQueue.filter((activeQuery) => activeQuery.callback === cb);
-  return filtered.length > 0 ? filtered[0] : undefined;
+  return queryQueue.find((activeQuery) => activeQuery.callback === cb);
 }
 
 function queryAfterHook(args, originalFnResult, extenderContext) {
