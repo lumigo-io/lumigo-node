@@ -17,14 +17,15 @@ export const createMockedResponse = (rowCount = 5) => {
     rowAsArray: false,
   };
 };
-const createMockClientWithOptions = mockedOptions => {
-  const { error, rowCount } = mockedOptions;
-  const Client = function(options = {}) {
+const createMockClientWithOptions = (mockedOptions) => {
+  const { error, rowCount, activeQuery, queryQueue } = mockedOptions;
+  const Client = function (options = {}) {
     this.connectionParameters = options;
-    this.activeQuery = {};
+    this.activeQuery = activeQuery;
+    this.queryQueue = queryQueue;
     return this;
   };
-  Client.prototype.query = function(...args) {
+  Client.prototype.query = function (...args) {
     // query (text: string) => Promise
     // query (text: string, values: Array<mixed>) => Promise
     if (!args[1] || (Array.isArray(args[1]) && !args[2]))
@@ -34,19 +35,29 @@ const createMockClientWithOptions = mockedOptions => {
       });
     // query (text: string, values: Array<mixed>, callback: Function) => void
     if (args[2] && typeof args[2] === 'function') {
-      this.activeQuery.callback = args[2];
+      if (this.queryQueue) {
+        this.queryQueue[0] = { callback: args[2] };
+      } else {
+        this.activeQuery.callback = args[2];
+      }
       setTimeout(() => {
-        error && this.activeQuery.callback(error, null);
-        !error && this.activeQuery.callback(null, createMockedResponse(rowCount));
+        let activeQuery = this.activeQuery ? this.activeQuery : this.queryQueue[0];
+        error && activeQuery.callback(error, null);
+        !error && activeQuery.callback(null, createMockedResponse(rowCount));
       }, 20);
       return undefined;
     }
     // query (text: string, callback: Function) => void
     if (args[1] && typeof args[1] === 'function') {
-      this.activeQuery.callback = args[1];
+      if (this.queryQueue) {
+        this.queryQueue[0] = { callback: args[1] };
+      } else {
+        this.activeQuery.callback = args[1];
+      }
       setTimeout(() => {
-        error && this.activeQuery.callback(error, null);
-        !error && this.activeQuery.callback(null, createMockedResponse(rowCount));
+        let activeQuery = this.activeQuery ? this.activeQuery : this.queryQueue[0];
+        error && activeQuery.callback(error, null);
+        !error && activeQuery.callback(null, createMockedResponse(rowCount));
       }, 20);
       return undefined;
     }

@@ -50,16 +50,25 @@ const createSpanFromPgResponse = (currentSpan, error, result) => {
   SpansContainer.addSpan(span);
 };
 
+function findActiveQuery(queryQueue = [], cb) {
+  return queryQueue.find((activeQuery) => activeQuery.callback === cb);
+}
+
 function queryAfterHook(args, originalFnResult, extenderContext) {
   // If the query function doesn't receive a callback, it will return a Promise
   const { currentSpan } = extenderContext;
   if (args[1] instanceof Function || args[2] instanceof Function) {
-    hook(this.activeQuery, 'callback', {
-      beforeHook: (args) => {
-        const [error, result] = args;
-        createSpanFromPgResponse(currentSpan, error, result);
-      },
-    });
+    const callback = args[1] instanceof Function ? args[1] : args[2];
+    let activeQuery = this.activeQuery || findActiveQuery(this.queryQueue, callback);
+    if (activeQuery) {
+      hook(activeQuery, 'callback', {
+        beforeHook: (args) => {
+          const [error, result] = args;
+          createSpanFromPgResponse(currentSpan, error, result);
+        },
+      });
+    }
+    !activeQuery && logger.warn('No active query found, Not instrumenting pg response!');
   } else {
     if (originalFnResult instanceof Promise) {
       originalFnResult.then(
