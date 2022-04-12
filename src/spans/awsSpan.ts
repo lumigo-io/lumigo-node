@@ -125,7 +125,6 @@ const getEnvsForSpan = (hasError: boolean = false): string =>
 export const getFunctionSpan = (lambdaEvent: {}, lambdaContext: Context): FunctionSpan => {
   const transactionId = getCurrentTransactionId();
   const basicSpan = getBasicSpan(transactionId);
-  const manualTraces = ManualTracer.getTraces();
   const info = { ...basicSpan.info, ...getEventInfo(lambdaEvent) };
   const type = FUNCTION_SPAN;
 
@@ -144,7 +143,6 @@ export const getFunctionSpan = (lambdaEvent: {}, lambdaContext: Context): Functi
   const startSpan = {
     ...basicSpan,
     info,
-    manualTraces,
     id,
     envs,
     name,

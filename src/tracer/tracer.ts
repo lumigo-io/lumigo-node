@@ -35,6 +35,7 @@ import { isAwsContext } from '../guards/awsGuards';
 import * as logger from '../logger';
 import type { TracerOptions } from './tracer-options.interface';
 import { TraceOptions } from './trace-options.type';
+import { ManualTracer } from '../utils/manualTracing';
 
 export const HANDLER_CALLBACKED = 'handler_callbacked';
 export const ASYNC_HANDLER_RESOLVED = 'async_handler_resolved';
@@ -141,7 +142,8 @@ export const endTrace = async (functionSpan, handlerReturnValue) => {
 export const sendEndTraceSpans = async (functionSpan, handlerReturnValue) => {
   const endFunctionSpan = getEndFunctionSpan(functionSpan, handlerReturnValue);
   const spans = [...SpansContainer.getSpans(), endFunctionSpan];
-
+  functionSpan.manualTraces = ManualTracer.getTraces();
+  ManualTracer.clear();
   await sendSpans(spans);
   logLeakedSpans(spans);
 

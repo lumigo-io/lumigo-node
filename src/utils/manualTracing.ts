@@ -1,10 +1,10 @@
 export type ManualTrace = {
-  name: string,
-  startTime: number,
-  endTime?: number,
+  name: string;
+  startTime: number;
+  endTime?: number;
 };
 
-const closedManualTraces: ManualTrace[] = [];
+let closedManualTraces: ManualTrace[] = [];
 // eslint-disable-next-line no-undef
 const openManualTraces = new Map<string, ManualTrace>();
 
@@ -13,12 +13,17 @@ export class ManualTracer {
     return closedManualTraces;
   }
 
+  static clear() {
+    openManualTraces.clear();
+    closedManualTraces=[];
+  }
+
   static startTrace = (name: string): void => {
-      const tracerTimer: ManualTrace = {
-        name,
-        startTime: new Date().getTime(),
-      }
-    openManualTraces.set(name, tracerTimer)
+    const tracerTimer: ManualTrace = {
+      name,
+      startTime: new Date().getTime(),
+    };
+    openManualTraces.set(name, tracerTimer);
   };
 
   static stopTrace = (name: string): void => {
@@ -53,26 +58,3 @@ export class ManualTracer {
     return descriptor;
   }
 }
-
-
-
-class A {
-  @ManualTracer.traceSync
-  static func(){
-    let x = 0;
-    for(let i = 0 ; i < 10000000; i++){
-      x = x + i;
-    }
-    return x;
-  }
-}
-(async ()=>{
-  A.func()
-  A.func()
-  A.func()
-  console.log('spans', closedManualTraces);
-})()
-
-
-
-
