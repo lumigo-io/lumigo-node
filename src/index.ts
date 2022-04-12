@@ -5,6 +5,7 @@ import startHooks from './hooks';
 import { HttpSpansAgent } from './httpSpansAgent';
 import * as logger from './logger';
 import * as LumigoLogger from './lumigoLogger';
+import { ManualTracer } from './utils/manualTracing';
 
 logger.debug('Tracer imported');
 
@@ -30,6 +31,10 @@ function initTracer(options?: TracerOptions): Tracer {
 
   return {
     trace: trace({ ...traceOptions, token }),
+    startTrace: ManualTracer.startTrace,
+    stopTrace: ManualTracer.stopTrace,
+    traceAsync: ManualTracer.traceAsync,
+    traceSync: ManualTracer.traceSync,
     addExecutionTag: ExecutionTags.addTag,
     info: LumigoLogger.info,
     warn: LumigoLogger.warn,
@@ -61,5 +66,9 @@ Object.assign(module.exports, {
   info: LumigoLogger.info,
   warn: LumigoLogger.warn,
   error: LumigoLogger.error,
+  startTrace: ManualTracer.startTrace,
+  stopTrace: ManualTracer.stopTrace,
+  traceAsync: ManualTracer.traceAsync,
+  traceSync: ManualTracer.traceSync,
   initTracer,
 });
