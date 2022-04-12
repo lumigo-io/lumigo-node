@@ -15,7 +15,7 @@ export class ManualTracer {
 
   static clear() {
     openManualTraces.clear();
-    closedManualTraces=[];
+    closedManualTraces = [];
   }
 
   static startTrace = (name: string): void => {
