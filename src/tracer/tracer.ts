@@ -236,6 +236,7 @@ const setupTimeoutTimer = () => {
         logger.debug('Invocation is about to timeout, sending trace data.');
         const spans = SpansContainer.getSpans();
         SpansContainer.clearSpans();
+        ManualTracer.clear();
         await sendSpans(spans);
       }, remainingTimeInMillis - timeoutBuffer);
     }
