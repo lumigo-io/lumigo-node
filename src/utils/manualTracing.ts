@@ -10,7 +10,7 @@ const openManualTraces = new Map<string, ManualTrace>();
 
 export class ManualTracer {
   static getTraces() {
-    return closedManualTraces;
+    return [...closedManualTraces];
   }
 
   static clear() {
@@ -58,3 +58,6 @@ export class ManualTracer {
     return descriptor;
   }
 }
+
+
+
