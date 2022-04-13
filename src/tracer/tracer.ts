@@ -33,7 +33,6 @@ import { Http } from '../hooks/http';
 import { runOneTimeWrapper } from '../utils/functionUtils';
 import { isAwsContext } from '../guards/awsGuards';
 import * as logger from '../logger';
-import type { TracerOptions } from './tracer-options.interface';
 import { TraceOptions } from './trace-options.type';
 import { ManualTracer } from '../utils/manualTracing';
 
@@ -141,8 +140,8 @@ export const endTrace = async (functionSpan, handlerReturnValue) => {
 
 export const sendEndTraceSpans = async (functionSpan, handlerReturnValue) => {
   const endFunctionSpan = getEndFunctionSpan(functionSpan, handlerReturnValue);
+  endFunctionSpan.manualTraces = ManualTracer.getTraces();
   const spans = [...SpansContainer.getSpans(), endFunctionSpan];
-  functionSpan.manualTraces = ManualTracer.getTraces();
   ManualTracer.clear();
   await sendSpans(spans);
   logLeakedSpans(spans);
