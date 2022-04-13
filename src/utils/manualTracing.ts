@@ -37,9 +37,9 @@ export class ManualTracer {
     const originalMethod = descriptor.value;
 
     descriptor.value = async function (...args: any[]) {
-      ManualTracer.startTrace(target.name);
+      ManualTracer.startTrace(propertyKey);
       const result = await originalMethod.apply(target, args);
-      ManualTracer.stopTrace(target.name);
+      ManualTracer.stopTrace(propertyKey);
       return result;
     };
 
@@ -59,5 +59,25 @@ export class ManualTracer {
   }
 }
 
+class ImageUtils {
 
+  @ManualTracer.traceSync
+  static resizeImage(){
+    let x = 0;
+    for (let i = 0; i < 1000000000; i++){
+      x=x+1;
+    }
+  }
 
+  @ManualTracer.traceAsync
+  static async detectFaces(){
+    await setTimeout(()=>{
+      console.log("Detected faces");
+    }, 2000);
+  }
+}
+
+(async ()=>{
+  await ImageUtils.detectFaces()
+
+})()
