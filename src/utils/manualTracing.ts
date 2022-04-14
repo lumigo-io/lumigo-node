@@ -58,26 +58,3 @@ export class ManualTracer {
     return descriptor;
   }
 }
-
-class ImageUtils {
-
-  @ManualTracer.traceSync
-  static resizeImage(){
-    let x = 0;
-    for (let i = 0; i < 1000000000; i++){
-      x=x+1;
-    }
-  }
-
-  @ManualTracer.traceAsync
-  static async detectFaces(){
-    await setTimeout(()=>{
-      console.log("Detected faces");
-    }, 2000);
-  }
-}
-
-(async ()=>{
-  await ImageUtils.detectFaces()
-
-})()
