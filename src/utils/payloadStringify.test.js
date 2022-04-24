@@ -4,6 +4,7 @@ import {
   LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP,
   LUMIGO_WHITELIST_KEYS_REGEXES,
 } from '../utils';
+import * as utils from '../utils';
 
 describe('payloadStringify', () => {
   test('payloadStringify -> simple flow -> object', () => {
@@ -75,6 +76,15 @@ describe('payloadStringify', () => {
 
     const result = payloadStringify(payload, 0);
 
+    expect(result).toEqual('');
+  });
+
+  test('payloadStringify -> prune Circular JSON ', () => {
+    utils.setDebug();
+    utils.setStoreLogsOn();
+    const payload = {b: 3 };
+    payload.b = payload
+    const result = prune(payload);
     expect(result).toEqual('');
   });
 

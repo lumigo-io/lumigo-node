@@ -1,3 +1,4 @@
+import { inspect } from 'util'
 import {
   getEventEntitySize,
   LUMIGO_SECRET_MASKING_REGEX,
@@ -46,7 +47,7 @@ export const whitelistKeysRegexes = () => {
 export const prune = (str, maxLength) => {
   let toPrune = str;
   if (!isString(toPrune)) {
-    logger.warn('Prune was called on a non-string object', toPrune);
+    logger.warn('Prune was called on a non-string object', inspect(toPrune));
     toPrune = '';
   }
   return toPrune.substr(0, maxLength);
