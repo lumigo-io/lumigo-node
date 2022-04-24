@@ -18,7 +18,7 @@ export const LogStore = (() => {
   let duplicateLogsCount = 0;
 
   const addLog = (type, message, object) => {
-    const logObj = JSON.stringify({ type, message, object });
+    const logObj = JSON.stringify({ type, message, object }, removeCircleFromJson());
     if (!logSet.has(logObj)) {
       logSet.add(logObj);
     } else {
@@ -64,16 +64,33 @@ export const log = (levelname, message, obj) => {
   }
 };
 
+const removeCircleFromJson = () => {
+  let cache = [];
+  return (key, value) => {
+    if (typeof value === 'object' && value !== null) {
+      // Duplicate reference found, discard key
+      if (cache.includes(value)) return;
+
+      // Store value in our collection
+      cache.push(value);
+    }
+    return value;
+  };
+};
+
 const forceLog = (levelname, message, obj) => {
   const escapedMessage = JSON.stringify(message, null, 0);
   const logMsg = `${LOG_PREFIX} - ${levelname} - ${escapedMessage}`;
   if (obj) {
-    let escapedObject = JSON.stringify(obj, null, 0);
+    let escapedObject = JSON.stringify(obj, removeCircleFromJson(), 0);
     if (obj.stack && obj.message) {
-      escapedObject = JSON.stringify({
-        message: obj.message,
-        stack: obj.stack,
-      });
+      escapedObject = JSON.stringify(
+        {
+          message: obj.message,
+          stack: obj.stack,
+        },
+        removeCircleFromJson()
+      );
     }
     // eslint-disable-next-line
     console.log(logMsg, escapedObject);

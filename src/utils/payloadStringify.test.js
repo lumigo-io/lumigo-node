@@ -82,8 +82,8 @@ describe('payloadStringify', () => {
   test('payloadStringify -> prune Circular JSON ', () => {
     utils.setDebug();
     utils.setStoreLogsOn();
-    const payload = {b: 3 };
-    payload.b = payload
+    const payload = { b: 3 };
+    payload.b = payload;
     const result = prune(payload);
     expect(result).toEqual('');
   });
