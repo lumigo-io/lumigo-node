@@ -2,22 +2,22 @@ Layers runtime: nodejs14.x
 ----
 | Region | ARN |
 | --- | --- |
-|US East (N. Virginia)  `us-east-1`|`arn:aws:lambda:us-east-1:114300393969:layer:lumigo-node-tracer:197`|
-|US East (Ohio)  `us-east-2`|`arn:aws:lambda:us-east-2:114300393969:layer:lumigo-node-tracer:197`|
-|US West (N. California)  `us-west-1`|`arn:aws:lambda:us-west-1:114300393969:layer:lumigo-node-tracer:197`|
-|US West (Oregon)  `us-west-2`|`arn:aws:lambda:us-west-2:114300393969:layer:lumigo-node-tracer:200`|
-|Canada (Central)  `ca-central-1`|`arn:aws:lambda:ca-central-1:114300393969:layer:lumigo-node-tracer:197`|
-|EU (Stockholm)  `eu-north-1`|`arn:aws:lambda:eu-north-1:114300393969:layer:lumigo-node-tracer:197`|
-|EU (Ireland)  `eu-west-1`|`arn:aws:lambda:eu-west-1:114300393969:layer:lumigo-node-tracer:197`|
-|EU (London)  `eu-west-2`|`arn:aws:lambda:eu-west-2:114300393969:layer:lumigo-node-tracer:197`|
-|EU (Paris)  `eu-west-3`|`arn:aws:lambda:eu-west-3:114300393969:layer:lumigo-node-tracer:197`|
-|EU (Frankfurt)  `eu-central-1`|`arn:aws:lambda:eu-central-1:114300393969:layer:lumigo-node-tracer:197`|
-|Asia Pacific (Tokyo)  `ap-northeast-1`|`arn:aws:lambda:ap-northeast-1:114300393969:layer:lumigo-node-tracer:197`|
-|Asia Pacific (Seoul)  `ap-northeast-2`|`arn:aws:lambda:ap-northeast-2:114300393969:layer:lumigo-node-tracer:197`|
-|Asia Pacific (Singapore)  `ap-southeast-1`|`arn:aws:lambda:ap-southeast-1:114300393969:layer:lumigo-node-tracer:197`|
-|Asia Pacific (Sydney)  `ap-southeast-2`|`arn:aws:lambda:ap-southeast-2:114300393969:layer:lumigo-node-tracer:197`|
-|Asia Pacific (Hong Kong)  `ap-east-1`|`arn:aws:lambda:ap-east-1:114300393969:layer:lumigo-node-tracer:182`|
-|Asia Pacific (Mumbai)  `ap-south-1`|`arn:aws:lambda:ap-south-1:114300393969:layer:lumigo-node-tracer:197`|
-|South America (São Paulo)  `sa-east-1`|`arn:aws:lambda:sa-east-1:114300393969:layer:lumigo-node-tracer:197`|
-|Middle East (Bahrain)  `me-south-1`|`arn:aws:lambda:me-south-1:114300393969:layer:lumigo-node-tracer:182`|
-|Africa (Cape Town)  `af-south-1`|`arn:aws:lambda:af-south-1:114300393969:layer:lumigo-node-tracer:74`|
+|US East (N. Virginia)  `us-east-1`|`arn:aws:lambda:us-east-1:114300393969:layer:lumigo-node-tracer:198`|
+|US East (Ohio)  `us-east-2`|`arn:aws:lambda:us-east-2:114300393969:layer:lumigo-node-tracer:198`|
+|US West (N. California)  `us-west-1`|`arn:aws:lambda:us-west-1:114300393969:layer:lumigo-node-tracer:198`|
+|US West (Oregon)  `us-west-2`|`arn:aws:lambda:us-west-2:114300393969:layer:lumigo-node-tracer:201`|
+|Canada (Central)  `ca-central-1`|`arn:aws:lambda:ca-central-1:114300393969:layer:lumigo-node-tracer:198`|
+|EU (Stockholm)  `eu-north-1`|`arn:aws:lambda:eu-north-1:114300393969:layer:lumigo-node-tracer:198`|
+|EU (Ireland)  `eu-west-1`|`arn:aws:lambda:eu-west-1:114300393969:layer:lumigo-node-tracer:198`|
+|EU (London)  `eu-west-2`|`arn:aws:lambda:eu-west-2:114300393969:layer:lumigo-node-tracer:198`|
+|EU (Paris)  `eu-west-3`|`arn:aws:lambda:eu-west-3:114300393969:layer:lumigo-node-tracer:198`|
+|EU (Frankfurt)  `eu-central-1`|`arn:aws:lambda:eu-central-1:114300393969:layer:lumigo-node-tracer:198`|
+|Asia Pacific (Tokyo)  `ap-northeast-1`|`arn:aws:lambda:ap-northeast-1:114300393969:layer:lumigo-node-tracer:198`|
+|Asia Pacific (Seoul)  `ap-northeast-2`|`arn:aws:lambda:ap-northeast-2:114300393969:layer:lumigo-node-tracer:198`|
+|Asia Pacific (Singapore)  `ap-southeast-1`|`arn:aws:lambda:ap-southeast-1:114300393969:layer:lumigo-node-tracer:198`|
+|Asia Pacific (Sydney)  `ap-southeast-2`|`arn:aws:lambda:ap-southeast-2:114300393969:layer:lumigo-node-tracer:198`|
+|Asia Pacific (Hong Kong)  `ap-east-1`|`arn:aws:lambda:ap-east-1:114300393969:layer:lumigo-node-tracer:183`|
+|Asia Pacific (Mumbai)  `ap-south-1`|`arn:aws:lambda:ap-south-1:114300393969:layer:lumigo-node-tracer:198`|
+|South America (São Paulo)  `sa-east-1`|`arn:aws:lambda:sa-east-1:114300393969:layer:lumigo-node-tracer:198`|
+|Middle East (Bahrain)  `me-south-1`|`arn:aws:lambda:me-south-1:114300393969:layer:lumigo-node-tracer:183`|
+|Africa (Cape Town)  `af-south-1`|`arn:aws:lambda:af-south-1:114300393969:layer:lumigo-node-tracer:75`|
