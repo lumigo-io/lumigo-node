@@ -191,20 +191,20 @@ export const parseS3Event = (event: S3Event) => {
       }
     }
 
+
     if (rec?.s3?.bucket != null) {
-      newS3RecordEvent.s3.bucket = {} as S3EventRecord['s3']['bucket'];
-
-      for (const key of S3_BUCKET_KEYS_ORDER) {
-        newS3RecordEvent.s3.bucket[key] = rec.s3.bucket[key];
-      }
-    }
-
-      if (rec?.s3?.bucket != null) {
-        newS3RecordEvent.s3.object = {} as S3EventRecord['s3']['object'];
+        newS3RecordEvent.s3 = {
+          bucket: {},
+          object: {},
+        } as S3EventRecord['s3'];
 
         for (const key of S3_OBJECT_KEYS_ORDER) {
           newS3RecordEvent.s3.object[key] = rec.s3.object[key];
         }
+
+      for (const key of S3_BUCKET_KEYS_ORDER) {
+        newS3RecordEvent.s3.bucket[key] = rec.s3.bucket[key];
+      }
       }
 
     newS3Event['Records'].push(newS3RecordEvent);
