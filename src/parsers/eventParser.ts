@@ -1,6 +1,14 @@
 import * as logger from '../logger';
 import { getEnvVarAsList, isScrubKnownServicesOn } from '../utils';
-import { APIGatewayEvent, APIGatewayProxyEventV2, SNSEvent } from 'aws-lambda';
+import {
+  APIGatewayEvent,
+  APIGatewayProxyEventV2,
+  CloudFrontEvent,
+  DynamoDBStreamEvent,
+  S3Event, S3EventRecord,
+  SNSEvent,
+  SQSEvent,
+} from 'aws-lambda';
 
 const API_GW_KEYS_ORDER = getEnvVarAsList('LUMIGO_API_GW_KEYS_ORDER', [
   'version',
@@ -75,41 +83,27 @@ export const isSnsEvent = (event): event is SNSEvent => {
   );
 };
 
-export const isSqsEvent = (event) => {
+export const isSqsEvent = (event): event is SQSEvent => {
   return (
-    event != null &&
-    event.Records != null &&
-    event.Records[0] != null &&
-    event.Records[0].eventSource === 'aws:sqs'
+    event?.Records[0]?.eventSource === 'aws:sqs'
   );
 };
 
-export const isS3Event = (event) => {
+export const isS3Event = (event): event is S3Event => {
   return (
-    event != null &&
-    event.Records != null &&
-    event.Records[0] != null &&
-    event.Records[0].eventSource === 'aws:s3'
+    event?.Records?.[0]?.eventSource === 'aws:s3'
   );
 };
 
-const isDDBEvent = (event) => {
+const isDDBEvent = (event): event is DynamoDBStreamEvent => {
   return (
-    event != null &&
-    event.Records != null &&
-    event.Records[0] != null &&
     event.Records[0].eventSource === 'aws:dynamodb'
   );
 };
 
-export const isCloudfrontEvent = (event) => {
+export const isCloudfrontEvent = (event): event is CloudFrontEvent => {
   return (
-    event != null &&
-    event.Records != null &&
-    event.Records[0] != null &&
-    event.Records[0].cf != null &&
-    event.Records[0].cf.config != null &&
-    event.Records[0].cf.config.distributionId != null
+    event?.Records?.[0]?.cf?.config?.distributionId != null
   );
 };
 
@@ -182,34 +176,40 @@ export const parseSqsEvent = (event) => {
   return newSqsEvent;
 };
 
-export const parseS3Event = (event) => {
-  const newS3Event = {};
-  newS3Event['Records'] = [];
+export const parseS3Event = (event: S3Event) => {
+  const newS3Event: S3Event = {
+    Records: [],
+  };
+
   // Add order keys
   for (const rec of event['Records']) {
-    const newS3RecordEvent = {};
+    const newS3RecordEvent: S3EventRecord = {} as S3EventRecord;
+
     for (const key of S3_KEYS_ORDER) {
-      if (rec.hasOwnProperty(key) != null) {
+      if (rec?.[key] != null) {
         newS3RecordEvent[key] = rec[key];
       }
     }
-    if (rec.hasOwnProperty('s3')) {
-      newS3RecordEvent.s3 = {};
-      if (rec.s3.hasOwnProperty('bucket')) {
-        newS3RecordEvent.s3.bucket = {};
-        for (const key of S3_BUCKET_KEYS_ORDER) {
-          newS3RecordEvent.s3.bucket[key] = rec.s3.bucket[key];
-        }
+
+    if (rec?.s3?.bucket != null) {
+      newS3RecordEvent.s3.bucket = {} as S3EventRecord['s3']['bucket'];
+
+      for (const key of S3_BUCKET_KEYS_ORDER) {
+        newS3RecordEvent.s3.bucket[key] = rec.s3.bucket[key];
       }
-      if (rec.s3.hasOwnProperty('object')) {
-        newS3RecordEvent.s3.object = {};
+    }
+
+      if (rec?.s3?.bucket != null) {
+        newS3RecordEvent.s3.object = {} as S3EventRecord['s3']['object'];
+
         for (const key of S3_OBJECT_KEYS_ORDER) {
           newS3RecordEvent.s3.object[key] = rec.s3.object[key];
         }
       }
-    }
+
     newS3Event['Records'].push(newS3RecordEvent);
   }
+
   return newS3Event;
 };
 
@@ -243,15 +243,19 @@ export const parseEvent = (event) => {
     if (isApiGwEvent(event)) {
       return parseApiGwEvent(event);
     }
+
     if (isSnsEvent(event)) {
       return parseSnsEvent(event);
     }
+
     if (isSqsEvent(event)) {
       return parseSqsEvent(event);
     }
+
     if (isS3Event(event)) {
       return parseS3Event(event);
     }
+
     if (isCloudfrontEvent(event)) {
       return parseCloudfrontEvent(event);
     }
