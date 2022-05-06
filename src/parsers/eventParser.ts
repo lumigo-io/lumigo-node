@@ -26,11 +26,11 @@ const API_GW_KEYS_ORDER = getEnvVarAsList('LUMIGO_API_GW_KEYS_ORDER', [
 ]);
 const API_GW_PREFIX_KEYS_HEADERS_DELETE_KEYS = getEnvVarAsList(
   'LUMIGO_API_GW_PREFIX_KEYS_HEADERS_DELETE_KEYS',
-  ['cookie', 'x-amz', 'accept', 'cloudfront', 'via', 'x-forwarded', 'sec-']
+  ['cookie', 'x-amz', 'accept', 'cloudfront', 'via', 'x-forwarded', 'sec-'],
 );
 const API_GW_REQUEST_CONTEXT_FILTER_KEYS = getEnvVarAsList(
   'LUMIGO_API_GW_REQUEST_CONTEXT_FILTER_KEYS',
-  ['authorizer', 'http', 'requestid']
+  ['authorizer', 'http', 'requestid'],
 );
 const API_GW_KEYS_DELETE_KEYS = getEnvVarAsList('LUMIGO_API_GW_KEYS_DELETE_KEYS', [
   'multiValueHeaders',
@@ -191,21 +191,20 @@ export const parseS3Event = (event: S3Event) => {
       }
     }
 
-
     if (rec?.s3?.bucket != null) {
-        newS3RecordEvent.s3 = {
-          bucket: {},
-          object: {},
-        } as S3EventRecord['s3'];
+      newS3RecordEvent.s3 = {
+        bucket: {},
+        object: {},
+      } as S3EventRecord['s3'];
 
-        for (const key of S3_OBJECT_KEYS_ORDER) {
-          newS3RecordEvent.s3.object[key] = rec.s3.object[key];
-        }
+      for (const key of S3_OBJECT_KEYS_ORDER) {
+        newS3RecordEvent.s3.object[key] = rec.s3.object[key];
+      }
 
       for (const key of S3_BUCKET_KEYS_ORDER) {
         newS3RecordEvent.s3.bucket[key] = rec.s3.bucket[key];
       }
-      }
+    }
 
     newS3Event['Records'].push(newS3RecordEvent);
   }
