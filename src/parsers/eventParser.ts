@@ -216,6 +216,7 @@ export const parseS3Event = (event: S3Event) => {
 export const parseCloudfrontEvent = (event) => {
   const newCloudfrontEvent = {};
   newCloudfrontEvent['Records'] = [];
+
   // Add order keys
   for (const rec of event['Records']) {
     const cfRecord = rec['cf'] || {};
@@ -226,15 +227,19 @@ export const parseCloudfrontEvent = (event) => {
       }
     }
     if (cfRecord.hasOwnProperty('request')) {
+      // @ts-ignore
       newCloudfrontRecordEvent.cf.request = {};
       for (const key of CLOUDFRONT_REQUEST_KEYS_ORDER) {
         if (cfRecord.request.hasOwnProperty(key)) {
+          // @ts-ignore
           newCloudfrontRecordEvent.cf.request[key] = cfRecord.request[key];
         }
       }
     }
+    // @ts-ignore
     newCloudfrontEvent['Records'].push(newCloudfrontRecordEvent);
   }
+
   return newCloudfrontEvent;
 };
 
