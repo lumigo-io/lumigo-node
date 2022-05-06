@@ -97,7 +97,7 @@ export const isS3Event = (event): event is S3Event => {
 
 const isDDBEvent = (event): event is DynamoDBStreamEvent => {
   return (
-    event.Records[0].eventSource === 'aws:dynamodb'
+    event?.Records?.[0]?.eventSource === 'aws:dynamodb'
   );
 };
 
