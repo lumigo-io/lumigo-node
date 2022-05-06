@@ -5,7 +5,8 @@ import {
   APIGatewayProxyEventV2,
   CloudFrontEvent,
   DynamoDBStreamEvent,
-  S3Event, S3EventRecord,
+  S3Event,
+  S3EventRecord,
   SNSEvent,
   SQSEvent,
 } from 'aws-lambda';
@@ -26,11 +27,11 @@ const API_GW_KEYS_ORDER = getEnvVarAsList('LUMIGO_API_GW_KEYS_ORDER', [
 ]);
 const API_GW_PREFIX_KEYS_HEADERS_DELETE_KEYS = getEnvVarAsList(
   'LUMIGO_API_GW_PREFIX_KEYS_HEADERS_DELETE_KEYS',
-  ['cookie', 'x-amz', 'accept', 'cloudfront', 'via', 'x-forwarded', 'sec-'],
+  ['cookie', 'x-amz', 'accept', 'cloudfront', 'via', 'x-forwarded', 'sec-']
 );
 const API_GW_REQUEST_CONTEXT_FILTER_KEYS = getEnvVarAsList(
   'LUMIGO_API_GW_REQUEST_CONTEXT_FILTER_KEYS',
-  ['authorizer', 'http', 'requestid'],
+  ['authorizer', 'http', 'requestid']
 );
 const API_GW_KEYS_DELETE_KEYS = getEnvVarAsList('LUMIGO_API_GW_KEYS_DELETE_KEYS', [
   'multiValueHeaders',
@@ -71,40 +72,27 @@ const CLOUDFRONT_REQUEST_KEYS_ORDER = getEnvVarAsList('LUMIGO_CLOUDFRONT_REQUEST
 ]);
 
 export const isApiGwEvent = (event): event is APIGatewayEvent | APIGatewayProxyEventV2 => {
-  return (
-    event?.requestContext?.domainName != null &&
-    event?.requestContext?.requestId != null
-  );
+  return event?.requestContext?.domainName != null && event?.requestContext?.requestId != null;
 };
 
 export const isSnsEvent = (event): event is SNSEvent => {
-  return (
-    event?.Records?.[0]?.EventSource === 'aws:sns'
-  );
+  return event?.Records?.[0]?.EventSource === 'aws:sns';
 };
 
 export const isSqsEvent = (event): event is SQSEvent => {
-  return (
-    event?.Records[0]?.eventSource === 'aws:sqs'
-  );
+  return event?.Records[0]?.eventSource === 'aws:sqs';
 };
 
 export const isS3Event = (event): event is S3Event => {
-  return (
-    event?.Records?.[0]?.eventSource === 'aws:s3'
-  );
+  return event?.Records?.[0]?.eventSource === 'aws:s3';
 };
 
 const isDDBEvent = (event): event is DynamoDBStreamEvent => {
-  return (
-    event?.Records?.[0]?.eventSource === 'aws:dynamodb'
-  );
+  return event?.Records?.[0]?.eventSource === 'aws:dynamodb';
 };
 
 export const isCloudfrontEvent = (event): event is CloudFrontEvent => {
-  return (
-    event?.Records?.[0]?.cf?.config?.distributionId != null
-  );
+  return event?.Records?.[0]?.cf?.config?.distributionId != null;
 };
 
 export const parseApiGwEvent = (event) => {
