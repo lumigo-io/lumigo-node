@@ -3,7 +3,7 @@ import { getEnvVarAsList, isScrubKnownServicesOn } from '../utils';
 import {
   APIGatewayEvent,
   APIGatewayProxyEventV2,
-  CloudFrontEvent,
+  CloudFrontEvent, CloudFrontRequestEvent,
   DynamoDBStreamEvent,
   S3Event,
   S3EventRecord,
@@ -91,7 +91,7 @@ const isDDBEvent = (event): event is DynamoDBStreamEvent => {
   return event?.Records?.[0]?.eventSource === 'aws:dynamodb';
 };
 
-export const isCloudfrontEvent = (event): event is CloudFrontEvent => {
+export const isCloudfrontEvent = (event): event is CloudFrontRequestEvent => {
   return event?.Records?.[0]?.cf?.config?.distributionId != null;
 };
 
@@ -200,30 +200,32 @@ export const parseS3Event = (event: S3Event) => {
   return newS3Event;
 };
 
-export const parseCloudfrontEvent = (event) => {
-  const newCloudfrontEvent = {};
-  newCloudfrontEvent['Records'] = [];
+export const parseCloudfrontEvent = (event: CloudFrontRequestEvent) => {
+  const newCloudfrontEvent: CloudFrontRequestEvent = {
+    Records: []
+  };
 
   // Add order keys
   for (const rec of event['Records']) {
-    const cfRecord = rec['cf'] || {};
-    const newCloudfrontRecordEvent = { cf: {} };
+    const cfRecord = rec['cf'] || {}  as CloudFrontRequestEvent['Records'][0]['cf'];
+    const newCloudfrontRecordEvent = { cf: {} } as CloudFrontRequestEvent['Records'][0];
+
     for (const key of CLOUDFRONT_KEYS_ORDER) {
       if (cfRecord.hasOwnProperty(key) != null) {
         newCloudfrontRecordEvent.cf[key] = cfRecord[key];
       }
     }
+
     if (cfRecord.hasOwnProperty('request')) {
-      // @ts-ignore
-      newCloudfrontRecordEvent.cf.request = {};
+      newCloudfrontRecordEvent.cf.request  = {} as CloudFrontRequestEvent['Records'][0]['cf']['request'];
+
       for (const key of CLOUDFRONT_REQUEST_KEYS_ORDER) {
-        if (cfRecord.request.hasOwnProperty(key)) {
-          // @ts-ignore
+        if (cfRecord.request?.[key] != null) {
           newCloudfrontRecordEvent.cf.request[key] = cfRecord.request[key];
         }
       }
     }
-    // @ts-ignore
+
     newCloudfrontEvent['Records'].push(newCloudfrontRecordEvent);
   }
 
