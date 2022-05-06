@@ -1,5 +1,6 @@
 import * as logger from '../logger';
 import { getEnvVarAsList, isScrubKnownServicesOn } from '../utils';
+import { APIGatewayEvent, APIGatewayProxyEventV2, SNSEvent } from 'aws-lambda';
 
 const API_GW_KEYS_ORDER = getEnvVarAsList('LUMIGO_API_GW_KEYS_ORDER', [
   'version',
@@ -61,21 +62,16 @@ const CLOUDFRONT_REQUEST_KEYS_ORDER = getEnvVarAsList('LUMIGO_CLOUDFRONT_REQUEST
   'uri',
 ]);
 
-export const isApiGwEvent = (event) => {
+export const isApiGwEvent = (event): event is APIGatewayEvent | APIGatewayProxyEventV2 => {
   return (
-    event != null &&
-    event.requestContext != null &&
-    event.requestContext.domainName != null &&
-    event.requestContext.requestId != null
+    event?.requestContext?.domainName != null &&
+    event?.requestContext?.requestId != null
   );
 };
 
-export const isSnsEvent = (event) => {
+export const isSnsEvent = (event): event is SNSEvent => {
   return (
-    event != null &&
-    event.Records != null &&
-    event.Records[0] != null &&
-    event.Records[0].EventSource === 'aws:sns'
+    event?.Records?.[0]?.EventSource === 'aws:sns'
   );
 };
 
