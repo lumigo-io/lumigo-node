@@ -1,6 +1,4 @@
-import * as logger from '../logger';
-import { getEnvVarAsList, isScrubKnownServicesOn } from '../utils';
-import {
+import type {
   APIGatewayEvent,
   APIGatewayProxyEventV2,
   CloudFrontRequestEvent,
@@ -10,6 +8,9 @@ import {
   SNSEvent,
   SQSEvent,
 } from 'aws-lambda';
+
+import * as logger from '../logger';
+import { getEnvVarAsList, isScrubKnownServicesOn } from '../utils';
 
 const API_GW_KEYS_ORDER = getEnvVarAsList('LUMIGO_API_GW_KEYS_ORDER', [
   'version',
