@@ -217,7 +217,8 @@ export const parseCloudfrontEvent = (event: CloudFrontRequestEvent) => {
     }
 
     if (cfRecord.hasOwnProperty('request')) {
-      newCloudfrontRecordEvent.cf.request = {} as CloudFrontRequestEvent['Records'][0]['cf']['request'];
+      newCloudfrontRecordEvent.cf.request =
+        {} as CloudFrontRequestEvent['Records'][0]['cf']['request'];
 
       for (const key of CLOUDFRONT_REQUEST_KEYS_ORDER) {
         if (cfRecord.request?.[key] != null) {
