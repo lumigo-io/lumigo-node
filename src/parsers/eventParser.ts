@@ -3,9 +3,7 @@ import { getEnvVarAsList, isScrubKnownServicesOn } from '../utils';
 import {
   APIGatewayEvent,
   APIGatewayProxyEventV2,
-  CloudFrontEvent,
   CloudFrontRequestEvent,
-  CloudFrontRequestEventRecord,
   DynamoDBStreamEvent,
   S3Event,
   S3EventRecord,
@@ -209,7 +207,7 @@ export const parseCloudfrontEvent = (event: CloudFrontRequestEvent) => {
 
   // Add order keys
   for (const rec of event['Records']) {
-    const cfRecord = rec['cf'] || ({} as CloudFrontRequestEventRecord['cf']);
+    const cfRecord = rec['cf'] || ({} as CloudFrontRequestEvent['Records'][0]['cf']);
     const newCloudfrontRecordEvent = { cf: {} } as CloudFrontRequestEvent['Records'][0];
 
     for (const key of CLOUDFRONT_KEYS_ORDER) {
@@ -219,7 +217,7 @@ export const parseCloudfrontEvent = (event: CloudFrontRequestEvent) => {
     }
 
     if (cfRecord.hasOwnProperty('request')) {
-      newCloudfrontRecordEvent.cf.request = {} as CloudFrontRequestEventRecord['cf']['request'];
+      newCloudfrontRecordEvent.cf.request = {} as CloudFrontRequestEvent['Records'][0]['cf']['request'];
 
       for (const key of CLOUDFRONT_REQUEST_KEYS_ORDER) {
         if (cfRecord.request?.[key] != null) {
