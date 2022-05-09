@@ -219,8 +219,7 @@ export const parseCloudfrontEvent = (event: CloudFrontRequestEvent) => {
     }
 
     if (cfRecord?.request != null) {
-      newCloudfrontRecordEvent.cf.request =
-        {} as CloudFrontRequestEventRecord['cf']['request'];
+      newCloudfrontRecordEvent.cf.request = {} as CloudFrontRequestEventRecord['cf']['request'];
 
       for (const key of CLOUDFRONT_REQUEST_KEYS_ORDER) {
         if (cfRecord.request?.[key] != null) {
