@@ -213,16 +213,16 @@ export const parseCloudfrontEvent = (event: CloudFrontRequestEvent) => {
     const newCloudfrontRecordEvent = { cf: {} } as CloudFrontRequestEvent['Records'][0];
 
     for (const key of CLOUDFRONT_KEYS_ORDER) {
-      if (cfRecord.hasOwnProperty(key) != null) {
+      if (cfRecord?.[key] !== undefined) {
         newCloudfrontRecordEvent.cf[key] = cfRecord[key];
       }
     }
 
-    if (cfRecord?.request != null) {
+    if (cfRecord?.request !== undefined) {
       newCloudfrontRecordEvent.cf.request = {} as CloudFrontRequestEventRecord['cf']['request'];
 
       for (const key of CLOUDFRONT_REQUEST_KEYS_ORDER) {
-        if (cfRecord.request?.[key] != null) {
+        if (cfRecord.request?.[key] !== undefined) {
           newCloudfrontRecordEvent.cf.request[key] = cfRecord.request[key];
         }
       }
