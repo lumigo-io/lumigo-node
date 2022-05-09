@@ -106,7 +106,7 @@ export const parseApiGwEvent = (event) => {
     }
   }
   // Remove requestContext keys
-  if (event.requestContext !== undefined) {
+  if (event.requestContext != null) {
     parsedEvent['requestContext'] = {};
     for (const rcKey of Object.keys(event.requestContext)) {
       if (API_GW_REQUEST_CONTEXT_FILTER_KEYS.includes(rcKey.toLowerCase())) {
@@ -115,7 +115,7 @@ export const parseApiGwEvent = (event) => {
     }
   }
   // Remove headers keys
-  if (event.headers !== undefined) {
+  if (event.headers != null) {
     parsedEvent['headers'] = {};
     for (const hKey of Object.keys(event.headers)) {
       if (
