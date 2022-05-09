@@ -2,6 +2,7 @@ import type {
   APIGatewayEvent,
   APIGatewayProxyEventV2,
   CloudFrontRequestEvent,
+  CloudFrontRequestEventRecord,
   DynamoDBStreamEvent,
   S3Event,
   S3EventRecord,
@@ -208,7 +209,7 @@ export const parseCloudfrontEvent = (event: CloudFrontRequestEvent) => {
 
   // Add order keys
   for (const rec of event['Records']) {
-    const cfRecord = rec['cf'] || ({} as CloudFrontRequestEvent['Records'][0]['cf']);
+    const cfRecord = rec['cf'] || ({} as CloudFrontRequestEventRecord['cf']);
     const newCloudfrontRecordEvent = { cf: {} } as CloudFrontRequestEvent['Records'][0];
 
     for (const key of CLOUDFRONT_KEYS_ORDER) {
@@ -217,9 +218,9 @@ export const parseCloudfrontEvent = (event: CloudFrontRequestEvent) => {
       }
     }
 
-    if (cfRecord.hasOwnProperty('request')) {
+    if (cfRecord?.request != null) {
       newCloudfrontRecordEvent.cf.request =
-        {} as CloudFrontRequestEvent['Records'][0]['cf']['request'];
+        {} as CloudFrontRequestEventRecord['cf']['request'];
 
       for (const key of CLOUDFRONT_REQUEST_KEYS_ORDER) {
         if (cfRecord.request?.[key] != null) {
