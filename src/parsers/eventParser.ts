@@ -101,7 +101,7 @@ export const parseApiGwEvent = (event) => {
   const parsedEvent = {};
   // Add order keys
   for (const orderKey of API_GW_KEYS_ORDER) {
-    if (event[orderKey] !== undefined) {
+    if (event[orderKey] != null) {
       parsedEvent[orderKey] = event[orderKey];
     }
   }
@@ -157,7 +157,7 @@ export const parseSqsEvent = (event) => {
   for (const rec of event['Records']) {
     const newSqsRecordEvent = {};
     for (const key of SQS_KEYS_ORDER) {
-      if (rec?.[key] !== undefined) {
+      if (rec?.[key] != null) {
         newSqsRecordEvent[key] = rec[key];
       }
     }
