@@ -101,12 +101,12 @@ export const parseApiGwEvent = (event) => {
   const parsedEvent = {};
   // Add order keys
   for (const orderKey of API_GW_KEYS_ORDER) {
-    if (event[orderKey] != null) {
+    if (event[orderKey] !== undefined) {
       parsedEvent[orderKey] = event[orderKey];
     }
   }
   // Remove requestContext keys
-  if (event.requestContext != null) {
+  if (event.requestContext !== undefined) {
     parsedEvent['requestContext'] = {};
     for (const rcKey of Object.keys(event.requestContext)) {
       if (API_GW_REQUEST_CONTEXT_FILTER_KEYS.includes(rcKey.toLowerCase())) {
@@ -115,7 +115,7 @@ export const parseApiGwEvent = (event) => {
     }
   }
   // Remove headers keys
-  if (event.headers != null) {
+  if (event.headers !== undefined) {
     parsedEvent['headers'] = {};
     for (const hKey of Object.keys(event.headers)) {
       if (
@@ -157,7 +157,7 @@ export const parseSqsEvent = (event) => {
   for (const rec of event['Records']) {
     const newSqsRecordEvent = {};
     for (const key of SQS_KEYS_ORDER) {
-      if (rec[key] != null) {
+      if (rec?.[key] !== undefined) {
         newSqsRecordEvent[key] = rec[key];
       }
     }
@@ -176,12 +176,12 @@ export const parseS3Event = (event: S3Event) => {
     const newS3RecordEvent: S3EventRecord = {} as S3EventRecord;
 
     for (const key of S3_KEYS_ORDER) {
-      if (rec?.[key] != null) {
+      if (rec?.[key] !== undefined) {
         newS3RecordEvent[key] = rec[key];
       }
     }
 
-    if (rec?.s3?.bucket != null) {
+    if (rec?.s3?.bucket !== undefined) {
       newS3RecordEvent.s3 = {
         bucket: {},
         object: {},
