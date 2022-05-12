@@ -3,13 +3,12 @@ import { payloadStringify, prune } from '../utils/payloadStringify';
 import { filterObjectKeys, getEventEntitySize } from '../utils';
 
 const normalizeQuery = (query: string | any): string => {
-  if(typeof query === "string")
-    return prune(query, getEventEntitySize())
-  if(typeof query === "object") {
-    const filteredQuery = filterObjectKeys(query, (key) => !key.startsWith("_"));
-    return payloadStringify(filteredQuery)
+  if (typeof query === 'string') return prune(query, getEventEntitySize());
+  if (typeof query === 'object') {
+    const filteredQuery = filterObjectKeys(query, (key) => !key.startsWith('_'));
+    return payloadStringify(filteredQuery);
   }
-}
+};
 
 export const createSqlSpan = (
   transactionId,

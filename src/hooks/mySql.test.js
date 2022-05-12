@@ -68,37 +68,32 @@ describe('mySql', () => {
     });
   });
 
-
-    test('v2 -> hook -> query (text: string, callback: Function) -> sqlObject', (done) => {
+  test('v2 -> hook -> query (text: string, callback: Function) -> sqlObject', (done) => {
     const client = createHookedMySqlV2Client();
 
-              const sql =   {
-  "_events": {},
-  "_eventsCount": 1,
-  "_callSite": {},
-  "_ended": false,
-  "_timer": {
-    "_timeout": null
-  },
-  "sql": "CALL usp_get_pending_requests(?,?,?)",
-  "values": [
-    "6784283985",
-    "0",
-    ""
-  ],
-  "typeCast": true,
-  "nestTables": false,
-  "_resultSet": null,
-  "_results": [],
-  "_fields": [],
-  "_index": 0,
-  "_loadError": null
-}
+    const sql = {
+      _events: {},
+      _eventsCount: 1,
+      _callSite: {},
+      _ended: false,
+      _timer: {
+        _timeout: null,
+      },
+      sql: 'CALL usp_get_pending_requests(?,?,?)',
+      values: ['6784283985', '0', ''],
+      typeCast: true,
+      nestTables: false,
+      _resultSet: null,
+      _results: [],
+      _fields: [],
+      _index: 0,
+      _loadError: null,
+    };
 
-  const sqlObject = {sql}
+    const sqlObject = { sql };
 
-      const expectedQuery =
-        '{"sql":"CALL usp_get_pending_requests(?,?,?)","values":["6784283985","0",""],"typeCast":true,"nestTables":false}'
+    const expectedQuery =
+      '{"sql":"CALL usp_get_pending_requests(?,?,?)","values":["6784283985","0",""],"typeCast":true,"nestTables":false}';
 
     client.query(sqlObject, () => {
       const spans = SpansContainer.getSpans();
@@ -112,10 +107,6 @@ describe('mySql', () => {
       done();
     });
   });
-
-
-
-
 
   test('v2 -> hook -> query (text: string, values: List, callback: Function) -> success', (done) => {
     const client = createHookedMySqlV2Client();

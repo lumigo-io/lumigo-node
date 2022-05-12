@@ -12,7 +12,8 @@ import {
   isDebug,
   DEFAULT_CONNECTION_TIMEOUT,
   isObject,
-  DEFAULT_AUTO_TAG_KEY, filterObjectKeys,
+  DEFAULT_AUTO_TAG_KEY,
+  filterObjectKeys,
 } from './utils';
 import { MAX_TRACER_ADDED_DURATION_ALLOWED, TracerGlobals } from './globals';
 import crypto from 'crypto';
@@ -1027,19 +1028,18 @@ describe('utils', () => {
     process.env = { ...oldEnv };
   });
 
-  test("filterObjectKeys => simple flow", () => {
+  test('filterObjectKeys => simple flow', () => {
     const obj = {
-      "aa": 1,
-      "bb": 2,
-      "_asdads": 3
-    }
+      aa: 1,
+      bb: 2,
+      _asdads: 3,
+    };
 
-    const result = filterObjectKeys(obj, (key) => !key.startsWith("_"));
+    const result = filterObjectKeys(obj, (key) => !key.startsWith('_'));
 
     expect(result).toEqual({
-      "aa": 1,
-      "bb": 2,
-    })
-
-  })
+      aa: 1,
+      bb: 2,
+    });
+  });
 });
