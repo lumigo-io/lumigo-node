@@ -563,3 +563,7 @@ export const getAutoTagKeys = (): string[] =>
   safeExecute(() => {
     return (process.env.LUMIGO_AUTO_TAG || DEFAULT_AUTO_TAG_KEY).split(',');
   })() || [DEFAULT_AUTO_TAG_KEY];
+
+export const filterObjectKeys = (obj: object, filterFunc: (value: string, index: number, array: any[]) => boolean): object => Object.keys(obj).
+  filter(filterFunc).
+  reduce((cur, key) => { return Object.assign(cur, { [key]: obj[key] })}, {});

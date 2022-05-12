@@ -1,6 +1,15 @@
 import { getBasicChildSpan } from './awsSpan';
 import { payloadStringify, prune } from '../utils/payloadStringify';
-import { getEventEntitySize } from '../utils';
+import { filterObjectKeys, getEventEntitySize } from '../utils';
+
+const normalizeQuery = (query: string | any): string => {
+  if(typeof query === "string")
+    return prune(query, getEventEntitySize())
+  if(typeof query === "object") {
+    const filteredQuery = filterObjectKeys(query, (key) => !key.startsWith("_"));
+    return payloadStringify(filteredQuery)
+  }
+}
 
 export const createSqlSpan = (
   transactionId,
@@ -20,7 +29,7 @@ export const createSqlSpan = (
       database: dbFields.connectionParameters.database,
       user: dbFields.connectionParameters.user,
     },
-    query: prune(dbFields.query, getEventEntitySize()),
+    query: normalizeQuery(dbFields.query),
     values: dbFields.values ? payloadStringify(dbFields.values) : '',
   };
 };
