@@ -6,7 +6,7 @@
   "private": true,
   "dependencies": {
     "aws-sdk": "^2.501.0",
-    "axios": "^0.19.0",
+    "axios": "0.24.0",
     "@lumigo/tracer": "file:../lumigo-node-d_exmaple.tgz"
   }
 }
