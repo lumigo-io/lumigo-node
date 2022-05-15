@@ -35,6 +35,7 @@ import { isAwsContext } from '../guards/awsGuards';
 import * as logger from '../logger';
 import type { TracerOptions } from './tracer-options.interface';
 import { TraceOptions } from './trace-options.type';
+import { warnClient } from '../logger';
 
 export const HANDLER_CALLBACKED = 'handler_callbacked';
 export const ASYNC_HANDLER_RESOLVED = 'async_handler_resolved';
@@ -48,7 +49,10 @@ export const trace =
   ({ token, debug, edgeHost, switchOff, stepFunction }: TraceOptions) =>
   (userHandler: Handler) =>
   async <Event = any>(event: Event, context?: Context, callback?: Callback): Promise<Handler> => {
-    if (!isAwsEnvironment()) return userHandler(event, context, callback);
+    if (!isAwsEnvironment()) {
+      warnClient('Tracer is disabled, running on non-aws environment');
+      return userHandler(event, context, callback);
+    }
 
     try {
       TracerGlobals.setHandlerInputs({ event, context });
