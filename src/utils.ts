@@ -566,7 +566,7 @@ export const getAutoTagKeys = (): string[] =>
 
 export const filterObjectKeys = (
   obj: object,
-  filterFunc: (value: string, index: number, array: any[]) => boolean
+  filterFunc: (value: string, index?: number, array?: any[]) => boolean
 ): object =>
   Object.keys(obj)
     .filter(filterFunc)
