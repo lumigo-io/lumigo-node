@@ -8,7 +8,7 @@ const normalizeQuery = (query: string | any): string => {
     const filteredQuery = filterObjectKeys(query, (key) => !key.startsWith('_'));
     return payloadStringify(filteredQuery);
   }
-  return "Unknown"
+  return 'Unknown';
 };
 
 export const createSqlSpan = (
