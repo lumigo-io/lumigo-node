@@ -119,7 +119,7 @@ describe('utils', () => {
 
     const timeDiff = Date.now() - 1000 * parseInt(resultTime, 16);
     expect(timeDiff).toBeGreaterThan(0);
-    expect(timeDiff).toBeLessThan(1000);
+    expect(timeDiff).toBeLessThan(1500);
   });
 
   test('getAWSEnvironment', () => {
