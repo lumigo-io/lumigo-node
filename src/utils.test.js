@@ -13,6 +13,7 @@ import {
   DEFAULT_CONNECTION_TIMEOUT,
   isObject,
   DEFAULT_AUTO_TAG_KEY,
+  filterObjectKeys,
 } from './utils';
 import { MAX_TRACER_ADDED_DURATION_ALLOWED, TracerGlobals } from './globals';
 import crypto from 'crypto';
@@ -118,7 +119,7 @@ describe('utils', () => {
 
     const timeDiff = Date.now() - 1000 * parseInt(resultTime, 16);
     expect(timeDiff).toBeGreaterThan(0);
-    expect(timeDiff).toBeLessThan(1000);
+    expect(timeDiff).toBeLessThan(1500);
   });
 
   test('getAWSEnvironment', () => {
@@ -1025,5 +1026,20 @@ describe('utils', () => {
     expect(utils.getAutoTagKeys()).toEqual(['key1', 'key2']);
 
     process.env = { ...oldEnv };
+  });
+
+  test('filterObjectKeys => simple flow', () => {
+    const obj = {
+      aa: 1,
+      bb: 2,
+      _asdads: 3,
+    };
+
+    const result = filterObjectKeys(obj, (key) => !key.startsWith('_'));
+
+    expect(result).toEqual({
+      aa: 1,
+      bb: 2,
+    });
   });
 });
