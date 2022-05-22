@@ -1,3 +1,15 @@
+import type {
+  APIGatewayEvent,
+  APIGatewayProxyEventV2,
+  CloudFrontRequestEvent,
+  CloudFrontRequestEventRecord,
+  DynamoDBStreamEvent,
+  S3Event,
+  S3EventRecord,
+  SNSEvent,
+  SQSEvent,
+} from 'aws-lambda';
+
 import * as logger from '../logger';
 import { getEnvVarAsList, isScrubKnownServicesOn } from '../utils';
 
@@ -61,60 +73,28 @@ const CLOUDFRONT_REQUEST_KEYS_ORDER = getEnvVarAsList('LUMIGO_CLOUDFRONT_REQUEST
   'uri',
 ]);
 
-export const isApiGwEvent = (event) => {
-  return (
-    event != null &&
-    event.requestContext != null &&
-    event.requestContext.domainName != null &&
-    event.requestContext.requestId != null
-  );
+export const isApiGwEvent = (event): event is APIGatewayEvent | APIGatewayProxyEventV2 => {
+  return event?.requestContext?.domainName != null && event?.requestContext?.requestId != null;
 };
 
-export const isSnsEvent = (event) => {
-  return (
-    event != null &&
-    event.Records != null &&
-    event.Records[0] != null &&
-    event.Records[0].EventSource === 'aws:sns'
-  );
+export const isSnsEvent = (event): event is SNSEvent => {
+  return event?.Records?.[0]?.EventSource === 'aws:sns';
 };
 
-export const isSqsEvent = (event) => {
-  return (
-    event != null &&
-    event.Records != null &&
-    event.Records[0] != null &&
-    event.Records[0].eventSource === 'aws:sqs'
-  );
+export const isSqsEvent = (event): event is SQSEvent => {
+  return event?.Records[0]?.eventSource === 'aws:sqs';
 };
 
-export const isS3Event = (event) => {
-  return (
-    event != null &&
-    event.Records != null &&
-    event.Records[0] != null &&
-    event.Records[0].eventSource === 'aws:s3'
-  );
+export const isS3Event = (event): event is S3Event => {
+  return event?.Records?.[0]?.eventSource === 'aws:s3';
 };
 
-const isDDBEvent = (event) => {
-  return (
-    event != null &&
-    event.Records != null &&
-    event.Records[0] != null &&
-    event.Records[0].eventSource === 'aws:dynamodb'
-  );
+const isDDBEvent = (event): event is DynamoDBStreamEvent => {
+  return event?.Records?.[0]?.eventSource === 'aws:dynamodb';
 };
 
-export const isCloudfrontEvent = (event) => {
-  return (
-    event != null &&
-    event.Records != null &&
-    event.Records[0] != null &&
-    event.Records[0].cf != null &&
-    event.Records[0].cf.config != null &&
-    event.Records[0].cf.config.distributionId != null
-  );
+export const isCloudfrontEvent = (event): event is CloudFrontRequestEvent => {
+  return event?.Records?.[0]?.cf?.config?.distributionId != null;
 };
 
 export const parseApiGwEvent = (event) => {
@@ -177,7 +157,7 @@ export const parseSqsEvent = (event) => {
   for (const rec of event['Records']) {
     const newSqsRecordEvent = {};
     for (const key of SQS_KEYS_ORDER) {
-      if (rec[key] != null) {
+      if (rec?.[key] != null) {
         newSqsRecordEvent[key] = rec[key];
       }
     }
@@ -186,59 +166,71 @@ export const parseSqsEvent = (event) => {
   return newSqsEvent;
 };
 
-export const parseS3Event = (event) => {
-  const newS3Event = {};
-  newS3Event['Records'] = [];
+export const parseS3Event = (event: S3Event) => {
+  const newS3Event: S3Event = {
+    Records: [],
+  };
+
   // Add order keys
   for (const rec of event['Records']) {
-    const newS3RecordEvent = {};
+    const newS3RecordEvent: S3EventRecord = {} as S3EventRecord;
+
     for (const key of S3_KEYS_ORDER) {
-      if (rec.hasOwnProperty(key) != null) {
+      if (rec?.[key] !== undefined) {
         newS3RecordEvent[key] = rec[key];
       }
     }
-    if (rec.hasOwnProperty('s3')) {
-      newS3RecordEvent.s3 = {};
-      if (rec.s3.hasOwnProperty('bucket')) {
-        newS3RecordEvent.s3.bucket = {};
-        for (const key of S3_BUCKET_KEYS_ORDER) {
-          newS3RecordEvent.s3.bucket[key] = rec.s3.bucket[key];
-        }
+
+    if (rec?.s3?.bucket !== undefined) {
+      newS3RecordEvent.s3 = {
+        bucket: {},
+        object: {},
+      } as S3EventRecord['s3'];
+
+      for (const key of S3_OBJECT_KEYS_ORDER) {
+        newS3RecordEvent.s3.object[key] = rec.s3.object[key];
       }
-      if (rec.s3.hasOwnProperty('object')) {
-        newS3RecordEvent.s3.object = {};
-        for (const key of S3_OBJECT_KEYS_ORDER) {
-          newS3RecordEvent.s3.object[key] = rec.s3.object[key];
-        }
+
+      for (const key of S3_BUCKET_KEYS_ORDER) {
+        newS3RecordEvent.s3.bucket[key] = rec.s3.bucket[key];
       }
     }
+
     newS3Event['Records'].push(newS3RecordEvent);
   }
+
   return newS3Event;
 };
 
-export const parseCloudfrontEvent = (event) => {
-  const newCloudfrontEvent = {};
-  newCloudfrontEvent['Records'] = [];
+export const parseCloudfrontEvent = (event: CloudFrontRequestEvent) => {
+  const newCloudfrontEvent: CloudFrontRequestEvent = {
+    Records: [],
+  };
+
   // Add order keys
   for (const rec of event['Records']) {
-    const cfRecord = rec['cf'] || {};
-    const newCloudfrontRecordEvent = { cf: {} };
+    const cfRecord = rec['cf'] || ({} as CloudFrontRequestEventRecord['cf']);
+    const newCloudfrontRecordEvent = { cf: {} } as CloudFrontRequestEvent['Records'][0];
+
     for (const key of CLOUDFRONT_KEYS_ORDER) {
-      if (cfRecord.hasOwnProperty(key) != null) {
+      if (cfRecord?.[key] !== undefined) {
         newCloudfrontRecordEvent.cf[key] = cfRecord[key];
       }
     }
-    if (cfRecord.hasOwnProperty('request')) {
-      newCloudfrontRecordEvent.cf.request = {};
+
+    if (cfRecord?.request !== undefined) {
+      newCloudfrontRecordEvent.cf.request = {} as CloudFrontRequestEventRecord['cf']['request'];
+
       for (const key of CLOUDFRONT_REQUEST_KEYS_ORDER) {
-        if (cfRecord.request.hasOwnProperty(key)) {
+        if (cfRecord.request?.[key] !== undefined) {
           newCloudfrontRecordEvent.cf.request[key] = cfRecord.request[key];
         }
       }
     }
+
     newCloudfrontEvent['Records'].push(newCloudfrontRecordEvent);
   }
+
   return newCloudfrontEvent;
 };
 
@@ -247,15 +239,19 @@ export const parseEvent = (event) => {
     if (isApiGwEvent(event)) {
       return parseApiGwEvent(event);
     }
+
     if (isSnsEvent(event)) {
       return parseSnsEvent(event);
     }
+
     if (isSqsEvent(event)) {
       return parseSqsEvent(event);
     }
+
     if (isS3Event(event)) {
       return parseS3Event(event);
     }
+
     if (isCloudfrontEvent(event)) {
       return parseCloudfrontEvent(event);
     }

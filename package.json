@@ -40,7 +40,7 @@
     "@semantic-release/changelog": "^3.0.6",
     "@semantic-release/git": "^7.0.18",
     "@semantic-release/github": "^7.2.3",
-    "@types/aws-lambda": "^8.10.77",
+    "@types/aws-lambda": "^8.10.96",
     "@types/jest": "^26.0.23",
     "@types/utf8": "^3.0.0",
     "aws-sdk": "^2.927.0",
