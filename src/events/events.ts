@@ -4,9 +4,10 @@ import type {
   AppSyncResolverEvent,
   DynamoDBStreamEvent,
   EventBridgeEvent,
-  KinesisStreamEvent, S3Event,
+  KinesisStreamEvent,
+  S3Event,
   SNSEvent,
-  SQSEvent
+  SQSEvent,
 } from 'aws-lambda';
 
 import {
@@ -21,13 +22,17 @@ import type {
   ApiGatewayV1EventData,
   ApiGatewayV2EventData,
   AppSyncEventData,
-  DynamoDBStreamEventData, EventBridgeEventData, EventData,
+  DynamoDBStreamEventData,
+  EventBridgeEventData,
+  EventData,
   EventInfo,
   IncomingEvent,
   IncomingEventRecord,
-  KinesisStreamEventData, S3EventData,
+  KinesisStreamEventData,
+  S3EventData,
   SNSEventData,
-  SQSEventData, StepFunctionEventData,
+  SQSEventData,
+  StepFunctionEventData,
 } from './event-data.types';
 import { EventTrigger } from './event-trigger.enum';
 
@@ -70,7 +75,9 @@ const extractEventSourceFromRecord = (eventRecord: IncomingEventRecord): EventTr
   return eventSourceName;
 };
 
-export const isApiGatewayEvent = (event: IncomingEvent): event is APIGatewayProxyEvent | APIGatewayProxyEventV2 => {
+export const isApiGatewayEvent = (
+  event: IncomingEvent
+): event is APIGatewayProxyEvent | APIGatewayProxyEventV2 => {
   return (
     (event?.['httpMethod'] && event?.['requestContext']?.['stage']) ||
     (event?.['headers'] && event?.['version'] === '2.0' && event?.['requestContext']?.['stage'])
@@ -78,9 +85,7 @@ export const isApiGatewayEvent = (event: IncomingEvent): event is APIGatewayProx
 };
 
 export const isAppSyncEvent = (event: IncomingEvent): event is AppSyncResolverEvent<any> => {
-  return (
-    (event?.request?.headers?.host?.includes('appsync-api'))
-  );
+  return event?.request?.headers?.host?.includes('appsync-api');
 };
 
 export const isEventBridgeEvent = (event: IncomingEvent): event is EventBridgeEvent<any, any> => {
@@ -124,9 +129,7 @@ export const getRelevantEventData = (triggeredBy: EventTrigger, event): EventDat
 
 export const getSqsData = (event: SQSEvent): SQSEventData => {
   const arn = event.Records[0].eventSourceARN;
-  const messageIds = event.Records
-    .map((r) => r.messageId)
-    .filter((messageId) => messageId != null);
+  const messageIds = event.Records.map((r) => r.messageId).filter((messageId) => messageId != null);
 
   if (messageIds.length === 1) return { arn, messageId: messageIds[0] };
 
@@ -136,18 +139,13 @@ export const getSqsData = (event: SQSEvent): SQSEventData => {
 export const getDynamodbData = (event: DynamoDBStreamEvent): DynamoDBStreamEventData => {
   const arn = event.Records[0].eventSourceARN;
   const approxEventCreationTime = event.Records[0].dynamodb.ApproximateCreationDateTime * 1000;
-  const messageIds = event.Records
-    .map((record) => {
-      if (
-        ['MODIFY', 'REMOVE'].includes(record.eventName) &&
-        record?.dynamodb?.Keys
-      ) {
-        return md5Hash(record.dynamodb.Keys);
-      } else if (record.eventName === 'INSERT' && record.dynamodb && record.dynamodb.NewImage) {
-        return md5Hash(record.dynamodb.NewImage);
-      }
-    })
-    .filter((hashedRecordContent) => hashedRecordContent != null);
+  const messageIds = event.Records.map((record) => {
+    if (['MODIFY', 'REMOVE'].includes(record.eventName) && record?.dynamodb?.Keys) {
+      return md5Hash(record.dynamodb.Keys);
+    } else if (record.eventName === 'INSERT' && record.dynamodb && record.dynamodb.NewImage) {
+      return md5Hash(record.dynamodb.NewImage);
+    }
+  }).filter((hashedRecordContent) => hashedRecordContent != null);
 
   return { arn, messageIds, approxEventCreationTime };
 };

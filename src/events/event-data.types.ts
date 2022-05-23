@@ -16,7 +16,7 @@ export type IncomingEvent = Record<string, any>;
 export type IncomingEventRecord = IncomingEvent['Records'][0];
 
 export type EventInfo = EventData & {
-  triggeredBy: EventTrigger,
+  triggeredBy: EventTrigger;
 };
 
 export type EventData =
@@ -39,13 +39,13 @@ export interface DynamoDBStreamEventData {
 }
 
 export type SQSEventData = {
-  arn: SQSRecord['eventSourceARN'],
+  arn: SQSRecord['eventSourceARN'];
 } & (
   | {
-      messageIds: SQSRecord['messageId'][],
+      messageIds: SQSRecord['messageId'][];
     }
   | {
-      messageId: SQSRecord['messageId'],
+      messageId: SQSRecord['messageId'];
     }
 );
 
