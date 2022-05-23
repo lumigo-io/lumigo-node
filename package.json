@@ -18,7 +18,8 @@
     "lint": "eslint ./src",
     "prepublishOnly": "npm run prettier:fix && npm run lint && npm run test",
     "prettier:ci": "prettier --list-different \"src/**/*.[jt]s\" --parser typescript",
-    "prettier:fix": "prettier --write \"./src/**/*.[jt]s\" --parser typescript"
+    "prettier:fix": "prettier --write \"./src/**/*.[jt]s\" --parser typescript",
+    "check-types": "tsc --noEmit"
   },
   "dependencies": {
     "agentkeepalive": "^4.1.4",
