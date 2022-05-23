@@ -5,7 +5,7 @@ import {
   LUMIGO_EVENT_KEY,
   md5Hash,
   safeExecute,
-} from './utils';
+} from '../utils';
 
 export const getTriggeredBy = (event) => {
   const canDetectTriggerSourceFromEventRecords =

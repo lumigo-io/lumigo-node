@@ -1,26 +1,26 @@
-import * as utils from './utils';
-import { TracerGlobals } from './globals';
-import { md5Hash } from './utils';
+import * as utils from '../utils';
+import { TracerGlobals } from '../globals';
+import { md5Hash } from '../utils';
 
 const events = require('./events');
-const exampleS3Event = require('../testUtils/testdata/events/s3-event.json');
-const exampleSnsEvent = require('../testUtils/testdata/events/sns-event.json');
-const exampleSesEvent = require('../testUtils/testdata/events/ses-event.json');
-const exampleSqsEvent = require('../testUtils/testdata/events/sqs-event.json');
-const exampleSqsManyMessagesEvent = require('../testUtils/testdata/events/sqs-event-many-messages.json');
-const exampleKinesisEvent = require('../testUtils/testdata/events/kinesis-event.json');
-const exampleDynamoDBInsertEvent = require('../testUtils/testdata/events/dynamodb-insert-event.json');
-const exampleDynamoDBModifyEvent = require('../testUtils/testdata/events/dynamodb-modify-event.json');
-const exampleDynamoDBRemoveEvent = require('../testUtils/testdata/events/dynamodb-remove-event.json');
-const exampleApiGatewayEvent = require('../testUtils/testdata/events/apigw-request.json');
-const exampleFalseApiGatewayEvent = require('./testdata/events/false-apigw-request.json');
-const exampleApiGatewayV2Event = require('../testUtils/testdata/events/apigw-v2-event.json');
-const exampleUnsupportedEvent = require('../testUtils/testdata/events/appsync-invoke.json');
-const exampleApiGatewayEventWithoutHost = require('../testUtils/testdata/events/apigw-custom-auth-request.json');
-const exampleEventBridgeEvent = require('../testUtils/testdata/events/event-bridge-event.json');
-const exampleAppSyncEvent = require('../testUtils/testdata/events/appsync-event.json');
-const exampleAppSyncSecondEvent = require('../testUtils/testdata/events/appsync-second-event.json');
-const exampleEmptySqsEvent = require('../testUtils/testdata/events/empty-sqs-event.json');
+const exampleS3Event = require('../../testUtils/testdata/events/s3-event.json');
+const exampleSnsEvent = require('../../testUtils/testdata/events/sns-event.json');
+const exampleSesEvent = require('../../testUtils/testdata/events/ses-event.json');
+const exampleSqsEvent = require('../../testUtils/testdata/events/sqs-event.json');
+const exampleSqsManyMessagesEvent = require('../../testUtils/testdata/events/sqs-event-many-messages.json');
+const exampleKinesisEvent = require('../../testUtils/testdata/events/kinesis-event.json');
+const exampleDynamoDBInsertEvent = require('../../testUtils/testdata/events/dynamodb-insert-event.json');
+const exampleDynamoDBModifyEvent = require('../../testUtils/testdata/events/dynamodb-modify-event.json');
+const exampleDynamoDBRemoveEvent = require('../../testUtils/testdata/events/dynamodb-remove-event.json');
+const exampleApiGatewayEvent = require('../../testUtils/testdata/events/apigw-request.json');
+const exampleFalseApiGatewayEvent = require('../testdata/events/false-apigw-request.json');
+const exampleApiGatewayV2Event = require('../../testUtils/testdata/events/apigw-v2-event.json');
+const exampleUnsupportedEvent = require('../../testUtils/testdata/events/appsync-invoke.json');
+const exampleApiGatewayEventWithoutHost = require('../../testUtils/testdata/events/apigw-custom-auth-request.json');
+const exampleEventBridgeEvent = require('../../testUtils/testdata/events/event-bridge-event.json');
+const exampleAppSyncEvent = require('../../testUtils/testdata/events/appsync-event.json');
+const exampleAppSyncSecondEvent = require('../../testUtils/testdata/events/appsync-second-event.json');
+const exampleEmptySqsEvent = require('../../testUtils/testdata/events/empty-sqs-event.json');
 
 describe('events', () => {
   test('getTriggeredBy', () => {
