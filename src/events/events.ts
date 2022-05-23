@@ -5,7 +5,8 @@ import type {
   DynamoDBStreamEvent,
   EventBridgeEvent,
   KinesisStreamEvent,
-  SNSEvent, SQSEvent,
+  SNSEvent,
+  SQSEvent,
 } from 'aws-lambda';
 
 import {
@@ -19,7 +20,11 @@ import {
 import type {
   ApiGatewayV1EventData,
   ApiGatewayV2EventData,
-  AppSyncEventData, DynamoDBStreamEventData, EventInfo, IncomingEvent, IncomingEventRecord,
+  AppSyncEventData,
+  DynamoDBStreamEventData,
+  EventInfo,
+  IncomingEvent,
+  IncomingEventRecord,
   KinesisStreamEventData,
   SNSEventData,
   SQSEventData,
@@ -197,7 +202,7 @@ export const getRelevantEventData = (triggeredBy: EventTrigger, event) => {
       return {
         messageId: recursiveGetKey(event, LUMIGO_EVENT_KEY)[STEP_FUNCTION_UID_KEY],
       };
-    case 'invocation':
+    case EventTrigger.Invocation:
     default:
       return {};
   }
