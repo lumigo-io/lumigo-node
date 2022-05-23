@@ -52,7 +52,7 @@ describe('events', () => {
       api: null,
       httpMethod: undefined,
       resource: undefined,
-      stage: null,
+      stage: '$default',
     });
   });
 
@@ -173,7 +173,7 @@ describe('events', () => {
         [utils.LUMIGO_EVENT_KEY]: { [utils.STEP_FUNCTION_UID_KEY]: '123' },
       })
     ).toEqual({
-      triggeredBy: 'stepFunction',
+      triggeredBy: EventTrigger.StepFunction,
       messageId: '123',
     });
   });
