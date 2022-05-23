@@ -6,7 +6,7 @@ import type {
   EventBridgeEvent,
   KinesisStreamEvent, S3Event,
   SNSEvent,
-  SQSEvent,
+  SQSEvent
 } from 'aws-lambda';
 
 import {
