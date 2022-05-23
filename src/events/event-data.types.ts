@@ -1,5 +1,5 @@
 import type { APIGatewayProxyEvent, APIGatewayProxyEventV2 } from 'aws-lambda';
-import { EventTrigger } from './event-trigger.enum';
+import type { EventTrigger } from './event-trigger.enum';
 
 export type IncomingEvent = { [key: string]: any };
 
