@@ -1,4 +1,14 @@
-import type { APIGatewayProxyEvent, APIGatewayProxyEventV2 } from 'aws-lambda';
+import type {
+  APIGatewayProxyEvent,
+  APIGatewayProxyEventV2,
+  AppSyncResolverEventHeaders,
+  DynamoDBRecord,
+  KinesisStreamRecord,
+  KinesisStreamRecordPayload,
+  S3EventRecord,
+  SNSMessage,
+  SQSRecord,
+} from 'aws-lambda';
 import type { EventTrigger } from './event-trigger.enum';
 
 export type IncomingEvent = Record<string, any>;
@@ -23,44 +33,47 @@ export type EventData =
   | Record<string, never>;
 
 export interface DynamoDBStreamEventData {
-  arn: string;
+  arn: DynamoDBRecord['eventSourceARN'];
   messageIds: string[];
-  approxEventCreationTime?: number;
+  approxEventCreationTime?: DynamoDBRecord['dynamodb']['ApproximateCreationDateTime'];
 }
 
 export type SQSEventData = {
-  arn: string;
-} & ( {
-    messageIds: string[];
-} | {
-    messageId: string;
-})
+  arn: SQSRecord['eventSourceARN'],
+} & (
+  | {
+      messageIds: SQSRecord['messageId'][],
+    }
+  | {
+      messageId: SQSRecord['messageId'],
+    }
+);
 
 export interface S3EventData {
-  arn: string;
+  arn: S3EventRecord['s3']['bucket']['arn'];
 }
 
 export interface KinesisStreamEventData {
-  arn: string;
-  messageIds: string[];
+  arn: KinesisStreamRecord['eventSourceARN'];
+  messageIds: KinesisStreamRecordPayload['sequenceNumber'][];
 }
 
 export interface SNSEventData {
-  arn: string;
-  messageId: string;
+  arn: SNSMessage['TopicArn'];
+  messageId: SNSMessage['MessageId'];
 }
 
 export interface AppSyncEventData {
-  api: string;
-  messageId: string;
+  api: AppSyncResolverEventHeaders['host'];
+  messageId: AppSyncResolverEventHeaders['x-amzn-trace-id'];
 }
 
 export interface ApiGatewayV1EventData {
-  messageId: APIGatewayProxyEvent['requestContext']['requestId']
-  httpMethod: APIGatewayProxyEvent['httpMethod']
-  resource: APIGatewayProxyEvent['resource']
-  stage: APIGatewayProxyEvent['requestContext']['stage']
-  api: APIGatewayProxyEvent['headers'][0]
+  messageId: APIGatewayProxyEvent['requestContext']['requestId'];
+  httpMethod: APIGatewayProxyEvent['httpMethod'];
+  resource: APIGatewayProxyEvent['resource'];
+  stage: APIGatewayProxyEvent['requestContext']['stage'];
+  api: APIGatewayProxyEvent['headers'][0];
 }
 
 export interface ApiGatewayV2EventData {
