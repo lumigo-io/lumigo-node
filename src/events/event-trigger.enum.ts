@@ -4,6 +4,7 @@ export enum EventTrigger {
   StepFunction = 'stepFunction',
   EventBridge = 'eventBridge',
   Invocation = 'invocation',
+  SES = 'ses',
   SQS = 'sqs',
   DynamoDB = 'dynamodb',
   Kinesis = 'kinesis',
