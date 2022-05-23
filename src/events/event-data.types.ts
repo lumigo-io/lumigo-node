@@ -3,6 +3,8 @@ import type { EventTrigger } from './event-trigger.enum';
 
 export type IncomingEvent = { [key: string]: any };
 
+export type IncomingEventRecord = IncomingEvent['Records'][0];
+
 export type EventInfo = EventData & {
   triggeredBy: EventTrigger | {},
 };

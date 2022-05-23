@@ -19,7 +19,7 @@ import {
 import type {
   ApiGatewayV1EventData,
   ApiGatewayV2EventData,
-  AppSyncEventData, DynamoDBStreamEventData, EventInfo, IncomingEvent,
+  AppSyncEventData, DynamoDBStreamEventData, EventInfo, IncomingEvent, IncomingEventRecord,
   KinesisStreamEventData,
   SNSEventData,
   SQSEventData,
@@ -42,7 +42,7 @@ export const getTriggeredBy = (event: IncomingEvent): EventTrigger => {
     return EventTrigger.AppSync;
   }
 
-  if (isStepFunction() && event && !!recursiveGetKey(event, LUMIGO_EVENT_KEY)) {
+  if (isStepFunction() && event != null && !!recursiveGetKey(event, LUMIGO_EVENT_KEY)) {
     return EventTrigger.StepFunction;
   }
 
@@ -53,8 +53,8 @@ export const getTriggeredBy = (event: IncomingEvent): EventTrigger => {
   return EventTrigger.Invocation;
 };
 
-const extractEventSourceFromRecord = (eventRecord): EventTrigger => {
-  const { eventSource, EventSource } = eventRecord;
+const extractEventSourceFromRecord = (eventRecord: IncomingEventRecord): EventTrigger => {
+  const { eventSource, EventSource } = eventRecord || {};
   const eventSourceStr = eventSource || EventSource;
 
   // AWS EventSources are formatted as "aws:$EVENT_SOURCE_NAME"
