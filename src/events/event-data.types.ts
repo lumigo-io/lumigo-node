@@ -1,4 +1,4 @@
-import type { APIGatewayProxyEventV2 } from 'aws-lambda';
+import type { APIGatewayProxyEvent, APIGatewayProxyEventV2 } from 'aws-lambda';
 import { EventTrigger } from './event-trigger.enum';
 
 export type IncomingEvent = { [key: string]: any };
@@ -8,6 +8,7 @@ export type EventInfo = EventData & {
 };
 
 export type EventData =
+  | ApiGatewayV1EventData
   | ApiGatewayV2EventData
   | AppSyncEventData
   | DynamoDBStreamEventData
@@ -41,6 +42,14 @@ export interface SNSEventData {
 export interface AppSyncEventData {
   api: string;
   messageId: string;
+}
+
+export interface ApiGatewayV1EventData {
+  messageId: APIGatewayProxyEvent['requestContext']['requestId']
+  httpMethod: APIGatewayProxyEvent['httpMethod']
+  resource: APIGatewayProxyEvent['resource']
+  stage: APIGatewayProxyEvent['requestContext']['stage']
+  api: APIGatewayProxyEvent['headers'][0]
 }
 
 export interface ApiGatewayV2EventData {

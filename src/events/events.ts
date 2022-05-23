@@ -1,3 +1,13 @@
+import type {
+  APIGatewayProxyEvent,
+  APIGatewayProxyEventV2,
+  AppSyncResolverEvent,
+  DynamoDBStreamEvent,
+  EventBridgeEvent,
+  KinesisStreamEvent,
+  SNSEvent, SQSEvent,
+} from 'aws-lambda';
+
 import {
   isStepFunction,
   LUMIGO_EVENT_KEY,
@@ -6,24 +16,17 @@ import {
   safeExecute,
   STEP_FUNCTION_UID_KEY,
 } from '../utils';
-import { EventTrigger } from './event-trigger.enum';
 import type {
-  APIGatewayProxyEventV2,
-  AppSyncResolverEvent,
-  DynamoDBStreamEvent,
-  EventBridgeEvent,
-  KinesisStreamEvent,
-  SNSEvent, SQSEvent,
-} from 'aws-lambda';
-import type {
+  ApiGatewayV1EventData,
   ApiGatewayV2EventData,
-  AppSyncEventData, DynamoDBStreamEventData, EventData, EventInfo, IncomingEvent,
+  AppSyncEventData, DynamoDBStreamEventData, EventInfo, IncomingEvent,
   KinesisStreamEventData,
   SNSEventData,
   SQSEventData,
 } from './event-data.types';
+import { EventTrigger } from './event-trigger.enum';
 
-export const getTriggeredBy = (event): EventTrigger => {
+export const getTriggeredBy = (event: IncomingEvent): EventTrigger => {
   const canDetectTriggerSourceFromEventRecords =
     event?.['Records']?.[0]?.['eventSource'] || event?.['Records']?.[0]?.['EventSource'];
 
@@ -47,7 +50,6 @@ export const getTriggeredBy = (event): EventTrigger => {
     return EventTrigger.EventBridge;
   }
 
-  // TODO: maybe rename to unknown?
   return EventTrigger.Invocation;
 };
 
@@ -63,39 +65,38 @@ const extractEventSourceFromRecord = (eventRecord): EventTrigger => {
   return eventSourceName;
 };
 
-export const isApiGatewayEvent = (event) => {
+export const isApiGatewayEvent = (event: IncomingEvent): event is APIGatewayProxyEvent | APIGatewayProxyEventV2 => {
   return (
     (event?.['httpMethod'] && event?.['requestContext']?.['stage']) ||
     (event?.['headers'] && event?.['version'] === '2.0' && event?.['requestContext']?.['stage'])
   );
 };
 
-export const isAppSyncEvent = (event): event is AppSyncResolverEvent<any> => {
+export const isAppSyncEvent = (event: IncomingEvent): event is AppSyncResolverEvent<any> => {
   return (
     (event?.request?.headers?.host?.includes('appsync-api'))
   );
 };
 
-export const isEventBridgeEvent = (event): event is EventBridgeEvent<any, any> => {
+export const isEventBridgeEvent = (event: IncomingEvent): event is EventBridgeEvent<any, any> => {
   return (
-    typeof event !== undefined &&
-    typeof event.version === 'string' &&
-    typeof event.id === 'string' &&
-    typeof event['detail-type'] === 'string' &&
-    typeof event.source === 'string' &&
-    typeof event.time === 'string' &&
-    typeof event.region === 'string' &&
-    Array.isArray(event.resources) &&
-    typeof event.detail === 'object'
+    typeof event?.version === 'string' &&
+    typeof event?.id === 'string' &&
+    typeof event?.['detail-type'] === 'string' &&
+    typeof event?.source === 'string' &&
+    typeof event?.time === 'string' &&
+    typeof event?.region === 'string' &&
+    Array.isArray(event?.resources) &&
+    typeof event?.detail === 'object'
   );
 };
 
-const getApiGatewayV1Data = (event) => {
-  const { headers = {}, resource, httpMethod, requestContext = {} } = event;
-  const { stage = null } = requestContext;
+const getApiGatewayV1Data = (event: APIGatewayProxyEvent): ApiGatewayV1EventData => {
+  const { headers, resource, httpMethod, requestContext } = event;
+  const { stage } = requestContext;
 
-  const api = headers['Host'] || null;
-  const messageId = requestContext['requestId'];
+  const api = headers?.Host || null;
+  const messageId = requestContext.requestId;
 
   return { messageId, httpMethod, resource, stage, api };
 };
@@ -110,14 +111,14 @@ const getApiGatewayV2Data = (event: APIGatewayProxyEventV2): ApiGatewayV2EventDa
   return { httpMethod, resource, messageId, api, stage };
 };
 
-export const getApiGatewayData = (event) => {
+export const getApiGatewayData = (event: APIGatewayProxyEvent | APIGatewayProxyEventV2) => {
   const version = event?.['version'];
 
   if (version === '2.0') {
-    return getApiGatewayV2Data(event);
+    return getApiGatewayV2Data(event as APIGatewayProxyEventV2);
   }
 
-  return getApiGatewayV1Data(event);
+  return getApiGatewayV1Data(event as APIGatewayProxyEvent);
 };
 
 export const getAppSyncData = (event: AppSyncResolverEvent<any>): AppSyncEventData => {
@@ -125,7 +126,7 @@ export const getAppSyncData = (event: AppSyncResolverEvent<any>): AppSyncEventDa
 
   return {
     api: host,
-    messageId: traceId.split('=')[1]
+    messageId: traceId.split('=')[1],
   };
 };
 
@@ -155,7 +156,7 @@ export const getSqsData = (event: SQSEvent): SQSEventData => {
   return { arn, messageIds };
 };
 
-export const getDynamodbData = (event:DynamoDBStreamEvent): DynamoDBStreamEventData => {
+export const getDynamodbData = (event: DynamoDBStreamEvent): DynamoDBStreamEventData => {
   const arn = event.Records[0].eventSourceARN;
   const approxEventCreationTime = event.Records[0].dynamodb.ApproximateCreationDateTime * 1000;
   const messageIds = event.Records

@@ -1,40 +1,35 @@
 {
-  "context": {
-    "arguments": {
-
-    },
-    "identity": null,
-    "request": {
-      "headers": {
-        "x-forwarded-for": "31.240.176.151, 61.252.133.35, 62.252.133.44",
-        "accept-encoding": "gzip,deflate",
-        "cloudfront-viewer-country": "US",
-        "cloudfront-is-tablet-viewer": "false",
-        "via": "1.1 ce024f609b66dae59e41a6b53a8753bb.cloudfront.net (CloudFront), 1.1 1534e42a83112268605736034e2afc15.cloudfront.net (CloudFront)",
-        "cloudfront-forwarded-proto": "https",
-        "content-type": "application/json",
-        "x-api-key": "****",
-        "x-amzn-trace-id": "Root=1-5fa161de-275509e254bf71cc48gc66d0",
-        "x-amz-cf-id": "IIwvBqN5AvTUMUEgNQAy1u7TRSmN0eUkd0Xv9akvM21TePAFamY6iQ==",
-        "content-length": "222",
-        "x-forwarded-proto": "https",
-        "host": "oookuwqyrfhy7eexeksfovlbem.appsync-api.eu-west-1.amazonaws.com",
-        "user-agent": "Amazon CloudFront",
-        "cloudfront-is-desktop-viewer": "true",
-        "cloudfront-is-mobile-viewer": "false",
-        "x-forwarded-port": "443",
-        "cloudfront-is-smarttv-viewer": "false"
-      }
-    },
-    "info": {
-      "fieldName": "bundles",
-      "parentTypeName": "Query",
-      "variables": {
-
-      }
-    },
-    "stash": {
-
+  "arguments": {
+  },
+  "identity": null,
+  "request": {
+    "headers": {
+      "x-forwarded-for": "31.240.176.151, 61.252.133.35, 62.252.133.44",
+      "accept-encoding": "gzip,deflate",
+      "cloudfront-viewer-country": "US",
+      "cloudfront-is-tablet-viewer": "false",
+      "via": "1.1 ce024f609b66dae59e41a6b53a8753bb.cloudfront.net (CloudFront), 1.1 1534e42a83112268605736034e2afc15.cloudfront.net (CloudFront)",
+      "cloudfront-forwarded-proto": "https",
+      "content-type": "application/json",
+      "x-api-key": "****",
+      "x-amzn-trace-id": "Root=1-5fa161de-275509e254bf71cc48gc66d0",
+      "x-amz-cf-id": "IIwvBqN5AvTUMUEgNQAy1u7TRSmN0eUkd0Xv9akvM21TePAFamY6iQ==",
+      "content-length": "222",
+      "x-forwarded-proto": "https",
+      "host": "oookuwqyrfhy7eexeksfovlbem.appsync-api.eu-west-1.amazonaws.com",
+      "user-agent": "Amazon CloudFront",
+      "cloudfront-is-desktop-viewer": "true",
+      "cloudfront-is-mobile-viewer": "false",
+      "x-forwarded-port": "443",
+      "cloudfront-is-smarttv-viewer": "false"
     }
+  },
+  "info": {
+    "fieldName": "bundles",
+    "parentTypeName": "Query",
+    "variables": {
+    }
+  },
+  "stash": {
   }
 }
