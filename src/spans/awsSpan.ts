@@ -25,7 +25,7 @@ import {
   eventBridgeParser,
 } from '../parsers/aws';
 import { TracerGlobals, ExecutionTags } from '../globals';
-import { getEventInfo } from '../events/events';
+import { getEventInfo } from '../events';
 import { getSkipScrubPath, parseEvent } from '../parsers/eventParser';
 import * as logger from '../logger';
 import { payloadStringify, prune } from '../utils/payloadStringify';
