@@ -4,7 +4,7 @@ import type {
   AppSyncResolverEvent,
   DynamoDBStreamEvent,
   EventBridgeEvent,
-  KinesisStreamEvent,
+  KinesisStreamEvent, S3Event,
   SNSEvent,
   SQSEvent,
 } from 'aws-lambda';
@@ -21,13 +21,13 @@ import type {
   ApiGatewayV1EventData,
   ApiGatewayV2EventData,
   AppSyncEventData,
-  DynamoDBStreamEventData,
+  DynamoDBStreamEventData, EventBridgeEventData, EventData,
   EventInfo,
   IncomingEvent,
   IncomingEventRecord,
-  KinesisStreamEventData,
+  KinesisStreamEventData, S3EventData,
   SNSEventData,
-  SQSEventData,
+  SQSEventData, StepFunctionEventData,
 } from './event-data.types';
 import { EventTrigger } from './event-trigger.enum';
 
@@ -96,58 +96,30 @@ export const isEventBridgeEvent = (event: IncomingEvent): event is EventBridgeEv
   );
 };
 
-const getApiGatewayV1Data = (event: APIGatewayProxyEvent): ApiGatewayV1EventData => {
-  const { headers, resource, httpMethod, requestContext } = event;
-  const { stage } = requestContext;
-
-  const api = headers?.Host || null;
-  const messageId = requestContext.requestId;
-
-  return { messageId, httpMethod, resource, stage, api };
-};
-
-const getApiGatewayV2Data = (event: APIGatewayProxyEventV2): ApiGatewayV2EventData => {
-  const httpMethod = event.requestContext.http.method;
-  const resource = event.requestContext.http.path;
-  const messageId = event.requestContext.requestId;
-  const api = event.requestContext.domainName;
-  const stage = event.requestContext.stage || 'unknown';
-
-  return { httpMethod, resource, messageId, api, stage };
-};
-
-export const getApiGatewayData = (event: APIGatewayProxyEvent | APIGatewayProxyEventV2) => {
-  const version = event?.['version'];
-
-  if (version === '2.0') {
-    return getApiGatewayV2Data(event as APIGatewayProxyEventV2);
+export const getRelevantEventData = (triggeredBy: EventTrigger, event): EventData => {
+  switch (triggeredBy) {
+    case EventTrigger.SQS:
+      return getSqsData(event);
+    case EventTrigger.DynamoDB:
+      return getDynamodbData(event);
+    case EventTrigger.Kinesis:
+      return getKinesisData(event);
+    case EventTrigger.SNS:
+      return getSnsData(event);
+    case EventTrigger.S3:
+      return getS3Data(event);
+    case EventTrigger.ApiGateway:
+      return getApiGatewayData(event);
+    case EventTrigger.EventBridge:
+      return getEventBridgeData(event);
+    case EventTrigger.AppSync:
+      return getAppSyncData(event);
+    case EventTrigger.StepFunction:
+      return getStepFunctionData(event);
+    case EventTrigger.Invocation:
+    default:
+      return {};
   }
-
-  return getApiGatewayV1Data(event as APIGatewayProxyEvent);
-};
-
-export const getAppSyncData = (event: AppSyncResolverEvent<any>): AppSyncEventData => {
-  const { host, 'x-amzn-trace-id': traceId } = event.request.headers;
-
-  return {
-    api: host,
-    messageId: traceId.split('=')[1],
-  };
-};
-
-export const getSnsData = (event: SNSEvent): SNSEventData => {
-  const { TopicArn: arn, MessageId: messageId } = event.Records[0].Sns;
-
-  return { arn, messageId };
-};
-
-export const getKinesisData = (event: KinesisStreamEvent): KinesisStreamEventData => {
-  const arn = event.Records[0].eventSourceARN;
-  const messageIds = (event.Records || [])
-    .map((record) => record.kinesis.sequenceNumber)
-    .filter((recordSequenceNumber) => recordSequenceNumber != null);
-
-  return { arn, messageIds };
 };
 
 export const getSqsData = (event: SQSEvent): SQSEventData => {
@@ -180,32 +152,72 @@ export const getDynamodbData = (event: DynamoDBStreamEvent): DynamoDBStreamEvent
   return { arn, messageIds, approxEventCreationTime };
 };
 
-export const getRelevantEventData = (triggeredBy: EventTrigger, event) => {
-  switch (triggeredBy) {
-    case EventTrigger.SQS:
-      return getSqsData(event);
-    case EventTrigger.DynamoDB:
-      return getDynamodbData(event);
-    case EventTrigger.Kinesis:
-      return getKinesisData(event);
-    case EventTrigger.SNS:
-      return getSnsData(event);
-    case EventTrigger.S3:
-      return { arn: event.Records[0].s3.bucket.arn };
-    case EventTrigger.ApiGateway:
-      return getApiGatewayData(event);
-    case EventTrigger.EventBridge:
-      return { messageId: event.id };
-    case EventTrigger.AppSync:
-      return getAppSyncData(event);
-    case EventTrigger.StepFunction:
-      return {
-        messageId: recursiveGetKey(event, LUMIGO_EVENT_KEY)[STEP_FUNCTION_UID_KEY],
-      };
-    case EventTrigger.Invocation:
-    default:
-      return {};
+export const getKinesisData = (event: KinesisStreamEvent): KinesisStreamEventData => {
+  const arn = event.Records[0].eventSourceARN;
+  const messageIds = (event.Records || [])
+    .map((record) => record.kinesis.sequenceNumber)
+    .filter((recordSequenceNumber) => recordSequenceNumber != null);
+
+  return { arn, messageIds };
+};
+
+export const getSnsData = (event: SNSEvent): SNSEventData => {
+  const { TopicArn: arn, MessageId: messageId } = event.Records[0].Sns;
+
+  return { arn, messageId };
+};
+
+export const getS3Data = (event: S3Event): S3EventData => {
+  return { arn: event.Records[0].s3.bucket.arn };
+};
+
+export const getApiGatewayData = (event: APIGatewayProxyEvent | APIGatewayProxyEventV2) => {
+  const version = event?.['version'];
+
+  if (version === '2.0') {
+    return getApiGatewayV2Data(event as APIGatewayProxyEventV2);
   }
+
+  return getApiGatewayV1Data(event as APIGatewayProxyEvent);
+};
+
+const getApiGatewayV1Data = (event: APIGatewayProxyEvent): ApiGatewayV1EventData => {
+  const { headers, resource, httpMethod, requestContext } = event;
+  const { stage } = requestContext;
+
+  const api = headers?.Host || null;
+  const messageId = requestContext.requestId;
+
+  return { messageId, httpMethod, resource, stage, api };
+};
+
+const getApiGatewayV2Data = (event: APIGatewayProxyEventV2): ApiGatewayV2EventData => {
+  const httpMethod = event.requestContext.http.method;
+  const resource = event.requestContext.http.path;
+  const messageId = event.requestContext.requestId;
+  const api = event.requestContext.domainName;
+  const stage = event.requestContext.stage || 'unknown';
+
+  return { httpMethod, resource, messageId, api, stage };
+};
+
+export const getEventBridgeData = (event: EventBridgeEvent<any, any>): EventBridgeEventData => {
+  return { messageId: event.id };
+};
+
+export const getAppSyncData = (event: AppSyncResolverEvent<any>): AppSyncEventData => {
+  const { host, 'x-amzn-trace-id': traceId } = event.request.headers;
+
+  return {
+    api: host,
+    messageId: traceId.split('=')[1],
+  };
+};
+
+export const getStepFunctionData = (event): StepFunctionEventData => {
+  return {
+    messageId: recursiveGetKey(event, LUMIGO_EVENT_KEY)[STEP_FUNCTION_UID_KEY],
+  };
 };
 
 export const getEventInfo = (event: IncomingEvent): EventInfo => {

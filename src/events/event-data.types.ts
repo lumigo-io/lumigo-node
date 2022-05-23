@@ -14,9 +14,12 @@ export type EventData =
   | ApiGatewayV2EventData
   | AppSyncEventData
   | DynamoDBStreamEventData
+  | EventBridgeEventData
+  | S3EventData
   | SNSEventData
-  | KinesisStreamEventData
   | SQSEventData
+  | StepFunctionEventData
+  | KinesisStreamEventData
   | Record<string, never>;
 
 export interface DynamoDBStreamEventData {
@@ -25,11 +28,16 @@ export interface DynamoDBStreamEventData {
   approxEventCreationTime?: number;
 }
 
-export interface SQSEventData {
+export type SQSEventData = {
   arn: string;
-  // TODO: make at least one of the below options mandatory
-  messageIds?: string[];
-  messageId?: string;
+} & ( {
+    messageIds: string[];
+} | {
+    messageId: string;
+})
+
+export interface S3EventData {
+  arn: string;
 }
 
 export interface KinesisStreamEventData {
@@ -61,4 +69,12 @@ export interface ApiGatewayV2EventData {
   messageId: APIGatewayProxyEventV2['requestContext']['requestId'];
   api: APIGatewayProxyEventV2['requestContext']['domainName'];
   stage: APIGatewayProxyEventV2['requestContext']['stage'] | 'unknown';
+}
+
+export interface EventBridgeEventData {
+  messageId: string;
+}
+
+export interface StepFunctionEventData {
+  messageId: string;
 }
