@@ -51,9 +51,11 @@ exports.handler = lumigo.trace(myHandler)
 // typescript
 import lumigo from '@lumigo/tracer';
 
-const myHandler = async (event, context, callback) => { ... }
+const tracer = lumigo({ token: 'YOUR-TOKEN-HERE' });
 
-exports.handler = lumigo({ token: 'YOUR-TOKEN-HERE' }).trace(myHandler)
+export const handler = tracer.trace(async (event, context) => {
+  ...
+});
 ~~~
 
 ##### Note:
