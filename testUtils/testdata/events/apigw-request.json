@@ -1,4 +1,4 @@
-{ 
+{
 	"resource": "/{proxy+}",
 	  "path": "/hello/world",
 	  "httpMethod": "POST",
@@ -79,7 +79,7 @@
 			"principalId": "admin",
 			"clientId": 1,
 			"clientName": "Exata"
-		},	
+		},
 		"resourcePath": "/{proxy+}",
 		"httpMethod": "POST",
 		"apiId": "gy415nuibc"

@@ -1,27 +1,26 @@
+import * as exampleS3Event from '../../testUtils/testdata/events/s3-event.json';
+import * as exampleSnsEvent from '../../testUtils/testdata/events/sns-event.json';
+import * as exampleSesEvent from '../../testUtils/testdata/events/ses-event.json';
+import * as exampleSqsEvent from '../../testUtils/testdata/events/sqs-event.json';
+import * as exampleSqsManyMessagesEvent from '../../testUtils/testdata/events/sqs-event-many-messages.json';
+import * as exampleKinesisEvent from '../../testUtils/testdata/events/kinesis-event.json';
+import * as exampleDynamoDBInsertEvent from '../../testUtils/testdata/events/dynamodb-insert-event.json';
+import * as exampleDynamoDBModifyEvent from '../../testUtils/testdata/events/dynamodb-modify-event.json';
+import * as exampleDynamoDBRemoveEvent from '../../testUtils/testdata/events/dynamodb-remove-event.json';
+import * as exampleApiGatewayEvent from '../../testUtils/testdata/events/apigw-request.json';
+import * as exampleFalseApiGatewayEvent from '../testdata/events/false-apigw-request.json';
+import * as exampleApiGatewayV2Event from '../../testUtils/testdata/events/apigw-v2-event.json';
+import * as exampleUnsupportedEvent from '../../testUtils/testdata/events/appsync-invoke.json';
+import * as exampleApiGatewayEventWithoutHost from '../../testUtils/testdata/events/apigw-custom-auth-request.json';
+import * as exampleEventBridgeEvent from '../../testUtils/testdata/events/event-bridge-event.json';
+import * as exampleAppSyncEvent from '../../testUtils/testdata/events/appsync-event.json';
+import * as exampleAppSyncSecondEvent from '../../testUtils/testdata/events/appsync-second-event.json';
+import * as exampleEmptySqsEvent from '../../testUtils/testdata/events/empty-sqs-event.json';
 import * as utils from '../utils';
 import { md5Hash } from '../utils';
 import { TracerGlobals } from '../globals';
 import * as events from './events';
 import { EventTrigger } from './event-trigger.enum';
-
-const exampleS3Event = require('../../testUtils/testdata/events/s3-event.json');
-const exampleSnsEvent = require('../../testUtils/testdata/events/sns-event.json');
-const exampleSesEvent = require('../../testUtils/testdata/events/ses-event.json');
-const exampleSqsEvent = require('../../testUtils/testdata/events/sqs-event.json');
-const exampleSqsManyMessagesEvent = require('../../testUtils/testdata/events/sqs-event-many-messages.json');
-const exampleKinesisEvent = require('../../testUtils/testdata/events/kinesis-event.json');
-const exampleDynamoDBInsertEvent = require('../../testUtils/testdata/events/dynamodb-insert-event.json');
-const exampleDynamoDBModifyEvent = require('../../testUtils/testdata/events/dynamodb-modify-event.json');
-const exampleDynamoDBRemoveEvent = require('../../testUtils/testdata/events/dynamodb-remove-event.json');
-const exampleApiGatewayEvent = require('../../testUtils/testdata/events/apigw-request.json');
-const exampleFalseApiGatewayEvent = require('../testdata/events/false-apigw-request.json');
-const exampleApiGatewayV2Event = require('../../testUtils/testdata/events/apigw-v2-event.json');
-const exampleUnsupportedEvent = require('../../testUtils/testdata/events/appsync-invoke.json');
-const exampleApiGatewayEventWithoutHost = require('../../testUtils/testdata/events/apigw-custom-auth-request.json');
-const exampleEventBridgeEvent = require('../../testUtils/testdata/events/event-bridge-event.json');
-const exampleAppSyncEvent = require('../../testUtils/testdata/events/appsync-event.json');
-const exampleAppSyncSecondEvent = require('../../testUtils/testdata/events/appsync-second-event.json');
-const exampleEmptySqsEvent = require('../../testUtils/testdata/events/empty-sqs-event.json');
 
 describe('events', () => {
   test('getTriggeredBy', () => {
@@ -40,6 +39,7 @@ describe('events', () => {
   });
 
   test('getApiGatewayData', () => {
+    // @ts-ignore TODO: fix the example file to fit the API Gateway event type definition
     expect(events.getApiGatewayData(exampleApiGatewayEvent)).toEqual({
       messageId: 'deef4878-7910-11e6-8f14-25afc3e9ae33',
       api: 'gy415nuibc.execute-api.us-east-1.amazonaws.com',
@@ -48,6 +48,7 @@ describe('events', () => {
       stage: 'testStage',
     });
 
+    // @ts-ignore TODO: fix the example file to fit the API Gateway event type definition
     expect(events.getApiGatewayData(exampleApiGatewayEventWithoutHost)).toEqual({
       api: null,
       httpMethod: undefined,
@@ -57,6 +58,7 @@ describe('events', () => {
   });
 
   test('getApiGatewayData => API gw v2', () => {
+    // @ts-ignore TODO: fix the example file to fit the API Gateway v2 event type definition
     expect(events.getApiGatewayData(exampleApiGatewayV2Event)).toEqual({
       api: 'r3pmxmplak.execute-api.us-east-2.amazonaws.com',
       httpMethod: 'GET',
