@@ -38,6 +38,9 @@ jobs:
         name: prettier
         command: npm run prettier:ci
     - run:
+        name: check types
+        command: npm run check-types
+    - run:
         name: test
         command: npm test
     - run:
