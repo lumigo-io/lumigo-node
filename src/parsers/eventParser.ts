@@ -82,7 +82,7 @@ export const isSnsEvent = (event): event is SNSEvent => {
 };
 
 export const isSqsEvent = (event): event is SQSEvent => {
-  return event?.Records[0]?.eventSource === 'aws:sqs';
+  return event?.Records?.[0]?.eventSource === 'aws:sqs';
 };
 
 export const isS3Event = (event): event is S3Event => {
