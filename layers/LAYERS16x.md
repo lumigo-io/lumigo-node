@@ -1,4 +1,4 @@
-Layers runtime: nodejs12.x
+Layers runtime: nodejs16.x
 ----
 | Region | ARN |
 | --- | --- |

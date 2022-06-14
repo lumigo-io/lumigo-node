@@ -8,7 +8,7 @@
 
 This is [`@lumigo/tracer`](https://), Lumigo's Node.js agent for distributed tracing and performance monitoring.
 
-Supported NodeJS runtimes: 8.10, 10.x, 12.x, 14.x
+Supported NodeJS runtimes: 8.10, 10.x, 12.x, 14.x, 16.x
 
  
 ## Usage 
@@ -51,9 +51,11 @@ exports.handler = lumigo.trace(myHandler)
 // typescript
 import lumigo from '@lumigo/tracer';
 
-const myHandler = async (event, context, callback) => { ... }
+const tracer = lumigo({ token: 'YOUR-TOKEN-HERE' });
 
-exports.handler = lumigo({ token: 'YOUR-TOKEN-HERE' }).trace(myHandler)
+export const handler = tracer.trace(async (event, context) => {
+  ...
+});
 ~~~
 
 ##### Note:

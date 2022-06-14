@@ -1,6 +1,6 @@
 {
   "name": "@lumigo/tracer",
-  "version": "1.71.1",
+  "version": "1.71.4",
   "description": "Lumigo Tracer for Node.js v8.x / v10.x / v12.x Runtimes",
   "main": "dist/index.js",
   "repository": "git@github.com:lumigo-io/lumigo-node.git",
@@ -18,7 +18,8 @@
     "lint": "eslint ./src",
     "prepublishOnly": "npm run prettier:fix && npm run lint && npm run test",
     "prettier:ci": "prettier --list-different \"src/**/*.[jt]s\" --parser typescript",
-    "prettier:fix": "prettier --write \"./src/**/*.[jt]s\" --parser typescript"
+    "prettier:fix": "prettier --write \"./src/**/*.[jt]s\" --parser typescript",
+    "check-types": "tsc --noEmit"
   },
   "dependencies": {
     "agentkeepalive": "^4.1.4",
@@ -41,7 +42,7 @@
     "@semantic-release/changelog": "^3.0.6",
     "@semantic-release/git": "^7.0.18",
     "@semantic-release/github": "^7.2.3",
-    "@types/aws-lambda": "^8.10.77",
+    "@types/aws-lambda": "^8.10.96",
     "@types/jest": "^26.0.23",
     "@types/utf8": "^3.0.0",
     "aws-sdk": "^2.927.0",
