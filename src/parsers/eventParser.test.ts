@@ -411,6 +411,12 @@ describe('event parser', () => {
     );
   });
 
+  test('unknownEvent parse', () => {
+    const unknownEvent = {a: "a"};
+    const parsedEvent = parseEvent(unknownEvent);
+    expect(unknownEvent).toEqual(parsedEvent)
+  });
+
   test('sqs parse', () => {
     const notOrderSqsEvent = {
       Records: [
