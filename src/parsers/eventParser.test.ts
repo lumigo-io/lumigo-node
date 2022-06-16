@@ -26,16 +26,6 @@ describe('event parser', () => {
     expect(parseEvent(null)).toEqual(null);
   });
 
-  test('exception check', () => {
-    const event = {
-      get requestContext() {
-        throw new Error();
-      },
-      a: 1,
-    };
-    expect(parseEvent(event)).toEqual(event);
-  });
-
   test('getSkipScrubPath S3', () => {
     expect(getSkipScrubPath(S3_EVENT)).toEqual(['Records', [], 's3', 'object', 'key']);
   });
@@ -409,6 +399,11 @@ describe('event parser', () => {
         ],
       })
     );
+  });
+
+  test('unknownEvent parse', () => {
+    const event = { a: 'a' };
+    expect(parseEvent(event)).toEqual(event);
   });
 
   test('sqs parse', () => {

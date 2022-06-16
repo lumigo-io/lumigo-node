@@ -13,6 +13,7 @@ import {
   EXECUTION_TAGS_KEY,
   getEventEntitySize,
   isString,
+  safeExecute,
 } from '../utils';
 import {
   dynamodbParser,
@@ -115,7 +116,11 @@ export const getBasicSpan = (transactionId: string): BasicSpan => {
 
 const getEventForSpan = (hasError: boolean = false): string => {
   const event = TracerGlobals.getHandlerInputs().event;
-  return payloadStringify(parseEvent(event), getEventEntitySize(hasError), getSkipScrubPath(event));
+  return payloadStringify(
+    safeExecute(parseEvent, 'Failed to parse event', logger.LOG_LEVELS.WARNING, event)(event),
+    getEventEntitySize(hasError),
+    getSkipScrubPath(event)
+  );
 };
 
 const getEnvsForSpan = (hasError: boolean = false): string =>

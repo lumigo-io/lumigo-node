@@ -82,7 +82,7 @@ export const isSnsEvent = (event): event is SNSEvent => {
 };
 
 export const isSqsEvent = (event): event is SQSEvent => {
-  return event?.Records[0]?.eventSource === 'aws:sqs';
+  return event?.Records?.[0]?.eventSource === 'aws:sqs';
 };
 
 export const isS3Event = (event): event is S3Event => {
@@ -235,28 +235,24 @@ export const parseCloudfrontEvent = (event: CloudFrontRequestEvent) => {
 };
 
 export const parseEvent = (event) => {
-  try {
-    if (isApiGwEvent(event)) {
-      return parseApiGwEvent(event);
-    }
+  if (isApiGwEvent(event)) {
+    return parseApiGwEvent(event);
+  }
 
-    if (isSnsEvent(event)) {
-      return parseSnsEvent(event);
-    }
+  if (isSnsEvent(event)) {
+    return parseSnsEvent(event);
+  }
 
-    if (isSqsEvent(event)) {
-      return parseSqsEvent(event);
-    }
+  if (isSqsEvent(event)) {
+    return parseSqsEvent(event);
+  }
 
-    if (isS3Event(event)) {
-      return parseS3Event(event);
-    }
+  if (isS3Event(event)) {
+    return parseS3Event(event);
+  }
 
-    if (isCloudfrontEvent(event)) {
-      return parseCloudfrontEvent(event);
-    }
-  } catch (e) {
-    logger.warn('Failed to parse event', e);
+  if (isCloudfrontEvent(event)) {
+    return parseCloudfrontEvent(event);
   }
   return event;
 };
