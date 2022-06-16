@@ -214,10 +214,10 @@ export const getServiceType = (host) =>
 
 export type AwsServiceData = {
   awsServiceData?: {
-    [key: string]: any,
-  },
-  messageId?: string,
-  [key: string]: any,
+    [key: string]: any;
+  };
+  messageId?: string;
+  [key: string]: any;
 };
 export const getAwsServiceData = (requestData, responseData): AwsServiceData => {
   const { host } = requestData;

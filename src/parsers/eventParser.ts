@@ -235,26 +235,26 @@ export const parseCloudfrontEvent = (event: CloudFrontRequestEvent) => {
 };
 
 export const parseEvent = (event) => {
-    if (isApiGwEvent(event)) {
-      return parseApiGwEvent(event);
-    }
+  if (isApiGwEvent(event)) {
+    return parseApiGwEvent(event);
+  }
 
-    if (isSnsEvent(event)) {
-      return parseSnsEvent(event);
-    }
+  if (isSnsEvent(event)) {
+    return parseSnsEvent(event);
+  }
 
-    if (isSqsEvent(event)) {
-      return parseSqsEvent(event);
-    }
+  if (isSqsEvent(event)) {
+    return parseSqsEvent(event);
+  }
 
-    if (isS3Event(event)) {
-      return parseS3Event(event);
-    }
+  if (isS3Event(event)) {
+    return parseS3Event(event);
+  }
 
-    if (isCloudfrontEvent(event)) {
-      return parseCloudfrontEvent(event);
-    }
-    return event;
+  if (isCloudfrontEvent(event)) {
+    return parseCloudfrontEvent(event);
+  }
+  return event;
 };
 
 export const getSkipScrubPath = (event) => {

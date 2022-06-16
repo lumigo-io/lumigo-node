@@ -413,7 +413,7 @@ describe('event parser', () => {
 
   test('unknownEvent parse', () => {
     const event = { a: 'a' };
-    expect(parseEvent(event)).toEqual(event)
+    expect(parseEvent(event)).toEqual(event);
   });
 
   test('sqs parse', () => {
