@@ -425,6 +425,7 @@ describe('event parser', () => {
     spies.forEach((spy) => {
       expect(spy.mock.results[0].type).toEqual('return');
       expect(spy.mock.results[0].value).toEqual(false);
+      spy.mockRestore();
     });
   });
 
