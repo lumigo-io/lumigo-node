@@ -12,14 +12,6 @@ import type {
 
 import * as logger from '../logger';
 import { getEnvVarAsList, isScrubKnownServicesOn } from '../utils';
-import {
-  isApiGwEvent,
-  isCloudfrontEvent,
-  isDDBEvent,
-  isS3Event,
-  isSnsEvent,
-  isSqsEvent,
-} from './eventChecker';
 
 const API_GW_KEYS_ORDER = getEnvVarAsList('LUMIGO_API_GW_KEYS_ORDER', [
   'version',
@@ -80,6 +72,30 @@ const CLOUDFRONT_REQUEST_KEYS_ORDER = getEnvVarAsList('LUMIGO_CLOUDFRONT_REQUEST
   'querystring',
   'uri',
 ]);
+
+export const isApiGwEvent = (event): event is APIGatewayEvent | APIGatewayProxyEventV2 => {
+  return event?.requestContext?.domainName != null && event?.requestContext?.requestId != null;
+};
+
+export const isSnsEvent = (event): event is SNSEvent => {
+  return event?.Records?.[0]?.EventSource === 'aws:sns';
+};
+
+export const isSqsEvent = (event): event is SQSEvent => {
+  return event?.Records?.[0]?.eventSource === 'aws:sqs';
+};
+
+export const isS3Event = (event): event is S3Event => {
+  return event?.Records?.[0]?.eventSource === 'aws:s3';
+};
+
+const isDDBEvent = (event): event is DynamoDBStreamEvent => {
+  return event?.Records?.[0]?.eventSource === 'aws:dynamodb';
+};
+
+export const isCloudfrontEvent = (event): event is CloudFrontRequestEvent => {
+  return event?.Records?.[0]?.cf?.config?.distributionId != null;
+};
 
 export const parseApiGwEvent = (event) => {
   const parsedEvent = {};
@@ -219,7 +235,6 @@ export const parseCloudfrontEvent = (event: CloudFrontRequestEvent) => {
 };
 
 export const parseEvent = (event) => {
-  try {
     if (isApiGwEvent(event)) {
       return parseApiGwEvent(event);
     }
@@ -239,10 +254,7 @@ export const parseEvent = (event) => {
     if (isCloudfrontEvent(event)) {
       return parseCloudfrontEvent(event);
     }
-  } catch (e) {
-    logger.warn('Failed to parse event', e);
-  }
-  return event;
+    return event;
 };
 
 export const getSkipScrubPath = (event) => {

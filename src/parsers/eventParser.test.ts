@@ -1,5 +1,4 @@
-import * as EventParser from './eventParser';
-import * as EventChecker from './eventChecker';
+import { getSkipScrubPath, parseEvent } from './eventParser';
 
 describe('event parser', () => {
   const S3_EVENT = {
@@ -20,11 +19,11 @@ describe('event parser', () => {
   };
 
   test('check null value', () => {
-    expect(EventParser.parseEvent(null)).toEqual(null);
+    expect(parseEvent(null)).toEqual(null);
   });
 
   test('null check', () => {
-    expect(EventParser.parseEvent(null)).toEqual(null);
+    expect(parseEvent(null)).toEqual(null);
   });
 
   test('exception check', () => {
@@ -34,14 +33,14 @@ describe('event parser', () => {
       },
       a: 1,
     };
-    expect(EventParser.parseEvent(event)).toEqual(event);
+    expect(parseEvent(event)).toEqual(event);
   });
 
-  test('EventParser.getSkipScrubPath S3', () => {
-    expect(EventParser.getSkipScrubPath(S3_EVENT)).toEqual(['Records', [], 's3', 'object', 'key']);
+  test('getSkipScrubPath S3', () => {
+    expect(getSkipScrubPath(S3_EVENT)).toEqual(['Records', [], 's3', 'object', 'key']);
   });
 
-  test('EventParser.getSkipScrubPath DDB', () => {
+  test('getSkipScrubPath DDB', () => {
     const ddbEvent = {
       Records: [
         {
@@ -63,16 +62,16 @@ describe('event parser', () => {
         },
       ],
     };
-    expect(EventParser.getSkipScrubPath(ddbEvent)).toEqual(['Records', [], 'dynamodb', 'Keys']);
+    expect(getSkipScrubPath(ddbEvent)).toEqual(['Records', [], 'dynamodb', 'Keys']);
   });
 
-  test('EventParser.getSkipScrubPath service without skipping', () => {
-    expect(EventParser.getSkipScrubPath({})).toEqual(null);
+  test('getSkipScrubPath service without skipping', () => {
+    expect(getSkipScrubPath({})).toEqual(null);
   });
 
-  test('EventParser.getSkipScrubPath - skipping disabled by env var', () => {
+  test('getSkipScrubPath - skipping disabled by env var', () => {
     process.env.LUMIGO_SCRUB_KNOWN_SERVICES = 'true';
-    expect(EventParser.getSkipScrubPath(S3_EVENT)).toEqual(null);
+    expect(getSkipScrubPath(S3_EVENT)).toEqual(null);
   });
 
   test('api gw v1', () => {
@@ -198,7 +197,7 @@ describe('event parser', () => {
       isBase64Encoded: false,
     };
 
-    const orderApiGwEvent = EventParser.parseEvent(notOrderApiGwEvent);
+    const orderApiGwEvent = parseEvent(notOrderApiGwEvent);
 
     expect(JSON.stringify(orderApiGwEvent)).toEqual(
       JSON.stringify({
@@ -296,7 +295,7 @@ describe('event parser', () => {
       isBase64Encoded: true,
     };
 
-    const orderApiGwEvent = EventParser.parseEvent(notOrderApiGwEvent);
+    const orderApiGwEvent = parseEvent(notOrderApiGwEvent);
 
     expect(JSON.stringify(orderApiGwEvent)).toEqual(
       JSON.stringify({
@@ -382,7 +381,7 @@ describe('event parser', () => {
       ],
     };
 
-    const orderSnsEvent = EventParser.parseEvent(notOrderSnsEvent);
+    const orderSnsEvent = parseEvent(notOrderSnsEvent);
 
     expect(JSON.stringify(orderSnsEvent)).toEqual(
       JSON.stringify({
@@ -413,20 +412,8 @@ describe('event parser', () => {
   });
 
   test('unknownEvent parse', () => {
-    const unknownEvent = { a: 'a' };
-    const spies = [
-      jest.spyOn(EventChecker, 'isApiGwEvent'),
-      jest.spyOn(EventChecker, 'isSnsEvent'),
-      jest.spyOn(EventChecker, 'isSqsEvent'),
-      jest.spyOn(EventChecker, 'isS3Event'),
-      jest.spyOn(EventChecker, 'isCloudfrontEvent'),
-    ];
-    EventParser.parseEvent(unknownEvent);
-    spies.forEach((spy) => {
-      expect(spy.mock.results[0].type).toEqual('return');
-      expect(spy.mock.results[0].value).toEqual(false);
-      spy.mockRestore();
-    });
+    const event = { a: 'a' };
+    expect(parseEvent(event)).toEqual(event)
   });
 
   test('sqs parse', () => {
@@ -467,7 +454,7 @@ describe('event parser', () => {
       ],
     };
 
-    const orderSqsEvent = EventParser.parseEvent(notOrderSqsEvent);
+    const orderSqsEvent = parseEvent(notOrderSqsEvent);
 
     expect(JSON.stringify(orderSqsEvent)).toEqual(
       JSON.stringify({
@@ -522,7 +509,7 @@ describe('event parser', () => {
       ],
     };
 
-    const orderedS3Event = EventParser.parseEvent(notOrderedS3Event);
+    const orderedS3Event = parseEvent(notOrderedS3Event);
 
     expect(JSON.stringify(orderedS3Event)).toEqual(
       JSON.stringify({
@@ -595,7 +582,7 @@ describe('event parser', () => {
         },
       ],
     };
-    const orderedCloudfrontEvent = EventParser.parseEvent(notOrderedCloudfrontEvent);
+    const orderedCloudfrontEvent = parseEvent(notOrderedCloudfrontEvent);
 
     expect(JSON.stringify(orderedCloudfrontEvent)).toEqual(
       JSON.stringify({
