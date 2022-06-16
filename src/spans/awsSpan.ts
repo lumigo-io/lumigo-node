@@ -117,7 +117,7 @@ export const getBasicSpan = (transactionId: string): BasicSpan => {
 const getEventForSpan = (hasError: boolean = false): string => {
   const event = TracerGlobals.getHandlerInputs().event;
   return payloadStringify(
-    safeExecute(parseEvent(event), 'Failed to parse event', logger.LOG_LEVELS.WARNING, event),
+    safeExecute(parseEvent, 'Failed to parse event', logger.LOG_LEVELS.WARNING, event)(event),
     getEventEntitySize(hasError),
     getSkipScrubPath(event)
   );
