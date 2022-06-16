@@ -428,13 +428,6 @@ describe('event parser', () => {
     });
   });
 
-  test('unknownEvent test', () => {
-    let spy = jest.spyOn(EventParser, 'func2');
-    EventParser.func2(1);
-    expect(spy).toHaveBeenCalledWith(1);
-    spy.mockRestore();
-  });
-
   test('sqs parse', () => {
     const notOrderSqsEvent = {
       Records: [

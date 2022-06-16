@@ -218,18 +218,6 @@ export const parseCloudfrontEvent = (event: CloudFrontRequestEvent) => {
   return newCloudfrontEvent;
 };
 
-export const func = (input) => {
-  try {
-    func2(input);
-  } catch (e) {
-    console.log('err');
-  }
-};
-
-export const func2 = (input) => {
-  if (input === 1) return input;
-};
-
 export const parseEvent = (event) => {
   try {
     if (isApiGwEvent(event)) {
