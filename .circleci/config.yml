@@ -78,6 +78,9 @@ jobs:
           cd ..
           git clone git@github.com:lumigo-io/larn.git
     - checkout
+    - run: apt-get update
+    - run: apt-get install jq
+    - run: npm install -g aws-cdk@1.125.0
     - run:
         name: deploy env
         command: ./scripts/ci_deploy.sh
