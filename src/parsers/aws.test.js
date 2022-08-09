@@ -195,6 +195,33 @@ describe('aws parser', () => {
     });
   });
 
+  test('snsParser -> happy flow (request with TargetArn)', () => {
+    const topicArn = 'SOME-TOPIC-ARN';
+    const requestData = {
+      path: '/',
+      port: 443,
+      host: 'sns.us-west-2.amazonaws.com',
+      body: `Action=Publish&Message=Some%20Message%20to%20SNS&TargetArn=${topicArn}&Version=2010-03-31`,
+      method: 'POST',
+      headers: {
+        'content-length': 137,
+        host: 'sns.us-west-2.amazonaws.com',
+        'x-amz-date': '20190730T080719Z',
+      },
+      protocol: 'https:',
+      sendTime: 1564474039619,
+    };
+
+    const result = aws.snsParser(requestData, {});
+
+    expect(result).toEqual({
+      awsServiceData: {
+        resourceName: topicArn,
+        targetArn: topicArn,
+      },
+    });
+  });
+
   test('snsParser -> happy flow (response)', () => {
     const response = {
       statusCode: 200,

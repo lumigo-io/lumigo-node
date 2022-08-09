@@ -2,6 +2,8 @@ import * as exampleS3Event from '../../testUtils/testdata/events/s3-event.json';
 import * as exampleSnsEvent from '../../testUtils/testdata/events/sns-event.json';
 import * as exampleSesEvent from '../../testUtils/testdata/events/ses-event.json';
 import * as exampleSqsEvent from '../../testUtils/testdata/events/sqs-event.json';
+import * as exampleSnsSqsEvent from '../../testUtils/testdata/events/sns-sqs-event.json';
+import * as exampleSqsNonSnsEvent from '../../testUtils/testdata/events/sqs-non-sns-event.json';
 import * as exampleSqsManyMessagesEvent from '../../testUtils/testdata/events/sqs-event-many-messages.json';
 import * as exampleKinesisEvent from '../../testUtils/testdata/events/kinesis-event.json';
 import * as exampleDynamoDBInsertEvent from '../../testUtils/testdata/events/dynamodb-insert-event.json';
@@ -84,6 +86,24 @@ describe('events', () => {
     expect(events.getRelevantEventData(EventTrigger.SQS, exampleSqsManyMessagesEvent)).toEqual({
       arn: 'arn:aws:sqs:us-west-2:123456789012:SQSQueue',
       messageIds: ['MessageID_1', 'MessageID_2'],
+    });
+
+    expect(events.getRelevantEventData(EventTrigger.SQS, exampleSnsSqsEvent)).toEqual({
+      arn: 'arn:aws:sqs:us-east-1:123456789:sqs-queue-name',
+      messageIdToChainResource: [
+        {
+          TopicArn: 'arn:aws:sns:us-west-2:723663554526:tracer-test-saart-temp-Pttcj',
+          childMessageId: 'f4ceb23d-2ae7-44d3-b171-df7ab2d10a81',
+          parentMessageId: '2c78f253-4cd9-57bb-8bc3-a965e40a293e',
+          resourceType: 'sns',
+        },
+      ],
+      messageIds: ['f4ceb23d-2ae7-44d3-b171-df7ab2d10a81', '2c78f253-4cd9-57bb-8bc3-a965e40a293e'],
+    });
+
+    expect(events.getRelevantEventData(EventTrigger.SQS, exampleSqsNonSnsEvent)).toEqual({
+      arn: 'arn:aws:sqs:us-east-1:123456789:sqs-queue-name',
+      messageId: 'f4ceb23d-2ae7-44d3-b171-df7ab2d10a81',
     });
 
     expect(events.getRelevantEventData(EventTrigger.Kinesis, exampleKinesisEvent)).toEqual({

@@ -129,11 +129,40 @@ export const getRelevantEventData = (triggeredBy: EventTrigger, event): EventDat
 
 export const getSqsData = (event: SQSEvent): SQSEventData => {
   const arn = event.Records[0].eventSourceARN;
-  const messageIds = event.Records.map((r) => r.messageId).filter((messageId) => messageId != null);
-
-  if (messageIds.length === 1) return { arn, messageId: messageIds[0] };
-
-  return { arn, messageIds };
+  const messageIds = [];
+  const chained_resources = [];
+  (event.Records || []).forEach((record) => {
+    let record_message_id = record.messageId;
+    record_message_id && messageIds.push(record_message_id);
+    const body = record.body || '';
+    if (
+      record_message_id &&
+      body.includes('SimpleNotificationService') &&
+      body.includes('TopicArn')
+    ) {
+      const message_id = /"MessageId" : "(\w{8}-\w{4}-\w{4}-\w{4}-\w{12})"/g.exec(body);
+      const topic_arn = /"TopicArn" : "(arn:aws:sns:[\w\-:]+)"/.exec(body);
+      if (message_id && topic_arn) {
+        messageIds.push(message_id[1]);
+        chained_resources.push({
+          resourceType: 'sns',
+          TopicArn: topic_arn[1],
+          childMessageId: record_message_id,
+          parentMessageId: message_id[1],
+        });
+      }
+    }
+  });
+  let result: SQSEventData;
+  if (messageIds.length === 1) {
+    result = { arn, messageId: messageIds[0] };
+  } else {
+    result = { arn, messageIds: messageIds };
+  }
+  if (chained_resources.length > 0) {
+    result['messageIdToChainResource'] = chained_resources;
+  }
+  return result;
 };
 
 export const getDynamodbData = (event: DynamoDBStreamEvent): DynamoDBStreamEventData => {

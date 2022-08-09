@@ -69,7 +69,12 @@ export const snsParser = (requestData, responseData) => {
   const { body: resBody } = responseData;
   const parsedRequestBody = reqBody ? parseQueryParams(reqBody) : undefined;
   const parsedResponseBody = resBody ? traverse(resBody) : undefined;
-  const resourceName = parsedRequestBody ? parsedRequestBody['TopicArn'] : undefined;
+  let resourceName = undefined;
+  if (parsedRequestBody && parsedRequestBody['TopicArn']) {
+    resourceName = parsedRequestBody['TopicArn'];
+  } else if (parsedRequestBody && parsedRequestBody['TargetArn']) {
+    resourceName = parsedRequestBody['TargetArn'];
+  }
   const messageId = parsedResponseBody
     ? ((parsedResponseBody['PublishResponse'] || {})['PublishResult'] || {})['MessageId']
     : undefined;
