@@ -2,6 +2,7 @@ import * as logger from './logger';
 import * as utils from './utils';
 import { TracerGlobals } from './globals';
 import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
+import { error } from './lumigoLogger';
 
 describe('logger', () => {
   const times = (x, callback) => {
@@ -271,6 +272,21 @@ describe('logger', () => {
     expect(ConsoleWritesForTesting.getLogs()).toEqual([
       {
         msg: '#LUMIGO# - FATAL - "Test"',
+        obj: undefined,
+      },
+    ]);
+  });
+
+  test('error with extra', () => {
+    utils.setStoreLogsOn();
+    TracerGlobals.setTracerInputs({});
+
+    error('Test', { extra: { a: { b: { c: 'a' } } }, err: new Error('ERROR'), type: 'ErrorType' });
+
+    const logs = ConsoleWritesForTesting.getLogs();
+    expect(logs).toEqual([
+      {
+        msg: '[LUMIGO_LOG] {"message":"Test","type":"ErrorType","level":40,"extra":{"a":{"b":{"c":"a"}},"rawException":"ERROR"}}',
         obj: undefined,
       },
     ]);

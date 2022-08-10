@@ -24,7 +24,7 @@ const log = (level, message, type, extra) => {
     .filter(([key, value]) => ExecutionTags.validateTag(key, value))
     .slice(0, MAX_ELEMENTS_IN_EXTRA)
     .reduce((acc, [key, value]) => {
-      acc[key] = String(value);
+      acc[key] = value;
       return acc;
     }, {});
 
