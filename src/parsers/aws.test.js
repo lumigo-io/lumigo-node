@@ -168,6 +168,26 @@ describe('aws parser', () => {
     expect(aws.lambdaParser(requestData, responseData)).toEqual(expected);
   });
 
+  test('lambdaParser with arn no headers on responseData', () => {
+    const resourceName = 'FunctionName';
+    const arn = `arn:aws:lambda:eu-central-1:123847209798:function:${resourceName}`;
+    const path = encodeURIComponent(
+      `lambda.eu-central-1.amazonaws.com/2015-03-31/functions/${arn}/invocations?Qualifier=Qualifier`
+    );
+    const invocationType = 'InvocationType';
+    const headers = {
+      'x-amz-invocation-type': invocationType,
+    };
+    const requestData = { path, headers };
+    const spanId = '';
+    const responseData = { headers:undefined };
+    const expected = {
+      awsServiceData: { resourceName, invocationType },
+      spanId,
+    };
+    expect(aws.lambdaParser(requestData, responseData)).toEqual(expected);
+  });
+
   test('snsParser -> happy flow (request)', () => {
     const topicArn = 'SOME-TOPIC-ARN';
     const requestData = {

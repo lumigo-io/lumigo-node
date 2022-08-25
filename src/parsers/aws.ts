@@ -58,7 +58,7 @@ export const lambdaParser = (requestData, responseData) => {
   resourceName = isArn(resourceName) ? extractLambdaNameFromArn(resourceName) : resourceName;
   const invocationType = headers['x-amz-invocation-type'];
   const { headers: responseHeaders } = responseData;
-  const spanId = responseHeaders['x-amzn-requestid'] || responseHeaders['x-amz-requestid'] || '';
+  const spanId = responseHeaders ?  (responseHeaders['x-amzn-requestid'] || responseHeaders['x-amz-requestid'] || '') : '';
   const awsServiceData = { resourceName, invocationType };
   return { awsServiceData, spanId };
 };
