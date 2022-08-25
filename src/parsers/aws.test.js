@@ -180,7 +180,7 @@ describe('aws parser', () => {
     };
     const requestData = { path, headers };
     const spanId = '';
-    const responseData = { headers:undefined };
+    const responseData = { headers: undefined };
     const expected = {
       awsServiceData: { resourceName, invocationType },
       spanId,
