@@ -217,9 +217,9 @@ describe('utils', () => {
   });
 
   test('shouldPropagateW3C', () => {
-    expect(shouldPropagateW3C()).toBe(true);
-    process.env.LUMIGO_PROPAGATE_W3C = 'FALSE';
     expect(shouldPropagateW3C()).toBe(false);
+    process.env.LUMIGO_PROPAGATE_W3C = 'TRUE';
+    expect(shouldPropagateW3C()).toBe(true);
   });
 
   test('setLambdaWrapped', () => {

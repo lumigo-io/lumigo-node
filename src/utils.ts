@@ -168,16 +168,8 @@ const LUMIGO_STACK_PATTERNS = [
   new RegExp('/node_modules/@lumigo/tracer/', 'i'),
 ];
 
-const validateEnvVar = (
-  envVar: string,
-  value: string = 'TRUE',
-  defaultValue: boolean = false
-): boolean => {
-  if (!(envVar in process.env)) {
-    return defaultValue;
-  }
-  return process.env[envVar].toUpperCase() === value.toUpperCase();
-};
+const validateEnvVar = (envVar: string, value: string = 'TRUE'): boolean =>
+  !!(process.env[envVar] && process.env[envVar].toUpperCase() === value.toUpperCase());
 
 export const isAwsEnvironment = () =>
   !!(
@@ -252,7 +244,7 @@ export const isDebug = (): boolean =>
 
 export const isLambdaWrapped = (): boolean => validateEnvVar(WRAPPED_FLAG);
 
-export const shouldPropagateW3C = (): boolean => validateEnvVar(LUMIGO_PROPAGATE_W3C, 'TRUE', true);
+export const shouldPropagateW3C = (): boolean => validateEnvVar(LUMIGO_PROPAGATE_W3C);
 
 export const setLambdaWrapped = (): void => {
   process.env[WRAPPED_FLAG] = 'TRUE';

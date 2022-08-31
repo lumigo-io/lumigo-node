@@ -556,7 +556,7 @@ describe('awsSpan', () => {
 
     requestData.host = `deadbeef.amazonaws.com`;
     awsSpan.getServiceData(requestData, responseData);
-    expect(awsParsers.awsParser).toHaveBeenCalledWith(requestData, responseData);
+    expect(awsParsers.defaultParser).toHaveBeenCalledWith(requestData, responseData);
   });
 
   test('getBasicChildSpan', () => {

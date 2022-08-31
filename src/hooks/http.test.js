@@ -818,6 +818,7 @@ describe('http hook', () => {
 
   test('wrapHttpLib - add W3C headers', () => {
     utils.setTimeoutTimerDisabled();
+    process.env['LUMIGO_PROPAGATE_W3C'] = 'TRUE';
     const handlerInputs = new HandlerInputesBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
     const requestData = HttpSpanBuilder.getDefaultData(HttpSpanBuilder.DEFAULT_REQUEST_DATA);

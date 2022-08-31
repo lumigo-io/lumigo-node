@@ -21,7 +21,7 @@ import {
   lambdaParser,
   sqsParser,
   kinesisParser,
-  awsParser,
+  defaultParser,
   apigwParser,
   eventBridgeParser,
 } from '../parsers/aws';
@@ -36,7 +36,6 @@ import { FunctionSpan } from '../types/spans/functionSpan';
 import { Context } from 'aws-lambda';
 import { Utf8Utils } from '../utils/utf8Utils';
 import { isW3CHeaders } from '../utils/w3cUtils';
-import { W3CParser } from '../parsers/w3c';
 
 export const HTTP_SPAN = 'http';
 export const FUNCTION_SPAN = 'function';
@@ -222,11 +221,7 @@ export type ServiceData = {
   [key: string]: any;
 };
 export const getServiceData = (requestData, responseData): ServiceData => {
-  const { host, headers } = requestData;
-
-  if (isW3CHeaders(headers)) {
-    return W3CParser(requestData);
-  }
+  const { host } = requestData;
 
   const awsService = getAwsServiceFromHost(host);
 
@@ -246,7 +241,7 @@ export const getServiceData = (requestData, responseData): ServiceData => {
     case 'events':
       return eventBridgeParser(requestData, responseData);
     default:
-      return awsParser(requestData, responseData);
+      return defaultParser(requestData, responseData);
   }
 };
 

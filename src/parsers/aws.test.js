@@ -1,5 +1,6 @@
 import * as aws from './aws';
 import { md5Hash } from '../utils';
+import { TRACEPARENT_HEADER_NAME } from '../utils/w3cUtils';
 
 describe('aws parser', () => {
   test('dynamodbParser', () => {
@@ -639,13 +640,13 @@ describe('aws parser', () => {
     });
   });
 
-  test('awsParser -> happy flow (with x-amzn-requestid header)', () => {
+  test('defaultParser -> happy flow (with x-amzn-requestid header)', () => {
     const responseData = {
       host: '9bis5jsyh2.execute-api.us-west-2.amazonaws.com',
       headers: { 'x-amzn-requestid': '123' },
     };
 
-    const result = aws.awsParser({}, responseData);
+    const result = aws.defaultParser({}, responseData);
 
     expect(result).toEqual({
       awsServiceData: {
@@ -654,14 +655,54 @@ describe('aws parser', () => {
     });
   });
 
-  test('awsParser -> happy flow (without x-amzn-requestid header)', () => {
+  test('defaultParser -> happy flow (without x-amzn-requestid header)', () => {
     const responseData = {
       host: '9bis5jsyh2.execute-api.us-west-2.amazonaws.com',
       headers: { hello: 'world' },
     };
 
-    const result = aws.awsParser({}, responseData);
+    const result = aws.defaultParser({}, responseData);
 
     expect(result).toEqual({});
+  });
+
+  test('defaultParser -> with W3C header', () => {
+    const responseData = {
+      host: 'google.com',
+      headers: { hello: 'world' },
+    };
+    const requestData = {
+      headers: {
+        [TRACEPARENT_HEADER_NAME]: '00-11111111111111111111111100000000-aaaaaaaaaaaaaaaa-01',
+      },
+    };
+
+    const result = aws.defaultParser(requestData, responseData);
+
+    expect(result).toEqual({
+      awsServiceData: {
+        messageId: 'aaaaaaaaaaaaaaaa',
+      },
+    });
+  });
+
+  test('defaultParser -> W3C messageId is weaker than other messageId', () => {
+    const responseData = {
+      host: 'google.com',
+      headers: { 'x-amzn-requestid': '123' },
+    };
+    const requestData = {
+      headers: {
+        [TRACEPARENT_HEADER_NAME]: '00-11111111111111111111111100000000-aaaaaaaaaaaaaaaa-01',
+      },
+    };
+
+    const result = aws.defaultParser(requestData, responseData);
+
+    expect(result).toEqual({
+      awsServiceData: {
+        messageId: '123',
+      },
+    });
   });
 });

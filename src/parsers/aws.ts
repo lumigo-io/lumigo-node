@@ -1,6 +1,7 @@
 import { md5Hash, parseQueryParams, removeDuplicates, safeGet } from '../utils';
 import { traverse } from '../tools/xmlToJson';
 import * as logger from '../logger';
+import { getW3CMessageId, isW3CHeaders } from '../utils/w3cUtils';
 
 const extractDynamodbMessageId = (reqBody, method) => {
   if (method === 'PutItem' && reqBody['Item']) {
@@ -87,7 +88,7 @@ export const snsParser = (requestData, responseData) => {
 
 export const apigwParser = (requestData, responseData) => {
   if (!responseData) return {};
-  const baseData = awsParser(requestData, responseData);
+  const baseData = defaultParser(requestData, responseData);
   if (!baseData.awsServiceData) {
     // @ts-ignore
     baseData.awsServiceData = {};
@@ -178,12 +179,16 @@ export const kinesisParser = (requestData, responseData) => {
   return { awsServiceData };
 };
 
-export const awsParser = (requestData, responseData) => {
+export const defaultParser = (requestData, responseData) => {
   if (!responseData) return {};
   const { headers: resHeader } = responseData;
-  const messageId = resHeader
+  let messageId = resHeader
     ? resHeader['x-amzn-requestid'] || resHeader['x-amz-request-id']
     : undefined;
+
+  if (!messageId && isW3CHeaders(requestData.headers)) {
+    messageId = getW3CMessageId(requestData.headers);
+  }
 
   const awsServiceData = { messageId };
   return messageId ? { awsServiceData } : {};

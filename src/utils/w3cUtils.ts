@@ -5,7 +5,7 @@ import { getCurrentTransactionId } from '../spans/awsSpan';
 // https://github.com/open-telemetry/opentelemetry-python/blob/cad776a2031c84fb3c3a1af90ee2a939f3394b9a/opentelemetry-api/src/opentelemetry/trace/propagation/tracecontext.py#L28
 export const TRACEPARENT_HEADER_NAME = 'traceparent';
 export const TRACESTATE_HEADER_NAME = 'tracestate';
-const TRACEPARENT_HEADER_FORMAT = /^([0-9a-f]{2})-([0-9a-f]{32})-([0-9a-f]{16})-([0-9a-f]{2})/g;
+const TRACEPARENT_HEADER_FORMAT = /^([0-9a-f]{2})-([0-9a-f]{32})-([0-9a-f]{16})-([0-9a-f]{2})/;
 const MALFORMED_TRACE_ID = '0'.repeat(32);
 const MALFORMED_SPAN_ID = '0'.repeat(16);
 
