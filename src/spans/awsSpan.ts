@@ -35,6 +35,8 @@ import { BasicSpan, SpanInfo } from '../types/spans/basicSpan';
 import { FunctionSpan } from '../types/spans/functionSpan';
 import { Context } from 'aws-lambda';
 import { Utf8Utils } from '../utils/utf8Utils';
+import { isW3CHeaders } from '../utils/w3cUtils';
+import { W3CParser } from '../parsers/w3c';
 
 export const HTTP_SPAN = 'http';
 export const FUNCTION_SPAN = 'function';
@@ -212,15 +214,20 @@ export const getAwsServiceFromHost = (host = '') => {
 export const getServiceType = (host) =>
   isAwsService(host) ? getAwsServiceFromHost(host) : EXTERNAL_SERVICE;
 
-export type AwsServiceData = {
+export type ServiceData = {
   awsServiceData?: {
     [key: string]: any;
   };
   messageId?: string;
   [key: string]: any;
 };
-export const getAwsServiceData = (requestData, responseData): AwsServiceData => {
-  const { host } = requestData;
+export const getServiceData = (requestData, responseData): ServiceData => {
+  const { host, headers } = requestData;
+
+  if (isW3CHeaders(headers)) {
+    return W3CParser(requestData);
+  }
+
   const awsService = getAwsServiceFromHost(host);
 
   switch (awsService) {
@@ -287,7 +294,7 @@ export const getHttpSpan = (
   let serviceData = {};
   try {
     if (isAwsService(requestData.host, responseData)) {
-      serviceData = getAwsServiceData(requestData, responseData);
+      serviceData = getServiceData(requestData, responseData);
     }
   } catch (e) {
     logger.warn('Failed to parse aws service data', e);

@@ -14,6 +14,7 @@ import {
   isObject,
   DEFAULT_AUTO_TAG_KEY,
   filterObjectKeys,
+  shouldPropagateW3C,
 } from './utils';
 import { MAX_TRACER_ADDED_DURATION_ALLOWED, TracerGlobals } from './globals';
 import crypto from 'crypto';
@@ -213,6 +214,12 @@ describe('utils', () => {
     expect(utils.isLambdaWrapped()).toBe(false);
     process.env.LUMIGO_IS_WRAPPED = 'TRUE';
     expect(utils.isLambdaWrapped()).toBe(true);
+  });
+
+  test('shouldPropagateW3C', () => {
+    expect(shouldPropagateW3C()).toBe(true);
+    process.env.LUMIGO_PROPAGATE_W3C = 'FALSE';
+    expect(shouldPropagateW3C()).toBe(false);
   });
 
   test('setLambdaWrapped', () => {

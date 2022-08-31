@@ -162,13 +162,22 @@ const IS_STEP_FUNCTION_FLAG = 'LUMIGO_STEP_FUNCTION';
 const SCRUB_KNOWN_SERVICES_FLAG = 'LUMIGO_SCRUB_KNOWN_SERVICES';
 const LUMIGO_LOG_PREFIX = '[LUMIGO_LOG]';
 const LUMIGO_LOG_PREFIX_FLAG = 'LUMIGO_LOG_PREFIX';
+const LUMIGO_PROPAGATE_W3C = 'LUMIGO_PROPAGATE_W3C';
 const LUMIGO_STACK_PATTERNS = [
   new RegExp('/dist/lumigo.js:', 'i'),
   new RegExp('/node_modules/@lumigo/tracer/', 'i'),
 ];
 
-const validateEnvVar = (envVar: string, value: string = 'TRUE'): boolean =>
-  !!(process.env[envVar] && process.env[envVar].toUpperCase() === value.toUpperCase());
+const validateEnvVar = (
+  envVar: string,
+  value: string = 'TRUE',
+  defaultValue: boolean = false
+): boolean => {
+  if (!(envVar in process.env)) {
+    return defaultValue;
+  }
+  return process.env[envVar].toUpperCase() === value.toUpperCase();
+};
 
 export const isAwsEnvironment = () =>
   !!(
@@ -242,6 +251,8 @@ export const isDebug = (): boolean =>
   validateEnvVar(DEBUG_FLAG) || TracerGlobals.getTracerInputs().debug;
 
 export const isLambdaWrapped = (): boolean => validateEnvVar(WRAPPED_FLAG);
+
+export const shouldPropagateW3C = (): boolean => validateEnvVar(LUMIGO_PROPAGATE_W3C, 'TRUE', true);
 
 export const setLambdaWrapped = (): void => {
   process.env[WRAPPED_FLAG] = 'TRUE';

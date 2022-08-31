@@ -11,11 +11,13 @@ import {
   isTimeoutTimerEnabled,
   isValidAlias,
   lowerCaseObjectKeys,
+  safeExecute,
+  shouldPropagateW3C,
 } from '../utils';
 import { extractBodyFromEmitSocketEvent, extractBodyFromWriteOrEndFunc } from './httpUtils';
 import {
-  AwsServiceData,
-  getAwsServiceData,
+  ServiceData,
+  getServiceData,
   getCurrentTransactionId,
   getHttpInfo,
   getHttpSpan,
@@ -29,6 +31,7 @@ import * as http from 'http';
 import * as https from 'https';
 import { GlobalDurationTimer } from '../utils/globalDurationTimer';
 import { runOneTimeWrapper } from '../utils/functionUtils';
+import { addW3CTracePropagator } from '../utils/w3cUtils';
 
 export const hostBlaclist = new Set(['127.0.0.1']);
 
@@ -66,10 +69,10 @@ export class Http {
     currentSpan,
     maxSize = getEventEntitySize(true)
   ) {
-    let serviceData: AwsServiceData = {};
+    let serviceData: ServiceData = {};
     if (body && !requestData.truncated) {
       requestData.body += body;
-      serviceData = getAwsServiceData(requestData, null);
+      serviceData = getServiceData(requestData, null);
       const truncated = maxSize < requestData.body.length;
       if (truncated) requestData.body = requestData.body.substr(0, maxSize);
       requestData.truncated = truncated;
@@ -189,6 +192,10 @@ export class Http {
         const { awsXAmznTraceId } = getAWSEnvironment();
         const traceId = getPatchedTraceId(awsXAmznTraceId);
         options.headers['X-Amzn-Trace-Id'] = traceId;
+      }
+
+      if (shouldPropagateW3C()) {
+        safeExecute(() => (options.headers = addW3CTracePropagator(headers)))();
       }
 
       const requestData = Http.parseHttpRequestOptions(options, url);

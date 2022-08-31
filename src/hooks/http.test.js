@@ -19,6 +19,7 @@ import {
 import { HandlerInputesBuilder } from '../../testUtils/handlerInputesBuilder';
 import { getCurrentTransactionId } from '../spans/awsSpan';
 import { Http } from './http';
+import { TRACESTATE_HEADER_NAME } from '../utils/w3cUtils';
 
 describe('http hook', () => {
   process.env['AWS_REGION'] = 'us-east-x';
@@ -813,6 +814,27 @@ describe('http hook', () => {
       .build();
 
     expect(spans).toEqual([expectedSpan]);
+  });
+
+  test('wrapHttpLib - add W3C headers', () => {
+    utils.setTimeoutTimerDisabled();
+    const handlerInputs = new HandlerInputesBuilder().build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
+    const requestData = HttpSpanBuilder.getDefaultData(HttpSpanBuilder.DEFAULT_REQUEST_DATA);
+    const responseData = {
+      truncated: false,
+      statusCode: 200,
+      body: 'OK',
+    };
+
+    Http.wrapHttpLib(HttpsMocker);
+
+    const req = HttpsMocker.request(requestData, () => {});
+    HttpsScenarioBuilder.appendNextResponse(req, responseData.body);
+
+    const span = SpansContainer.getSpans()[0];
+
+    expect(span.info.httpInfo.request.headers[TRACESTATE_HEADER_NAME]).toBeDefined();
   });
 
   test('wrapHttpLib - Timer time is passed', () => {
