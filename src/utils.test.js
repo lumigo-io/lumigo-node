@@ -217,6 +217,7 @@ describe('utils', () => {
   });
 
   test('shouldPropagateW3C', () => {
+    delete process.env.LUMIGO_PROPAGATE_W3C;
     expect(shouldPropagateW3C()).toBe(false);
     process.env.LUMIGO_PROPAGATE_W3C = 'TRUE';
     expect(shouldPropagateW3C()).toBe(true);

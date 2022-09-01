@@ -1,10 +1,10 @@
 import { getRandomString } from '../utils';
 import { getCurrentTransactionId } from '../spans/awsSpan';
 
-// parts of this file were copied from:
-// https://github.com/open-telemetry/opentelemetry-python/blob/cad776a2031c84fb3c3a1af90ee2a939f3394b9a/opentelemetry-api/src/opentelemetry/trace/propagation/tracecontext.py#L28
 export const TRACEPARENT_HEADER_NAME = 'traceparent';
 export const TRACESTATE_HEADER_NAME = 'tracestate';
+// The regex was copied from:
+// https://github.com/open-telemetry/opentelemetry-python/blob/cad776a2031c84fb3c3a1af90ee2a939f3394b9a/opentelemetry-api/src/opentelemetry/trace/propagation/tracecontext.py#L28
 const TRACEPARENT_HEADER_FORMAT = /^([0-9a-f]{2})-([0-9a-f]{32})-([0-9a-f]{16})-([0-9a-f]{2})/;
 const MALFORMED_TRACE_ID = '0'.repeat(32);
 const MALFORMED_SPAN_ID = '0'.repeat(16);
@@ -23,6 +23,8 @@ const getTraceId = (
   transactionId: string,
   messageID: string
 ): string => {
+  // Create the TraceId: either by continuing the transaction that we already see from the headers,
+  //   or by creating a new transaction. The spanId is this span (the next component's parent).
   let version = null;
   let trace_id = null;
   let span_id = null;
