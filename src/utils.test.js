@@ -14,6 +14,7 @@ import {
   isObject,
   DEFAULT_AUTO_TAG_KEY,
   filterObjectKeys,
+  safeJsonParse,
 } from './utils';
 import { MAX_TRACER_ADDED_DURATION_ALLOWED, TracerGlobals } from './globals';
 import crypto from 'crypto';
@@ -1000,6 +1001,18 @@ describe('utils', () => {
 
   test('safeGet default flow', () => {
     expect(safeGet({ a: { b: 'c' } }, ['a', 'b', 'arg'], 'dflt')).toEqual('dflt');
+  });
+
+  test('safeJsonParse happy flow', () => {
+    expect(safeJsonParse('{ "a": { "b": "c" } }')).toEqual({ a: { b: 'c' } });
+  });
+
+  test('safeJsonParse bad json', () => {
+    expect(safeJsonParse('{ "a": { "b": "c" }')).toBeUndefined();
+  });
+
+  test('safeJsonParse bad json with default', () => {
+    expect(safeJsonParse('{ "a": { "b": "c" }', { c: 'd' })).toEqual({ c: 'd' });
   });
 
   test('removeDuplicates happy flow', () => {
