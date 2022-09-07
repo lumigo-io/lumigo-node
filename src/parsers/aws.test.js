@@ -130,7 +130,7 @@ describe('aws parser', () => {
     };
     expect(aws.dynamodbParser(requestDataDeleteBatch)).toEqual(expectedDeleteBatch);
 
-    const bodyMalformed = '{"TableName":"logs",';
+    const bodyMalformed = '{"TableName": "ddbTable",';
     const requestDataDMalformed = {
       headers: headersGet,
       body: bodyMalformed,

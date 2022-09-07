@@ -36,7 +36,7 @@ export const dynamodbParser = (requestData) => {
   const dynamodbMethod =
     (reqHeaders['x-amz-target'] && reqHeaders['x-amz-target'].split('.')[1]) || '';
 
-  let reqBodyJSON = safeJsonParse(reqBody, undefined);
+  const reqBodyJSON = safeJsonParse(reqBody, undefined);
   const resourceName = reqBodyJSON && extractDynamodbTableName(reqBodyJSON, dynamodbMethod);
   const messageId = reqBodyJSON && extractDynamodbMessageId(reqBodyJSON, dynamodbMethod);
 

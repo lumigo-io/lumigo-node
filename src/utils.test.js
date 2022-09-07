@@ -1008,11 +1008,11 @@ describe('utils', () => {
   });
 
   test('safeJsonParse bad json', () => {
-    expect(safeJsonParse('{ "a": { "b": "c" }')).toBeUndefined();
+    expect(safeJsonParse('{ "a": { "b": "c"')).toBeUndefined();
   });
 
   test('safeJsonParse bad json with default', () => {
-    expect(safeJsonParse('{ "a": { "b": "c" }', { c: 'd' })).toEqual({ c: 'd' });
+    expect(safeJsonParse('{ "a": { "b": "c"', { c: 'd' })).toEqual({ c: 'd' });
   });
 
   test('removeDuplicates happy flow', () => {
