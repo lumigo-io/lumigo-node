@@ -130,6 +130,15 @@ describe('aws parser', () => {
       },
     };
     expect(aws.dynamodbParser(requestDataDeleteBatch)).toEqual(expectedDeleteBatch);
+
+    const bodyMalformed = '{"TableName": "ddbTable",';
+    const requestDataDMalformed = {
+      headers: headersGet,
+      body: bodyMalformed,
+    };
+    expect(aws.dynamodbParser(requestDataDMalformed)).toEqual({
+      awsServiceData: { dynamodbMethod: 'GetItem' },
+    });
   });
 
   test('lambdaParser', () => {
