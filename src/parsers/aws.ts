@@ -1,7 +1,7 @@
 import { md5Hash, parseQueryParams, removeDuplicates, safeGet } from '../utils';
 import { traverse } from '../tools/xmlToJson';
 import * as logger from '../logger';
-import { getW3CMessageId, isW3CHeaders } from '../utils/w3cUtils';
+import { getW3CMessageId } from '../utils/w3cUtils';
 
 const extractDynamodbMessageId = (reqBody, method) => {
   if (method === 'PutItem' && reqBody['Item']) {
@@ -186,7 +186,7 @@ export const defaultParser = (requestData, responseData) => {
     ? resHeader['x-amzn-requestid'] || resHeader['x-amz-request-id']
     : undefined;
 
-  if (!messageId && isW3CHeaders(requestData.headers)) {
+  if (!messageId) {
     messageId = getW3CMessageId(requestData.headers);
   }
 

@@ -18,6 +18,20 @@ export const addW3CTracePropagator = (headers: Record<string, string>): Record<s
   return headers;
 };
 
+const parseW3CHeader = (headers: Record<string, string>) => {
+  const existingHeader = headers?.[TRACEPARENT_HEADER_NAME] || '';
+  const match = TRACEPARENT_HEADER_FORMAT.exec(existingHeader);
+  if (match) {
+    return {
+      version: match[1],
+      traceId: match[2],
+      spanId: match[3],
+      traceFlags: match[4],
+    };
+  }
+  return {};
+};
+
 const getTraceId = (
   headers: Record<string, string>,
   transactionId: string,
@@ -25,30 +39,18 @@ const getTraceId = (
 ): string => {
   // Create the TraceId: either by continuing the transaction that we already see from the headers,
   //   or by creating a new transaction. The spanId is this span (the next component's parent).
-  let version = null;
-  let trace_id = null;
-  let span_id = null;
-  let trace_flags = null;
-  const existingHeader = headers?.[TRACEPARENT_HEADER_NAME] || '';
-  const match = TRACEPARENT_HEADER_FORMAT.exec(existingHeader);
-  if (match) {
-    version = match[1];
-    trace_id = match[2];
-    span_id = match[3];
-    trace_flags = match[4];
-  }
+  let { version, traceId, spanId, traceFlags } = parseW3CHeader(headers);
   if (
-    !match ||
-    trace_id === MALFORMED_TRACE_ID ||
-    span_id == MALFORMED_SPAN_ID ||
+    !version ||
+    traceId === MALFORMED_TRACE_ID ||
+    spanId == MALFORMED_SPAN_ID ||
     version == 'ff'
   ) {
     version = '00';
-    trace_id = transactionId.padEnd(32, '0');
-    trace_flags = '01';
+    traceId = transactionId.padEnd(32, '0');
+    traceFlags = '01';
   }
-  span_id = messageID;
-  return `${version}-${trace_id}-${span_id}-${trace_flags}`;
+  return `${version}-${traceId}-${messageID}-${traceFlags}`;
 };
 
 const getTraceState = (headers: Record<string, string>, messageID: string): string => {
@@ -59,13 +61,6 @@ const getTraceState = (headers: Record<string, string>, messageID: string): stri
   return lumigoState;
 };
 
-export const isW3CHeaders = (headers: Record<string, string>): boolean =>
-  !!TRACEPARENT_HEADER_FORMAT.exec(headers?.[TRACEPARENT_HEADER_NAME] || '');
-
 export const getW3CMessageId = (headers: Record<string, string>): string | null => {
-  const match = TRACEPARENT_HEADER_FORMAT.exec(headers?.[TRACEPARENT_HEADER_NAME] || '');
-  if (match) {
-    return match[3];
-  }
-  return null;
+  return parseW3CHeader(headers).spanId;
 };

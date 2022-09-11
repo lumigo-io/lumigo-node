@@ -35,7 +35,6 @@ import { BasicSpan, SpanInfo } from '../types/spans/basicSpan';
 import { FunctionSpan } from '../types/spans/functionSpan';
 import { Context } from 'aws-lambda';
 import { Utf8Utils } from '../utils/utf8Utils';
-import { isW3CHeaders } from '../utils/w3cUtils';
 
 export const HTTP_SPAN = 'http';
 export const FUNCTION_SPAN = 'function';

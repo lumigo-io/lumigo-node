@@ -66,6 +66,6 @@ describe('Utf8Utils', () => {
 
   test('getW3CMessageId -> malformed header', () => {
     const headers = { [TRACEPARENT_HEADER_NAME]: 'something else-aaaaaaaaaaaaaaaa-01' };
-    expect(getW3CMessageId(headers)).toBeNull();
+    expect(getW3CMessageId(headers)).toBeFalsy();
   });
 });
