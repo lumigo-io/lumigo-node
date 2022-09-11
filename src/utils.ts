@@ -196,6 +196,15 @@ export const safeGet = (obj, arr, dflt = null) => {
   return current || dflt;
 };
 
+export const safeJsonParse = (obj, dflt = undefined) => {
+  return safeExecute(
+    () => JSON.parse(obj),
+    'Failed to parse json',
+    logger.LOG_LEVELS.DEBUG,
+    dflt
+  )();
+};
+
 export const isTimeoutTimerEnabled = (): boolean => !validateEnvVar(TIMEOUT_ENABLE_FLAG, 'FALSE');
 
 export const getTimeoutTimerBuffer = (): number => {

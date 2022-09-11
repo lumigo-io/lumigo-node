@@ -1,4 +1,4 @@
-import { md5Hash, parseQueryParams, removeDuplicates, safeGet } from '../utils';
+import { md5Hash, parseQueryParams, removeDuplicates, safeGet, safeJsonParse } from '../utils';
 import { traverse } from '../tools/xmlToJson';
 import * as logger from '../logger';
 import { getW3CMessageId } from '../utils/w3cUtils';
@@ -37,9 +37,9 @@ export const dynamodbParser = (requestData) => {
   const dynamodbMethod =
     (reqHeaders['x-amz-target'] && reqHeaders['x-amz-target'].split('.')[1]) || '';
 
-  const reqBodyJSON = (!!reqBody && JSON.parse(reqBody)) || {};
-  const resourceName = extractDynamodbTableName(reqBodyJSON, dynamodbMethod);
-  const messageId = extractDynamodbMessageId(reqBodyJSON, dynamodbMethod);
+  const reqBodyJSON = safeJsonParse(reqBody, undefined);
+  const resourceName = reqBodyJSON && extractDynamodbTableName(reqBodyJSON, dynamodbMethod);
+  const messageId = reqBodyJSON && extractDynamodbMessageId(reqBodyJSON, dynamodbMethod);
 
   const awsServiceData = { resourceName, dynamodbMethod, messageId };
   return { awsServiceData };
