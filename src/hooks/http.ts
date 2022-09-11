@@ -179,7 +179,7 @@ export class Http {
     extenderContext.isTracedDisabled = false;
 
     const { url, options } = Http.httpRequestArguments(args);
-    const { headers } = options || {};
+    const headers = options?.headers || {};
     const host = Http.getHostFromOptionsOrUrl(options, url);
     extenderContext.isTracedDisabled =
       Http.isBlacklisted(host) || !isValidAlias() || GlobalDurationTimer.isTimePassed();
