@@ -195,7 +195,10 @@ export const getSnsData = (event: SNSEvent): SNSEventData => {
 };
 
 export const getS3Data = (event: S3Event): S3EventData => {
-  return { arn: event.Records[0].s3.bucket.arn };
+  return {
+    arn: event.Records[0].s3.bucket.arn,
+    messageId: event.Records[0]?.responseElements?.['x-amz-request-id'],
+  };
 };
 
 export const getApiGatewayData = (event: APIGatewayProxyEvent | APIGatewayProxyEventV2) => {
