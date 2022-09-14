@@ -147,6 +147,7 @@ describe('events', () => {
 
     expect(events.getRelevantEventData(EventTrigger.S3, exampleS3Event)).toEqual({
       arn: 'arn:aws:s3:::mybucket',
+      messageId: 'C3D13FE58DE4C810',
     });
     expect(events.getRelevantEventData(EventTrigger.ApiGateway, exampleApiGatewayEvent)).toEqual({
       api: 'gy415nuibc.execute-api.us-east-1.amazonaws.com',
@@ -185,6 +186,7 @@ describe('events', () => {
 
     expect(events.getEventInfo(exampleS3Event)).toEqual({
       arn: 'arn:aws:s3:::mybucket',
+      messageId: 'C3D13FE58DE4C810',
       triggeredBy: EventTrigger.S3,
     });
 

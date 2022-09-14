@@ -51,6 +51,7 @@ export type SQSEventData = {
 
 export interface S3EventData {
   arn: S3EventRecord['s3']['bucket']['arn'];
+  messageId: S3EventRecord['responseElements']['x-amz-request-id'];
 }
 
 export interface KinesisStreamEventData {
