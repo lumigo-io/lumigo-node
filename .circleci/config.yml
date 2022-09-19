@@ -17,8 +17,8 @@ jobs:
         username: lumigo
         password: $DOCKERHUB_PASSWORD
     environment:
-    - TZ: Asia/Jerusalem
-    - NODE_OPTIONS: --max_old_space_size=1500
+      - TZ: Asia/Jerusalem
+      - NODE_OPTIONS: --max_old_space_size=1500
     resource_class: medium+
     steps:
     - checkout
@@ -130,7 +130,7 @@ jobs:
         password: $DOCKERHUB_PASSWORD
     resource_class: medium+
     environment:
-    - TZ: Asia/Jerusalem
+      - TZ: Asia/Jerusalem
     steps:
     - run:
         command: |
@@ -167,7 +167,7 @@ jobs:
         username: lumigo
         password: $DOCKERHUB_PASSWORD
     environment:
-    - TZ: Asia/Jerusalem
+      - TZ: Asia/Jerusalem
     resource_class: medium+
     steps:
     - run:
@@ -197,6 +197,7 @@ jobs:
     - run:
         name: deploy to npm + lambda layer
         command: ./scripts/bd_to_prod.sh
+
 workflows:
   test-deploy:
     jobs:
