@@ -1,5 +1,29 @@
-import type { Callback, Context, Handler } from 'aws-lambda';
+import type {
+  Callback,
+  Context,
+  Handler,
+} from 'aws-lambda';
 
+import {
+  clearGlobals,
+  ExecutionTags,
+  GlobalTimer,
+  SpansContainer,
+  TracerGlobals,
+} from '../globals';
+import { isAwsContext } from '../guards/awsGuards';
+import { Http } from '../hooks/http';
+import * as logger from '../logger';
+import { warnClient } from '../logger';
+import {
+  sendSingleSpan,
+  sendSpans,
+} from '../reporter';
+import {
+  getEndFunctionSpan,
+  getFunctionSpan,
+  isSpanIsFromAnotherInvocation,
+} from '../spans/awsSpan';
 import {
   getContextInfo,
   getEdgeUrl,
@@ -16,26 +40,8 @@ import {
   safeExecute,
   STEP_FUNCTION_UID_KEY,
 } from '../utils';
-import {
-  getEndFunctionSpan,
-  getFunctionSpan,
-  isSpanIsFromAnotherInvocation,
-} from '../spans/awsSpan';
-import { sendSingleSpan, sendSpans } from '../reporter';
-import {
-  clearGlobals,
-  GlobalTimer,
-  SpansContainer,
-  TracerGlobals,
-  ExecutionTags,
-} from '../globals';
-import { Http } from '../hooks/http';
 import { runOneTimeWrapper } from '../utils/functionUtils';
-import { isAwsContext } from '../guards/awsGuards';
-import * as logger from '../logger';
-import type { TracerOptions } from './tracer-options.interface';
 import { TraceOptions } from './trace-options.type';
-import { warnClient } from '../logger';
 
 export const HANDLER_CALLBACKED = 'handler_callbacked';
 export const ASYNC_HANDLER_RESOLVED = 'async_handler_resolved';
@@ -184,7 +190,8 @@ export function promisifyUserHandler(
 
 export const normalizeLambdaError = (handlerReturnValue) => {
   // Normalizing lambda error according to Lambda normalize process
-  let { err, data, type } = handlerReturnValue;
+  const { data, type } = handlerReturnValue;
+  let { err } = handlerReturnValue;
   if (err && !(err instanceof Error)) err = new Error(err);
   return { err, data, type };
 };

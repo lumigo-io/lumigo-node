@@ -1,9 +1,15 @@
 module.exports = {
-  parser: 'babel-eslint',
-  extends: ['eslint:recommended', 'prettier'],
-  plugins: ['jest'],
+  parser: "@typescript-eslint/parser",
+  plugins: [
+    "@typescript-eslint",
+    "jest"
+  ],
+  extends: [
+    "plugin:@typescript-eslint/eslint-recommended",
+    "prettier"
+  ],
   rules: {
-    camelcase: 'error',
+    camelcase: "error",
   },
   globals: {
     process: true,
@@ -15,7 +21,7 @@ module.exports = {
     Set: true,
   },
   env: {
-    'jest/globals': true,
+    "jest/globals": true,
     node: true,
   },
 };

@@ -1,14 +1,15 @@
+import * as crypto from 'crypto';
+
 import {
   MAX_TRACER_ADDED_DURATION_ALLOWED,
   MIN_TRACER_ADDED_DURATION_ALLOWED,
   TracerGlobals,
 } from './globals';
-import * as crypto from 'crypto';
+import { isAwsContext } from './guards/awsGuards';
 import * as logger from './logger';
 import { sortify } from './tools/jsonSortify';
-import { EdgeUrl } from './types/common/edgeTypes';
 import { AwsEnvironment, ContextInfo, LambdaContext } from './types/aws/awsEnvironment';
-import { isAwsContext } from './guards/awsGuards';
+import { EdgeUrl } from './types/common/edgeTypes';
 
 export const SPAN_PATH = '/api/spans';
 export const LUMIGO_TRACER_EDGE = 'lumigo-tracer-edge.golumigo.com';
