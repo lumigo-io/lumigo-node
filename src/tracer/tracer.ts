@@ -1,8 +1,4 @@
-import type {
-  Callback,
-  Context,
-  Handler,
-} from 'aws-lambda';
+import type { Callback, Context, Handler } from 'aws-lambda';
 
 import {
   clearGlobals,
@@ -15,10 +11,7 @@ import { isAwsContext } from '../guards/awsGuards';
 import { Http } from '../hooks/http';
 import * as logger from '../logger';
 import { warnClient } from '../logger';
-import {
-  sendSingleSpan,
-  sendSpans,
-} from '../reporter';
+import { sendSingleSpan, sendSpans } from '../reporter';
 import {
   getEndFunctionSpan,
   getFunctionSpan,

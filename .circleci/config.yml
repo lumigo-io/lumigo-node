@@ -25,7 +25,7 @@ jobs:
     - restore_cache:
         key: dependency-cache-{{ checksum "package.json" }}
     - run:
-        name: install-npm-wee
+        name: install npm dependencies
         command: npm install
     - run:
         name: install-npm-inner
@@ -36,7 +36,8 @@ jobs:
         - ./node_modules
     - run:
         name: prettier
-        command: npm run prettier:ci
+        command: |
+          npm run prettier:ci
     - run:
         name: check types
         command: npm run check-types

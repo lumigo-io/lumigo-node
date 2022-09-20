@@ -60,7 +60,7 @@
     "jest-junit": "^6.4.0",
     "mockdate": "^2.0.5",
     "mongo-mock": "^4.0.0",
-    "prettier": "^2.3.1",
+    "prettier": "2.7.1",
     "semantic-release": "^19.0.5",
     "typescript": "^4.3.2"
   },
