@@ -21,7 +21,7 @@ import {
   lambdaParser,
   sqsParser,
   kinesisParser,
-  awsParser,
+  defaultParser,
   apigwParser,
   eventBridgeParser,
 } from '../parsers/aws';
@@ -212,15 +212,16 @@ export const getAwsServiceFromHost = (host = '') => {
 export const getServiceType = (host) =>
   isAwsService(host) ? getAwsServiceFromHost(host) : EXTERNAL_SERVICE;
 
-export type AwsServiceData = {
+export type ServiceData = {
   awsServiceData?: {
     [key: string]: any;
   };
   messageId?: string;
   [key: string]: any;
 };
-export const getAwsServiceData = (requestData, responseData): AwsServiceData => {
+export const getServiceData = (requestData, responseData): ServiceData => {
   const { host } = requestData;
+
   const awsService = getAwsServiceFromHost(host);
 
   switch (awsService) {
@@ -239,7 +240,7 @@ export const getAwsServiceData = (requestData, responseData): AwsServiceData => 
     case 'events':
       return eventBridgeParser(requestData, responseData);
     default:
-      return awsParser(requestData, responseData);
+      return defaultParser(requestData, responseData);
   }
 };
 
@@ -287,7 +288,7 @@ export const getHttpSpan = (
   let serviceData = {};
   try {
     if (isAwsService(requestData.host, responseData)) {
-      serviceData = getAwsServiceData(requestData, responseData);
+      serviceData = getServiceData(requestData, responseData);
     }
   } catch (e) {
     logger.warn('Failed to parse aws service data', e);

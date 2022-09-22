@@ -522,41 +522,41 @@ describe('awsSpan', () => {
 
     requestData.host = `dynamodb.amazonaws.com`;
 
-    awsSpan.getAwsServiceData(requestData, responseData);
+    awsSpan.getServiceData(requestData, responseData);
     expect(awsParsers.dynamodbParser).toHaveBeenCalledWith(requestData);
 
     requestData.host = `sns.amazonaws.com`;
 
-    awsSpan.getAwsServiceData(requestData, responseData);
+    awsSpan.getServiceData(requestData, responseData);
     expect(awsParsers.snsParser).toHaveBeenCalledWith(requestData, responseData);
 
     requestData.host = `lambda.amazonaws.com`;
 
-    awsSpan.getAwsServiceData(requestData, responseData);
+    awsSpan.getServiceData(requestData, responseData);
     expect(awsParsers.lambdaParser).toHaveBeenCalledWith(requestData, responseData);
 
     requestData.host = `sqs.amazonaws.com`;
 
-    awsSpan.getAwsServiceData(requestData, responseData);
+    awsSpan.getServiceData(requestData, responseData);
     expect(awsParsers.sqsParser).toHaveBeenCalledWith(requestData, responseData);
 
     requestData.host = `kinesis.amazonaws.com`;
 
-    awsSpan.getAwsServiceData(requestData, responseData);
+    awsSpan.getServiceData(requestData, responseData);
     expect(awsParsers.kinesisParser).toHaveBeenCalledWith(requestData, responseData);
 
     requestData.host = `events.us-west-2.amazonaws.com`;
 
-    awsSpan.getAwsServiceData(requestData, responseData);
+    awsSpan.getServiceData(requestData, responseData);
     expect(awsParsers.eventBridgeParser).toHaveBeenCalledWith(requestData, responseData);
 
     requestData.host = `random.random.execute-api.amazonaws.com`;
-    awsSpan.getAwsServiceData(requestData, responseData);
+    awsSpan.getServiceData(requestData, responseData);
     expect(awsParsers.apigwParser).toHaveBeenCalledWith(requestData, responseData);
 
     requestData.host = `deadbeef.amazonaws.com`;
-    awsSpan.getAwsServiceData(requestData, responseData);
-    expect(awsParsers.awsParser).toHaveBeenCalledWith(requestData, responseData);
+    awsSpan.getServiceData(requestData, responseData);
+    expect(awsParsers.defaultParser).toHaveBeenCalledWith(requestData, responseData);
   });
 
   test('getBasicChildSpan', () => {
