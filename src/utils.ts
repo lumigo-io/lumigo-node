@@ -162,6 +162,7 @@ const IS_STEP_FUNCTION_FLAG = 'LUMIGO_STEP_FUNCTION';
 const SCRUB_KNOWN_SERVICES_FLAG = 'LUMIGO_SCRUB_KNOWN_SERVICES';
 const LUMIGO_LOG_PREFIX = '[LUMIGO_LOG]';
 const LUMIGO_LOG_PREFIX_FLAG = 'LUMIGO_LOG_PREFIX';
+const LUMIGO_PROPAGATE_W3C = 'LUMIGO_PROPAGATE_W3C';
 const LUMIGO_STACK_PATTERNS = [
   new RegExp('/dist/lumigo.js:', 'i'),
   new RegExp('/node_modules/@lumigo/tracer/', 'i'),
@@ -251,6 +252,8 @@ export const isDebug = (): boolean =>
   validateEnvVar(DEBUG_FLAG) || TracerGlobals.getTracerInputs().debug;
 
 export const isLambdaWrapped = (): boolean => validateEnvVar(WRAPPED_FLAG);
+
+export const shouldPropagateW3C = (): boolean => validateEnvVar(LUMIGO_PROPAGATE_W3C);
 
 export const setLambdaWrapped = (): void => {
   process.env[WRAPPED_FLAG] = 'TRUE';
