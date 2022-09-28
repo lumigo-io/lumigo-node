@@ -762,6 +762,43 @@ describe('http hook', () => {
     expect(Http.httpRequestArguments([url, callback])).toEqual(expected1);
   });
 
+  test('addOptionsToHttpRequestArguments', () => {
+    // This test goes over all the options of inputs to: https://nodejs.org/api/http.html#httpgeturl-options-callback
+    const url = new URL('http://saart.info');
+    const callback = () => {};
+    const newOptions = { a: 'b' };
+
+    // http.get(url)
+    const originalArgs0 = [url];
+    const expected0 = [url, newOptions];
+    Http.addOptionsToHttpRequestArguments(originalArgs0, newOptions);
+    expect(originalArgs0).toEqual(expected0);
+
+    // http.get(url, callback)
+    const originalArgs1 = [url, callback];
+    const expected1 = [url, newOptions, callback];
+    Http.addOptionsToHttpRequestArguments(originalArgs1, newOptions);
+    expect(originalArgs1).toEqual(expected1);
+
+    // http.get(url, options)
+    const originalArgs2 = [url, { c: 'd' }];
+    const expected2 = [url, newOptions];
+    Http.addOptionsToHttpRequestArguments(originalArgs2, newOptions);
+    expect(originalArgs2).toEqual(expected2);
+
+    // http.get(url, options, callback)
+    const originalArgs3 = [url, { c: 'd' }, callback];
+    const expected3 = [url, newOptions, callback];
+    Http.addOptionsToHttpRequestArguments(originalArgs3, newOptions);
+    expect(originalArgs3).toEqual(expected3);
+
+    // http.get(options)
+    const originalArgs4 = [{ c: 'd' }];
+    const expected4 = [newOptions];
+    Http.addOptionsToHttpRequestArguments(originalArgs4, newOptions);
+    expect(originalArgs4).toEqual(expected4);
+  });
+
   test('wrapHttpLib - missing _X_AMZN_TRACE_ID', () => {
     utils.setTimeoutTimerDisabled();
     const handlerInputs = new HandlerInputesBuilder().build();
@@ -836,6 +873,49 @@ describe('http hook', () => {
     const span = SpansContainer.getSpans()[0];
 
     expect(span.info.httpInfo.request.headers[TRACESTATE_HEADER_NAME]).toBeDefined();
+  });
+
+  test('wrapHttpLib - check request - headers exists', () => {
+    utils.setTimeoutTimerDisabled();
+    process.env['LUMIGO_PROPAGATE_W3C'] = 'TRUE';
+    const handlerInputs = new HandlerInputesBuilder().build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
+
+    Http.wrapHttpLib(HttpsMocker);
+
+    const req = HttpsMocker.request({ headers: { a: 'b' } }, () => {});
+    req.write('headers exists');
+
+    const requests = HttpsRequestsForTesting.getRequests();
+    expect(
+      requests.some(
+        (request) =>
+          request.options.headers[TRACESTATE_HEADER_NAME] &&
+          request.options.headers.a === 'b' &&
+          request.body === 'headers exists'
+      )
+    ).toBeTruthy();
+  });
+
+  test('wrapHttpLib - check request - headers doesnt exists', () => {
+    utils.setTimeoutTimerDisabled();
+    process.env['LUMIGO_PROPAGATE_W3C'] = 'TRUE';
+    const handlerInputs = new HandlerInputesBuilder().build();
+    TracerGlobals.setHandlerInputs(handlerInputs);
+
+    Http.wrapHttpLib(HttpsMocker);
+
+    const req = HttpsMocker.request({}, () => {});
+    req.write('headers doesnt exists');
+
+    const requests = HttpsRequestsForTesting.getRequests();
+    expect(
+      requests.some(
+        (request) =>
+          request.options.headers[TRACESTATE_HEADER_NAME] &&
+          request.body === 'headers doesnt exists'
+      )
+    ).toBeTruthy();
   });
 
   test('wrapHttpLib - Timer time is passed', () => {

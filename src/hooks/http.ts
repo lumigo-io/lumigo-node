@@ -123,6 +123,30 @@ export class Http {
     return options.hostname || options.host || (options.uri && options.uri.hostname) || 'localhost';
   }
 
+  static addOptionsToHttpRequestArguments(originalArgs, newOptions) {
+    // We're switching on the different signatures of http:
+    // https://nodejs.org/api/http.html#httpgeturl-options-callback
+    if (typeof originalArgs[0] === 'string' || originalArgs[0] instanceof URL) {
+      if (originalArgs[1]) {
+        if (typeof originalArgs[1] === 'function') {
+          // The signature is: (url, callback)
+          originalArgs.push(originalArgs[1]);
+          originalArgs[1] = newOptions;
+        } else {
+          // The signature is: (url, options) OR (url, options, callback)
+          originalArgs[1] = newOptions;
+        }
+      } else {
+        // The signature is: (url)
+        originalArgs.push(newOptions);
+      }
+    } else {
+      // The signature is: (options)
+      originalArgs[0] = newOptions;
+    }
+    logger.warn('addOptionsToHttpRequestArguments failed: unknown signature');
+  }
+
   static isBlacklisted(host) {
     return host === getEdgeHost() || hostBlaclist.has(host);
   }
@@ -195,7 +219,10 @@ export class Http {
       }
 
       if (shouldPropagateW3C()) {
-        safeExecute(() => (options.headers = addW3CTracePropagator(headers)))();
+        safeExecute(() => {
+          options.headers = addW3CTracePropagator(headers);
+          Http.addOptionsToHttpRequestArguments(args, options);
+        })();
       }
 
       const requestData = Http.parseHttpRequestOptions(options, url);
