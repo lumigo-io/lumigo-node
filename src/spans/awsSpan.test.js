@@ -1,13 +1,13 @@
-import * as awsSpan from './awsSpan';
-import { EXECUTION_TAGS_KEY, getEventEntitySize, parseErrorObject } from '../utils';
 import MockDate from 'mockdate';
+import { encode } from 'utf8';
+import { HandlerInputsBuilder } from '../../testUtils/HandlerInputsBuilder';
 import { MAX_TRACER_ADDED_DURATION_ALLOWED, TracerGlobals } from '../globals';
 import * as awsParsers from '../parsers/aws';
 import * as utils from '../utils';
+import { EXECUTION_TAGS_KEY, getEventEntitySize, parseErrorObject } from '../utils';
 import { payloadStringify } from '../utils/payloadStringify';
+import * as awsSpan from './awsSpan';
 import { decodeHttpBody, HTTP_SPAN } from './awsSpan';
-import { HandlerInputesBuilder } from '../../testUtils/handlerInputesBuilder';
-import { encode } from 'utf8';
 
 const exampleApiGatewayEvent = require('../../testUtils/testdata/events/apigw-request.json');
 
@@ -153,7 +153,7 @@ describe('awsSpan', () => {
       started: 895093200000,
       maxFinishTime: 895093210000,
     };
-    const { event, context } = new HandlerInputesBuilder().build();
+    const { event, context } = new HandlerInputsBuilder().build();
     expect(awsSpan.getFunctionSpan(event, context)).toEqual(expectedStartSpan);
   });
 

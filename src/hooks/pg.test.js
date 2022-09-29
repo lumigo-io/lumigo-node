@@ -1,9 +1,9 @@
+import { HandlerInputsBuilder } from '../../testUtils/HandlerInputsBuilder';
 import { createMockedClient, createMockedResponse } from '../../testUtils/pgMocker';
-import { hookPg } from './pg';
-import { SpansContainer, TracerGlobals } from '../globals';
-import { HandlerInputesBuilder } from '../../testUtils/handlerInputesBuilder';
 import { SqlSpanBuilder } from '../../testUtils/sqlSpanBuilder';
+import { SpansContainer, TracerGlobals } from '../globals';
 import { payloadStringify } from '../utils/payloadStringify';
+import { hookPg } from './pg';
 
 const DUMMY_PG_OPTIONS = {
   host: 'database-1.us-west-1.rds.amazonaws.com',
@@ -34,7 +34,7 @@ const createExpectedResponse = () => {
 
 describe('pg', () => {
   beforeEach(() => {
-    const handlerInputs = new HandlerInputesBuilder().build();
+    const handlerInputs = new HandlerInputsBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
   });
 

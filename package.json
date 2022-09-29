@@ -6,13 +6,12 @@
   "repository": "git@github.com:lumigo-io/lumigo-node.git",
   "private": false,
   "author": "Lumigo LTD (https://lumigo.io)",
-  "contributors": [
-    "Sagi Kedmi (https://sagi.io)"
-  ],
+  "contributors": ["Sagi Kedmi (https://sagi.io)"],
   "license": "Apache-2.0",
   "scripts": {
     "build": "rm -rf dist && tsc --build --force",
     "jest": "jest",
+    "jest-detectOpenHandles": "jest --detectOpenHandles",
     "semantic-release": "semantic-release",
     "test": "npm run build && npm run jest",
     "lint": "eslint ./src",
@@ -48,6 +47,7 @@
     "@typescript-eslint/parser": "^5.37.0",
     "aws-sdk": "^2.927.0",
     "axios-mock-adapter": "^1.19.0",
+    "caniuse-lite": "^1.0.30001412",
     "codecov": "^3.8.2",
     "eslint": "^5.16.0",
     "eslint-config-prettier": "^4.3.0",

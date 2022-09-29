@@ -206,13 +206,13 @@ export const performStepFunctionLogic = (handlerReturnValue) => {
   );
 };
 
-// @ts-ignore
-const events = process._events;
-const { unhandledRejection } = events;
-const originalUnhandledRejection = unhandledRejection;
+// we wrap the unhandledRejection method to send the function span before the process ends
 export const hookUnhandledRejection = async (functionSpan) => {
+  // @ts-ignore - we're overriding an accessor we usually shouldn't have access to
+  const events = process._events;
+  const { unhandledRejection } = events;
+  const originalUnhandledRejection = unhandledRejection;
   events.unhandledRejection = async (reason, promise) => {
-    events.unhandledRejection = originalUnhandledRejection;
     const err = Error(reason);
     err.name = 'Runtime.UnhandledPromiseRejection';
     await endTrace(functionSpan, {
@@ -220,8 +220,9 @@ export const hookUnhandledRejection = async (functionSpan) => {
       type: ASYNC_HANDLER_REJECTED,
       data: null,
     }).then(() => {
-      typeof originalUnhandledRejection === 'function' &&
+      if (typeof originalUnhandledRejection === 'function') {
         originalUnhandledRejection(reason, promise);
+      }
     });
   };
 };

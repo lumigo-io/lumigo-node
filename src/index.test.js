@@ -1,13 +1,13 @@
 /* eslint-disable */
+import * as fsExtra from 'fs-extra';
+import { AxiosMocker } from '../testUtils/axiosMocker';
+import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
+import { HandlerInputsBuilder } from '../testUtils/HandlerInputsBuilder';
+import { sleep } from '../testUtils/sleep';
+import { MAX_ELEMENTS_IN_EXTRA } from './tracer';
 import * as tracer from './tracer/tracer';
 import * as utils from './utils';
 import { EXECUTION_TAGS_KEY } from './utils';
-import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
-import * as fsExtra from 'fs-extra';
-import { AxiosMocker } from '../testUtils/axiosMocker';
-import { MAX_ELEMENTS_IN_EXTRA } from './tracer';
-import { HandlerInputesBuilder } from '../testUtils/handlerInputesBuilder';
-import { sleep } from '../testUtils/sleep';
 
 const TOKEN = 't_10faa5e13e7844aaa1234';
 
@@ -27,7 +27,7 @@ describe('index', () => {
     const dupDirPath = `${originDirPath}Dup`;
     const layerPath = `${dupDirPath}/index.ts`;
 
-    const { context } = new HandlerInputesBuilder().build();
+    const { context } = new HandlerInputsBuilder().build();
     const callback = jest.fn();
     const retVal = 'The Tracer Wars';
 
@@ -54,7 +54,7 @@ describe('index', () => {
   });
 
   test('execution tags - async handler', async () => {
-    const { context } = new HandlerInputesBuilder().build();
+    const { context } = new HandlerInputsBuilder().build();
     const callback = jest.fn();
     const retVal = 'The Tracer Wars';
 
@@ -182,7 +182,7 @@ describe('index', () => {
   });
 
   test('execution tags - with undefined', async () => {
-    const { context } = new HandlerInputesBuilder().build();
+    const { context } = new HandlerInputsBuilder().build();
 
     const lumigoImport = require('./index');
     const lumigo = lumigoImport({ token: TOKEN });
@@ -201,7 +201,7 @@ describe('index', () => {
   });
 
   test('execution tags - non async handler', async () => {
-    const { context } = new HandlerInputesBuilder().build();
+    const { context } = new HandlerInputsBuilder().build();
 
     const lumigoImport = require('./index');
     const lumigo = lumigoImport({ token: TOKEN });
@@ -234,7 +234,7 @@ describe('index', () => {
       }
     });
 
-    const { context } = new HandlerInputesBuilder().build();
+    const { context } = new HandlerInputsBuilder().build();
 
     const lumigoImport = require('./index');
     const lumigo = lumigoImport({ token: TOKEN });

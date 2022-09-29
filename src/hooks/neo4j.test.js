@@ -1,11 +1,11 @@
-import { createMockedClient, createMockedResponse } from '../../testUtils/neo4jMocker';
-import { SpansContainer, TracerGlobals } from '../globals';
-import { HandlerInputesBuilder } from '../../testUtils/handlerInputesBuilder';
-import { Neo4jSpanBuilder } from '../../testUtils/neo4jSpanBuilder';
-import { payloadStringify } from '../utils/payloadStringify';
-import { NEO4J_SPAN } from '../spans/awsSpan';
-import { hookNeo4j } from './neo4j';
 import * as neo4jSpan from '../../src/spans/neo4jSpan';
+import { HandlerInputsBuilder } from '../../testUtils/HandlerInputsBuilder';
+import { createMockedClient, createMockedResponse } from '../../testUtils/neo4jMocker';
+import { Neo4jSpanBuilder } from '../../testUtils/neo4jSpanBuilder';
+import { SpansContainer, TracerGlobals } from '../globals';
+import { NEO4J_SPAN } from '../spans/awsSpan';
+import { payloadStringify } from '../utils/payloadStringify';
+import { hookNeo4j } from './neo4j';
 
 const DUMMY_OPTIONS = {
   mode: 'READ',
@@ -44,7 +44,7 @@ const createBaseBuilderFromSpan = (span) =>
 
 describe('neo4j', () => {
   beforeEach(() => {
-    const handlerInputs = new HandlerInputesBuilder().build();
+    const handlerInputs = new HandlerInputsBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
   });
 

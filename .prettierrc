@@ -9,7 +9,7 @@
   "overrides": [
     {
       "files": "*.json",
-      "options": { "parser": "json", "printWidth": 200 }
+      "options": { "parser": "json" }
     }
   ]
 }

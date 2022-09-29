@@ -1,10 +1,10 @@
-import { createMockedClient } from '../../testUtils/redisMocker';
-import { SpansContainer, TracerGlobals } from '../globals';
-import { hookRedis } from './redis';
-import { HandlerInputesBuilder } from '../../testUtils/handlerInputesBuilder';
-import { RedisSpanBuilder } from '../../testUtils/redisSpanBuilder';
-import { createRedisSpan } from '../spans/redisSpan';
+import { HandlerInputsBuilder } from '../../testUtils/HandlerInputsBuilder';
 import { Ioredis } from '../../testUtils/ioredisMocker';
+import { createMockedClient } from '../../testUtils/redisMocker';
+import { RedisSpanBuilder } from '../../testUtils/redisSpanBuilder';
+import { SpansContainer, TracerGlobals } from '../globals';
+import { createRedisSpan } from '../spans/redisSpan';
+import { hookRedis } from './redis';
 
 const noop = () => {};
 
@@ -15,7 +15,7 @@ const dummyConnectionOptions = {
 
 describe('redis', () => {
   beforeEach(() => {
-    const handlerInputs = new HandlerInputesBuilder().build();
+    const handlerInputs = new HandlerInputsBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
   });
 

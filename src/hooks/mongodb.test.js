@@ -1,18 +1,18 @@
+import { HandlerInputsBuilder } from '../../testUtils/HandlerInputsBuilder';
 import {
   getMockedMongoClient,
   promisifyMongoFunc,
   wrapMongoCollection,
 } from '../../testUtils/mongoMocker';
+import { MongoSpanBuilder } from '../../testUtils/mongoSpanBuilder';
 import { SpansContainer, TracerGlobals } from '../globals';
 import { hookMongoDb } from './mongodb';
-import { MongoSpanBuilder } from '../../testUtils/mongoSpanBuilder';
-import { HandlerInputesBuilder } from '../../testUtils/handlerInputesBuilder';
 
 const DUMMY_URL = 'mongodb://localhost:27017/myproject';
 
 describe('mongodb', () => {
   beforeEach(() => {
-    const handlerInputs = new HandlerInputesBuilder().build();
+    const handlerInputs = new HandlerInputsBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
   });
 
@@ -42,6 +42,7 @@ describe('mongodb', () => {
       .withCommandName('insert')
       .build();
     expect(spans).toEqual([expectedSpan]);
+    connection.close();
   });
 
   test('hookMongoDb -> error', async () => {
@@ -68,6 +69,7 @@ describe('mongodb', () => {
       .withError('"Wow What a error"')
       .build();
     expect(spans).toEqual([expectedSpan]);
+    connection.close();
   });
 
   test('hookMongoDb -> instrument Failed', async () => {
@@ -80,5 +82,6 @@ describe('mongodb', () => {
 
     const spans = SpansContainer.getSpans();
     expect(spans).toEqual([]);
+    connection.close();
   });
 });

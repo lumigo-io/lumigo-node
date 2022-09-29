@@ -1,25 +1,25 @@
-import { lowerCaseObjectKeys } from '../utils';
 import EventEmitter from 'events';
 import MockDate from 'mockdate';
 import * as shimmer from 'shimmer';
-import { HttpSpanBuilder } from '../../testUtils/httpSpanBuilder';
 import {
   HttpsMocker,
-  HttpsScenarioBuilder,
   HttpsRequestsForTesting,
+  HttpsScenarioBuilder,
 } from '../../testUtils/httpsMocker';
+import { HttpSpanBuilder } from '../../testUtils/httpSpanBuilder';
+import { lowerCaseObjectKeys } from '../utils';
 
-import * as utils from '../utils';
+import { HandlerInputsBuilder } from '../../testUtils/HandlerInputsBuilder';
 import {
   clearGlobals,
   MAX_TRACER_ADDED_DURATION_ALLOWED,
   SpansContainer,
   TracerGlobals,
 } from '../globals';
-import { HandlerInputesBuilder } from '../../testUtils/handlerInputesBuilder';
 import { getCurrentTransactionId } from '../spans/awsSpan';
-import { Http } from './http';
+import * as utils from '../utils';
 import { TRACESTATE_HEADER_NAME } from '../utils/w3cUtils';
+import { Http } from './http';
 
 describe('http hook', () => {
   process.env['AWS_REGION'] = 'us-east-x';
@@ -443,7 +443,7 @@ describe('http hook', () => {
         body: 'SomeResponse',
       },
     };
-    const handlerInputs = new HandlerInputesBuilder()
+    const handlerInputs = new HandlerInputsBuilder()
       .withAwsRequestId('DummyParentId')
       .withInvokedFunctionArn('arn:aws:l:region:335722316285:function:dummy-func')
       .build();
@@ -499,7 +499,7 @@ describe('http hook', () => {
         body: 'start' + 'a'.repeat(10000),
       },
     };
-    const handlerInputs = new HandlerInputesBuilder()
+    const handlerInputs = new HandlerInputsBuilder()
       .withAwsRequestId('DummyParentId')
       .withInvokedFunctionArn('arn:aws:l:region:335722316285:function:dummy-func')
       .build();
@@ -556,7 +556,7 @@ describe('http hook', () => {
       },
     };
     const transactionId = getCurrentTransactionId();
-    const handlerInputs = new HandlerInputesBuilder()
+    const handlerInputs = new HandlerInputsBuilder()
       .withAwsRequestId('DummyParentId')
       .withInvokedFunctionArn('arn:aws:l:region:335722316285:function:dummy-func')
       .build();
@@ -629,7 +629,7 @@ describe('http hook', () => {
       throw Error();
     });
 
-    const handlerInputs = new HandlerInputesBuilder()
+    const handlerInputs = new HandlerInputsBuilder()
       .withAwsRequestId('DummyParentId')
       .withInvokedFunctionArn('arn:aws:l:region:335722316285:function:dummy-func')
       .build();
@@ -764,7 +764,7 @@ describe('http hook', () => {
 
   test('wrapHttpLib - missing _X_AMZN_TRACE_ID', () => {
     utils.setTimeoutTimerDisabled();
-    const handlerInputs = new HandlerInputesBuilder().build();
+    const handlerInputs = new HandlerInputsBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
     process.env._X_AMZN_TRACE_ID = undefined;
     const requestData = HttpSpanBuilder.getDefaultData(HttpSpanBuilder.DEFAULT_REQUEST_DATA);
@@ -785,7 +785,7 @@ describe('http hook', () => {
 
   test('wrapHttpLib - simple flow', () => {
     utils.setTimeoutTimerDisabled();
-    const handlerInputs = new HandlerInputesBuilder().build();
+    const handlerInputs = new HandlerInputsBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
     const requestData = HttpSpanBuilder.getDefaultData(HttpSpanBuilder.DEFAULT_REQUEST_DATA);
     const responseData = {
@@ -819,7 +819,7 @@ describe('http hook', () => {
   test('wrapHttpLib - add W3C headers', () => {
     utils.setTimeoutTimerDisabled();
     process.env['LUMIGO_PROPAGATE_W3C'] = 'TRUE';
-    const handlerInputs = new HandlerInputesBuilder().build();
+    const handlerInputs = new HandlerInputsBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
     const requestData = HttpSpanBuilder.getDefaultData(HttpSpanBuilder.DEFAULT_REQUEST_DATA);
     const responseData = {
@@ -841,7 +841,7 @@ describe('http hook', () => {
   test('wrapHttpLib - Timer time is passed', () => {
     process.env.LUMIGO_TRACER_TIMEOUT = '0';
 
-    const handlerInputs = new HandlerInputesBuilder().build();
+    const handlerInputs = new HandlerInputsBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
     const requestData = HttpSpanBuilder.getDefaultData(HttpSpanBuilder.DEFAULT_REQUEST_DATA);
     const responseData = {
@@ -861,7 +861,7 @@ describe('http hook', () => {
 
   test('wrapHttpLib - no callback provided', () => {
     utils.setTimeoutTimerDisabled();
-    const handlerInputs = new HandlerInputesBuilder().build();
+    const handlerInputs = new HandlerInputsBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
     const requestData = HttpSpanBuilder.getDefaultData(HttpSpanBuilder.DEFAULT_REQUEST_DATA);
     const responseData = {
@@ -894,7 +894,7 @@ describe('http hook', () => {
 
   test('wrapHttpLib - adding token after globals cleared', () => {
     TracerGlobals.setTracerInputs({ token: 'TOKEN' });
-    const handlerInputs = new HandlerInputesBuilder().build();
+    const handlerInputs = new HandlerInputsBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
 
     Http.wrapHttpLib(HttpsMocker);
@@ -913,7 +913,7 @@ describe('http hook', () => {
 
   test('wrapHttpLib - black listed url', () => {
     const edgeHost = 'http://a.com';
-    const handlerInputs = new HandlerInputesBuilder().build();
+    const handlerInputs = new HandlerInputsBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
     TracerGlobals.setTracerInputs({ ...TracerGlobals.getTracerInputs(), edgeHost });
 
@@ -934,7 +934,7 @@ describe('http hook', () => {
   });
 
   test('wrapHttpLib - added span before request finish', () => {
-    const handlerInputs = new HandlerInputesBuilder().build();
+    const handlerInputs = new HandlerInputsBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
     const requestData = HttpSpanBuilder.getDefaultData(HttpSpanBuilder.DEFAULT_REQUEST_DATA);
 
@@ -963,7 +963,7 @@ describe('http hook', () => {
   test('wrapHttpLib - added span before request finish for aws service', () => {
     const host = 'random.amazonaws.com';
 
-    const handlerInputs = new HandlerInputesBuilder().build();
+    const handlerInputs = new HandlerInputsBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
     let requestData = HttpSpanBuilder.getDefaultData(HttpSpanBuilder.DEFAULT_REQUEST_DATA);
     requestData.host = host;
@@ -994,7 +994,7 @@ describe('http hook', () => {
 
   test('wrapHttpLib - wrapping twice not effecting', () => {
     utils.setTimeoutTimerDisabled();
-    const handlerInputs = new HandlerInputesBuilder().build();
+    const handlerInputs = new HandlerInputsBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
     const requestData = HttpSpanBuilder.getDefaultData(HttpSpanBuilder.DEFAULT_REQUEST_DATA);
     const responseData = {
@@ -1029,7 +1029,7 @@ describe('http hook', () => {
 
   test('wrapHttpLib - invalid alias dont save spans', () => {
     utils.setTimeoutTimerDisabled();
-    const handlerInputs = new HandlerInputesBuilder().build();
+    const handlerInputs = new HandlerInputsBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
     const cleanRequestData = HttpSpanBuilder.getDefaultData(HttpSpanBuilder.DEFAULT_REQUEST_DATA);
     let a = {};
@@ -1063,7 +1063,7 @@ describe('http hook', () => {
 
   test('wrapHttpLib - circular object wrapper cutting object', () => {
     utils.setTimeoutTimerDisabled();
-    const handlerInputs = new HandlerInputesBuilder().build();
+    const handlerInputs = new HandlerInputsBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
     const cleanRequestData = HttpSpanBuilder.getDefaultData(HttpSpanBuilder.DEFAULT_REQUEST_DATA);
     let a = {};
@@ -1113,7 +1113,7 @@ describe('http hook', () => {
 
   test('wrapHttpLib - shimmer all wraps failed', () => {
     utils.setWarm();
-    const handlerInputs = new HandlerInputesBuilder().build();
+    const handlerInputs = new HandlerInputsBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
     const requestData = HttpSpanBuilder.getDefaultData(HttpSpanBuilder.DEFAULT_REQUEST_DATA);
 

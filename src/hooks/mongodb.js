@@ -1,9 +1,9 @@
-import { safeRequire } from '../utils/requireUtils';
-import { getRandomId, safeExecute } from '../utils';
-import { createMongoDbSpan, extendMongoDbSpan } from '../spans/mongoDbSpan';
 import { SpansContainer, TracerGlobals } from '../globals';
 import * as logger from '../logger';
 import { getCurrentTransactionId } from '../spans/awsSpan';
+import { createMongoDbSpan, extendMongoDbSpan } from '../spans/mongoDbSpan';
+import { getRandomId, safeExecute } from '../utils';
+import { safeRequire } from '../utils/requireUtils';
 
 const PendingRequests = (() => {
   let pendingRequests = {};
@@ -74,8 +74,8 @@ const onFailedHook = (event) => {
 
 export const hookMongoDb = (mongoLib) => {
   const mongoClient = mongoLib ? mongoLib : safeRequire('mongodb');
-  const mongoosClients = safeRequire('node_modules/mongoose/node_modules/mongodb');
-  const mongoClients = [mongoClient, mongoosClients].filter(Boolean);
+  const mongooseClients = safeRequire('node_modules/mongoose/node_modules/mongodb');
+  const mongoClients = [mongoClient, mongooseClients].filter(Boolean);
   if (mongoClients.length > 0) {
     mongoClients.forEach((mongoClient) => {
       logger.info('Starting to instrument MongoDB');
