@@ -2,7 +2,7 @@
 import * as fsExtra from 'fs-extra';
 import { AxiosMocker } from '../testUtils/axiosMocker';
 import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
-import { HandlerInputsBuilder } from '../testUtils/HandlerInputsBuilder';
+import { HandlerInputsBuilder } from '../testUtils/handlerInputsBuilder';
 import { sleep } from '../testUtils/sleep';
 import { MAX_ELEMENTS_IN_EXTRA } from './tracer';
 import * as tracer from './tracer/tracer';

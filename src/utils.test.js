@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
-import { HandlerInputsBuilder } from '../testUtils/HandlerInputsBuilder';
+import { HandlerInputsBuilder } from '../testUtils/handlerInputsBuilder';
 import * as globals from './globals';
 import { MAX_TRACER_ADDED_DURATION_ALLOWED, TracerGlobals } from './globals';
 import * as logger from './logger';

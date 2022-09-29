@@ -1,4 +1,4 @@
-import { HandlerInputsBuilder } from '../../testUtils/HandlerInputsBuilder';
+import { HandlerInputsBuilder } from '../../testUtils/handlerInputsBuilder';
 import {
   getMockedMongoClient,
   promisifyMongoFunc,

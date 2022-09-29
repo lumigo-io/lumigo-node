@@ -1,4 +1,4 @@
-import { HandlerInputsBuilder } from '../../testUtils/HandlerInputsBuilder';
+import { HandlerInputsBuilder } from '../../testUtils/handlerInputsBuilder';
 import { createMockedClient, createMockedResponse } from '../../testUtils/pgMocker';
 import { SqlSpanBuilder } from '../../testUtils/sqlSpanBuilder';
 import { SpansContainer, TracerGlobals } from '../globals';

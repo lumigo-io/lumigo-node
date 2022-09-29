@@ -2,7 +2,7 @@
 import each from 'jest-each';
 import { AxiosMocker } from '../../testUtils/axiosMocker';
 import { EnvironmentBuilder } from '../../testUtils/environmentBuilder';
-import { HandlerInputsBuilder } from '../../testUtils/HandlerInputsBuilder';
+import { HandlerInputsBuilder } from '../../testUtils/handlerInputsBuilder';
 import * as globals from '../globals';
 import { MAX_TRACER_ADDED_DURATION_ALLOWED, SpansContainer, TracerGlobals } from '../globals';
 import { Http } from '../hooks/http';

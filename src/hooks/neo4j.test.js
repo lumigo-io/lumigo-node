@@ -1,5 +1,5 @@
 import * as neo4jSpan from '../../src/spans/neo4jSpan';
-import { HandlerInputsBuilder } from '../../testUtils/HandlerInputsBuilder';
+import { HandlerInputsBuilder } from '../../testUtils/handlerInputsBuilder';
 import { createMockedClient, createMockedResponse } from '../../testUtils/neo4jMocker';
 import { Neo4jSpanBuilder } from '../../testUtils/neo4jSpanBuilder';
 import { SpansContainer, TracerGlobals } from '../globals';

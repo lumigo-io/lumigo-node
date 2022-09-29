@@ -9,7 +9,7 @@ import {
 import { HttpSpanBuilder } from '../../testUtils/httpSpanBuilder';
 import { lowerCaseObjectKeys } from '../utils';
 
-import { HandlerInputsBuilder } from '../../testUtils/HandlerInputsBuilder';
+import { HandlerInputsBuilder } from '../../testUtils/handlerInputsBuilder';
 import {
   clearGlobals,
   MAX_TRACER_ADDED_DURATION_ALLOWED,

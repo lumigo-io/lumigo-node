@@ -1,6 +1,6 @@
 import MockDate from 'mockdate';
 import { encode } from 'utf8';
-import { HandlerInputsBuilder } from '../../testUtils/HandlerInputsBuilder';
+import { HandlerInputsBuilder } from '../../testUtils/handlerInputsBuilder';
 import { MAX_TRACER_ADDED_DURATION_ALLOWED, TracerGlobals } from '../globals';
 import * as awsParsers from '../parsers/aws';
 import * as utils from '../utils';

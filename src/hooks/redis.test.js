@@ -1,4 +1,4 @@
-import { HandlerInputsBuilder } from '../../testUtils/HandlerInputsBuilder';
+import { HandlerInputsBuilder } from '../../testUtils/handlerInputsBuilder';
 import { Ioredis } from '../../testUtils/ioredisMocker';
 import { createMockedClient } from '../../testUtils/redisMocker';
 import { RedisSpanBuilder } from '../../testUtils/redisSpanBuilder';
