@@ -214,7 +214,7 @@ export class Http {
       if (isRequestToAwsService && !isKeepHeadersOn()) {
         const { awsXAmznTraceId } = getAWSEnvironment();
         const traceId = getPatchedTraceId(awsXAmznTraceId);
-        options.headers['X-Amzn-Trace-Id'] = traceId;
+        headers['X-Amzn-Trace-Id'] = traceId;
       }
 
       if (shouldPropagateW3C()) {
