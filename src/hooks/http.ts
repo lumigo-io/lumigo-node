@@ -144,7 +144,6 @@ export class Http {
       // The signature is: (options)
       originalArgs[0] = newOptions;
     }
-    logger.warn('addOptionsToHttpRequestArguments failed: unknown signature');
   }
 
   static isBlacklisted(host) {
@@ -202,7 +201,7 @@ export class Http {
     extenderContext.transactionId = transactionId;
     extenderContext.isTracedDisabled = false;
 
-    const { url, options } = Http.httpRequestArguments(args);
+    const { url, options = {} } = Http.httpRequestArguments(args);
     const headers = options?.headers || {};
     const host = Http.getHostFromOptionsOrUrl(options, url);
     extenderContext.isTracedDisabled =
