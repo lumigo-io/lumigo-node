@@ -21,7 +21,7 @@ service: aws-nodejs # NOTE: update this with your service name
 
 provider:
   name: aws
-  runtime: nodejs10.x
+  runtime: nodejs16.x
   env:
     LUMIGO_DEBUG: TRUE
 

@@ -1,8 +1,8 @@
-import { GlobalDurationTimer } from './utils/globalDurationTimer';
-import type { LambdaContext } from './types/aws/awsEnvironment';
-import type { TracerOptions } from './tracer';
-import { getAutoTagKeys, getJSONBase64Size, getMaxRequestSize, spanHasErrors } from './utils';
 import * as logger from './logger';
+import type { TracerOptions } from './tracer';
+import type { LambdaContext } from './types/aws/awsEnvironment';
+import { getAutoTagKeys, getJSONBase64Size, getMaxRequestSize, spanHasErrors } from './utils';
+import { GlobalDurationTimer } from './utils/globalDurationTimer';
 
 const MAX_TAGS = 50;
 const MAX_TAG_KEY_LEN = 50;
@@ -26,8 +26,8 @@ export const SpansContainer = (() => {
     return false;
   };
   const getSpans = () => Object.values(spansToSend);
-  const getSpanById = (spanId) => spansToSend[spanId];
-  const changeSpanId = (oldId, newId) => {
+  const getSpanById = (spanId: string) => spansToSend[spanId];
+  const changeSpanId = (oldId: string, newId: string) => {
     const oldSpan = spansToSend[oldId];
     if (oldSpan) {
       oldSpan.id = newId;

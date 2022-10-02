@@ -6,7 +6,8 @@
     "declaration": true,
     "moduleResolution": "node",
     "experimentalDecorators": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "lib": ["esnext"]
   },
   "include": ["./src/**/*"],
   "exclude": ["**/*.test.js", "**/*.test.ts", "__mocks__", "./testUtils"]

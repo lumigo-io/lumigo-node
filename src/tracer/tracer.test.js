@@ -1,21 +1,19 @@
 /* eslint-disable */
 import each from 'jest-each';
-import * as tracer from './tracer';
-import * as utils from '../utils';
+import { AxiosMocker } from '../../testUtils/axiosMocker';
+import { EnvironmentBuilder } from '../../testUtils/environmentBuilder';
+import { HandlerInputsBuilder } from '../../testUtils/handlerInputsBuilder';
 import * as globals from '../globals';
+import { MAX_TRACER_ADDED_DURATION_ALLOWED, SpansContainer, TracerGlobals } from '../globals';
+import { Http } from '../hooks/http';
+import * as logger from '../logger';
 import * as reporter from '../reporter';
 import * as awsSpan from '../spans/awsSpan';
-import * as logger from '../logger';
-import { MAX_TRACER_ADDED_DURATION_ALLOWED, TracerGlobals } from '../globals';
-import { setSwitchOff, STEP_FUNCTION_UID_KEY } from '../utils';
-import { LUMIGO_EVENT_KEY } from '../utils';
-import { HandlerInputesBuilder } from '../../testUtils/handlerInputesBuilder';
-import { EnvironmentBuilder } from '../../testUtils/environmentBuilder';
-import { SpansContainer } from '../globals';
-import { AxiosMocker } from '../../testUtils/axiosMocker';
-jest.mock('../hooks/http');
-import { Http } from '../hooks/http';
 import { getFunctionSpan } from '../spans/awsSpan';
+import * as utils from '../utils';
+import { LUMIGO_EVENT_KEY, STEP_FUNCTION_UID_KEY } from '../utils';
+import * as tracer from './tracer';
+jest.mock('../hooks/http');
 
 const TOKEN = 't_10faa5e13e7844aaa1234';
 
@@ -48,7 +46,7 @@ describe('tracer', () => {
 
   test('startTrace - not aws context (should mot send any spans)', async () => {
     process.env['LAMBDA_RUNTIME_DIR'] = 'TRUE';
-    const { event, context } = new HandlerInputesBuilder().build();
+    const { event, context } = new HandlerInputsBuilder().build();
     const functionSpan = getFunctionSpan(event, context);
     await tracer.startTrace(functionSpan);
     const requests = AxiosMocker.getRequests();
@@ -58,7 +56,7 @@ describe('tracer', () => {
   test('startTrace - simple flow', async () => {
     new EnvironmentBuilder().awsEnvironment().applyEnv();
 
-    const { event, context } = new HandlerInputesBuilder().build();
+    const { event, context } = new HandlerInputsBuilder().build();
     TracerGlobals.setHandlerInputs({ event, context });
     const functionSpan = getFunctionSpan(event, context);
     await tracer.startTrace(functionSpan);
@@ -70,7 +68,7 @@ describe('tracer', () => {
   test('startTrace - not sending start-span on non-aws env', async () => {
     new EnvironmentBuilder().notAwsEnvironment().applyEnv();
 
-    const { event, context } = new HandlerInputesBuilder().build();
+    const { event, context } = new HandlerInputsBuilder().build();
     const functionSpan = getFunctionSpan(event, context);
     await tracer.startTrace(functionSpan);
 
@@ -82,7 +80,7 @@ describe('tracer', () => {
     new EnvironmentBuilder().awsEnvironment().applyEnv();
     utils.setSendOnlyIfErrors();
 
-    const { event, context } = new HandlerInputesBuilder().build();
+    const { event, context } = new HandlerInputsBuilder().build();
     const functionSpan = getFunctionSpan(event, context);
     await tracer.startTrace(functionSpan);
 
@@ -96,7 +94,7 @@ describe('tracer', () => {
 
     new EnvironmentBuilder().awsEnvironment().applyEnv();
 
-    const { event, context } = new HandlerInputesBuilder().withTimeout(timeout).build();
+    const { event, context } = new HandlerInputsBuilder().withTimeout(timeout).build();
     TracerGlobals.setHandlerInputs({ event, context });
     const functionSpan = getFunctionSpan(event, context);
     tracer.startTrace(functionSpan).then(() => {
@@ -116,7 +114,7 @@ describe('tracer', () => {
     const testBuffer = 50;
 
     new EnvironmentBuilder().awsEnvironment().applyEnv();
-    const { event, context } = new HandlerInputesBuilder().withTimeout(timeout).build();
+    const { event, context } = new HandlerInputsBuilder().withTimeout(timeout).build();
     TracerGlobals.setHandlerInputs({ event, context });
     const functionSpan = getFunctionSpan(event, context);
     tracer.startTrace(functionSpan).then(() => {
@@ -136,7 +134,7 @@ describe('tracer', () => {
     const testBuffer = 50;
 
     new EnvironmentBuilder().awsEnvironment().applyEnv();
-    const { event, context } = new HandlerInputesBuilder().withTimeout(timeout).build();
+    const { event, context } = new HandlerInputsBuilder().withTimeout(timeout).build();
     TracerGlobals.setHandlerInputs({ event, context });
     const functionSpan = getFunctionSpan(event, context);
     tracer.startTrace(functionSpan).then(() => {
@@ -159,7 +157,7 @@ describe('tracer', () => {
 
     new EnvironmentBuilder().awsEnvironment().applyEnv();
 
-    const { event, context } = new HandlerInputesBuilder().withTimeout(timeout).build();
+    const { event, context } = new HandlerInputsBuilder().withTimeout(timeout).build();
     TracerGlobals.setHandlerInputs({ event, context });
     const functionSpan = getFunctionSpan(event, context);
     tracer.startTrace(functionSpan).then(() => {
@@ -180,7 +178,7 @@ describe('tracer', () => {
 
     utils.setSendOnlyIfErrors();
     new EnvironmentBuilder().awsEnvironment().applyEnv();
-    const { event, context } = new HandlerInputesBuilder().withTimeout(timeout).build();
+    const { event, context } = new HandlerInputsBuilder().withTimeout(timeout).build();
     const functionSpan = getFunctionSpan(event, context);
     tracer.startTrace(functionSpan).then(() => {
       SpansContainer.addSpan({ id: 'SomeRandomHttpSpan' });
@@ -287,7 +285,7 @@ describe('tracer', () => {
   });
 
   test('promisifyUserHandler async ', async () => {
-    const { event, context } = new HandlerInputesBuilder().build();
+    const { event, context } = new HandlerInputsBuilder().build();
     const data = 'Satoshi was here';
     const err = new Error('w00t');
     const userHandler1 = async () => Promise.resolve(data);
@@ -317,7 +315,7 @@ describe('tracer', () => {
   });
 
   test('promisifyUserHandler non async', async () => {
-    const { event, context } = new HandlerInputesBuilder().build();
+    const { event, context } = new HandlerInputsBuilder().build();
     const err = new Error('w00t');
 
     const userHandler1 = () => {
@@ -356,7 +354,7 @@ describe('tracer', () => {
     const userHandler1 = async (event) => {
       return 'ok';
     };
-    const { event } = new HandlerInputesBuilder().build();
+    const { event } = new HandlerInputsBuilder().build();
 
     await lumigoTracer.trace(userHandler1)(event);
 
@@ -374,7 +372,7 @@ describe('tracer', () => {
       done();
     };
 
-    const { event, context } = new HandlerInputesBuilder().build();
+    const { event, context } = new HandlerInputsBuilder().build();
 
     lumigoTracer
       .trace(userHandler1)(event, context, callback1)
@@ -395,7 +393,7 @@ describe('tracer', () => {
       done();
     };
 
-    const { event, context } = new HandlerInputesBuilder().build();
+    const { event, context } = new HandlerInputsBuilder().build();
 
     lumigoTracer1
       .trace(userHandler1)(event, context, callback1)
@@ -412,7 +410,7 @@ describe('tracer', () => {
     const token = TOKEN;
     const lumigoTracer = require('../index')({ token });
 
-    const { event, context } = new HandlerInputesBuilder().build();
+    const { event, context } = new HandlerInputsBuilder().build();
 
     const userHandler2 = (event, context, callback) => {
       throw new Error('bla');
@@ -426,7 +424,7 @@ describe('tracer', () => {
   });
 
   test('trace; async callbacked ', (done) => {
-    const { event, context } = new HandlerInputesBuilder().build();
+    const { event, context } = new HandlerInputsBuilder().build();
     const token = TOKEN;
 
     const retVal = 'The Tracer Wars';
@@ -449,7 +447,7 @@ describe('tracer', () => {
     expect(spies.warnClient).toHaveBeenCalledTimes(0);
     expect(spies.setSwitchOff).not.toHaveBeenCalled();
 
-    const { event, context } = new HandlerInputesBuilder().build();
+    const { event, context } = new HandlerInputsBuilder().build();
 
     const retVal = 'The Tracer Wars';
     const callback4 = jest.fn();
@@ -470,7 +468,7 @@ describe('tracer', () => {
     expect(spies.warnClient).toHaveBeenCalledTimes(0);
     expect(spies.setSwitchOff).not.toHaveBeenCalled();
 
-    const { context } = new HandlerInputesBuilder().build();
+    const { context } = new HandlerInputsBuilder().build();
 
     const userHandler4 = async (event, context, callback) => {
       return {};
@@ -484,7 +482,7 @@ describe('tracer', () => {
     const token = TOKEN;
     const lumigoTracer = require('../index')({ token });
 
-    const { event, context } = new HandlerInputesBuilder().build();
+    const { event, context } = new HandlerInputsBuilder().build();
 
     const retVal = 'The Tracer Wars';
     const callback5 = jest.fn();
@@ -506,7 +504,7 @@ describe('tracer', () => {
       const token = TOKEN;
       const lumigoTracer = require('../index')({ token });
 
-      const { event, context } = new HandlerInputesBuilder().build();
+      const { event, context } = new HandlerInputsBuilder().build();
       const retVal = 'The Tracer Wars';
 
       const userHandler5 = async (event, context) => {
@@ -523,7 +521,7 @@ describe('tracer', () => {
       const token = TOKEN;
       const lumigoTracer = require('../index')({ token });
 
-      const { event, context } = new HandlerInputesBuilder().build();
+      const { event, context } = new HandlerInputsBuilder().build();
       const retVal = 'The Tracer Wars';
 
       const userHandler5 = (event, context, callback) => {
@@ -540,9 +538,9 @@ describe('tracer', () => {
   test('trace; follow AWS stringify on the return value - happy flow', async () => {
     // According to node's runtime: var/runtime/RAPIDClient.js:134, AWS stringify the message.
     new EnvironmentBuilder().awsEnvironment().applyEnv();
-    const handlerInputs = new HandlerInputesBuilder().build();
+    const handlerInputs = new HandlerInputsBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
-    const { context } = new HandlerInputesBuilder().build();
+    const { context } = new HandlerInputsBuilder().build();
 
     const lumigoTracer = require('../index')({
       token: TOKEN,
@@ -562,9 +560,9 @@ describe('tracer', () => {
   test('trace; follow AWS stringify on the return value - bad flow', async () => {
     // According to node's runtime: var/runtime/RAPIDClient.js:134, AWS raise exception if JSON.stringify fails.
     new EnvironmentBuilder().awsEnvironment().applyEnv();
-    const handlerInputs = new HandlerInputesBuilder().build();
+    const handlerInputs = new HandlerInputsBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
-    const { context } = new HandlerInputesBuilder().build();
+    const { context } = new HandlerInputsBuilder().build();
 
     const lumigoTracer = require('../index')({
       token: TOKEN,
@@ -590,9 +588,9 @@ describe('tracer', () => {
 
   test('trace; callback -> user raise error of type string', async () => {
     new EnvironmentBuilder().awsEnvironment().applyEnv();
-    const handlerInputs = new HandlerInputesBuilder().build();
+    const handlerInputs = new HandlerInputsBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
-    const { context } = new HandlerInputesBuilder().build();
+    const { context } = new HandlerInputsBuilder().build();
 
     const lumigoTracer = require('../index')({
       token: TOKEN,
@@ -661,7 +659,7 @@ describe('tracer', () => {
     const token = TOKEN;
     const lumigoTracer = require('../index')({ token });
 
-    const { event, context } = new HandlerInputesBuilder().build();
+    const { event, context } = new HandlerInputsBuilder().build();
 
     const userHandlerAsync = async (event, context, callback) => 1;
     const result = lumigoTracer.trace(lumigoTracer.trace(userHandlerAsync))(event, context);
@@ -692,7 +690,7 @@ describe('tracer', () => {
     Http.hookHttp.mockImplementationOnce(() => {
       throw new Error('Mocked error');
     });
-    const { event, context } = new HandlerInputesBuilder().build();
+    const { event, context } = new HandlerInputsBuilder().build();
     const handler = jest.fn(() => done());
     tracer
       .trace({})(handler)(event, context)
@@ -709,7 +707,7 @@ describe('tracer', () => {
     });
     const handler = jest.fn(() => done());
 
-    const { event, context } = new HandlerInputesBuilder().build();
+    const { event, context } = new HandlerInputsBuilder().build();
 
     tracer
       .trace({})(handler)(event, context)
@@ -724,7 +722,7 @@ describe('tracer', () => {
   test('performStepFunctionLogic - performStepFunctionLogic doesnt call if not step function', async () => {
     const handler = jest.fn(async () => {});
 
-    const { event, context } = new HandlerInputesBuilder().build();
+    const { event, context } = new HandlerInputsBuilder().build();
 
     await tracer.trace({ stepFunction: false })(handler)(event, context);
 
@@ -735,7 +733,7 @@ describe('tracer', () => {
     const handler = jest.fn(async () => ({ hello: 'world' }));
     spies.getRandomId.mockReturnValueOnce('123');
 
-    const { event, context } = new HandlerInputesBuilder().build();
+    const { event, context } = new HandlerInputsBuilder().build();
 
     const result = await tracer.trace({ stepFunction: true })(handler)(event, context);
 
@@ -754,7 +752,7 @@ describe('tracer', () => {
       throw new Error('stam1');
     });
 
-    const { event, context } = new HandlerInputesBuilder().build();
+    const { event, context } = new HandlerInputsBuilder().build();
 
     const result3 = await tracer.trace({ stepFunction: true })(handler)(event, context);
 
@@ -768,7 +766,7 @@ describe('tracer', () => {
       hello: 'world',
       [LUMIGO_EVENT_KEY]: { [STEP_FUNCTION_UID_KEY]: 'old' },
     }));
-    const handlerInputs = new HandlerInputesBuilder().build();
+    const handlerInputs = new HandlerInputsBuilder().build();
 
     const result = await tracer.trace({ stepFunction: true })(handler)(
       handlerInputs.event,

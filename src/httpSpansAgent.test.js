@@ -1,7 +1,7 @@
 import { AxiosMocker } from '../testUtils/axiosMocker';
-import * as utils from './utils';
-import { HttpSpansAgent } from './httpSpansAgent';
 import * as globals from './globals';
+import { HttpSpansAgent } from './httpSpansAgent';
+import * as utils from './utils';
 
 import axios from 'axios';
 import { sleep } from '../testUtils/sleep';
@@ -57,7 +57,7 @@ describe('HttpSpansAgent', () => {
 
     await HttpSpansAgent.postSpans(reqBody);
 
-    //no Error throwed
+    //no Error thrown
   });
 
   test('postSpans - reject network error', async () => {
@@ -68,10 +68,10 @@ describe('HttpSpansAgent', () => {
 
     await HttpSpansAgent.postSpans(reqBody);
 
-    //no Error throwed
+    //no Error thrown
   });
 
-  test('postSpans - reject timout', async () => {
+  test('postSpans - reject timeout', async () => {
     const reqBody = 'abcdefg';
     globals.TracerGlobals.setTracerInputs({ token: 't_xxx' });
 
@@ -79,12 +79,12 @@ describe('HttpSpansAgent', () => {
 
     await HttpSpansAgent.postSpans(reqBody);
 
-    //no Error throwed
+    //no Error thrown
   });
 
   const testTimeout = 700; //in MS
   test(
-    'postSpans - reject connection timout',
+    'postSpans - reject connection timeout',
     async () => {
       let called = false;
       const reqBody = 'abcdefg';
@@ -94,7 +94,7 @@ describe('HttpSpansAgent', () => {
         return {
           post: async () => {
             called = true;
-            await sleep(60000);
+            await sleep(testTimeout + 500);
           },
         };
       });
