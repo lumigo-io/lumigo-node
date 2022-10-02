@@ -6,7 +6,7 @@ export const MongoMockerEventEmitter = (() => {
   let eventEmitter = new EventEmitter();
   const getEventEmitter = () => eventEmitter;
   const cleanEventEmitter = () => {
-    eventEmitter.eventNames().forEach(event => {
+    eventEmitter.eventNames().forEach((event) => {
       eventEmitter.removeAllListeners(event);
     });
   };
@@ -15,7 +15,7 @@ export const MongoMockerEventEmitter = (() => {
 
 export const wrapMongoCollection = (collection, funcName, failed = false) => {
   hook(collection, funcName, {
-    beforeHook: args => {
+    beforeHook: (args) => {
       MongoMockerEventEmitter.getEventEmitter().emit('started', {
         eventName: 'onStartedHook',
         command: {
@@ -67,6 +67,7 @@ export const wrapMongoCollection = (collection, funcName, failed = false) => {
 
 export const getMockedMongoClient = (options = {}) => {
   const MongoClient = mongodb.MongoClient;
+  // eslint-disable-next-line camelcase
   mongodb.max_delay = 0;
   if (options.instrumentFailed) {
     mongodb.instrument = (options, errCallback) => {
@@ -79,16 +80,21 @@ export const getMockedMongoClient = (options = {}) => {
   return { mongoLib: mongodb, mongoClient: MongoClient };
 };
 
-export const promisifyMongoFunc = func => (...params) =>
-  new Promise(function(resolve, reject) {
-    func.apply(this, [
-      ...params,
-      function(err, data) {
+export const promisifyMongoFunc =
+  (func) =>
+  (...params) =>
+    new Promise((resolve, reject) => {
+      const promiseCallbackHandler = (err, data) => {
         if (err) {
           reject(err);
         } else {
           resolve(data);
         }
-      },
-    ]);
-  });
+      };
+
+      try {
+        func.apply(this, [...params, promiseCallbackHandler]);
+      } catch (err) {
+        reject(err);
+      }
+    });

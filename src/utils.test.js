@@ -1,32 +1,34 @@
+import crypto from 'crypto';
+import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
+import { HandlerInputsBuilder } from '../testUtils/handlerInputsBuilder';
+import * as globals from './globals';
+import { MAX_TRACER_ADDED_DURATION_ALLOWED, TracerGlobals } from './globals';
+import * as logger from './logger';
 import * as utils from './utils';
 import {
+  DEFAULT_AUTO_TAG_KEY,
+  DEFAULT_CONNECTION_TIMEOUT,
+  DEFAULT_TIMEOUT_MIN_DURATION,
+  filterObjectKeys,
+  getEnvVarAsList,
   getJSONBase64Size,
+  GET_KEY_DEPTH_ENV_KEY,
+  isDebug,
+  isEmptyString,
+  isEncodingType,
+  isObject,
   LUMIGO_MAX_ENTRY_SIZE,
+  md5Hash,
   parseErrorObject,
   parseQueryParams,
-  shouldScrubDomain,
-  safeExecute,
   recursiveGetKey,
-  md5Hash,
+  removeDuplicates,
+  safeExecute,
   safeGet,
-  isDebug,
-  DEFAULT_CONNECTION_TIMEOUT,
-  isObject,
-  DEFAULT_AUTO_TAG_KEY,
-  filterObjectKeys,
-  shouldPropagateW3C,
   safeJsonParse,
+  shouldPropagateW3C,
+  shouldScrubDomain,
 } from './utils';
-import { MAX_TRACER_ADDED_DURATION_ALLOWED, TracerGlobals } from './globals';
-import crypto from 'crypto';
-import { GET_KEY_DEPTH_ENV_KEY } from './utils';
-import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
-import { getEnvVarAsList, isEncodingType, isEmptyString } from './utils';
-import { DEFAULT_TIMEOUT_MIN_DURATION } from './utils';
-import * as globals from './globals';
-import { removeDuplicates } from './utils';
-import * as logger from './logger';
-import { HandlerInputesBuilder } from '../testUtils/handlerInputesBuilder';
 
 describe('utils', () => {
   const spies = {};
@@ -504,19 +506,19 @@ describe('utils', () => {
   });
 
   test('getTracerMaxDurationTimeout -> Max value', () => {
-    const inputs = new HandlerInputesBuilder().withTimeout(6000000).build();
+    const inputs = new HandlerInputsBuilder().withTimeout(6000000).build();
     TracerGlobals.setHandlerInputs(inputs);
     expect(utils.getTracerMaxDurationTimeout()).toEqual(750);
   });
 
   test('getTracerMaxDurationTimeout -> min value', () => {
-    const inputs = new HandlerInputesBuilder().withTimeout(1000).build();
+    const inputs = new HandlerInputsBuilder().withTimeout(1000).build();
     TracerGlobals.setHandlerInputs(inputs);
     expect(utils.getTracerMaxDurationTimeout()).toEqual(200);
   });
 
   test('getTracerMaxDurationTimeout -> in between', () => {
-    const inputs = new HandlerInputesBuilder().withTimeout(2000).build();
+    const inputs = new HandlerInputsBuilder().withTimeout(2000).build();
     TracerGlobals.setHandlerInputs(inputs);
     expect(utils.getTracerMaxDurationTimeout()).toEqual(400);
   });
