@@ -129,19 +129,19 @@ export class Http {
     if (typeof originalArgs[0] === 'string' || originalArgs[0] instanceof URL) {
       if (originalArgs[1]) {
         if (typeof originalArgs[1] === 'function') {
-          // The signature is: (url, callback)
+          // The signature is: (url, callback). Change to: (url, options, callback)
           originalArgs.push(originalArgs[1]);
           originalArgs[1] = newOptions;
         } else {
-          // The signature is: (url, options) OR (url, options, callback)
+          // The signature is: (url, options) OR (url, options, callback). Doesn't change.
           originalArgs[1] = newOptions;
         }
       } else {
-        // The signature is: (url)
+        // The signature is: (url). Change to: (url, options)
         originalArgs.push(newOptions);
       }
     } else {
-      // The signature is: (options)
+      // The signature is: (options). Doesn't change.
       originalArgs[0] = newOptions;
     }
   }

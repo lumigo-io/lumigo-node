@@ -875,7 +875,7 @@ describe('http hook', () => {
     expect(span.info.httpInfo.request.headers[TRACESTATE_HEADER_NAME]).toBeDefined();
   });
 
-  test('wrapHttpLib - check request - headers exists', () => {
+  test('wrapHttpLib - adding TRACESTATE_HEADER_NAME - headers exists', () => {
     utils.setTimeoutTimerDisabled();
     process.env['LUMIGO_PROPAGATE_W3C'] = 'TRUE';
     const handlerInputs = new HandlerInputesBuilder().build();
@@ -897,7 +897,7 @@ describe('http hook', () => {
     ).toBeTruthy();
   });
 
-  test('wrapHttpLib - check request - headers doesnt exists', () => {
+  test('wrapHttpLib - adding TRACESTATE_HEADER_NAME - headers doesnt exists', () => {
     utils.setTimeoutTimerDisabled();
     process.env['LUMIGO_PROPAGATE_W3C'] = 'TRUE';
     const handlerInputs = new HandlerInputesBuilder().build();
