@@ -1,9 +1,9 @@
+import { HandlerInputsBuilder } from '../../testUtils/handlerInputsBuilder';
 import { createMockedClient, createMockedResponse } from '../../testUtils/mySqlMocker';
-import { SpansContainer, TracerGlobals } from '../globals';
-import { HandlerInputesBuilder } from '../../testUtils/handlerInputesBuilder';
 import { SqlSpanBuilder } from '../../testUtils/sqlSpanBuilder';
-import { payloadStringify } from '../utils/payloadStringify';
+import { SpansContainer, TracerGlobals } from '../globals';
 import { MYSQL_SPAN } from '../spans/awsSpan';
+import { payloadStringify } from '../utils/payloadStringify';
 import { hookMySql } from './mySql';
 
 const DUMMY_OPTIONS = {
@@ -48,7 +48,7 @@ const createExpectedResponse = () => {
 
 describe('mySql', () => {
   beforeEach(() => {
-    const handlerInputs = new HandlerInputesBuilder().build();
+    const handlerInputs = new HandlerInputsBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
   });
 
