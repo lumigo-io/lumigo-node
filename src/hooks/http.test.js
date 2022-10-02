@@ -878,7 +878,7 @@ describe('http hook', () => {
   test('wrapHttpLib - adding TRACESTATE_HEADER_NAME - headers exists', () => {
     utils.setTimeoutTimerDisabled();
     process.env['LUMIGO_PROPAGATE_W3C'] = 'TRUE';
-    const handlerInputs = new HandlerInputesBuilder().build();
+    const handlerInputs = new HandlerInputsBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
 
     Http.wrapHttpLib(HttpsMocker);
@@ -900,7 +900,7 @@ describe('http hook', () => {
   test('wrapHttpLib - adding TRACESTATE_HEADER_NAME - headers doesnt exists', () => {
     utils.setTimeoutTimerDisabled();
     process.env['LUMIGO_PROPAGATE_W3C'] = 'TRUE';
-    const handlerInputs = new HandlerInputesBuilder().build();
+    const handlerInputs = new HandlerInputsBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
 
     Http.wrapHttpLib(HttpsMocker);
