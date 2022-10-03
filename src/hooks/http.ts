@@ -123,6 +123,29 @@ export class Http {
     return options.hostname || options.host || (options.uri && options.uri.hostname) || 'localhost';
   }
 
+  static addOptionsToHttpRequestArguments(originalArgs, newOptions) {
+    // We're switching on the different signatures of http:
+    // https://nodejs.org/api/http.html#httpgeturl-options-callback
+    if (typeof originalArgs[0] === 'string' || originalArgs[0] instanceof URL) {
+      if (originalArgs[1]) {
+        if (typeof originalArgs[1] === 'function') {
+          // The signature is: (url, callback). Change to: (url, options, callback)
+          originalArgs.push(originalArgs[1]);
+          originalArgs[1] = newOptions;
+        } else {
+          // The signature is: (url, options) OR (url, options, callback). Doesn't change.
+          originalArgs[1] = newOptions;
+        }
+      } else {
+        // The signature is: (url). Change to: (url, options)
+        originalArgs.push(newOptions);
+      }
+    } else {
+      // The signature is: (options). Doesn't change.
+      originalArgs[0] = newOptions;
+    }
+  }
+
   static isBlacklisted(host) {
     return host === getEdgeHost() || hostBlaclist.has(host);
   }
@@ -178,7 +201,7 @@ export class Http {
     extenderContext.transactionId = transactionId;
     extenderContext.isTracedDisabled = false;
 
-    const { url, options } = Http.httpRequestArguments(args);
+    const { url, options = {} } = Http.httpRequestArguments(args);
     const headers = options?.headers || {};
     const host = Http.getHostFromOptionsOrUrl(options, url);
     extenderContext.isTracedDisabled =
@@ -191,11 +214,14 @@ export class Http {
       if (isRequestToAwsService && !isKeepHeadersOn()) {
         const { awsXAmznTraceId } = getAWSEnvironment();
         const traceId = getPatchedTraceId(awsXAmznTraceId);
-        options.headers['X-Amzn-Trace-Id'] = traceId;
+        headers && (headers['X-Amzn-Trace-Id'] = traceId);
       }
 
       if (shouldPropagateW3C()) {
-        safeExecute(() => (options.headers = addW3CTracePropagator(headers)))();
+        safeExecute(() => {
+          options.headers = addW3CTracePropagator(headers);
+          Http.addOptionsToHttpRequestArguments(args, options);
+        })();
       }
 
       const requestData = Http.parseHttpRequestOptions(options, url);
