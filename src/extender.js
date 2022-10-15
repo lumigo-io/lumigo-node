@@ -27,11 +27,14 @@ export const hook = (module, funcName, options = {}, shimmerLib = shimmer) => {
              * If we are instrumenting a constructor, we need to use the 'new' keyword , and
              * there isn't really a great way to detect it other than looking into the error.
              */
-            if (err instanceof TypeError && err.message && err.message.startsWith('Class constructor')) {
+            if (
+              err instanceof TypeError &&
+              err.message &&
+              err.message.startsWith('Class constructor')
+            ) {
               try {
                 originalFnResult = new originalFn(...args);
-              } catch (err) {
-              }
+              } catch (err) {}
             }
           }
           safeAfterHook.call(this, args, originalFnResult, extenderContext);
@@ -39,7 +42,7 @@ export const hook = (module, funcName, options = {}, shimmerLib = shimmer) => {
         } catch (err) {
           logger.debug(`Wrapper for ${funcName} failed`, err);
         }
-      }
+      };
     };
     shimmerLib.wrap(module, funcName, wrapper);
   } catch (e) {

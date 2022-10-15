@@ -84,7 +84,9 @@ function mongoClient4xBeforeConstructorHook(args, extenderContext) {
        * Wait this is not possible. It is supposed to have at least the URL
        * as first arg!
        */
-      logger.debug('MongoDB 4.x instrumentation skipped: unexpected zero arguments to MongoClient constructor');
+      logger.debug(
+        'MongoDB 4.x instrumentation skipped: unexpected zero arguments to MongoClient constructor'
+      );
       break;
     case 1:
       args.push({
@@ -103,7 +105,9 @@ function mongoClient4xBeforeConstructorHook(args, extenderContext) {
           };
           break;
         default:
-          logger.debug(`MongoDB 4.x instrumentation skipped: unexpected type of the 'options' argument: ${typeof optionsObject}`);
+          logger.debug(
+            `MongoDB 4.x instrumentation skipped: unexpected type of the 'options' argument: ${typeof optionsObject}`
+          );
       }
   }
 }
@@ -114,7 +118,7 @@ function mongoClient4xAfterConstructorHook(args, clientInstance, extenderContext
    * add in the 'beforeConstructor' hook. The shape of the events we get from
    * the MongoDB Client 4.x is the same as those that 3.x emitted with 'instrument'.
    */
-  if (args.length > 1 && (typeof args[1]) === 'object' && args[1].monitorCommands === true) {
+  if (args.length > 1 && typeof args[1] === 'object' && args[1].monitorCommands === true) {
     try {
       clientInstance.on('commandStarted', safeExecute(onStartedHook));
       clientInstance.on('commandSucceeded', safeExecute(onSucceededHook));
