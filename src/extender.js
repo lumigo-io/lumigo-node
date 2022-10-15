@@ -13,17 +13,37 @@ export const hook = (module, funcName, options = {}, shimmerLib = shimmer) => {
   const extenderContext = {};
   try {
     const wrapper = (originalFn) => {
-      if (isFunctionAlreadyWrapped(originalFn)) return originalFn;
+      if (isFunctionAlreadyWrapped(originalFn)) {
+        return originalFn;
+      }
       return function (...args) {
-        safeBeforeHook.call(this, args, extenderContext);
-        const originalFnResult = originalFn.apply(this, args);
-        safeAfterHook.call(this, args, originalFnResult, extenderContext);
-        return originalFnResult;
-      };
+        try {
+          safeBeforeHook.call(this, args, extenderContext);
+          var originalFnResult;
+          try {
+            originalFnResult = originalFn.apply(this, args);
+          } catch (err) {
+            /*
+             * If we are instrumenting a constructor, we need to use the 'new' keyword , and
+             * there isn't really a great way to detect it other than looking into the error.
+             */
+            if (err instanceof TypeError && err.message && err.message.startsWith('Class constructor')) {
+              try {
+                originalFnResult = new originalFn(...args);
+              } catch (err) {
+              }
+            }
+          }
+          safeAfterHook.call(this, args, originalFnResult, extenderContext);
+          return originalFnResult;
+        } catch (err) {
+          logger.debug(`Wrapper for ${funcName} failed`, err);
+        }
+      }
     };
     shimmerLib.wrap(module, funcName, wrapper);
   } catch (e) {
-    logger.warn(`Wrapping of function ${funcName} failed`, options);
+    logger.debug(`Hooking of function ${funcName} failed`, e);
   }
 };
 
