@@ -34,7 +34,11 @@ export const hook = (module, funcName, options = {}, shimmerLib = shimmer) => {
             ) {
               try {
                 originalFnResult = new originalFn(...args);
-              } catch (err) {}
+              } catch (err) {
+                throw err;
+              }
+            } else {
+              throw err;
             }
           }
           safeAfterHook.call(this, args, originalFnResult, extenderContext);
