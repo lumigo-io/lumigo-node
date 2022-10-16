@@ -160,11 +160,8 @@ export const hookMongoDb = (mongoLib) => {
 
       logger.debug('MongoDB 3.x instrumentation applied');
     } else if (mongoLib.MongoClient.prototype.on) {
-      logger.debug({
-        beforeHook: mongoClient4xBeforeConstructorHook,
-        afterHook: mongoClient4xAfterConstructorHook,
-      });
       hook(mongoLib, 'MongoClient', {
+        isConstructor: true,
         beforeHook: mongoClient4xBeforeConstructorHook,
         afterHook: mongoClient4xAfterConstructorHook,
       });

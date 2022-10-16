@@ -1,8 +1,10 @@
 import * as extender from './extender';
 import * as shimmer from 'shimmer';
+import * as dummy from './extender.testModule';
 
 export const DummyCounterService = (() => {
   let dummyCounter = 0;
+
   const incrementToDummyCounter = (count = 1) => {
     dummyCounter += count;
   };
@@ -40,6 +42,19 @@ describe('extender', () => {
     extender.hook(DummyCounterService, 'incrementToDummyCounter');
     DummyCounterService.incrementToDummyCounter();
     expect(DummyCounterService.getDummyCounter()).toEqual(1);
+  });
+
+  test('hook -> constructor flow', () => {
+    expect(new dummy.DummyClass().value).toEqual(0);
+
+    extender.hook(dummy, 'DummyClass', {
+      isConstructor: true,
+      afterHook: (args, clientInstance, extenderContext) => {
+        clientInstance.value = 42;
+      }
+    });
+
+    expect(new dummy.DummyClass().value).toEqual(42);
   });
 
   test('hook -> before Hook', () => {

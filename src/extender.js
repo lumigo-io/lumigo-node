@@ -7,7 +7,7 @@ const noop = () => {};
 const isFunctionAlreadyWrapped = (fn) => fn && fn.__wrapped;
 
 export const hook = (module, funcName, options = {}, shimmerLib = shimmer) => {
-  const { beforeHook = noop, afterHook = noop } = options;
+  const { isConstructor = true, beforeHook = noop, afterHook = noop } = options;
   const safeBeforeHook = safeExecute(beforeHook, `before hook of ${funcName} fail`);
   const safeAfterHook = safeExecute(afterHook, `after hook of ${funcName} fail`);
   const extenderContext = {};
@@ -18,28 +18,9 @@ export const hook = (module, funcName, options = {}, shimmerLib = shimmer) => {
       }
       return function (...args) {
         safeBeforeHook.call(this, args, extenderContext);
-        var originalFnResult;
-        try {
-          originalFnResult = originalFn.apply(this, args);
-        } catch (err) {
-          /*
-           * If we are instrumenting a constructor, we need to use the 'new' keyword , and
-           * there isn't really a great way to detect it other than looking into the error.
-           */
-          if (
-            err instanceof TypeError &&
-            err.message &&
-            err.message.startsWith('Class constructor')
-          ) {
-            try {
-              originalFnResult = new originalFn(...args);
-            } catch (err) {
-              throw err;
-            }
-          } else {
-            throw err;
-          }
-        }
+        const originalFnResult = isConstructor
+          ? new originalFn(...args)
+          : originalFn.apply(this, args);
         safeAfterHook.call(this, args, originalFnResult, extenderContext);
         return originalFnResult;
       };
