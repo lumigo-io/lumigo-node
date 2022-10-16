@@ -51,7 +51,7 @@ describe('extender', () => {
       isConstructor: true,
       afterHook: (args, clientInstance, extenderContext) => {
         clientInstance.value = 42;
-      }
+      },
     });
 
     expect(new dummy.DummyClass().value).toEqual(42);
