@@ -27,7 +27,7 @@ export const hook = (module, funcName, options = {}, shimmerLib = shimmer) => {
     };
     shimmerLib.wrap(module, funcName, wrapper);
   } catch (e) {
-    logger.debug(`Hooking of function ${funcName} failed`, e);
+    logger.warn(`Wrapping of function ${funcName} failed`, options);
   }
 };
 
