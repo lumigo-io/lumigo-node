@@ -25,7 +25,7 @@ export const extractBodyFromWriteOrEndFunc = (writeEventArgs) => {
     if (isValidHttpRequestBody(writeEventArgs[0])) {
       const encoding = isEncodingType(writeEventArgs[1]) ? writeEventArgs[1] : 'utf8';
       return typeof writeEventArgs[0] === 'string'
-        ? Buffer(writeEventArgs[0]).toString(encoding)
+        ? Buffer.from(writeEventArgs[0]).toString(encoding)
         : writeEventArgs[0].toString();
     }
   })();
