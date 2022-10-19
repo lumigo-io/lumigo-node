@@ -38,7 +38,7 @@ export const wrapMongoCollection = (collection, funcName, failed = false) => {
       if (failed) {
         MongoMockerEventEmitter.getEventEmitter().emit('failed', {
           duration: 26,
-          failure: 'Wow What a error',
+          failure: 'Wow, what an error!',
           commandName: funcName,
           requestId: 13,
           operationId: undefined,
@@ -77,7 +77,7 @@ export const getMockedMongoClient = (options = {}) => {
     mongodb.instrument = () => MongoMockerEventEmitter.getEventEmitter();
   }
 
-  return { mongoLib: mongodb, mongoClient: MongoClient };
+  return { mongoClientLibrary: mongodb, mongoClient: MongoClient };
 };
 
 export const promisifyMongoFunc =

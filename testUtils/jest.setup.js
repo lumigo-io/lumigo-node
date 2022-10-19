@@ -1,14 +1,14 @@
-import { HttpsRequestsForTesting, HttpsScenarioBuilder } from './httpsMocker';
-import { AxiosMocker } from './axiosMocker';
-import { createAwsEnvVars } from './awsTestUtils';
-import { LogStore } from '../src/logger';
-import { ConsoleMocker, ConsoleWritesForTesting } from './consoleMocker';
-import { HttpSpansAgent } from '../src/httpSpansAgent';
-import * as globals from '../src/globals';
 import axios from 'axios';
-import { MongoMockerEventEmitter } from './mongoMocker';
 import path from 'path';
+import * as globals from '../src/globals';
 import { TracerGlobals } from '../src/globals';
+import { HttpSpansAgent } from '../src/httpSpansAgent';
+import { LogStore } from '../src/logger';
+import { createAwsEnvVars } from './awsTestUtils';
+import { AxiosMocker } from './axiosMocker';
+import { ConsoleMocker, ConsoleWritesForTesting } from './consoleMocker';
+import { HttpsRequestsForTesting, HttpsScenarioBuilder } from './httpsMocker';
+import { MongoMockerEventEmitter } from './mongo3xMocker';
 
 jest.mock('../package.json');
 jest.mock('https');

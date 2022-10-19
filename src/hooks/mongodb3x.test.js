@@ -3,7 +3,7 @@ import {
   getMockedMongoClient,
   promisifyMongoFunc,
   wrapMongoCollection,
-} from '../../testUtils/mongoMocker';
+} from '../../testUtils/mongo3xMocker';
 import { MongoSpanBuilder } from '../../testUtils/mongoSpanBuilder';
 import { SpansContainer, TracerGlobals } from '../globals';
 import { hookMongoDb } from './mongodb';
@@ -11,16 +11,22 @@ import { hookMongoDb } from './mongodb';
 const DUMMY_URL = 'mongodb://localhost:27017/myproject';
 
 describe('mongodb', () => {
+  let connection;
+
   beforeEach(() => {
     const handlerInputs = new HandlerInputsBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
   });
 
-  test('hookMongoDb -> simple flow', async () => {
-    const { mongoLib, mongoClient } = getMockedMongoClient();
+  afterEach(() => {
+    connection && connection.close();
+  });
 
-    hookMongoDb(mongoLib);
-    const connection = await promisifyMongoFunc(mongoClient.connect)(DUMMY_URL, {});
+  test('hookMongoDb -> simple flow', async () => {
+    const { mongoClientLibrary, mongoClient } = getMockedMongoClient();
+
+    hookMongoDb(mongoClientLibrary);
+    connection = await promisifyMongoFunc(mongoClient.connect)(DUMMY_URL, {});
     const collection = connection.db().collection('documents');
     wrapMongoCollection(collection, 'insert');
 
@@ -42,14 +48,13 @@ describe('mongodb', () => {
       .withCommandName('insert')
       .build();
     expect(spans).toEqual([expectedSpan]);
-    connection.close();
   });
 
   test('hookMongoDb -> error', async () => {
-    const { mongoLib, mongoClient } = getMockedMongoClient();
+    const { mongoClientLibrary, mongoClient } = getMockedMongoClient();
 
-    hookMongoDb(mongoLib);
-    const connection = await promisifyMongoFunc(mongoClient.connect)(DUMMY_URL, {});
+    hookMongoDb(mongoClientLibrary);
+    connection = await promisifyMongoFunc(mongoClient.connect)(DUMMY_URL, {});
     const collection = connection.db().collection('documents1');
     wrapMongoCollection(collection, 'insert', true);
 
@@ -66,22 +71,21 @@ describe('mongodb', () => {
       )
       .withDatabaseName('TracerDB')
       .withCommandName('insert')
-      .withError('"Wow What a error"')
+      .withError('"Wow, what an error!"')
       .build();
+
     expect(spans).toEqual([expectedSpan]);
-    connection.close();
   });
 
   test('hookMongoDb -> instrument Failed', async () => {
-    const { mongoLib, mongoClient } = getMockedMongoClient({ instrumentFailed: true });
+    const { mongoClientLibrary, mongoClient } = getMockedMongoClient({ instrumentFailed: true });
 
-    hookMongoDb(mongoLib);
-    const connection = await promisifyMongoFunc(mongoClient.connect)(DUMMY_URL, {});
+    hookMongoDb(mongoClientLibrary);
+    connection = await promisifyMongoFunc(mongoClient.connect)(DUMMY_URL, {});
     const collection = connection.db().collection('documents');
     wrapMongoCollection(collection, 'insert');
 
     const spans = SpansContainer.getSpans();
     expect(spans).toEqual([]);
-    connection.close();
   });
 });
