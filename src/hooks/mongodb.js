@@ -34,6 +34,7 @@ export const hookMongoDb = (mongoClientLibrary) => {
 
       logger.debug('MongoDB 3.x instrumentation applied');
     } else if (mongoClientLibrary.MongoClient.prototype.on) {
+      // MongoDB 4.x
       hook(mongoClientLibrary, 'MongoClient', {
         isConstructor: true,
         beforeHook: beforeConstructorHook,

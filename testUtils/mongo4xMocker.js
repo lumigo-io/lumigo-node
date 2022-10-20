@@ -5,7 +5,7 @@ import { MongoMockerEventEmitter } from './mongodbEventEmitterMocker';
 export const wrapMongoCollection = (collection, funcName, failed = false) => {
   hook(collection, funcName, {
     beforeHook: (args) => {
-      MongoMockerEventEmitter.getEventEmitter().emit('started', {
+      MongoMockerEventEmitter.getEventEmitter().emit('commandStarted', {
         eventName: 'onStartedHook',
         command: {
           insert: 'documents',
@@ -25,7 +25,7 @@ export const wrapMongoCollection = (collection, funcName, failed = false) => {
     },
     afterHook: () => {
       if (failed) {
-        MongoMockerEventEmitter.getEventEmitter().emit('failed', {
+        MongoMockerEventEmitter.getEventEmitter().emit('commandFailed', {
           duration: 26,
           failure: 'Wow, what an error!',
           commandName: funcName,
@@ -34,7 +34,7 @@ export const wrapMongoCollection = (collection, funcName, failed = false) => {
           connectionId: 1,
         });
       } else {
-        MongoMockerEventEmitter.getEventEmitter().emit('succeeded', {
+        MongoMockerEventEmitter.getEventEmitter().emit('commandSucceeded', {
           duration: 26,
           reply: {
             n: 1,
@@ -76,21 +76,28 @@ const promisifyMongoFunc =
 export const getMockedMongoClient = (options = {}) => {
   // extend mongodb so that we can replace its client
   const MongoClientLibrary = () => {};
-  MongoClientLibrary.prototype = mongodb.prototype;
+  MongoClientLibrary.prototype = mongodb;
 
-  // configure the mocked client
+  // configure the mocked library
   // eslint-disable-next-line camelcase
   MongoClientLibrary.max_delay = 0;
-  if (options.instrumentFailed) {
+  // TODO can 4x instrumentation fail in a similar way?
+  /*if (options.instrumentFailed) {
     MongoClientLibrary.instrument = (options, errCallback) => {
       errCallback('RandomError');
     };
-  } else {
-    MongoClientLibrary.instrument = () => MongoMockerEventEmitter.getEventEmitter();
-  }
+  }*/
 
-  // extend the mocked client
-  const MongoClient = () => {};
+  // extend the mocked client and make it an emitter
+  const MongoClient = (options) => {
+    if (!(this instanceof MongoClient)) return new MongoClient(options);
+
+    // "inherit" event emitter methods
+    const eventEmitter = MongoMockerEventEmitter.getEventEmitter();
+    for (var methodName in eventEmitter.prototype) {
+      this[methodName] = eventEmitter.prototype[methodName];
+    }
+  };
   MongoClient.prototype = Object.create(mongodb.MongoClient.prototype);
 
   // promisify the client's functions
