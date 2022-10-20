@@ -1,17 +1,6 @@
-import EventEmitter from 'events';
 import mongodb from 'mongo-mock';
 import { hook } from '../src/extender';
-
-export const MongoMockerEventEmitter = (() => {
-  let eventEmitter = new EventEmitter();
-  const getEventEmitter = () => eventEmitter;
-  const cleanEventEmitter = () => {
-    eventEmitter.eventNames().forEach((event) => {
-      eventEmitter.removeAllListeners(event);
-    });
-  };
-  return { getEventEmitter, cleanEventEmitter };
-})();
+import { MongoMockerEventEmitter } from './mongodbEventEmitterMocker';
 
 export const wrapMongoCollection = (collection, funcName, failed = false) => {
   hook(collection, funcName, {
@@ -65,22 +54,7 @@ export const wrapMongoCollection = (collection, funcName, failed = false) => {
   });
 };
 
-export const getMockedMongoClient = (options = {}) => {
-  const MongoClient = mongodb.MongoClient;
-  // eslint-disable-next-line camelcase
-  mongodb.max_delay = 0;
-  if (options.instrumentFailed) {
-    mongodb.instrument = (options, errCallback) => {
-      errCallback('RandomError');
-    };
-  } else {
-    mongodb.instrument = () => MongoMockerEventEmitter.getEventEmitter();
-  }
-
-  return { mongoClientLibrary: mongodb, mongoClient: MongoClient };
-};
-
-export const promisifyMongoFunc =
+const promisifyMongoFunc =
   (func) =>
   (...params) =>
     new Promise((resolve, reject) => {
@@ -98,3 +72,32 @@ export const promisifyMongoFunc =
         reject(err);
       }
     });
+
+export const getMockedMongoClient = (options = {}) => {
+  // extend mongodb so that we can replace its client
+  const MongoClientLibrary = () => {};
+  MongoClientLibrary.prototype = mongodb.prototype;
+
+  // configure the mocked client
+  // eslint-disable-next-line camelcase
+  MongoClientLibrary.max_delay = 0;
+  if (options.instrumentFailed) {
+    MongoClientLibrary.instrument = (options, errCallback) => {
+      errCallback('RandomError');
+    };
+  } else {
+    MongoClientLibrary.instrument = () => MongoMockerEventEmitter.getEventEmitter();
+  }
+
+  // promisify the client's functions
+  const MongoClient = () => {};
+  MongoClient.prototype = Object.create(mongodb.MongoClient.prototype);
+  Object.keys(mongodb.MongoClient).forEach((key) => {
+    if (typeof mongodb.MongoClient[key] === 'function') {
+      MongoClient[key] = promisifyMongoFunc(mongodb.MongoClient[key]);
+    }
+  });
+  MongoClientLibrary.MongoClient = MongoClient;
+
+  return { mongoClientLibrary: MongoClientLibrary, mongoClient: MongoClientLibrary.MongoClient };
+};

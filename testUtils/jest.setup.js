@@ -8,7 +8,7 @@ import { createAwsEnvVars } from './awsTestUtils';
 import { AxiosMocker } from './axiosMocker';
 import { ConsoleMocker, ConsoleWritesForTesting } from './consoleMocker';
 import { HttpsRequestsForTesting, HttpsScenarioBuilder } from './httpsMocker';
-import { MongoMockerEventEmitter } from './mongo3xMocker';
+import { MongoMockerEventEmitter } from './mongodbEventEmitterMocker';
 
 jest.mock('../package.json');
 jest.mock('https');

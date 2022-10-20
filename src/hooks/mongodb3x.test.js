@@ -1,9 +1,5 @@
 import { HandlerInputsBuilder } from '../../testUtils/handlerInputsBuilder';
-import {
-  getMockedMongoClient,
-  promisifyMongoFunc,
-  wrapMongoCollection,
-} from '../../testUtils/mongo3xMocker';
+import { getMockedMongoClient, wrapMongoCollection } from '../../testUtils/mongo3xMocker';
 import { MongoSpanBuilder } from '../../testUtils/mongoSpanBuilder';
 import { SpansContainer, TracerGlobals } from '../globals';
 import { hookMongoDb } from './mongodb';
@@ -26,12 +22,12 @@ describe('mongodb', () => {
     const { mongoClientLibrary, mongoClient } = getMockedMongoClient();
 
     hookMongoDb(mongoClientLibrary);
-    connection = await promisifyMongoFunc(mongoClient.connect)(DUMMY_URL, {});
+    connection = await mongoClient.connect(DUMMY_URL, {});
     const collection = connection.db().collection('documents');
     wrapMongoCollection(collection, 'insert');
 
     const docs = [{ a: 1 }, { a: 2 }, { a: 3 }];
-    await promisifyMongoFunc(collection.insert)(docs);
+    await collection.insert(docs);
 
     const spans = SpansContainer.getSpans();
     const expectedSpan = new MongoSpanBuilder()
@@ -54,12 +50,12 @@ describe('mongodb', () => {
     const { mongoClientLibrary, mongoClient } = getMockedMongoClient();
 
     hookMongoDb(mongoClientLibrary);
-    connection = await promisifyMongoFunc(mongoClient.connect)(DUMMY_URL, {});
+    connection = await mongoClient.connect(DUMMY_URL, {});
     const collection = connection.db().collection('documents1');
     wrapMongoCollection(collection, 'insert', true);
 
     const docs = [{ a: 1 }, { a: 2 }, { a: 3 }];
-    await promisifyMongoFunc(collection.insert)(docs);
+    await collection.insert(docs);
 
     const spans = SpansContainer.getSpans();
     const expectedSpan = new MongoSpanBuilder()
@@ -81,7 +77,7 @@ describe('mongodb', () => {
     const { mongoClientLibrary, mongoClient } = getMockedMongoClient({ instrumentFailed: true });
 
     hookMongoDb(mongoClientLibrary);
-    connection = await promisifyMongoFunc(mongoClient.connect)(DUMMY_URL, {});
+    connection = await mongoClient.connect(DUMMY_URL, {});
     const collection = connection.db().collection('documents');
     wrapMongoCollection(collection, 'insert');
 
