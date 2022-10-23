@@ -4,6 +4,7 @@ import { MongoMockerEventEmitter } from './mongodbEventEmitterMocker';
 
 export const wrapMongoCollection = (collection, funcName, failed = false) => {
   hook(collection, funcName, {
+    isConstructor: true,
     beforeHook: (args) => {
       MongoMockerEventEmitter.getEventEmitter().emit('commandStarted', {
         eventName: 'onStartedHook',
