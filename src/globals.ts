@@ -6,7 +6,8 @@ import {
   getJSONBase64Size,
   getMaxRequestSize,
   isLambdaTraced,
-  spanHasErrors,} from './utils';
+  spanHasErrors,
+} from './utils';
 import { GlobalDurationTimer } from './utils/globalDurationTimer';
 
 const MAX_TAGS = 50;

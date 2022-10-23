@@ -4,6 +4,10 @@ import { DEFAULT_MAX_SIZE_FOR_REQUEST, MAX_TRACER_ADDED_DURATION_ALLOWED } from 
 import { getMaxRequestSize } from './utils';
 
 describe('globals', () => {
+  const setLambdaAsTraced = () => {
+    process.env.LAMBDA_RUNTIME_DIR = 'true';
+  };
+
   test('SpansContainer - simple flow', () => {
     const span1 = { a: 'b', c: 'd', id: '1' };
     const span2 = { e: 'f', g: 'h', id: '2' };
@@ -380,7 +384,8 @@ describe('globals', () => {
 
   test('autoTagEvent', () => {
     const oldEnv = Object.assign({}, process.env);
-    process.env = { LUMIGO_AUTO_TAG: 'key1,key2', LAMBDA_RUNTIME_DIR: 'true' };
+    process.env = { LUMIGO_AUTO_TAG: 'key1,key2' };
+    setLambdaAsTraced();
 
     globals.ExecutionTags.autoTagEvent({
       key1: 'value1',
@@ -399,7 +404,8 @@ describe('globals', () => {
 
   test('autoTagEvent nested', () => {
     const oldEnv = Object.assign({}, process.env);
-    process.env = { LUMIGO_AUTO_TAG: 'key1.key2', LAMBDA_RUNTIME_DIR: 'true' };
+    process.env = { LUMIGO_AUTO_TAG: 'key1.key2' };
+    setLambdaAsTraced();
 
     // only outer key
     globals.ExecutionTags.autoTagEvent({
@@ -430,7 +436,9 @@ describe('globals', () => {
     globals.ExecutionTags.clear();
 
     // happy flow - two nested
-    process.env = { LUMIGO_AUTO_TAG: 'key1.key2,key3.key4', LAMBDA_RUNTIME_DIR: 'true' };
+    process.env = { LUMIGO_AUTO_TAG: 'key1.key2,key3.key4' };
+    setLambdaAsTraced();
+
     globals.ExecutionTags.autoTagEvent({
       key1: { key2: 'value' },
       key3: { key4: 'value2' },
