@@ -380,7 +380,7 @@ describe('globals', () => {
 
   test('autoTagEvent', () => {
     const oldEnv = Object.assign({}, process.env);
-    process.env = { LUMIGO_AUTO_TAG: 'key1,key2' };
+    process.env = { LUMIGO_AUTO_TAG: 'key1,key2', LAMBDA_RUNTIME_DIR: 'true' };
 
     globals.ExecutionTags.autoTagEvent({
       key1: 'value1',
@@ -399,7 +399,7 @@ describe('globals', () => {
 
   test('autoTagEvent nested', () => {
     const oldEnv = Object.assign({}, process.env);
-    process.env = { LUMIGO_AUTO_TAG: 'key1.key2' };
+    process.env = { LUMIGO_AUTO_TAG: 'key1.key2', LAMBDA_RUNTIME_DIR: 'true' };
 
     // only outer key
     globals.ExecutionTags.autoTagEvent({
@@ -430,7 +430,7 @@ describe('globals', () => {
     globals.ExecutionTags.clear();
 
     // happy flow - two nested
-    process.env = { LUMIGO_AUTO_TAG: 'key1.key2,key3.key4' };
+    process.env = { LUMIGO_AUTO_TAG: 'key1.key2,key3.key4', LAMBDA_RUNTIME_DIR: 'true' };
     globals.ExecutionTags.autoTagEvent({
       key1: { key2: 'value' },
       key3: { key4: 'value2' },
@@ -445,4 +445,26 @@ describe('globals', () => {
 
     process.env = { ...oldEnv };
   });
+
+  test.each`
+    killSwitchValue | isAwsEnvironment | expectedRetValue | expectedTags
+    ${false}        | ${true}          | ${true}          | ${[{ key: 'k0', value: 'v0' }]}
+    ${true}         | ${true}          | ${false}         | ${[]}
+    ${true}         | ${false}         | ${false}         | ${[]}
+    ${false}        | ${false}         | ${false}         | ${[]}
+  `(
+    'killSwitch=$killSwitchValue, isAwsEnv=$isAwsEnvironment, expectedRetValue=$expectedRetValue$',
+    ({ killSwitchValue, isAwsEnvironment, expectedRetValue, expectedTags }) => {
+      const oldEnv = Object.assign({}, process.env);
+
+      process.env.LUMIGO_SWITCH_OFF = killSwitchValue;
+      process.env.LAMBDA_RUNTIME_DIR = isAwsEnvironment;
+
+      const value = 'v0';
+      const key = 'k0';
+      expect(globals.ExecutionTags.addTag(key, value)).toEqual(expectedRetValue);
+      expect(globals.ExecutionTags.getTags()).toEqual(expectedTags);
+      process.env = { ...oldEnv };
+    }
+  );
 });

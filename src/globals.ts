@@ -1,7 +1,12 @@
 import * as logger from './logger';
 import type { TracerOptions } from './tracer';
 import type { LambdaContext } from './types/aws/awsEnvironment';
-import { getAutoTagKeys, getJSONBase64Size, getMaxRequestSize, spanHasErrors } from './utils';
+import {
+  getAutoTagKeys,
+  getJSONBase64Size,
+  getMaxRequestSize,
+  isLambdaTraced,
+  spanHasErrors,} from './utils';
 import { GlobalDurationTimer } from './utils/globalDurationTimer';
 
 const MAX_TAGS = 50;
@@ -95,10 +100,15 @@ export const ExecutionTags = (() => {
 
   const addTag = (key, value, shouldLogErrors = true) => {
     try {
-      logger.debug(`Adding tag: ${key} - ${value}`);
-      if (!validateTag(key, value, shouldLogErrors)) return false;
-      // @ts-ignore
-      global.tags.push({ key: normalizeTag(key), value: normalizeTag(value) });
+      if (isLambdaTraced()) {
+        logger.debug(`Adding tag: ${key} - ${value}`);
+        if (!validateTag(key, value, shouldLogErrors)) return false;
+        // @ts-ignore
+        global.tags.push({ key: normalizeTag(key), value: normalizeTag(value) });
+      } else {
+        shouldLogErrors && logger.warnClient(`${ADD_TAG_ERROR_MSG_PREFIX}: lambda is not traced`);
+        return false;
+      }
     } catch (err) {
       shouldLogErrors && logger.warnClient(ADD_TAG_ERROR_MSG_PREFIX);
       logger.warn(ADD_TAG_ERROR_MSG_PREFIX, err);
