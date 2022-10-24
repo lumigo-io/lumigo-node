@@ -10,7 +10,7 @@ const extractDynamodbMessageId = (reqBody, method) => {
     return md5Hash(reqBody.Key);
   } else if (method === 'DeleteItem' && reqBody['Key']) {
     return md5Hash(reqBody.Key);
-  } else if (method === 'BatchWriteItem') {
+  } else if (method === 'BatchWriteItem' && reqBody.RequestItems) {
     const firstTableName = Object.keys(reqBody.RequestItems)[0];
     if (firstTableName) {
       const firstItem = reqBody.RequestItems[firstTableName][0];
@@ -27,7 +27,9 @@ const extractDynamodbMessageId = (reqBody, method) => {
 const extractDynamodbTableName = (reqBody, method) => {
   const tableName = (reqBody['TableName'] && reqBody.TableName) || '';
   if (!tableName && ['BatchWriteItem', 'BatchGetItem'].includes(method)) {
-    return Object.keys(reqBody.RequestItems)[0];
+    if (reqBody.RequestItems){
+      return Object.keys(reqBody.RequestItems)[0];
+    }
   }
   return tableName;
 };
