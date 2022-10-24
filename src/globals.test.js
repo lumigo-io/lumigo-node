@@ -4,6 +4,10 @@ import { DEFAULT_MAX_SIZE_FOR_REQUEST, MAX_TRACER_ADDED_DURATION_ALLOWED } from 
 import { getMaxRequestSize } from './utils';
 
 describe('globals', () => {
+  const setLambdaAsTraced = () => {
+    process.env.LAMBDA_RUNTIME_DIR = 'true';
+  };
+
   test('SpansContainer - simple flow', () => {
     const span1 = { a: 'b', c: 'd', id: '1' };
     const span2 = { e: 'f', g: 'h', id: '2' };
@@ -379,8 +383,8 @@ describe('globals', () => {
   });
 
   test('autoTagEvent', () => {
-    const oldEnv = Object.assign({}, process.env);
     process.env = { LUMIGO_AUTO_TAG: 'key1,key2' };
+    setLambdaAsTraced();
 
     globals.ExecutionTags.autoTagEvent({
       key1: 'value1',
@@ -393,13 +397,11 @@ describe('globals', () => {
       { key: 'key1', value: 'value1' },
       { key: 'key2', value: '2' },
     ]);
-
-    process.env = { ...oldEnv };
   });
 
   test('autoTagEvent nested', () => {
-    const oldEnv = Object.assign({}, process.env);
     process.env = { LUMIGO_AUTO_TAG: 'key1.key2' };
+    setLambdaAsTraced();
 
     // only outer key
     globals.ExecutionTags.autoTagEvent({
@@ -431,6 +433,8 @@ describe('globals', () => {
 
     // happy flow - two nested
     process.env = { LUMIGO_AUTO_TAG: 'key1.key2,key3.key4' };
+    setLambdaAsTraced();
+
     globals.ExecutionTags.autoTagEvent({
       key1: { key2: 'value' },
       key3: { key4: 'value2' },
@@ -442,7 +446,24 @@ describe('globals', () => {
       { key: 'key3.key4', value: 'value2' },
     ]);
     globals.ExecutionTags.clear();
-
-    process.env = { ...oldEnv };
   });
+
+  test.each`
+    killSwitchValue | isAwsEnvironment | expectedRetValue | expectedTags
+    ${'FALSE'}      | ${'TRUE'}        | ${true}          | ${[{ key: 'k0', value: 'v0' }]}
+    ${'TRUE'}       | ${'TRUE'}        | ${false}         | ${[]}
+    ${'TRUE'}       | ${''}            | ${false}         | ${[]}
+    ${'FALSE'}      | ${''}            | ${false}         | ${[]}
+  `(
+    'killSwitchValue=$killSwitchValue, isAwsEnvironment=$isAwsEnvironment, expectedRetValue=$expectedRetValue$',
+    ({ killSwitchValue, isAwsEnvironment, expectedRetValue, expectedTags }) => {
+      process.env.LUMIGO_SWITCH_OFF = killSwitchValue;
+      process.env.LAMBDA_RUNTIME_DIR = isAwsEnvironment;
+
+      const value = 'v0';
+      const key = 'k0';
+      expect(globals.ExecutionTags.addTag(key, value)).toEqual(expectedRetValue);
+      expect(globals.ExecutionTags.getTags()).toEqual(expectedTags);
+    }
+  );
 });
