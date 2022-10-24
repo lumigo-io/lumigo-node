@@ -1,7 +1,4 @@
 module.exports = {
-  silent: true,
-  testEnvironment: 'node',
-  coverageDirectory: './coverage/',
   collectCoverage: true,
   collectCoverageFrom: [
     '**/src/**/**/**/**.js',
@@ -10,12 +7,15 @@ module.exports = {
     '!./src/testdata/functions/**/**.js',
     '!./d_example/**/**',
   ],
+  coverageDirectory: './coverage/',
   coverageThreshold: {
     global: {
       lines: 100,
     },
   },
-  setupFilesAfterEnv: ['./testUtils/jest.setup.js'],
-  roots: ['<rootDir>/src'],
   modulePaths: ['<rootDir>/dist'],
+  roots: ['<rootDir>/src'],
+  setupFilesAfterEnv: ['./testUtils/jest.setup.js'],
+  silent: true,
+  testEnvironment: 'node',
 };

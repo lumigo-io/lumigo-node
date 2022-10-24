@@ -1,39 +1,39 @@
-import {
-  isWarm,
-  setWarm,
-  getTraceId,
-  getAccountId,
-  getTracerInfo,
-  getContextInfo,
-  getAWSEnvironment,
-  isAwsService,
-  parseErrorObject,
-  getInvokedArn,
-  getInvokedVersion,
-  EXECUTION_TAGS_KEY,
-  getEventEntitySize,
-  isString,
-  safeExecute,
-} from '../utils';
-import {
-  dynamodbParser,
-  snsParser,
-  lambdaParser,
-  sqsParser,
-  kinesisParser,
-  defaultParser,
-  apigwParser,
-  eventBridgeParser,
-} from '../parsers/aws';
-import { TracerGlobals, ExecutionTags } from '../globals';
+import { Context } from 'aws-lambda';
 import { getEventInfo } from '../events';
-import { getSkipScrubPath, parseEvent } from '../parsers/eventParser';
+import { ExecutionTags, TracerGlobals } from '../globals';
 import * as logger from '../logger';
-import { payloadStringify, prune } from '../utils/payloadStringify';
-import { HttpInfo } from '../types/spans/httpSpan';
+import {
+  apigwParser,
+  defaultParser,
+  dynamodbParser,
+  eventBridgeParser,
+  kinesisParser,
+  lambdaParser,
+  snsParser,
+  sqsParser,
+} from '../parsers/aws';
+import { getSkipScrubPath, parseEvent } from '../parsers/eventParser';
 import { BasicSpan, SpanInfo } from '../types/spans/basicSpan';
 import { FunctionSpan } from '../types/spans/functionSpan';
-import { Context } from 'aws-lambda';
+import { HttpInfo } from '../types/spans/httpSpan';
+import {
+  EXECUTION_TAGS_KEY,
+  getAccountId,
+  getAWSEnvironment,
+  getContextInfo,
+  getEventEntitySize,
+  getInvokedArn,
+  getInvokedVersion,
+  getTraceId,
+  getTracerInfo,
+  isAwsService,
+  isString,
+  isWarm,
+  parseErrorObject,
+  safeExecute,
+  setWarm,
+} from '../utils';
+import { payloadStringify, truncate } from '../utils/payloadStringify';
 import { Utf8Utils } from '../utils/utf8Utils';
 
 export const HTTP_SPAN = 'http';
@@ -173,7 +173,7 @@ export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
   try {
     returnValue = payloadStringify(data);
   } catch (e) {
-    returnValue = prune(data.toString(), getEventEntitySize(true));
+    returnValue = truncate(data.toString(), getEventEntitySize(true));
     error = parseErrorObject({
       name: 'ReturnValueError',
       message: `Could not JSON.stringify the return value. This will probably fail the lambda. Original error: ${

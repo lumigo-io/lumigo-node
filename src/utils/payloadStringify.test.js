@@ -1,10 +1,10 @@
-import { payloadStringify, keyToOmitRegexes, prune } from './payloadStringify';
+import * as utils from '../utils';
 import {
   LUMIGO_SECRET_MASKING_REGEX,
   LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP,
   LUMIGO_WHITELIST_KEYS_REGEXES,
 } from '../utils';
-import * as utils from '../utils';
+import { keyToOmitRegexes, payloadStringify, truncate } from './payloadStringify';
 
 describe('payloadStringify', () => {
   test('payloadStringify -> simple flow -> object', () => {
@@ -71,7 +71,7 @@ describe('payloadStringify', () => {
     expect(result).toEqual('');
   });
 
-  test('payloadStringify -> prune all', () => {
+  test('payloadStringify -> truncate all', () => {
     const payload = { a: 2, b: 3 };
 
     const result = payloadStringify(payload, 0);
@@ -79,12 +79,12 @@ describe('payloadStringify', () => {
     expect(result).toEqual('');
   });
 
-  test('payloadStringify -> prune Circular JSON ', () => {
+  test('payloadStringify -> truncate Circular JSON ', () => {
     utils.setDebug();
     utils.setStoreLogsOn();
     const payload = { b: 3 };
     payload.b = payload;
-    const result = prune(payload);
+    const result = truncate(payload);
     expect(result).toEqual('');
   });
 
@@ -96,7 +96,7 @@ describe('payloadStringify', () => {
     expect(result).toEqual('{"a":2,"password":"****"}');
   });
 
-  test('payloadStringify -> prune after 10B', () => {
+  test('payloadStringify -> truncate after 10B', () => {
     const payload = {
       a: 2,
       b: 3,
@@ -122,7 +122,7 @@ describe('payloadStringify', () => {
     expect(result).toEqual('{"a":2,"b":3,"c":3,"d":4,"e":5,"f":6,"g":7,"aa":11}...[too long]');
   });
 
-  test('payloadStringify -> prune after 10B -> list', () => {
+  test('payloadStringify -> truncate after 10B -> list', () => {
     const payload = [2, 3, 3, 4, 5, 6, 7, 11, 22, 33, 44, 55, 111, 222, 333, 444, 555];
 
     const result = payloadStringify(payload, 10);
@@ -130,22 +130,22 @@ describe('payloadStringify', () => {
     expect(result).toEqual('[2,3,3,4,5,6,7,11]...[too long]');
   });
 
-  test('prune on non-string', () => {
+  test('truncate on non-string', () => {
     const payload = { an: 'object' };
 
-    const result = prune(payload, 10);
+    const result = truncate(payload, 10);
 
     expect(result).toEqual('');
   });
 
-  test('prune on undefined', () => {
-    const result = prune(undefined, 10);
+  test('truncate on undefined', () => {
+    const result = truncate(undefined, 10);
 
     expect(result).toEqual('');
   });
 
-  test('prune on null', () => {
-    const result = prune(null, 10);
+  test('truncate on null', () => {
+    const result = truncate(null, 10);
 
     expect(result).toEqual('');
   });

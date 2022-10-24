@@ -1,14 +1,14 @@
+import * as logger from '../logger';
 import {
   getEventEntitySize,
+  isString,
   LUMIGO_SECRET_MASKING_REGEX,
   LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP,
+  LUMIGO_WHITELIST_KEYS_REGEXES,
   OMITTING_KEYS_REGEXES,
   parseJsonFromEnvVar,
-  isString,
-  LUMIGO_WHITELIST_KEYS_REGEXES,
+  safeExecute,
 } from '../utils';
-import { safeExecute } from '../utils';
-import * as logger from '../logger';
 
 const nativeTypes = ['string', 'bigint', 'number', 'undefined', 'boolean'];
 const SCRUBBED_TEXT = '****';
@@ -43,13 +43,13 @@ export const whitelistKeysRegexes = () => {
   return keyToRegexes([], null, LUMIGO_WHITELIST_KEYS_REGEXES);
 };
 
-export const prune = (str, maxLength) => {
-  let toPrune = str;
-  if (!isString(toPrune)) {
-    logger.warn('Prune was called on a non-string object', toPrune);
-    toPrune = '';
+export const truncate = (str, maxLength, truncationString = '') => {
+  let toTruncate = str;
+  if (!isString(toTruncate)) {
+    logger.warn('Truncate was called on a non-string object', toTruncate);
+    toTruncate = '';
   }
-  return toPrune.substr(0, maxLength);
+  return toTruncate.substr(0, maxLength - truncationString.length).concat(truncationString);
 };
 
 const keyContainsRegex = (regexes, key) => {
@@ -111,8 +111,9 @@ export const payloadStringify = (
           !shouldSkipSecretScrub &&
           !keyContainsRegex(whitelistRegexes, key) &&
           keyContainsRegex(secretsRegexes, key)
-        )
+        ) {
           return SCRUBBED_TEXT;
+        }
         if (isNativeType(value)) {
           totalSize += getNativeVarSize(value);
         }
@@ -121,14 +122,14 @@ export const payloadStringify = (
         }
         if (value && isStr && value.length > maxPayloadSize) {
           isPruned = true;
-          return prune(value, maxPayloadSize);
+          return truncate(value, maxPayloadSize);
         }
-        if (value instanceof Error)
+        if (value instanceof Error) {
           return {
-            stack: prune(value.stack, maxPayloadSize),
             message: value.message,
+            stack: truncate(value.stack, maxPayloadSize, TRUNCATED_TEXT),
           };
-
+        }
         return value;
       } else isPruned = true;
     } else {
@@ -137,7 +138,9 @@ export const payloadStringify = (
   });
   if (result && (isPruned || truncated)) {
     result = result.replace(/,null/g, '');
-    result = result.concat(TRUNCATED_TEXT);
+    if (!(payload instanceof Error)) {
+      result = result.concat(TRUNCATED_TEXT);
+    }
   }
   return result || '';
 };
