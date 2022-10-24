@@ -586,3 +586,5 @@ export const filterObjectKeys = (
     .reduce((cur, key) => {
       return Object.assign(cur, { [key]: obj[key] });
     }, {});
+
+export const isLambdaTraced = () => isAwsEnvironment() && !isSwitchedOff();
