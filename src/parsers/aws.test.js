@@ -150,7 +150,7 @@ describe('aws parser', () => {
     };
     const expectedEmptyBodyWriteBatch = {
       awsServiceData: {
-        resourceName: "",
+        resourceName: '',
         dynamodbMethod: 'BatchWriteItem',
         messageId: undefined,
       },

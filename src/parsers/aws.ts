@@ -27,7 +27,7 @@ const extractDynamodbMessageId = (reqBody, method) => {
 const extractDynamodbTableName = (reqBody, method) => {
   const tableName = (reqBody['TableName'] && reqBody.TableName) || '';
   if (!tableName && ['BatchWriteItem', 'BatchGetItem'].includes(method)) {
-    if (reqBody.RequestItems){
+    if (reqBody.RequestItems) {
       return Object.keys(reqBody.RequestItems)[0];
     }
   }
