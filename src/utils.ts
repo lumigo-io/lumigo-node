@@ -587,6 +587,4 @@ export const filterObjectKeys = (
       return Object.assign(cur, { [key]: obj[key] });
     }, {});
 
-export const isKillSwitchOn = () => !!process.env['LUMIGO_SWITCH_OFF'];
-
-export const isLambdaTraced = () => !!(!isKillSwitchOn() && isAwsEnvironment());
+export const isLambdaTraced = () => isAwsEnvironment() && !isSwitchedOff();

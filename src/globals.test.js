@@ -383,7 +383,6 @@ describe('globals', () => {
   });
 
   test('autoTagEvent', () => {
-    const oldEnv = Object.assign({}, process.env);
     process.env = { LUMIGO_AUTO_TAG: 'key1,key2' };
     setLambdaAsTraced();
 
@@ -398,12 +397,9 @@ describe('globals', () => {
       { key: 'key1', value: 'value1' },
       { key: 'key2', value: '2' },
     ]);
-
-    process.env = { ...oldEnv };
   });
 
   test('autoTagEvent nested', () => {
-    const oldEnv = Object.assign({}, process.env);
     process.env = { LUMIGO_AUTO_TAG: 'key1.key2' };
     setLambdaAsTraced();
 
@@ -450,21 +446,17 @@ describe('globals', () => {
       { key: 'key3.key4', value: 'value2' },
     ]);
     globals.ExecutionTags.clear();
-
-    process.env = { ...oldEnv };
   });
 
   test.each`
     killSwitchValue | isAwsEnvironment | expectedRetValue | expectedTags
-    ${false}        | ${true}          | ${true}          | ${[{ key: 'k0', value: 'v0' }]}
-    ${true}         | ${true}          | ${false}         | ${[]}
-    ${true}         | ${false}         | ${false}         | ${[]}
-    ${false}        | ${false}         | ${false}         | ${[]}
+    ${'FALSE'}      | ${'TRUE'}        | ${true}          | ${[{ key: 'k0', value: 'v0' }]}
+    ${'TRUE'}       | ${'TRUE'}        | ${false}         | ${[]}
+    ${'TRUE'}       | ${''}            | ${false}         | ${[]}
+    ${'FALSE'}      | ${''}            | ${false}         | ${[]}
   `(
-    'killSwitch=$killSwitchValue, isAwsEnv=$isAwsEnvironment, expectedRetValue=$expectedRetValue$',
+    'killSwitchValue=$killSwitchValue, isAwsEnvironment=$isAwsEnvironment, expectedRetValue=$expectedRetValue$',
     ({ killSwitchValue, isAwsEnvironment, expectedRetValue, expectedTags }) => {
-      const oldEnv = Object.assign({}, process.env);
-
       process.env.LUMIGO_SWITCH_OFF = killSwitchValue;
       process.env.LAMBDA_RUNTIME_DIR = isAwsEnvironment;
 
@@ -472,7 +464,6 @@ describe('globals', () => {
       const key = 'k0';
       expect(globals.ExecutionTags.addTag(key, value)).toEqual(expectedRetValue);
       expect(globals.ExecutionTags.getTags()).toEqual(expectedTags);
-      process.env = { ...oldEnv };
     }
   );
 });

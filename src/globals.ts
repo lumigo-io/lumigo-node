@@ -103,7 +103,9 @@ export const ExecutionTags = (() => {
     try {
       if (isLambdaTraced()) {
         logger.debug(`Adding tag: ${key} - ${value}`);
-        if (!validateTag(key, value, shouldLogErrors)) return false;
+        if (!validateTag(key, value, shouldLogErrors)) {
+          return false;
+        }
         // @ts-ignore
         global.tags.push({ key: normalizeTag(key), value: normalizeTag(value) });
       } else {
