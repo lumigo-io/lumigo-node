@@ -139,6 +139,23 @@ describe('aws parser', () => {
     expect(aws.dynamodbParser(requestDataDMalformed)).toEqual({
       awsServiceData: { dynamodbMethod: 'GetItem' },
     });
+
+    const emptyBodyWriteBatch = JSON.stringify({});
+    const headersEmptyBodyWriteBatch = {
+      'x-amz-target': 'DynamoDB_20120810.BatchWriteItem',
+    };
+    const requestDataEmptyBodyWriteBatch = {
+      headers: headersEmptyBodyWriteBatch,
+      body: emptyBodyWriteBatch,
+    };
+    const expectedEmptyBodyWriteBatch = {
+      awsServiceData: {
+        resourceName: '',
+        dynamodbMethod: 'BatchWriteItem',
+        messageId: undefined,
+      },
+    };
+    expect(aws.dynamodbParser(requestDataEmptyBodyWriteBatch)).toEqual(expectedEmptyBodyWriteBatch);
   });
 
   test('lambdaParser', () => {
