@@ -4,7 +4,6 @@ import { MongoMockerEventEmitter } from './mongodbEventEmitterMocker';
 
 export const wrapMongoCollection = (collection, funcName, failed = false) => {
   hook(collection, funcName, {
-    isConstructor: true,
     beforeHook: (args) => {
       MongoMockerEventEmitter.getEventEmitter().emit('commandStarted', {
         eventName: 'onStartedHook',
@@ -74,6 +73,16 @@ const promisifyMongoFunc =
       }
     });
 
+class MongoClient extends mongodb.MongoClient {
+  constructor() {
+    super();
+    this.connect = promisifyMongoFunc(this.connect);
+    this.on = (event, callback) => {
+      MongoMockerEventEmitter.getEventEmitter().on(event, callback);
+    };
+  }
+}
+
 export const getMockedMongoClient = (options = {}) => {
   // extend mongodb so that we can replace its client
   const MongoClientLibrary = () => {};
@@ -82,33 +91,8 @@ export const getMockedMongoClient = (options = {}) => {
   // configure the mocked library
   // eslint-disable-next-line camelcase
   MongoClientLibrary.max_delay = 0;
-  // TODO can 4x instrumentation fail in a similar way?
-  /*if (options.instrumentFailed) {
-    MongoClientLibrary.instrument = (options, errCallback) => {
-      errCallback('RandomError');
-    };
-  }*/
-
-  // extend the mocked client and make it an emitter
-  const MongoClient = (options) => {
-    if (!(this instanceof MongoClient)) return new MongoClient(options);
-
-    // "inherit" event emitter methods
-    const eventEmitter = MongoMockerEventEmitter.getEventEmitter();
-    for (var methodName in eventEmitter.prototype) {
-      this[methodName] = eventEmitter.prototype[methodName];
-    }
-  };
-  MongoClient.prototype = Object.create(mongodb.MongoClient.prototype);
-
-  // promisify the client's functions
-  Object.keys(mongodb.MongoClient).forEach((key) => {
-    if (typeof mongodb.MongoClient[key] === 'function') {
-      MongoClient[key] = promisifyMongoFunc(mongodb.MongoClient[key]);
-    }
-  });
-
   MongoClientLibrary.MongoClient = MongoClient;
+  MongoClient.prototype.on = MongoMockerEventEmitter.getEventEmitter().on;
 
   return { mongoClientLibrary: MongoClientLibrary, mongoClient: MongoClientLibrary.MongoClient };
 };

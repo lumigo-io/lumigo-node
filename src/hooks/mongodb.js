@@ -6,9 +6,9 @@ import { onFailedHook, onStartedHook, onSucceededHook } from './mongodb3x';
 import { afterConstructorHook, beforeConstructorHook } from './mongodb4x';
 
 export const hookMongoDb = (mongoClientLibrary) => {
-  const mongoClient = mongoClientLibrary ? mongoClientLibrary : safeRequire('mongodb');
+  const mongoClientLibraries = mongoClientLibrary ? mongoClientLibrary : safeRequire('mongodb');
   const mongooseClients = safeRequire('node_modules/mongoose/node_modules/mongodb');
-  const mongoClients = [mongoClient, mongooseClients].filter(Boolean);
+  const mongoClients = [mongoClientLibraries, mongooseClients].filter(Boolean);
 
   if (!mongoClients) {
     logger.debug('MongoDB clients not found');
@@ -19,7 +19,9 @@ export const hookMongoDb = (mongoClientLibrary) => {
     if (mongoClientLibrary.instrument) {
       // MongoDB 3.x
       const listener = mongoClientLibrary.instrument({}, (err) => {
-        if (err) logger.warn('MongoDB 3.x instrumentation failed ', err);
+        if (err) {
+          logger.warn('MongoDB 3.x instrumentation failed ', err);
+        }
       });
 
       const safeStartedHook = safeExecute(onStartedHook);

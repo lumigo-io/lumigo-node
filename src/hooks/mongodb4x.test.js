@@ -19,10 +19,11 @@ describe('mongodb', () => {
   });
 
   test('hookMongoDb -> simple flow', async () => {
-    const { mongoClientLibrary, mongoClient } = getMockedMongoClient();
+    const { mongoClientLibrary } = getMockedMongoClient();
 
     hookMongoDb(mongoClientLibrary);
-    connection = await mongoClient.connect(DUMMY_URL, {});
+    const client = new mongoClientLibrary.MongoClient(DUMMY_URL);
+    connection = await client.connect(DUMMY_URL, {});
     const collection = connection.db().collection('documents');
     wrapMongoCollection(collection, 'insert');
 
@@ -47,10 +48,11 @@ describe('mongodb', () => {
   });
 
   test('hookMongoDb -> error', async () => {
-    const { mongoClientLibrary, mongoClient } = getMockedMongoClient();
+    const { mongoClientLibrary } = getMockedMongoClient();
 
     hookMongoDb(mongoClientLibrary);
-    connection = await mongoClient.connect(DUMMY_URL, {});
+    const client = new mongoClientLibrary.MongoClient(DUMMY_URL);
+    connection = await client.connect(DUMMY_URL, {});
     const collection = connection.db().collection('documents1');
     wrapMongoCollection(collection, 'insert', true);
 
@@ -70,17 +72,5 @@ describe('mongodb', () => {
       .withError('"Wow, what an error!"')
       .build();
     expect(spans).toEqual([expectedSpan]);
-  });
-
-  test('hookMongoDb -> instrument Failed', async () => {
-    const { mongoClientLibrary, mongoClient } = getMockedMongoClient({ instrumentFailed: true });
-
-    hookMongoDb(mongoClientLibrary);
-    connection = await mongoClient.connect(DUMMY_URL, {});
-    const collection = connection.db().collection('documents');
-    wrapMongoCollection(collection, 'insert');
-
-    const spans = SpansContainer.getSpans();
-    expect(spans).toEqual([]);
   });
 });
