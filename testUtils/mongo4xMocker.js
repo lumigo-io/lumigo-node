@@ -54,32 +54,32 @@ export const wrapMongoCollection = (collection, funcName, failed = false) => {
   });
 };
 
-const promisifyMongoFunc =
-  (func) =>
-  (...params) =>
-    new Promise((resolve, reject) => {
-      const promiseCallbackHandler = (err, data) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(data);
-        }
-      };
-
-      try {
-        func.apply(this, [...params, promiseCallbackHandler]);
-      } catch (err) {
-        reject(err);
-      }
-    });
-
 class MongoClient extends mongodb.MongoClient {
-  constructor() {
+  constructor(url) {
     super();
-    this.connect = promisifyMongoFunc(this.connect);
-    this.on = (event, callback) => {
+    const self = this;
+    self.url = url;
+    self.on = (event, callback) => {
       MongoMockerEventEmitter.getEventEmitter().on(event, callback);
     };
+
+    self.originalConnect = self.connect;
+    self.connect = (...params) =>
+      new Promise((resolve, reject) => {
+        const promiseCallbackHandler = (err, data) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(data);
+          }
+        };
+
+        try {
+          self.originalConnect.apply(this, [self.url, {}, ...params, promiseCallbackHandler]);
+        } catch (err) {
+          reject(err);
+        }
+      });
   }
 }
 

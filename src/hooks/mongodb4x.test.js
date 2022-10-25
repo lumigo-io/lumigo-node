@@ -23,7 +23,7 @@ describe('mongodb', () => {
 
     hookMongoDb(mongoClientLibrary);
     const client = new mongoClientLibrary.MongoClient(DUMMY_URL);
-    connection = await client.connect(DUMMY_URL, {});
+    connection = await client.connect();
     const collection = connection.db().collection('documents');
     wrapMongoCollection(collection, 'insert');
 
@@ -52,7 +52,7 @@ describe('mongodb', () => {
 
     hookMongoDb(mongoClientLibrary);
     const client = new mongoClientLibrary.MongoClient(DUMMY_URL);
-    connection = await client.connect(DUMMY_URL, {});
+    connection = await client.connect();
     const collection = connection.db().collection('documents1');
     wrapMongoCollection(collection, 'insert', true);
 
