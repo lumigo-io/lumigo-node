@@ -14,8 +14,9 @@ module.exports = {
     },
   },
   modulePaths: ['<rootDir>/dist'],
+  preset: '@shelf/jest-mongodb',
   roots: ['<rootDir>/src'],
   setupFilesAfterEnv: ['./testUtils/jest.setup.js'],
   silent: true,
-  testEnvironment: 'node',
+  watchPathIgnorePatterns: ['globalConfig'],
 };

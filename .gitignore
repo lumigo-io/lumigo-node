@@ -12,3 +12,4 @@ nodejs
 .DS_Store
 d_example/
 .vscode
+globalConfig.json
