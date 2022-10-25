@@ -9,11 +9,7 @@ export const beforeConstructorHook = (args, extenderContext) => {
    */
   switch (args.length) {
     case 0:
-      /*
-       * Wait this is not possible. It is supposed to have at least the URL
-       * as first arg!
-       */
-      logger.debug(
+      logger.warn(
         'MongoDB 4.x instrumentation skipped: missing expected arguments to MongoClient constructor'
       );
       break;
@@ -25,7 +21,7 @@ export const beforeConstructorHook = (args, extenderContext) => {
     default:
       switch (typeof args[1]) {
         case 'object':
-          // TODO Check for `null`, which has type object?
+          args[1] = args[1] || {}; // typeof returns 'object' for null values
           args[1].monitorCommands = true;
           break;
         case 'undefined':
@@ -34,7 +30,7 @@ export const beforeConstructorHook = (args, extenderContext) => {
           };
           break;
         default:
-          logger.debug(
+          logger.warn(
             `MongoDB 4.x instrumentation skipped: unexpected type of the 'options' argument: ${typeof optionsObject}`
           );
       }
@@ -53,7 +49,8 @@ export const afterConstructorHook = (args, clientInstance, extenderContext) => {
       clientInstance.on('commandSucceeded', safeExecute(onSucceededHook));
       clientInstance.on('commandFailed', safeExecute(onFailedHook));
     } catch (err) {
-      logger.debug(`MongoDB 4.x 'on' hooks cannot be applied to ${clientInstance}`, err);
+      /* istanbul ignore next : this hook is only applied after testing that on is available */
+      logger.warn(`MongoDB 4.x 'on' hooks cannot be applied to ${clientInstance}`, err);
     }
   } else {
     logger.debug("MongoDB 4.x 'on' hooks skipped: monitorCommands was not set in the options");

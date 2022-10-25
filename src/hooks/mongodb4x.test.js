@@ -6,6 +6,15 @@ import { hookMongoDb } from './mongodb';
 
 const DUMMY_URL = 'mongodb://localhost:27017/myproject';
 
+const validSimpleFlowArguments = [
+  [[DUMMY_URL]],
+  [[DUMMY_URL, {}]],
+  [[DUMMY_URL, { url: DUMMY_URL }]],
+  [[DUMMY_URL, undefined]],
+];
+
+const invalidSimpleFlowArguments = [[[0, 1]], [[0, 'abc']], [[0, () => {}]]];
+
 describe('mongodb', () => {
   let connection;
 
@@ -18,11 +27,11 @@ describe('mongodb', () => {
     connection && connection.close();
   });
 
-  test('hookMongoDb -> simple flow', async () => {
+  test.each(validSimpleFlowArguments)('hookMongoDb -> simple flow', async (args) => {
     const { mongoClientLibrary } = getMockedMongoClient();
 
     hookMongoDb(mongoClientLibrary);
-    const client = new mongoClientLibrary.MongoClient(DUMMY_URL);
+    const client = new mongoClientLibrary.MongoClient(...args);
     connection = await client.connect();
     const collection = connection.db().collection('documents');
     wrapMongoCollection(collection, 'insert');
@@ -73,4 +82,28 @@ describe('mongodb', () => {
       .build();
     expect(spans).toEqual([expectedSpan]);
   });
+
+  test('hookMongoDb -> no args no hook', async () => {
+    const { mongoClientLibrary } = getMockedMongoClient();
+
+    hookMongoDb(mongoClientLibrary);
+    const client = new mongoClientLibrary.MongoClient();
+    const connect = async () => await client.connect();
+    expect(connect()).rejects.toThrowError(
+      'The "url" argument must be of type string. Received undefined'
+    );
+    expect(SpansContainer.getSpans().length).toEqual(0);
+  });
+});
+
+test.each(invalidSimpleFlowArguments)('hookMongoDb -> invalid arguments', async (args) => {
+  const { mongoClientLibrary } = getMockedMongoClient();
+
+  hookMongoDb(mongoClientLibrary);
+  const client = new mongoClientLibrary.MongoClient(...args);
+  const connect = async () => await client.connect();
+  expect(connect()).rejects.toThrowError(
+    'The "url" argument must be of type string. Received type number (0)'
+  );
+  expect(SpansContainer.getSpans().length).toEqual(0);
 });

@@ -1,6 +1,6 @@
-import * as aws from './aws';
 import { md5Hash } from '../utils';
 import { TRACEPARENT_HEADER_NAME } from '../utils/w3cUtils';
+import * as aws from './aws';
 
 describe('aws parser', () => {
   test('dynamodbParser', () => {
