@@ -1,33 +1,34 @@
 import { HandlerInputsBuilder } from '../../testUtils/handlerInputsBuilder';
-import { getMockedMongoClient, wrapMongoCollection } from '../../testUtils/mongo3xMocker';
+import {
+  getMockedMongoClientLibrary,
+  promisifyMongoFunc,
+  wrapMongoCollection,
+} from '../../testUtils/mongo3xMocker';
 import { MongoSpanBuilder } from '../../testUtils/mongoSpanBuilder';
 import { SpansContainer, TracerGlobals } from '../globals';
 import { hookMongoDb } from './mongodb';
 
 const DUMMY_URL = 'mongodb://localhost:27017/myproject';
 
-describe('mongodb', () => {
-  let connection;
-
+describe('mongodb3x', () => {
   beforeEach(() => {
     const handlerInputs = new HandlerInputsBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
   });
 
-  afterEach(() => {
-    connection && connection.close();
-  });
-
   test('hookMongoDb -> simple flow', async () => {
-    const { mongoClientLibrary, mongoClient } = getMockedMongoClient();
+    const mongoClientLibrary = getMockedMongoClientLibrary();
 
     hookMongoDb(mongoClientLibrary);
-    connection = await mongoClient.connect(DUMMY_URL, {});
+    const connection = await promisifyMongoFunc(mongoClientLibrary.MongoClient.connect)(
+      DUMMY_URL,
+      {}
+    );
     const collection = connection.db().collection('documents');
     wrapMongoCollection(collection, 'insert');
 
     const docs = [{ a: 1 }, { a: 2 }, { a: 3 }];
-    await collection.insert(docs);
+    await promisifyMongoFunc(collection.insert)(docs);
 
     const spans = SpansContainer.getSpans();
     const expectedSpan = new MongoSpanBuilder()
@@ -44,18 +45,22 @@ describe('mongodb', () => {
       .withCommandName('insert')
       .build();
     expect(spans).toEqual([expectedSpan]);
+    connection.close();
   });
 
   test('hookMongoDb -> error', async () => {
-    const { mongoClientLibrary, mongoClient } = getMockedMongoClient();
+    const mongoClientLibrary = getMockedMongoClientLibrary();
 
     hookMongoDb(mongoClientLibrary);
-    connection = await mongoClient.connect(DUMMY_URL, {});
+    const connection = await promisifyMongoFunc(mongoClientLibrary.MongoClient.connect)(
+      DUMMY_URL,
+      {}
+    );
     const collection = connection.db().collection('documents1');
     wrapMongoCollection(collection, 'insert', true);
 
     const docs = [{ a: 1 }, { a: 2 }, { a: 3 }];
-    await collection.insert(docs);
+    await promisifyMongoFunc(collection.insert)(docs);
 
     const spans = SpansContainer.getSpans();
     const expectedSpan = new MongoSpanBuilder()
@@ -71,17 +76,22 @@ describe('mongodb', () => {
       .build();
 
     expect(spans).toEqual([expectedSpan]);
+    connection.close();
   });
 
   test('hookMongoDb -> instrument Failed', async () => {
-    const { mongoClientLibrary, mongoClient } = getMockedMongoClient({ instrumentFailed: true });
+    const mongoClientLibrary = getMockedMongoClientLibrary({ instrumentFailed: true });
 
     hookMongoDb(mongoClientLibrary);
-    connection = await mongoClient.connect(DUMMY_URL, {});
+    const connection = await promisifyMongoFunc(mongoClientLibrary.MongoClient.connect)(
+      DUMMY_URL,
+      {}
+    );
     const collection = connection.db().collection('documents');
     wrapMongoCollection(collection, 'insert');
 
     const spans = SpansContainer.getSpans();
     expect(spans).toEqual([]);
+    connection.close();
   });
 });

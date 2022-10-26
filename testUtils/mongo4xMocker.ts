@@ -2,9 +2,9 @@ import mongodb from 'mongo-mock';
 import { hook } from '../src/extender';
 import { MongoMockerEventEmitter } from './mongodbEventEmitterMocker';
 
-export const wrapMongoCollection = (collection, funcName, failed = false) => {
+export const wrapMongoCollection = (collection: any, funcName: string, failed: Boolean = false) => {
   hook(collection, funcName, {
-    beforeHook: (args) => {
+    beforeHook: (args: any[]) => {
       MongoMockerEventEmitter.getEventEmitter().emit('commandStarted', {
         eventName: 'onStartedHook',
         command: {
@@ -55,16 +55,15 @@ export const wrapMongoCollection = (collection, funcName, failed = false) => {
 };
 
 class MongoClient extends mongodb.MongoClient {
-  constructor(url) {
-    super();
-    const self = this;
-    self.url = url;
-    self.on = (event, callback) => {
-      MongoMockerEventEmitter.getEventEmitter().on(event, callback);
-    };
+  url: String;
+  originalConnect: Function;
 
-    self.originalConnect = self.connect;
-    self.connect = (...params) =>
+  constructor(url: string) {
+    super();
+    this.url = url;
+
+    this.originalConnect = this.connect;
+    this.connect = (...params) =>
       new Promise((resolve, reject) => {
         const promiseCallbackHandler = (err, data) => {
           if (err) {
@@ -75,7 +74,7 @@ class MongoClient extends mongodb.MongoClient {
         };
 
         try {
-          self.originalConnect.apply(this, [self.url, {}, ...params, promiseCallbackHandler]);
+          this.originalConnect.apply(this, [this.url, {}, ...params, promiseCallbackHandler]);
         } catch (err) {
           reject(err);
         }
@@ -83,7 +82,18 @@ class MongoClient extends mongodb.MongoClient {
   }
 }
 
-export const getMockedMongoClient = (options = {}) => {
+const getMockedOn = (isBroken: boolean = false) => {
+  if (isBroken) {
+    return () => {
+      throw new Error('"on" method is broken');
+    };
+  }
+  return (event: string | symbol, listener: (...args: any[]) => void) => {
+    MongoMockerEventEmitter.getEventEmitter().on(event, listener);
+  };
+};
+
+export const getMockedMongoClientLibrary = (options: any = {}): any => {
   // extend mongodb so that we can replace its client
   const MongoClientLibrary = () => {};
   MongoClientLibrary.prototype = mongodb;
@@ -92,7 +102,7 @@ export const getMockedMongoClient = (options = {}) => {
   // eslint-disable-next-line camelcase
   MongoClientLibrary.max_delay = 0;
   MongoClientLibrary.MongoClient = MongoClient;
-  MongoClient.prototype.on = MongoMockerEventEmitter.getEventEmitter().on;
+  MongoClientLibrary.MongoClient.prototype.on = getMockedOn(options.isOnBroken);
 
-  return { mongoClientLibrary: MongoClientLibrary, mongoClient: MongoClientLibrary.MongoClient };
+  return MongoClientLibrary;
 };

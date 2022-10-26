@@ -1,38 +1,29 @@
 import { HandlerInputsBuilder } from '../../testUtils/handlerInputsBuilder';
-import { getMockedMongoClient, wrapMongoCollection } from '../../testUtils/mongo4xMocker';
+import { getMockedMongoClientLibrary, wrapMongoCollection } from '../../testUtils/mongo4xMocker';
 import { MongoSpanBuilder } from '../../testUtils/mongoSpanBuilder';
 import { SpansContainer, TracerGlobals } from '../globals';
 import { hookMongoDb } from './mongodb';
 
 const DUMMY_URL = 'mongodb://localhost:27017/myproject';
 
-const validSimpleFlowArguments = [
-  [[DUMMY_URL]],
-  [[DUMMY_URL, {}]],
-  [[DUMMY_URL, { url: DUMMY_URL }]],
-  [[DUMMY_URL, undefined]],
-];
-
-const invalidSimpleFlowArguments = [[[0, 1]], [[0, 'abc']], [[0, () => {}]]];
-
-describe('mongodb', () => {
-  let connection;
-
+describe('mongodb4x', () => {
   beforeEach(() => {
     const handlerInputs = new HandlerInputsBuilder().build();
     TracerGlobals.setHandlerInputs(handlerInputs);
   });
 
-  afterEach(() => {
-    connection && connection.close();
-  });
-
-  test.each(validSimpleFlowArguments)('hookMongoDb -> simple flow', async (args) => {
-    const { mongoClientLibrary } = getMockedMongoClient();
+  test.each`
+    url          | options
+    ${DUMMY_URL} | ${null}
+    ${DUMMY_URL} | ${undefined}
+    ${DUMMY_URL} | ${{}}
+    ${DUMMY_URL} | ${{ authMechanism: 'SCRAM-SHA-1' }}
+  `('hookMongoDb -> simple flow -> url=$url, options=$options', async ({ url, options }) => {
+    const mongoClientLibrary = getMockedMongoClientLibrary();
 
     hookMongoDb(mongoClientLibrary);
-    const client = new mongoClientLibrary.MongoClient(...args);
-    connection = await client.connect();
+    const client = new mongoClientLibrary.MongoClient(url, options);
+    const connection = await client.connect();
     const collection = connection.db().collection('documents');
     wrapMongoCollection(collection, 'insert');
 
@@ -54,14 +45,15 @@ describe('mongodb', () => {
       .withCommandName('insert')
       .build();
     expect(spans).toEqual([expectedSpan]);
+    connection.close();
   });
 
   test('hookMongoDb -> error', async () => {
-    const { mongoClientLibrary } = getMockedMongoClient();
+    const mongoClientLibrary = getMockedMongoClientLibrary();
 
     hookMongoDb(mongoClientLibrary);
     const client = new mongoClientLibrary.MongoClient(DUMMY_URL);
-    connection = await client.connect();
+    const connection = await client.connect();
     const collection = connection.db().collection('documents1');
     wrapMongoCollection(collection, 'insert', true);
 
@@ -81,10 +73,11 @@ describe('mongodb', () => {
       .withError('"Wow, what an error!"')
       .build();
     expect(spans).toEqual([expectedSpan]);
+    connection.close();
   });
 
   test('hookMongoDb -> no args no hook', async () => {
-    const { mongoClientLibrary } = getMockedMongoClient();
+    const mongoClientLibrary = getMockedMongoClientLibrary();
 
     hookMongoDb(mongoClientLibrary);
     const client = new mongoClientLibrary.MongoClient();
@@ -94,16 +87,28 @@ describe('mongodb', () => {
     );
     expect(SpansContainer.getSpans().length).toEqual(0);
   });
-});
 
-test.each(invalidSimpleFlowArguments)('hookMongoDb -> invalid arguments', async (args) => {
-  const { mongoClientLibrary } = getMockedMongoClient();
+  test.each`
+    url  | options
+    ${0} | ${1}
+    ${0} | ${'abc'}
+    ${0} | ${() => {}}
+  `('hookMongoDb -> invalid arguments -> url=$url, options=$options', async ({ url, options }) => {
+    const mongoClientLibrary = getMockedMongoClientLibrary();
 
-  hookMongoDb(mongoClientLibrary);
-  const client = new mongoClientLibrary.MongoClient(...args);
-  const connect = async () => await client.connect();
-  expect(connect()).rejects.toThrowError(
-    'The "url" argument must be of type string. Received type number (0)'
-  );
-  expect(SpansContainer.getSpans().length).toEqual(0);
+    hookMongoDb(mongoClientLibrary);
+    const client = new mongoClientLibrary.MongoClient(url, options);
+    const connect = async () => await client.connect();
+    expect(connect()).rejects.toThrowError(
+      'The "url" argument must be of type string. Received type number (0)'
+    );
+    expect(SpansContainer.getSpans().length).toEqual(0);
+  });
+
+  test('hookMongoDb -> emitter "on" broken', async () => {
+    const mongoClientLibrary = getMockedMongoClientLibrary({ isOnBroken: true });
+
+    hookMongoDb(mongoClientLibrary);
+    const client = new mongoClientLibrary.MongoClient(DUMMY_URL);
+  });
 });

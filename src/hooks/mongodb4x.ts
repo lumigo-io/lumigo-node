@@ -2,11 +2,7 @@ import * as logger from '../logger';
 import { safeExecute } from '../utils';
 import { onFailedHook, onStartedHook, onSucceededHook } from './mongodb3x';
 
-export const beforeConstructorHook = (args, extenderContext) => {
-  /*
-   * Inject the `monitorCommands: true` property in the options (2nd argument).
-   * If no options argument is given, well... now there is :D
-   */
+const injectMonitoringCommand = (args: any[]) => {
   switch (args.length) {
     case 0:
       logger.warn(
@@ -19,7 +15,8 @@ export const beforeConstructorHook = (args, extenderContext) => {
       });
       break;
     default:
-      switch (typeof args[1]) {
+      const optionsArgumentType: string = typeof args[1];
+      switch (optionsArgumentType) {
         case 'object':
           args[1] = args[1] || {}; // typeof returns 'object' for null values
           args[1].monitorCommands = true;
@@ -31,25 +28,27 @@ export const beforeConstructorHook = (args, extenderContext) => {
           break;
         default:
           logger.warn(
-            `MongoDB 4.x instrumentation skipped: unexpected type of the 'options' argument: ${typeof optionsObject}`
+            `MongoDB 4.x instrumentation skipped: unexpected type of the 'options' argument: ${optionsArgumentType}`
           );
       }
   }
 };
 
-export const afterConstructorHook = (args, clientInstance, extenderContext) => {
-  /*
-   * Turn on the command listener. This assumes the `monitorCommands` flag we
-   * add in the 'beforeConstructor' hook. The shape of the events we get from
-   * the MongoDB Client 4.x is the same as those that 3.x emitted with 'instrument'.
-   */
-  if (args.length > 1 && typeof args[1] === 'object' && args[1].monitorCommands === true) {
+export const beforeConstructorHook = (args: any[], extenderContext: any) => {
+  injectMonitoringCommand(args);
+};
+
+const isMonitoringEnabled = (args: any[]) => {
+  return args.length > 1 && typeof args[1] === 'object' && args[1].monitorCommands === true;
+};
+
+export const afterConstructorHook = (args: any[], clientInstance: any, extenderContext: any) => {
+  if (isMonitoringEnabled(args)) {
     try {
       clientInstance.on('commandStarted', safeExecute(onStartedHook));
       clientInstance.on('commandSucceeded', safeExecute(onSucceededHook));
       clientInstance.on('commandFailed', safeExecute(onFailedHook));
     } catch (err) {
-      /* istanbul ignore next : this hook is only applied after testing that on is available */
       logger.warn(`MongoDB 4.x 'on' hooks cannot be applied to ${clientInstance}`, err);
     }
   } else {

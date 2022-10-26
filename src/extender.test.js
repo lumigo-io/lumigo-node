@@ -1,5 +1,5 @@
-import * as extender from './extender';
 import * as shimmer from 'shimmer';
+import * as extender from './extender';
 import * as dummy from './extender.testModule';
 
 export const DummyCounterService = (() => {

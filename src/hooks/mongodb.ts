@@ -5,35 +5,42 @@ import { safeRequire } from '../utils/requireUtils';
 import { onFailedHook, onStartedHook, onSucceededHook } from './mongodb3x';
 import { afterConstructorHook, beforeConstructorHook } from './mongodb4x';
 
-export const hookMongoDb = (mongoClientLibrary) => {
+export const hookMongoDb = (mongoClientLibrary: any) => {
   const mongoClientLibraries = mongoClientLibrary ? mongoClientLibrary : safeRequire('mongodb');
   const mongooseClients = safeRequire('node_modules/mongoose/node_modules/mongodb');
   const mongoClients = [mongoClientLibraries, mongooseClients].filter(Boolean);
 
-  /* istanbul ignore next : there's no point in testing this */
-  if (!mongoClients) {
+  if (mongoClients.length === 0) {
     logger.debug('MongoDB clients not found');
     return;
   }
 
-  mongoClients.forEach((mongoClientLibrary) => {
-    let mongoClientVersion = 'unknown';
-    if (mongoClientLibrary.instrument) {
-      mongoClientVersion = '3.x';
-    } else if (mongoClientLibrary.MongoClient.prototype.on) {
-      mongoClientVersion = '4.x';
+  const getVersion = (clientLibrary: any): string => {
+    if (clientLibrary.instrument) {
+      return '3.x';
     }
-    switch (mongoClientVersion) {
+    if (
+      clientLibrary.MongoClient &&
+      clientLibrary.MongoClient.prototype &&
+      clientLibrary.MongoClient.prototype.on
+    ) {
+      return '4.x';
+    }
+    return 'unknown';
+  };
+
+  mongoClients.forEach((mongoClientLibrary) => {
+    switch (getVersion(mongoClientLibrary)) {
       case '3.x':
-        const listener = mongoClientLibrary.instrument({}, (err) => {
+        const listener = mongoClientLibrary.instrument({}, (err: any) => {
           if (err) {
             logger.warn('MongoDB 3.x instrumentation failed ', err);
           }
         });
 
-        const safeStartedHook = safeExecute(onStartedHook);
-        const safeSucceededHook = safeExecute(onSucceededHook);
-        const safeFailedHook = safeExecute(onFailedHook);
+        const safeStartedHook: Function = safeExecute(onStartedHook);
+        const safeSucceededHook: Function = safeExecute(onSucceededHook);
+        const safeFailedHook: Function = safeExecute(onFailedHook);
 
         safeExecute(() => {
           listener.on('started', safeStartedHook);
@@ -49,8 +56,6 @@ export const hookMongoDb = (mongoClientLibrary) => {
           beforeHook: beforeConstructorHook,
           afterHook: afterConstructorHook,
         });
-
-        // TODO Find a hook for catching connection issues.
 
         logger.debug('MongoDB 4.x instrumentation applied');
         break;

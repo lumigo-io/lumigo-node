@@ -3,15 +3,19 @@ import { getCurrentTransactionId } from '../spans/awsSpan';
 import { createMongoDbSpan, extendMongoDbSpan } from '../spans/mongoDbSpan';
 import { getRandomId } from '../utils';
 
-const PendingRequests = (() => {
-  let pendingRequests = {};
+type SpanMap = {
+  [requestId: string]: string;
+};
 
-  const addPendingRequest = (requestId, spanId) => {
+const PendingRequests = (() => {
+  const pendingRequests: SpanMap = {};
+
+  const addPendingRequest = (requestId: string, spanId: string) => {
     pendingRequests[requestId] = spanId;
   };
 
-  const popPendingRequestSpanId = (requestId) => {
-    const spanId = pendingRequests[requestId];
+  const popPendingRequestSpanId = (requestId: string): string => {
+    const spanId: string = pendingRequests[requestId];
     delete pendingRequests[requestId];
     return spanId;
   };
@@ -22,12 +26,12 @@ const PendingRequests = (() => {
   };
 })();
 
-export const onStartedHook = (event) => {
-  const awsRequestId = TracerGlobals.getHandlerInputs().context.awsRequestId;
-  const transactionId = getCurrentTransactionId();
+export const onStartedHook = (event: any) => {
+  const awsRequestId: string = TracerGlobals.getHandlerInputs().context.awsRequestId;
+  const transactionId: string = getCurrentTransactionId();
   const { command, databaseName, commandName, requestId, operationId, connectionId } = event;
-  const started = Date.now();
-  const spanId = getRandomId();
+  const started: number = Date.now();
+  const spanId: string = getRandomId();
   PendingRequests.addPendingRequest(requestId, spanId);
   const mongoSpan = createMongoDbSpan(
     transactionId,
@@ -48,9 +52,9 @@ export const onStartedHook = (event) => {
   SpansContainer.addSpan(mongoSpan);
 };
 
-export const onSucceededHook = (event) => {
+export const onSucceededHook = (event: any) => {
   const { duration, reply, requestId } = event;
-  const currentSpanId = PendingRequests.popPendingRequestSpanId(requestId);
+  const currentSpanId: string = PendingRequests.popPendingRequestSpanId(requestId);
   const currentSpan = SpansContainer.getSpanById(currentSpanId);
   const extendedMondoDbSpan = extendMongoDbSpan(currentSpan, {
     duration,
@@ -59,7 +63,7 @@ export const onSucceededHook = (event) => {
   SpansContainer.addSpan(extendedMondoDbSpan);
 };
 
-export const onFailedHook = (event) => {
+export const onFailedHook = (event: any) => {
   const { duration, failure, requestId } = event;
   const currentSpanId = PendingRequests.popPendingRequestSpanId(requestId);
   const currentSpan = SpansContainer.getSpanById(currentSpanId);

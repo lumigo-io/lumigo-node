@@ -2,9 +2,9 @@ import mongodb from 'mongo-mock';
 import { hook } from '../src/extender';
 import { MongoMockerEventEmitter } from './mongodbEventEmitterMocker';
 
-export const wrapMongoCollection = (collection, funcName, failed = false) => {
+export const wrapMongoCollection = (collection: any, funcName: string, failed: Boolean = false) => {
   hook(collection, funcName, {
-    beforeHook: (args) => {
+    beforeHook: (args: any[]) => {
       MongoMockerEventEmitter.getEventEmitter().emit('started', {
         eventName: 'onStartedHook',
         command: {
@@ -54,9 +54,30 @@ export const wrapMongoCollection = (collection, funcName, failed = false) => {
   });
 };
 
-const promisifyMongoFunc =
-  (func) =>
-  (...params) =>
+export const getMockedMongoClientLibrary = (options: any = {}): any => {
+  // extend mongodb so that we can manipulate its client
+  const MongoClientLibrary = () => {};
+  MongoClientLibrary.prototype = mongodb.prototype;
+
+  // configure the mocked client
+  // eslint-disable-next-line camelcase
+  MongoClientLibrary.max_delay = 0;
+  if (options.instrumentFailed) {
+    MongoClientLibrary.instrument = (options, errCallback) => {
+      errCallback('RandomError');
+    };
+  } else {
+    MongoClientLibrary.instrument = () => MongoMockerEventEmitter.getEventEmitter();
+  }
+
+  MongoClientLibrary.MongoClient = mongodb.MongoClient;
+
+  return MongoClientLibrary;
+};
+
+export const promisifyMongoFunc =
+  (func: Function) =>
+  (...params: any[]) =>
     new Promise((resolve, reject) => {
       const promiseCallbackHandler = (err, data) => {
         if (err) {
@@ -72,35 +93,3 @@ const promisifyMongoFunc =
         reject(err);
       }
     });
-
-export const getMockedMongoClient = (options = {}) => {
-  // extend mongodb so that we can replace its client
-  const MongoClientLibrary = () => {};
-  MongoClientLibrary.prototype = mongodb.prototype;
-
-  // configure the mocked client
-  // eslint-disable-next-line camelcase
-  MongoClientLibrary.max_delay = 0;
-  if (options.instrumentFailed) {
-    MongoClientLibrary.instrument = (options, errCallback) => {
-      errCallback('RandomError');
-    };
-  } else {
-    MongoClientLibrary.instrument = () => MongoMockerEventEmitter.getEventEmitter();
-  }
-
-  // extend the mocked client
-  const MongoClient = () => {};
-  MongoClient.prototype = Object.create(mongodb.MongoClient.prototype);
-
-  // promisify the client's functions
-  Object.keys(mongodb.MongoClient).forEach((key) => {
-    if (typeof mongodb.MongoClient[key] === 'function') {
-      MongoClient[key] = promisifyMongoFunc(mongodb.MongoClient[key]);
-    }
-  });
-
-  MongoClientLibrary.MongoClient = MongoClient;
-
-  return { mongoClientLibrary: MongoClientLibrary, mongoClient: MongoClientLibrary.MongoClient };
-};
