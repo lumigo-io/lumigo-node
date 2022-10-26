@@ -1,7 +1,7 @@
 import EventEmitter from 'events';
 
 export const MongoMockerEventEmitter = (() => {
-  let eventEmitter = new EventEmitter();
+  const eventEmitter: EventEmitter = new EventEmitter();
   const getEventEmitter = () => eventEmitter;
   const cleanEventEmitter = () => {
     eventEmitter.eventNames().forEach((event) => {
