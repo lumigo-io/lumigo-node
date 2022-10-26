@@ -55,24 +55,17 @@ export const wrapMongoCollection = (collection: any, funcName: string, failed: B
 };
 
 export const getMockedMongoClientLibrary = (options: any = {}): any => {
-  // extend mongodb so that we can manipulate its client
-  const MongoClientLibrary = () => {};
-  MongoClientLibrary.prototype = mongodb.prototype;
-
-  // configure the mocked client
   // eslint-disable-next-line camelcase
-  MongoClientLibrary.max_delay = 0;
+  mongodb.max_delay = 0;
   if (options.instrumentFailed) {
-    MongoClientLibrary.instrument = (options, errCallback) => {
+    mongodb.instrument = (options, errCallback) => {
       errCallback('RandomError');
     };
   } else {
-    MongoClientLibrary.instrument = () => MongoMockerEventEmitter.getEventEmitter();
+    mongodb.instrument = () => MongoMockerEventEmitter.getEventEmitter();
   }
 
-  MongoClientLibrary.MongoClient = mongodb.MongoClient;
-
-  return MongoClientLibrary;
+  return mongodb;
 };
 
 export const promisifyMongoFunc =
