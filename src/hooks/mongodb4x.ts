@@ -39,7 +39,9 @@ export const beforeConstructorHook = (args: any[], extenderContext: any) => {
 };
 
 const isMonitoringEnabled = (args: any[]) => {
-  return args.length > 1 && typeof args[1] === 'object' && args[1].monitorCommands === true;
+  return args.length < 2
+    ? false
+    : (args[1] || {}) && typeof args[1] === 'object' && args[1].monitorCommands === true;
 };
 
 export const afterConstructorHook = (args: any[], clientInstance: any, extenderContext: any) => {

@@ -13,16 +13,16 @@ describe('mongodb4x', () => {
   });
 
   test.each`
-    url          | options
-    ${DUMMY_URL} | ${null}
-    ${DUMMY_URL} | ${undefined}
-    ${DUMMY_URL} | ${{}}
-    ${DUMMY_URL} | ${{ authMechanism: 'SCRAM-SHA-1' }}
-  `('hookMongoDb -> simple flow -> url=$url, options=$options', async ({ url, options }) => {
+    options
+    ${null}
+    ${undefined}
+    ${{}}
+    ${{ authMechanism: 'SCRAM-SHA-1' }}
+  `('hookMongoDb -> simple flow -> url=DUMMY_URL, options=$options', async ({ options }) => {
     const mongoClientLibrary = getMockedMongoClientLibrary();
 
     hookMongoDb(mongoClientLibrary);
-    const client = new mongoClientLibrary.MongoClient(url, options);
+    const client = new mongoClientLibrary.MongoClient(DUMMY_URL, options);
     const connection = await client.connect();
     const collection = connection.db().collection('documents');
     wrapMongoCollection(collection, 'insert');
@@ -89,15 +89,15 @@ describe('mongodb4x', () => {
   });
 
   test.each`
-    url  | options
-    ${0} | ${1}
-    ${0} | ${'abc'}
-    ${0} | ${() => {}}
-  `('hookMongoDb -> invalid arguments -> url=$url, options=$options', async ({ url, options }) => {
+    options
+    ${1}
+    ${'abc'}
+    ${() => {}}
+  `('hookMongoDb -> invalid arguments -> url=0, options=$options', async ({ options }) => {
     const mongoClientLibrary = getMockedMongoClientLibrary();
 
     hookMongoDb(mongoClientLibrary);
-    const client = new mongoClientLibrary.MongoClient(url, options);
+    const client = new mongoClientLibrary.MongoClient(0, options);
     const connect = async () => await client.connect();
     expect(connect()).rejects.toThrowError(
       'The "url" argument must be of type string. Received type number (0)'
@@ -105,7 +105,7 @@ describe('mongodb4x', () => {
     expect(SpansContainer.getSpans().length).toEqual(0);
   });
 
-  test('hookMongoDb -> emitter "on" broken', async () => {
+  test('hookMongoDb -> broken emitter "on" method does not throw errors', async () => {
     const mongoClientLibrary = getMockedMongoClientLibrary({ isOnBroken: true });
 
     hookMongoDb(mongoClientLibrary);
