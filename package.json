@@ -6,9 +6,7 @@
   "repository": "git@github.com:lumigo-io/lumigo-node.git",
   "private": false,
   "author": "Lumigo LTD (https://lumigo.io)",
-  "contributors": [
-    "Sagi Kedmi (https://sagi.io)"
-  ],
+  "contributors": ["Sagi Kedmi (https://sagi.io)"],
   "license": "Apache-2.0",
   "scripts": {
     "build": "rm -rf dist && tsc --build --force",
@@ -62,7 +60,7 @@
     "jest-each": "^29.2.1",
     "jest-junit": "^14.0.1",
     "mockdate": "^2.0.5",
-    "mongo-mock": "^4.0.0",
+    "mongo-mock": "^4.2.0",
     "prettier": "2.7.1",
     "semantic-release": "^19.0.5",
     "typescript": "^4.3.2"

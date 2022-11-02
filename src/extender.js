@@ -7,7 +7,7 @@ const noop = () => {};
 const isFunctionAlreadyWrapped = (fn) => fn && fn.__wrapped;
 
 export const hook = (module, funcName, options = {}, shimmerLib = shimmer) => {
-  const { isConstructor = false, beforeHook = noop, afterHook = noop } = options;
+  const { beforeHook = noop, afterHook = noop } = options;
   const safeBeforeHook = safeExecute(beforeHook, `before hook of ${funcName} fail`);
   const safeAfterHook = safeExecute(afterHook, `after hook of ${funcName} fail`);
   const extenderContext = {};
@@ -18,9 +18,7 @@ export const hook = (module, funcName, options = {}, shimmerLib = shimmer) => {
       }
       return function (...args) {
         safeBeforeHook.call(this, args, extenderContext);
-        const originalFnResult = isConstructor
-          ? new originalFn(...args)
-          : originalFn.apply(this, args);
+        const originalFnResult = originalFn.apply(this, args);
         safeAfterHook.call(this, args, originalFnResult, extenderContext);
         return originalFnResult;
       };

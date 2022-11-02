@@ -2,6 +2,16 @@ import * as logger from '../logger';
 import { safeExecute } from '../utils';
 import { onFailedHook, onStartedHook, onSucceededHook } from './mongodb3x';
 
+const attachEventHooks = (client: any) => {
+  try {
+    client.on('commandStarted', safeExecute(onStartedHook));
+    client.on('commandSucceeded', safeExecute(onSucceededHook));
+    client.on('commandFailed', safeExecute(onFailedHook));
+  } catch (err) {
+    logger.warn(`MongoDB 4.x 'on' event hooks cannot be applied to ${client}`, err);
+  }
+};
+
 const injectMonitoringCommand = (args: any[]) => {
   switch (args.length) {
     case 0:
@@ -32,28 +42,35 @@ const injectMonitoringCommand = (args: any[]) => {
           );
       }
   }
+  return args;
 };
 
-export const beforeConstructorHook = (args: any[], extenderContext: any) => {
-  injectMonitoringCommand(args);
-};
+export const wrapMongoClient4xClass = (mongoClientLibrary: any) => {
+  const originalPrototype = mongoClientLibrary.MongoClient.prototype;
+  const originalConstructor = mongoClientLibrary.MongoClient.prototype.constructor;
+  const originalStaticConnect = mongoClientLibrary.MongoClient.connect;
+  mongoClientLibrary.MongoClient = function (...args: any[]) {
+    const client = new originalConstructor(...injectMonitoringCommand(args));
+    attachEventHooks(client);
+    return client;
+  };
+  mongoClientLibrary.MongoClient.prototype = originalPrototype;
 
-const isMonitoringEnabled = (args: any[]) => {
-  return args.length < 2
-    ? false
-    : (args[1] || {}) && typeof args[1] === 'object' && args[1].monitorCommands === true;
-};
-
-export const afterConstructorHook = (args: any[], clientInstance: any, extenderContext: any) => {
-  if (isMonitoringEnabled(args)) {
-    try {
-      clientInstance.on('commandStarted', safeExecute(onStartedHook));
-      clientInstance.on('commandSucceeded', safeExecute(onSucceededHook));
-      clientInstance.on('commandFailed', safeExecute(onFailedHook));
-    } catch (err) {
-      logger.warn(`MongoDB 4.x 'on' hooks cannot be applied to ${clientInstance}`, err);
-    }
-  } else {
-    logger.debug("MongoDB 4.x 'on' hooks skipped: monitorCommands was not set in the options");
-  }
+  mongoClientLibrary.MongoClient.connect = (url: string, options: any, callback: Function) => {
+    return new Promise((resolve, reject) => {
+      callback =
+        typeof callback === 'function'
+          ? callback
+          : typeof options === 'function'
+          ? options
+          : undefined;
+      options = typeof options !== 'function' ? options : undefined;
+      originalStaticConnect(...injectMonitoringCommand([url, options, callback]))
+        .then((connection: any) => {
+          attachEventHooks(connection);
+          resolve(connection);
+        })
+        .catch(reject);
+    });
+  };
 };

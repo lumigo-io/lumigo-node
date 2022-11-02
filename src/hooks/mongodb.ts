@@ -1,9 +1,7 @@
-import { hook } from '../extender';
 import * as logger from '../logger';
-import { safeExecute } from '../utils';
 import { safeRequire } from '../utils/requireUtils';
-import { onFailedHook, onStartedHook, onSucceededHook } from './mongodb3x';
-import { afterConstructorHook, beforeConstructorHook } from './mongodb4x';
+import { configureMongoClient3xInstrumentation } from './mongodb3x';
+import { wrapMongoClient4xClass } from './mongodb4x';
 
 export const hookMongoDb = (mongoClientLibrary: any) => {
   const mongoClientLibraries = mongoClientLibrary ? mongoClientLibrary : safeRequire('mongodb');
@@ -32,33 +30,15 @@ export const hookMongoDb = (mongoClientLibrary: any) => {
   mongoClients.forEach((mongoClientLibrary) => {
     switch (getVersion(mongoClientLibrary)) {
       case '3.x':
-        const listener = mongoClientLibrary.instrument({}, (err: any) => {
-          if (err) {
-            logger.warn('MongoDB 3.x instrumentation failed ', err);
-          }
-        });
-
-        const safeStartedHook: Function = safeExecute(onStartedHook);
-        const safeSucceededHook: Function = safeExecute(onSucceededHook);
-        const safeFailedHook: Function = safeExecute(onFailedHook);
-
-        safeExecute(() => {
-          listener.on('started', safeStartedHook);
-          listener.on('succeeded', safeSucceededHook);
-          listener.on('failed', safeFailedHook);
-        })();
-
+        configureMongoClient3xInstrumentation(mongoClientLibrary);
         logger.debug('MongoDB 3.x instrumentation applied');
         break;
-      case '4.x':
-        hook(mongoClientLibrary, 'MongoClient', {
-          isConstructor: true,
-          beforeHook: beforeConstructorHook,
-          afterHook: afterConstructorHook,
-        });
 
+      case '4.x':
+        wrapMongoClient4xClass(mongoClientLibrary);
         logger.debug('MongoDB 4.x instrumentation applied');
         break;
+
       default:
         logger.warn('MongoDB instrumentation skipped: unsupported client version');
     }

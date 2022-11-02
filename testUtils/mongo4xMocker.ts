@@ -54,46 +54,69 @@ export const wrapMongoCollection = (collection: any, funcName: string, failed: B
   });
 };
 
-class MongoClient extends mongodb.MongoClient {
-  url: String;
-  originalConnect: Function;
+class MongoClient {
+  client: any;
+  url: string;
+  options: any;
 
-  constructor(url: string) {
-    super();
+  constructor(url: string, options: any) {
+    this.client = new mongodb.MongoClient();
     this.url = url;
+    this.options = options;
+  }
 
-    this.originalConnect = this.connect;
-    this.connect = (...params) =>
-      new Promise((resolve, reject) => {
-        const promiseCallbackHandler = (err, data) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(data);
-          }
-        };
-
-        try {
-          this.originalConnect.apply(this, [this.url, {}, ...params, promiseCallbackHandler]);
-        } catch (err) {
-          reject(err);
+  connect(options: any, callback: Function) {
+    const self = this;
+    return new Promise((resolve, reject) => {
+      const promiseCallbackHandler = (err: any, connection: any) => {
+        if (connection) {
+          connection.on = self.on;
         }
-      });
+        if (callback) {
+          callback(err, connection);
+        }
+        if (err) {
+          reject(err);
+        } else {
+          resolve(connection);
+        }
+      };
+
+      try {
+        self.client.connect(self.url, options ? options : self.options, promiseCallbackHandler);
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+
+  on(event: string, listener: any) {
+    if (this.options && this.options.isOnBroken) {
+      throw new Error('"on" method is broken');
+    }
+    MongoMockerEventEmitter.getEventEmitter().on(event, listener);
+  }
+
+  static connect(url: string, options: any, callback: Function) {
+    return new Promise((resolve, reject) => {
+      callback =
+        typeof callback === 'function'
+          ? callback
+          : typeof options === 'function'
+          ? options
+          : undefined;
+      options = typeof options !== 'function' ? options : undefined;
+      try {
+        const client = new MongoClient(url, options);
+        client.connect(null, callback).then(resolve).catch(reject);
+      } catch (err) {
+        reject(err);
+      }
+    });
   }
 }
 
-const getMockedOn = (isBroken: boolean = false) => {
-  if (isBroken) {
-    return () => {
-      throw new Error('"on" method is broken');
-    };
-  }
-  return (event: string | symbol, listener: (...args: any[]) => void) => {
-    MongoMockerEventEmitter.getEventEmitter().on(event, listener);
-  };
-};
-
-export const getMockedMongoClientLibrary = (options: any = {}): any => {
+export const getMockedMongoClientLibrary = () => {
   // extend mongodb so that we can replace its client
   const MongoClientLibrary = () => {};
   MongoClientLibrary.prototype = mongodb;
@@ -102,7 +125,6 @@ export const getMockedMongoClientLibrary = (options: any = {}): any => {
   // eslint-disable-next-line camelcase
   MongoClientLibrary.max_delay = 0;
   MongoClientLibrary.MongoClient = MongoClient;
-  MongoClientLibrary.MongoClient.prototype.on = getMockedOn(options.isOnBroken);
 
   return MongoClientLibrary;
 };

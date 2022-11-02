@@ -1,7 +1,8 @@
 import { SpansContainer, TracerGlobals } from '../globals';
+import * as logger from '../logger';
 import { getCurrentTransactionId } from '../spans/awsSpan';
 import { createMongoDbSpan, extendMongoDbSpan } from '../spans/mongoDbSpan';
-import { getRandomId } from '../utils';
+import { getRandomId, safeExecute } from '../utils';
 
 type SpanMap = {
   [requestId: string]: string;
@@ -72,4 +73,22 @@ export const onFailedHook = (event: any) => {
     failure,
   });
   SpansContainer.addSpan(extendedMondoDbSpan);
+};
+
+export const configureMongoClient3xInstrumentation = (mongoClientLibrary: any) => {
+  const listener = mongoClientLibrary.instrument({}, (err: any) => {
+    if (err) {
+      logger.warn('MongoDB 3.x instrumentation failed ', err);
+    }
+  });
+
+  const safeStartedHook: Function = safeExecute(onStartedHook);
+  const safeSucceededHook: Function = safeExecute(onSucceededHook);
+  const safeFailedHook: Function = safeExecute(onFailedHook);
+
+  safeExecute(() => {
+    listener.on('started', safeStartedHook);
+    listener.on('succeeded', safeSucceededHook);
+    listener.on('failed', safeFailedHook);
+  })();
 };

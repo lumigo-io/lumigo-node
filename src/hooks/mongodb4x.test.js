@@ -48,6 +48,44 @@ describe('mongodb4x', () => {
     connection.close();
   });
 
+  test.each`
+    options
+    ${null}
+    ${undefined}
+    ${{}}
+    ${{ authMechanism: 'SCRAM-SHA-1' }}
+  `(
+    'hookMongoDb -> simple flow with shorthand construction -> url=DUMMY_URL, options=$options',
+    async ({ options }) => {
+      const mongoClientLibrary = getMockedMongoClientLibrary();
+
+      hookMongoDb(mongoClientLibrary);
+      const connection = await mongoClientLibrary.MongoClient.connect(DUMMY_URL, options);
+      const collection = connection.db().collection('documents');
+      wrapMongoCollection(collection, 'insert');
+
+      const docs = [{ a: 1 }, { a: 2 }, { a: 3 }];
+      await collection.insert(docs);
+
+      const spans = SpansContainer.getSpans();
+      const expectedSpan = new MongoSpanBuilder()
+        .withId(spans[0].id)
+        .withStarted(spans[0].started)
+        .withEnded(spans[0].ended)
+        .withRequest(
+          '{"insert":"documents","documents":[{"a":1},{"a":2},{"a":3}],"ordered":true,"lsid":{"id":"2"},"txnNumber":1,"$clusterTime":{"clusterTime":123,"signature":"****"},"$db":"TracerDB"}'
+        )
+        .withResponse(
+          '{"n":1,"opTime":{"ts":123456,"t":3},"electionId":7,"ok":1,"$clusterTime":{"clusterTime":123456,"signature":"****"},"operationTime":12345}'
+        )
+        .withDatabaseName('TracerDB')
+        .withCommandName('insert')
+        .build();
+      expect(spans).toEqual([expectedSpan]);
+      connection.close();
+    }
+  );
+
   test('hookMongoDb -> error', async () => {
     const mongoClientLibrary = getMockedMongoClientLibrary();
 
@@ -106,9 +144,9 @@ describe('mongodb4x', () => {
   });
 
   test('hookMongoDb -> broken emitter "on" method does not throw errors', async () => {
-    const mongoClientLibrary = getMockedMongoClientLibrary({ isOnBroken: true });
+    const mongoClientLibrary = getMockedMongoClientLibrary();
 
     hookMongoDb(mongoClientLibrary);
-    const client = new mongoClientLibrary.MongoClient(DUMMY_URL);
+    const client = new mongoClientLibrary.MongoClient(DUMMY_URL, { isOnBroken: true });
   });
 });
