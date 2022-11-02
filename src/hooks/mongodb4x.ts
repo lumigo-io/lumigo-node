@@ -1,3 +1,4 @@
+import * as shimmer from 'shimmer';
 import * as logger from '../logger';
 import { safeExecute } from '../utils';
 import { onFailedHook, onStartedHook, onSucceededHook } from './mongodb3x';
@@ -46,31 +47,37 @@ const injectMonitoringCommand = (args: any[]) => {
 };
 
 export const wrapMongoClient4xClass = (mongoClientLibrary: any) => {
-  const originalPrototype = mongoClientLibrary.MongoClient.prototype;
-  const originalConstructor = mongoClientLibrary.MongoClient.prototype.constructor;
-  const originalStaticConnect = mongoClientLibrary.MongoClient.connect;
-  mongoClientLibrary.MongoClient = function (...args: any[]) {
-    const client = new originalConstructor(...injectMonitoringCommand(args));
-    attachEventHooks(client);
-    return client;
-  };
-  mongoClientLibrary.MongoClient.prototype = originalPrototype;
-
-  mongoClientLibrary.MongoClient.connect = (url: string, options: any, callback: Function) => {
-    return new Promise((resolve, reject) => {
-      callback =
-        typeof callback === 'function'
-          ? callback
-          : typeof options === 'function'
-          ? options
-          : undefined;
-      options = typeof options !== 'function' ? options : undefined;
-      originalStaticConnect(...injectMonitoringCommand([url, options, callback]))
-        .then((connection: any) => {
-          attachEventHooks(connection);
-          resolve(connection);
-        })
-        .catch(reject);
-    });
-  };
+  try {
+    const originalStaticConnect = mongoClientLibrary.MongoClient.connect;
+    const wrapper = (originalFn: any) => {
+      const wrappedClass = function (...args: any[]) {
+        const client = new originalFn(...injectMonitoringCommand(args));
+        attachEventHooks(client);
+        return client;
+      };
+      // wrap the original connect method, which references the original constructor
+      // so we must attach the hooks to the resulting client instance
+      wrappedClass.connect = (url: string, options: any, callback: Function) => {
+        return new Promise((resolve, reject) => {
+          callback =
+            typeof callback === 'function'
+              ? callback
+              : typeof options === 'function'
+              ? options
+              : undefined;
+          options = typeof options !== 'function' ? options : undefined;
+          originalStaticConnect(...injectMonitoringCommand([url, options, callback]))
+            .then((client: any) => {
+              attachEventHooks(client);
+              resolve(client);
+            })
+            .catch(reject);
+        });
+      };
+      return wrappedClass;
+    };
+    shimmer.wrap(mongoClientLibrary, 'MongoClient', wrapper);
+  } catch (err) {
+    logger.warn('MongoDB 4.x instrumentation skipped: failed to wrap MongoClient class', err);
+  }
 };
