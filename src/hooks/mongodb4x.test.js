@@ -3,6 +3,7 @@ import { getMockedMongoClientLibrary, wrapMongoCollection } from '../../testUtil
 import { MongoSpanBuilder } from '../../testUtils/mongoSpanBuilder';
 import { SpansContainer, TracerGlobals } from '../globals';
 import { hookMongoDb } from './mongodb';
+import { wrapMongoClient4xClass } from './mongodb4x';
 
 const DUMMY_URL = 'mongodb://localhost:27017/myproject';
 
@@ -148,5 +149,9 @@ describe('mongodb4x', () => {
 
     hookMongoDb(mongoClientLibrary);
     const client = new mongoClientLibrary.MongoClient(DUMMY_URL, { isOnBroken: true });
+  });
+
+  test('hookMongoDb -> wrapMongoClient4xClass fails silently on invalid library', async () => {
+    wrapMongoClient4xClass({});
   });
 });
