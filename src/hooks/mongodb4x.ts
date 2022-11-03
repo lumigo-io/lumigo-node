@@ -13,6 +13,11 @@ const attachEventHooks = (client: any) => {
   }
 };
 
+const getStaticProperties = (nodule: any) => {
+  const baseProperties = ['prototype', 'name', 'length'];
+  return Object.getOwnPropertyNames(nodule).filter((x) => baseProperties.indexOf(x) < 0);
+};
+
 const injectMonitoringCommand = (args: any[]) => {
   switch (args.length) {
     case 0:
@@ -49,14 +54,20 @@ const injectMonitoringCommand = (args: any[]) => {
 export const wrapMongoClient4xClass = (mongoClientLibrary: any) => {
   try {
     const originalStaticConnect = mongoClientLibrary.MongoClient.connect;
+    const staticProperties = getStaticProperties(mongoClientLibrary.MongoClient);
     const wrapper = (originalFn: any) => {
       const wrappedClass = function (...args: any[]) {
         const client = new originalFn(...injectMonitoringCommand(args));
         attachEventHooks(client);
         return client;
       };
-      // wrap the original connect method, which references the original constructor
-      // so we must attach the hooks to the resulting client instance
+      // ensure that we don't lose any unexpected static properties
+      for (const key of staticProperties) {
+        wrappedClass[key] = originalFn[key];
+      }
+      // wrap the original connect method. this references the original constructor
+      // and not our overridden one, so we must attach the hooks to the resulting
+      // client instance
       wrappedClass.connect = (url: string, options: any, callback: Function) => {
         return new Promise((resolve, reject) => {
           callback =
