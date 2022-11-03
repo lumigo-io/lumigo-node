@@ -15,7 +15,7 @@ const attachEventHooks = (client: any) => {
 
 const getStaticProperties = (nodule: any) => {
   const baseProperties = ['prototype', 'name', 'length'];
-  return Object.getOwnPropertyNames(nodule).filter((x) => baseProperties.indexOf(x) < 0);
+  return Object.getOwnPropertyNames(nodule).filter((x) => !baseProperties.includes(x));
 };
 
 const injectMonitoringCommand = (args: any[]) => {
