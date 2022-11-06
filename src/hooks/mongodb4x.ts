@@ -70,19 +70,23 @@ export const wrapMongoClient4xClass = (mongoClientLibrary: any) => {
       // client instance
       wrappedClass.connect = (url: string, options: any, callback: Function) => {
         return new Promise((resolve, reject) => {
-          callback =
-            typeof callback === 'function'
-              ? callback
-              : typeof options === 'function'
-              ? options
-              : undefined;
-          options = typeof options !== 'function' ? options : undefined;
-          originalStaticConnect(...injectMonitoringCommand([url, options, callback]))
-            .then((client: any) => {
-              attachEventHooks(client);
-              resolve(client);
-            })
-            .catch(reject);
+          try {
+            callback =
+              typeof callback === 'function'
+                ? callback
+                : typeof options === 'function'
+                ? options
+                : undefined;
+            options = typeof options !== 'function' ? options : undefined;
+            originalStaticConnect(...injectMonitoringCommand([url, options, callback]))
+              .then((client: any) => {
+                attachEventHooks(client);
+                resolve(client);
+              })
+              .catch(reject);
+          } catch (err) {
+            reject(err);
+          }
         });
       };
       return wrappedClass;

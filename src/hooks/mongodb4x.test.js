@@ -50,11 +50,14 @@ describe('mongodb4x', () => {
   });
 
   test.each`
-    options
-    ${null}
-    ${undefined}
-    ${{}}
-    ${{ authMechanism: 'SCRAM-SHA-1' }}
+    options                             | callback
+    ${null}                             | ${null}
+    ${null}                             | ${(err, client) => console.log}
+    ${undefined}                        | ${null}
+    ${(err, client) => console.log}     | ${null}
+    ${(err, client) => console.log}     | ${undefined}
+    ${{}}                               | ${null}
+    ${{ authMechanism: 'SCRAM-SHA-1' }} | ${null}
   `(
     'hookMongoDb -> simple flow with shorthand construction -> url=DUMMY_URL, options=$options',
     async ({ options }) => {
@@ -142,6 +145,15 @@ describe('mongodb4x', () => {
       'The "url" argument must be of type string. Received type number (0)'
     );
     expect(SpansContainer.getSpans().length).toEqual(0);
+  });
+
+  test('hookMongoDb -> broken shorthand connect fails gracefully', async () => {
+    const mongoClientLibrary = getMockedMongoClientLibrary();
+
+    hookMongoDb(mongoClientLibrary);
+    await expect(
+      mongoClientLibrary.MongoClient.connect(DUMMY_URL, { connectThrowsError: true })
+    ).rejects.toThrowError('Connection failed: connectThrowsError');
   });
 
   test('hookMongoDb -> broken emitter "on" method does not throw errors', async () => {
