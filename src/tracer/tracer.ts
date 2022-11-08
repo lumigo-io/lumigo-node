@@ -206,24 +206,40 @@ export const performStepFunctionLogic = (handlerReturnValue) => {
   );
 };
 
-// we wrap the unhandledRejection method to send the function span before the process ends
+// @ts-ignore - we're overriding an accessor we shouldn't have access to under normal circumstances
+const events = process._events;
+const originalUnhandledRejection = events.unhandledRejection;
+// here we wrap the unhandledRejection method to send the function span before ending the process
+// NOTE: listening to the process object's "unhandledRejection" event has no effect in a lambda
+// runtime context, so this is the only way to catch unhandled rejections
+/* istanbul ignore next : there's no way to unit test unhandled promise rejections */
 export const hookUnhandledRejection = async (functionSpan) => {
-  // @ts-ignore - we're overriding an accessor we usually shouldn't have access to
-  const events = process._events;
-  const { unhandledRejection } = events;
-  const originalUnhandledRejection = unhandledRejection;
-  events.unhandledRejection = async (reason, promise) => {
-    const err = Error(reason);
-    err.name = 'Runtime.UnhandledPromiseRejection';
-    await endTrace(functionSpan, {
-      err: err,
-      type: ASYNC_HANDLER_REJECTED,
-      data: null,
-    }).then(() => {
-      if (typeof originalUnhandledRejection === 'function') {
-        originalUnhandledRejection(reason, promise);
-      }
+  events.unhandledRejection = async (err, promise) => {
+    const isErrAnError = err instanceof Error;
+    logger.warn('Lumigo has detected the following unhandled promise rejection:', {
+      reason: isErrAnError ? err.message : err,
+      stackTrace: isErrAnError ? err.stack : 'stack trace not available',
     });
+    try {
+      const traceErr = isErrAnError ? err : Error(err);
+      traceErr.name = 'Runtime.UnhandledPromiseRejection';
+      await endTrace(functionSpan, {
+        err: traceErr,
+        type: ASYNC_HANDLER_REJECTED,
+        data: null,
+      });
+    } catch (err) {
+      logger.warn(
+        'An error occurred while Lumigo attempted to complete the transaction after encountering an unhandled promise rejection:',
+        err
+      );
+    }
+    // call to the original unhandledRejection handler should not be enclosed in a try/catch statement
+    if (originalUnhandledRejection && typeof originalUnhandledRejection === 'function') {
+      originalUnhandledRejection(
+        `Lumigo has detected an unhandledRejection event "${err}", deferring to the original handler for safety.`
+      );
+    }
   };
 };
 
