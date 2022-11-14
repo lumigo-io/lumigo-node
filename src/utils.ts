@@ -192,7 +192,7 @@ export const getEnvVarAsList = (key: string, def: string[]): string[] => {
 
 export const safeGet = (obj, arr, dflt = null) => {
   let current = obj;
-  for (let i in arr) {
+  for (const i in arr) {
     if (!current) {
       return dflt;
     }
@@ -483,7 +483,7 @@ export const parseQueryParams = (queryParams) => {
   return safeExecute(
     () => {
       if (typeof queryParams !== 'string') return {};
-      let obj = {};
+      const obj = {};
       queryParams.replace(
         /([^=&]+)=([^&]*)/g,
         // @ts-ignore

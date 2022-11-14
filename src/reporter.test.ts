@@ -1,12 +1,12 @@
 /* eslint-disable */
+import { encode } from 'utf8';
+import { AxiosMocker } from '../testUtils/axiosMocker';
+import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
 import { TracerGlobals } from './globals';
 import * as reporter from './reporter';
-import * as utils from './utils';
-import { AxiosMocker } from '../testUtils/axiosMocker';
-import { getEventEntitySize, getJSONBase64Size, setDebug } from './utils';
-import { encode } from 'utf8';
 import { scrubSpans, sendSpans } from './reporter';
-import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
+import * as utils from './utils';
+import { getEventEntitySize, getJSONBase64Size, setDebug } from './utils';
 
 describe('reporter', () => {
   test('sendSingleSpan', async () => {

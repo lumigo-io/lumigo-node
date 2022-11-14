@@ -1,6 +1,6 @@
-import { getBasicChildSpan } from './awsSpan';
-import { payloadStringify, prune } from '../utils/payloadStringify';
 import { getEventEntitySize } from '../utils';
+import { payloadStringify, truncate } from '../utils/payloadStringify';
+import { getBasicChildSpan } from './awsSpan';
 
 export const createNeo4jSpan = (
   transactionId,
@@ -15,7 +15,7 @@ export const createNeo4jSpan = (
     ...baseSpan,
     started: requestMetadata.started,
     connectionParameters: dbFields.connectionParameters,
-    query: prune(dbFields.query, getEventEntitySize()),
+    query: truncate(dbFields.query, getEventEntitySize()),
     params: dbFields.params ? payloadStringify(dbFields.params) : null,
   };
 };

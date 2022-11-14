@@ -1,8 +1,9 @@
-import * as extender from './extender';
 import * as shimmer from 'shimmer';
+import * as extender from './extender';
 
 export const DummyCounterService = (() => {
   let dummyCounter = 0;
+
   const incrementToDummyCounter = (count = 1) => {
     dummyCounter += count;
   };

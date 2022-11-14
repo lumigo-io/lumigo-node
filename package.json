@@ -6,21 +6,20 @@
   "repository": "git@github.com:lumigo-io/lumigo-node.git",
   "private": false,
   "author": "Lumigo LTD (https://lumigo.io)",
-  "contributors": [
-    "Sagi Kedmi (https://sagi.io)"
-  ],
+  "contributors": ["Sagi Kedmi (https://sagi.io)"],
   "license": "Apache-2.0",
   "scripts": {
     "build": "rm -rf dist && tsc --build --force",
+    "check-types": "tsc --noEmit",
     "jest": "jest",
     "jest-detectOpenHandles": "jest --detectOpenHandles",
-    "semantic-release": "semantic-release",
-    "test": "npm run build && npm run jest",
+    "jest-traces": "node --trace-deprecation --trace-warnings node_modules/.bin/jest",
     "lint": "eslint ./src",
-    "prepublishOnly": "npm run prettier:fix && npm run lint && npm run test",
+    "prepublishOnly": "npm run lint && npm run prettier:fix && npm run test",
     "prettier:ci": "prettier --list-different \"src/**/*.[jt]s\" --parser typescript",
     "prettier:fix": "prettier --write \"./src/**/*.[jt]s\" --parser typescript",
-    "check-types": "tsc --noEmit"
+    "semantic-release": "semantic-release",
+    "test": "npm run build && npm run jest"
   },
   "dependencies": {
     "agentkeepalive": "^4.1.4",
@@ -43,7 +42,7 @@
     "@semantic-release/git": "^7.0.18",
     "@semantic-release/github": "^7.2.3",
     "@types/aws-lambda": "^8.10.96",
-    "@types/jest": "^26.0.23",
+    "@types/jest": "^29.2.0",
     "@types/utf8": "^3.0.0",
     "@typescript-eslint/eslint-plugin": "^5.37.0",
     "@typescript-eslint/parser": "^5.37.0",
@@ -57,11 +56,11 @@
     "eslint-plugin-prettier": "^3.4.0",
     "fs-extra": "^8.1.0",
     "husky": "^2.4.1",
-    "jest": "^27.0.4",
-    "jest-each": "^26.6.2",
-    "jest-junit": "^6.4.0",
+    "jest": "^29.2.1",
+    "jest-each": "^29.2.1",
+    "jest-junit": "^14.0.1",
     "mockdate": "^2.0.5",
-    "mongo-mock": "^4.0.0",
+    "mongo-mock": "^4.2.0",
     "prettier": "2.7.1",
     "semantic-release": "^19.0.5",
     "typescript": "^4.3.2"

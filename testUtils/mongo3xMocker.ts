@@ -1,21 +1,10 @@
-import EventEmitter from 'events';
 import mongodb from 'mongo-mock';
 import { hook } from '../src/extender';
+import { MongoMockerEventEmitter } from './mongodbEventEmitterMocker';
 
-export const MongoMockerEventEmitter = (() => {
-  let eventEmitter = new EventEmitter();
-  const getEventEmitter = () => eventEmitter;
-  const cleanEventEmitter = () => {
-    eventEmitter.eventNames().forEach((event) => {
-      eventEmitter.removeAllListeners(event);
-    });
-  };
-  return { getEventEmitter, cleanEventEmitter };
-})();
-
-export const wrapMongoCollection = (collection, funcName, failed = false) => {
+export const wrapMongoCollection = (collection: any, funcName: string, failed: Boolean = false) => {
   hook(collection, funcName, {
-    beforeHook: (args) => {
+    beforeHook: (args: any[]) => {
       MongoMockerEventEmitter.getEventEmitter().emit('started', {
         eventName: 'onStartedHook',
         command: {
@@ -38,7 +27,7 @@ export const wrapMongoCollection = (collection, funcName, failed = false) => {
       if (failed) {
         MongoMockerEventEmitter.getEventEmitter().emit('failed', {
           duration: 26,
-          failure: 'Wow What a error',
+          failure: 'Wow, what an error!',
           commandName: funcName,
           requestId: 13,
           operationId: undefined,
@@ -65,8 +54,7 @@ export const wrapMongoCollection = (collection, funcName, failed = false) => {
   });
 };
 
-export const getMockedMongoClient = (options = {}) => {
-  const MongoClient = mongodb.MongoClient;
+export const getMockedMongoClientLibrary = (options: any = {}): any => {
   // eslint-disable-next-line camelcase
   mongodb.max_delay = 0;
   if (options.instrumentFailed) {
@@ -77,12 +65,12 @@ export const getMockedMongoClient = (options = {}) => {
     mongodb.instrument = () => MongoMockerEventEmitter.getEventEmitter();
   }
 
-  return { mongoLib: mongodb, mongoClient: MongoClient };
+  return mongodb;
 };
 
 export const promisifyMongoFunc =
-  (func) =>
-  (...params) =>
+  (func: Function) =>
+  (...params: any[]) =>
     new Promise((resolve, reject) => {
       const promiseCallbackHandler = (err, data) => {
         if (err) {

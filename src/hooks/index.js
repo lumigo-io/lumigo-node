@@ -1,17 +1,17 @@
 import {
-  isSwitchedOff,
   isAwsEnvironment,
   isLambdaWrapped,
-  setLambdaWrapped,
+  isSwitchedOff,
   safeExecute,
+  setLambdaWrapped,
 } from '../utils';
-import { hookMongoDb } from './mongodb';
-import { hookRedis } from './redis';
-import { hookPg } from './pg';
-import { hookMySql } from './mySql';
-import { hookMssql } from './msSql';
-import { hookNeo4j } from './neo4j';
 import { Http } from './http';
+import { hookMongoDb } from './mongodb';
+import { hookMssql } from './msSql';
+import { hookMySql } from './mySql';
+import { hookNeo4j } from './neo4j';
+import { hookPg } from './pg';
+import { hookRedis } from './redis';
 
 export default () => {
   if (!isSwitchedOff() && isAwsEnvironment()) {

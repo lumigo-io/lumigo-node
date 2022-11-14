@@ -13,7 +13,9 @@ export const hook = (module, funcName, options = {}, shimmerLib = shimmer) => {
   const extenderContext = {};
   try {
     const wrapper = (originalFn) => {
-      if (isFunctionAlreadyWrapped(originalFn)) return originalFn;
+      if (isFunctionAlreadyWrapped(originalFn)) {
+        return originalFn;
+      }
       return function (...args) {
         safeBeforeHook.call(this, args, extenderContext);
         const originalFnResult = originalFn.apply(this, args);

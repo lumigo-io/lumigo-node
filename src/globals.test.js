@@ -1,5 +1,5 @@
-import * as globals from './globals';
 import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
+import * as globals from './globals';
 import { DEFAULT_MAX_SIZE_FOR_REQUEST, MAX_TRACER_ADDED_DURATION_ALLOWED } from './globals';
 import { getMaxRequestSize } from './utils';
 
@@ -455,7 +455,7 @@ describe('globals', () => {
     ${'TRUE'}       | ${''}            | ${false}         | ${[]}
     ${'FALSE'}      | ${''}            | ${false}         | ${[]}
   `(
-    'killSwitchValue=$killSwitchValue, isAwsEnvironment=$isAwsEnvironment, expectedRetValue=$expectedRetValue$',
+    'killSwitchValue=$killSwitchValue, isAwsEnvironment=$isAwsEnvironment, expectedRetValue=$expectedRetValue,expectedTags=$expectedTags',
     ({ killSwitchValue, isAwsEnvironment, expectedRetValue, expectedTags }) => {
       process.env.LUMIGO_SWITCH_OFF = killSwitchValue;
       process.env.LAMBDA_RUNTIME_DIR = isAwsEnvironment;
