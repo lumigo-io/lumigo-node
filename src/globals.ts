@@ -164,7 +164,7 @@ export const TracerGlobals = (() => {
 
   const getLambdaTimeout = () => tracerInputs.lambdaTimeout;
 
-  const getHandlerInputs = (): { event: {}; context: LambdaContext | {} } => handlerInputs;
+  const getHandlerInputs = (): { event: {}; context: LambdaContext | any } => handlerInputs;
 
   const clearHandlerInputs = () => Object.assign(handlerInputs, { event: {}, context: {} });
 
