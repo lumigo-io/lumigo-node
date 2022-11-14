@@ -206,22 +206,29 @@ export const performStepFunctionLogic = (handlerReturnValue) => {
   );
 };
 
-// we wrap the unhandledRejection method to send the function span before the process ends
+// @ts-ignore - we're storing a reference we shouldn't have access to under normal circumstances
+const originalUnhandledRejectionHandler = process._events.unhandledRejection;
+
+// here we wrap the unhandledRejection method to send the function span before ending the process
+// NOTE: listening to the process object's "unhandledRejection" event has no effect in a lambda
+// runtime context, so this is the only way to catch unhandled rejections
 export const hookUnhandledRejection = async (functionSpan) => {
-  // @ts-ignore - we're overriding an accessor we usually shouldn't have access to
+  // @ts-ignore - we're overriding a method of an object we shouldn't have access to under normal circumstances
   const events = process._events;
-  const { unhandledRejection } = events;
-  const originalUnhandledRejection = unhandledRejection;
+  const originalUnhandledRejection = events.unhandledRejection;
   events.unhandledRejection = async (reason, promise) => {
-    const err = Error(reason);
-    err.name = 'Runtime.UnhandledPromiseRejection';
+    // reset the handler for the subsequent invocation
+    events.unhandledRejection = originalUnhandledRejectionHandler;
+    const traceErr = reason instanceof Error ? reason : Error(reason);
+    traceErr.name = 'Runtime.UnhandledPromiseRejection';
     await endTrace(functionSpan, {
-      err: err,
+      err: traceErr,
       type: ASYNC_HANDLER_REJECTED,
       data: null,
     }).then(() => {
-      if (typeof originalUnhandledRejection === 'function') {
-        originalUnhandledRejection(reason, promise);
+      // errors from call to the original unhandledRejection handler must not be caught
+      if (typeof originalUnhandledRejectionHandler === 'function') {
+        originalUnhandledRejectionHandler(reason, promise);
       }
     });
   };

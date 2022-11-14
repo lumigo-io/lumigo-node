@@ -3,7 +3,6 @@ import * as fsExtra from 'fs-extra';
 import { AxiosMocker } from '../testUtils/axiosMocker';
 import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
 import { HandlerInputsBuilder } from '../testUtils/handlerInputsBuilder';
-import { sleep } from '../testUtils/sleep';
 import { MAX_ELEMENTS_IN_EXTRA } from './tracer';
 import * as tracer from './tracer/tracer';
 import * as utils from './utils';
@@ -222,32 +221,6 @@ describe('index', () => {
       { key: 'k0', value: 'v0' },
       { key: 'k1', value: 'v1' },
     ]);
-  });
-
-  test('trace => UnhandledPromiseRejection', async () => {
-    process.exit = jest.fn();
-
-    const mError = new Error('dead lock');
-    jest.spyOn(process, 'on').mockImplementation((event, handler) => {
-      if (event === 'unhandledRejection') {
-        handler(mError);
-      }
-    });
-
-    const { context } = new HandlerInputsBuilder().build();
-
-    const lumigoImport = require('./index');
-    const lumigo = lumigoImport({ token: TOKEN });
-
-    const userHandler = async (event, context) => {
-      await sleep(0);
-    };
-    await lumigo.trace(userHandler)({}, context);
-    await process._events.unhandledRejection('Boom', Promise.reject('Boom'));
-
-    const lastSpan = AxiosMocker.getSentSpans().pop().pop();
-    expect(lastSpan.error.type).toBe('Runtime.UnhandledPromiseRejection');
-    expect(lastSpan.error.message).toBe('Boom');
   });
 
   test('addExecutionTag without tracer not throw exception', async () => {
