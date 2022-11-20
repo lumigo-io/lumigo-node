@@ -9,9 +9,10 @@ export class DynamodbEventParser extends EventTriggerParser {
   };
 
   handle = (event: IncomingEvent, targetId: string | null): Trigger => {
-    const arn = event.Records[0].eventSourceARN;
-    const approxEventCreationTime = event.Records[0].dynamodb.ApproximateCreationDateTime * 1000;
-    const messageIds = event.Records.map((record) => {
+    const arn = event?.Records?.[0]?.eventSourceARN;
+    const approxEventCreationTime =
+      (event?.Records?.[0]?.dynamodb?.ApproximateCreationDateTime || 0) * 1000;
+    const messageIds = event?.Records?.map((record) => {
       if (['MODIFY', 'REMOVE'].includes(record.eventName) && record?.dynamodb?.Keys) {
         return md5Hash(record.dynamodb.Keys);
       } else if (record.eventName === 'INSERT' && record.dynamodb && record.dynamodb.NewImage) {

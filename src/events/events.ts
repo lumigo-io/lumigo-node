@@ -23,7 +23,7 @@ const EVENT_TRIGGER_PARSERS: Array<EventTriggerParser> = [
   new SqsEventParser(),
   new StepFunctionEventParser(),
 ];
-export const INNER_MESSAGES_MAGIC_PATTERN = new RegExp(
+export const INNER_MESSAGES_IDENTIFIER_PATTERN = new RegExp(
   '(' +
     EVENT_TRIGGER_PARSERS.map((parser) => parser.MAGIC_IDENTIFIER)
       .filter((x) => !!x)
@@ -36,10 +36,10 @@ const recursiveParseTriggers = (
   targetId: string | null,
   level: number
 ): Trigger[] => {
-  return (
-    safeExecute(() => {
+  return safeExecute(
+    () => {
       if (level > getChainedServicesMaxDepth()) {
-        logger.info('Chained services parsing has stopped due to depth');
+        logger.info(`Chained services depth (${level}) exceeds limit, parsing stopped`);
         return [];
       }
       return EVENT_TRIGGER_PARSERS.filter((parser) => parser.shouldHandle(event))
@@ -47,14 +47,16 @@ const recursiveParseTriggers = (
           const trigger = parser.handle(event, targetId);
           let innerMessages = parser.extractInner(event);
           if (innerMessages.length > getChainedServicesMaxWidth()) {
-            logger.info('Chained services parsing has stopped due to width');
+            logger.info(
+              `Chained services messages width (${innerMessages.length}) exceeds limit, parsing stopped`
+            );
             innerMessages = innerMessages.slice(0, getChainedServicesMaxWidth());
           }
 
           const innerTriggers =
             safeExecute(() =>
               innerMessages
-                .filter((message) => message.search(INNER_MESSAGES_MAGIC_PATTERN) !== -1)
+                .filter((message) => message.search(INNER_MESSAGES_IDENTIFIER_PATTERN) !== -1)
                 .map((innerEvent) =>
                   recursiveParseTriggers(JSON.parse(innerEvent), trigger.id, level + 1)
                 )
@@ -63,12 +65,15 @@ const recursiveParseTriggers = (
           return [trigger, ...innerTriggers];
         })
         .flat();
-    })() || []
-  );
+    },
+    'Error in event parsing',
+    logger.LOG_LEVELS.WARNING,
+    []
+  )();
 };
 
 export const getEventInfo = (event: IncomingEvent): EventInfo => {
-  const triggers = safeExecute(() => recursiveParseTriggers(event, null, 0))();
+  const triggers = recursiveParseTriggers(event, null, 0);
 
   return { trigger: triggers };
 };

@@ -2,7 +2,6 @@ import { IncomingEvent, Trigger } from '../event-data.types';
 import { EventTriggerParser } from './trigger-parser-base';
 import { getRandomId } from '../../utils';
 import { EventTrigger } from '../event-trigger.enum';
-import { APIGatewayProxyEvent, APIGatewayProxyEventV2 } from 'aws-lambda';
 
 export class ApiGatewayEventParser extends EventTriggerParser {
   _shouldHandle = (event: IncomingEvent): boolean => {
@@ -37,6 +36,7 @@ export class ApiGatewayEventParser extends EventTriggerParser {
       extra: { api, stage, httpMethod, resource },
     };
   };
+
   getApiGatewayV2Data = (event: IncomingEvent, targetId: string | null): Trigger => {
     const httpMethod = event.requestContext?.http?.method;
     const resource = event.requestContext?.http?.path;

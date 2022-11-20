@@ -30,7 +30,7 @@ import {
 import { TracerGlobals } from '../globals';
 import * as events from './events';
 import { EventTrigger } from './event-trigger.enum';
-import { getEventInfo, INNER_MESSAGES_MAGIC_PATTERN } from './events';
+import { getEventInfo, INNER_MESSAGES_IDENTIFIER_PATTERN } from './events';
 import { EventTriggerParser } from './trigger-parsers/trigger-parser-base';
 import { IncomingEvent, Trigger } from './event-data.types';
 
@@ -302,17 +302,17 @@ describe('events', () => {
     expect(snsTriggers.map((sns) => sns.fromMessageIds).flat()).toEqual(['sns-1', 'sns-2']);
   });
 
-  test('test INNER_MESSAGES_MAGIC_PATTERN', () => {
+  test('test INNER_MESSAGES_IDENTIFIER_PATTERN', () => {
     const innerSns =
       '{\n  "Type" : "Notification",\n  "MessageId" : "aaaaa-bbbbb-ccccc-ddddddddd",\n  "TopicArn" : "arn:aws:sns:us-west-2:1234567891011:test-queue",\n  "Message" : "{}",\n  "Timestamp" : "2022-06-29T19:22:59.929Z",\n  "SignatureVersion" : "1",\n  "Signature" : "BLABLA",\n  "SigningCertURL" : "https://sns.us-west-2.amazonaws.com/SimpleNotificationService-blablabla.pem",\n  "UnsubscribeURL" : "https://sns.us-west-2.amazonaws.com/?Action=Unsubscribe&SubscriptionArn=arn:aws:sns:us-west-2:123456789:test-queue:blablabla"\n}';
-    expect(innerSns.search(INNER_MESSAGES_MAGIC_PATTERN)).not.toEqual(-1);
+    expect(innerSns.search(INNER_MESSAGES_IDENTIFIER_PATTERN)).not.toEqual(-1);
 
     const innerEventBridge =
       '{"version":"0","id":"eventBusMessage-bbbbb-ccccc-ddddddddd","detail-type":"string","source":"IT","region":"us-west-2","resources":[],"detail":{}}';
-    expect(innerEventBridge.search(INNER_MESSAGES_MAGIC_PATTERN)).not.toEqual(-1);
+    expect(innerEventBridge.search(INNER_MESSAGES_IDENTIFIER_PATTERN)).not.toEqual(-1);
 
     const otherMessage = 'otherMessage';
-    expect(otherMessage.search(INNER_MESSAGES_MAGIC_PATTERN)).toEqual(-1);
+    expect(otherMessage.search(INNER_MESSAGES_IDENTIFIER_PATTERN)).toEqual(-1);
   });
 
   test('test recursive triggers too deep', () => {
