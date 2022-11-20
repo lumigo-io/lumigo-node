@@ -1,7 +1,7 @@
 import { IncomingEvent, Trigger } from '../event-data.types';
 
 export abstract class EventTriggerParser {
-  MAGIC_IDENTIFIER: string | null = null;
+  INNER_IDENTIFIER: string | null = null;
 
   shouldHandle = (event: IncomingEvent): boolean => {
     try {

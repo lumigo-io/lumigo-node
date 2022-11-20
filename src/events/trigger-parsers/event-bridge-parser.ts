@@ -4,7 +4,7 @@ import { getRandomId } from '../../utils';
 import { EventTrigger } from '../event-trigger.enum';
 
 export class EventBridgeEventParser extends EventTriggerParser {
-  MAGIC_IDENTIFIER = 'detail-type';
+  INNER_IDENTIFIER = 'detail-type';
 
   _shouldHandle = (event: IncomingEvent): boolean => {
     return (

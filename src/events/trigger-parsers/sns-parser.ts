@@ -4,7 +4,7 @@ import { getRandomId } from '../../utils';
 import { EventTrigger } from '../event-trigger.enum';
 
 export class SnsEventParser extends EventTriggerParser {
-  MAGIC_IDENTIFIER = 'SimpleNotificationService';
+  INNER_IDENTIFIER = 'SimpleNotificationService';
 
   _shouldHandle = (event: IncomingEvent): boolean => {
     return (

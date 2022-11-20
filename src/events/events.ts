@@ -25,7 +25,7 @@ const EVENT_TRIGGER_PARSERS: Array<EventTriggerParser> = [
 ];
 export const INNER_MESSAGES_IDENTIFIER_PATTERN = new RegExp(
   '(' +
-    EVENT_TRIGGER_PARSERS.map((parser) => parser.MAGIC_IDENTIFIER)
+    EVENT_TRIGGER_PARSERS.map((parser) => parser.INNER_IDENTIFIER)
       .filter((x) => !!x)
       .join('|') +
     ')'
