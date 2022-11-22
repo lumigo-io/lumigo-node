@@ -32,11 +32,22 @@ function extractQueryFromArg(arg) {
   }
 }
 
-function extractValuesFromArg(arg) {
+function extractValuesFromQueryOptions(arg) {
   if (isObject(arg) && typeof arg === 'object' && !!arg['values']) {
     return arg['values'];
   }
   return undefined;
+}
+
+function extractValuesFromQueryParameter(arg) {
+  return (
+    // This is for the `.query(sql, single_param, callback?)` form; we show it as a JSON array for simplicity
+    (typeof arg === 'string' ? arg : undefined) ||
+    // This is for named parameters in the `.query(sql, {p1:'foo', p2:'bar'}, callback?)` form
+    (isObject(arg) && typeof arg === 'object' ? arg : undefined) ||
+    // This is for unnamed parameters in the `.query(sql, ['foo', 'bar'], callback?)` form
+    (Array.isArray(arg) ? arg : [])
+  );
 }
 
 function queryBeforeHook(args, extenderContext) {
@@ -44,15 +55,8 @@ function queryBeforeHook(args, extenderContext) {
   const transactionId = getCurrentTransactionId();
   const query = extractQueryFromArg(args[0]);
 
-  const values =
-    // This is for the `.query(options, callback?)` form
-    extractValuesFromArg(args[0]) ||
-    // This is for the `.query(sql, single_param, callback?)` form; we show it as a JSON array for simplicity
-    (typeof args[1] === 'string' ? args[1] : undefined) ||
-    // This is for named parameters in the `.query(sql, {p1:'foo', p2:'bar'}, callback?)` form
-    (isObject(args[1]) && typeof args[1] === 'object' ? args[1] : undefined) ||
-    // This is for unnamed parameters in the `.query(sql, ['foo', 'bar'], callback?)` form
-    (Array.isArray(args[1]) ? args[1] : []);
+  const values = extractValuesFromQueryOptions(args[0]) || extractValuesFromQueryParameter(args[1]);
+
   const connectionParameters = this.config;
 
   const spanId = getRandomId();
