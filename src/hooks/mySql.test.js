@@ -87,7 +87,7 @@ describe('mySql', () => {
     });
 
     test('hook -> query (text: string, callback: Function) -> fail', (done) => {
-      const error = new Error('DuumyError');
+      const error = new Error('DummyError');
       const client = createHookedMySqlV1Client({ error });
 
       client.query('SELECT * from users', () => {
@@ -104,7 +104,7 @@ describe('mySql', () => {
     });
 
     test('hook -> query (text: string, values: List, callback: Function) -> fail', (done) => {
-      const error = new Error('DuumyError');
+      const error = new Error('DummyError');
       const client = createHookedMySqlV1Client({ error });
 
       client.query('SELECT * from users', ['123'], () => {
@@ -246,7 +246,7 @@ describe('mySql', () => {
     });
 
     test('hook -> query (text: string, callback: Function) -> fail', (done) => {
-      const error = new Error('DuumyError');
+      const error = new Error('DummyError');
       const client = createHookedMySqlV2Client({ error });
 
       client.query('SELECT * from users', () => {
@@ -263,7 +263,7 @@ describe('mySql', () => {
     });
 
     test('hook -> query (text: string, values: List, callback: Function) -> fail', (done) => {
-      const error = new Error('DuumyError');
+      const error = new Error('DummyError');
       const client = createHookedMySqlV2Client({ error });
 
       client.query('SELECT * from users', ['123'], () => {
@@ -352,7 +352,7 @@ describe('mySql', () => {
     });
 
     test('hook -> execute (text: string, callback: Function) -> fail', (done) => {
-      const error = new Error('DuumyError');
+      const error = new Error('DummyError');
       const client = createHookedMySqlV2Client({ error });
 
       client.execute('SELECT * from users', () => {
@@ -369,7 +369,7 @@ describe('mySql', () => {
     });
 
     test('hook -> execute (text: string, values: List, callback: Function) -> fail', (done) => {
-      const error = new Error('DuumyError');
+      const error = new Error('DummyError');
       const client = createHookedMySqlV2Client({ error });
 
       client.execute('SELECT * from users', ['123'], () => {
