@@ -36,6 +36,7 @@ function extractValuesFromArg(arg) {
   if (isObject(arg) && typeof arg === 'object' && !!arg['values']) {
     return arg['values'];
   }
+  return undefined;
 }
 
 function queryBeforeHook(args, extenderContext) {
