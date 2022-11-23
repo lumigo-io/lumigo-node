@@ -129,7 +129,7 @@ describe('awsSpan', () => {
         },
         logGroupName: '/aws/lambda/aws-nodejs-dev-hello',
         logStreamName: '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',
-        trigger: [],
+        triggeredBy: 'invocation',
       },
       vendor: 'AWS',
       transactionId: '64a1b06067c2100c52e51ef4',
@@ -170,19 +170,12 @@ describe('awsSpan', () => {
         tracer: { name: '@lumigo/tracerMock', version: '1.2.3' },
         logGroupName: '/aws/lambda/aws-nodejs-dev-hello',
         logStreamName: '2019/05/16/[$LATEST]8bcc747eb4ff4897bf6eba48797c0d73',
-        trigger: [
-          {
-            fromMessageIds: ['deef4878-7910-11e6-8f14-25afc3e9ae33'],
-            extra: {
-              httpMethod: 'POST',
-              resource: '/{proxy+}',
-              stage: 'testStage',
-              api: 'gy415nuibc.execute-api.us-east-1.amazonaws.com',
-            },
-            triggeredBy: 'apigw',
-            targetId: null,
-          },
-        ],
+        messageId: 'deef4878-7910-11e6-8f14-25afc3e9ae33',
+        httpMethod: 'POST',
+        resource: '/{proxy+}',
+        stage: 'testStage',
+        api: 'gy415nuibc.execute-api.us-east-1.amazonaws.com',
+        triggeredBy: 'apigw',
       },
       vendor: 'AWS',
       transactionId: '64a1b06067c2100c52e51ef4',
@@ -223,9 +216,7 @@ describe('awsSpan', () => {
       started: 895093200000,
       maxFinishTime: 895093323456,
     };
-    const actualSpan = awsSpan.getFunctionSpan(event, context);
-    delete actualSpan.info.trigger[0].id;
-    expect(actualSpan).toEqual(expectedStartSpan);
+    expect(awsSpan.getFunctionSpan(event, context)).toEqual(expectedStartSpan);
   });
 
   test('removeStartedFromId', () => {

@@ -28,12 +28,6 @@ import {
   safeJsonParse,
   shouldPropagateW3C,
   shouldScrubDomain,
-  getChainedServicesMaxDepth,
-  getChainedServicesMaxWidth,
-  CHAINED_SERVICES_MAX_DEPTH,
-  DEFAULT_CHAINED_SERVICES_MAX_DEPTH,
-  DEFAULT_CHAINED_SERVICES_MAX_WIDTH,
-  CHAINED_SERVICES_MAX_WIDTH,
 } from './utils';
 
 describe('utils', () => {
@@ -260,18 +254,6 @@ describe('utils', () => {
     expect(utils.getEventEntitySize(true)).toBe(LUMIGO_MAX_ENTRY_SIZE * 2);
     process.env.MAX_EVENT_ENTITY_SIZE = '2048';
     expect(utils.getEventEntitySize()).toBe(2048);
-  });
-
-  test('getChainedServicesMaxDepth', () => {
-    expect(utils.getChainedServicesMaxDepth()).toBe(DEFAULT_CHAINED_SERVICES_MAX_DEPTH);
-    process.env[CHAINED_SERVICES_MAX_DEPTH] = '10';
-    expect(utils.getChainedServicesMaxDepth()).toBe(10);
-  });
-
-  test('getChainedServicesMaxWidth', () => {
-    expect(utils.getChainedServicesMaxWidth()).toBe(DEFAULT_CHAINED_SERVICES_MAX_WIDTH);
-    process.env[CHAINED_SERVICES_MAX_WIDTH] = '10';
-    expect(utils.getChainedServicesMaxWidth()).toBe(10);
   });
 
   test('getEventEntitySize LUMIGO_MAX_ENTRY_SIZE', () => {

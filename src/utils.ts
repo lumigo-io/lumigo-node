@@ -168,10 +168,6 @@ const LUMIGO_STACK_PATTERNS = [
   new RegExp('/dist/lumigo.js:', 'i'),
   new RegExp('/node_modules/@lumigo/tracer/', 'i'),
 ];
-export const CHAINED_SERVICES_MAX_DEPTH = 'LUMIGO_CHAINED_SERVICES_MAX_DEPTH';
-export const DEFAULT_CHAINED_SERVICES_MAX_DEPTH = 3;
-export const CHAINED_SERVICES_MAX_WIDTH = 'LUMIGO_CHAINED_SERVICES_MAX_WIDTH';
-export const DEFAULT_CHAINED_SERVICES_MAX_WIDTH = 5;
 
 const validateEnvVar = (envVar: string, value: string = 'TRUE'): boolean =>
   !!(process.env[envVar] && process.env[envVar].toUpperCase() === value.toUpperCase());
@@ -241,18 +237,6 @@ export const getAgentKeepAlive = () => {
 export const getTimeoutMinDuration = () => {
   if (process.env[TIMEOUT_MIN_DURATION]) return parseFloat(process.env[TIMEOUT_MIN_DURATION]);
   return DEFAULT_TIMEOUT_MIN_DURATION;
-};
-
-export const getChainedServicesMaxDepth = () => {
-  if (process.env[CHAINED_SERVICES_MAX_DEPTH])
-    return parseFloat(process.env[CHAINED_SERVICES_MAX_DEPTH]);
-  return DEFAULT_CHAINED_SERVICES_MAX_DEPTH;
-};
-
-export const getChainedServicesMaxWidth = () => {
-  if (process.env[CHAINED_SERVICES_MAX_WIDTH])
-    return parseFloat(process.env[CHAINED_SERVICES_MAX_WIDTH]);
-  return DEFAULT_CHAINED_SERVICES_MAX_WIDTH;
 };
 
 export const isScrubKnownServicesOn = () => validateEnvVar(SCRUB_KNOWN_SERVICES_FLAG);
