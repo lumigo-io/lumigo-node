@@ -32,11 +32,31 @@ function extractQueryFromArg(arg) {
   }
 }
 
+function extractValuesFromQueryOptions(arg) {
+  if (isObject(arg) && typeof arg === 'object' && !!arg['values']) {
+    return arg['values'];
+  }
+  return undefined;
+}
+
+function extractValuesFromQueryParameter(arg) {
+  return (
+    // This is for the `.query(sql, single_param, callback?)` form; we show it as a JSON array for simplicity
+    (typeof arg === 'string' ? arg : undefined) ||
+    // This is for named parameters in the `.query(sql, {p1:'foo', p2:'bar'}, callback?)` form
+    (isObject(arg) && typeof arg === 'object' ? arg : undefined) ||
+    // This is for unnamed parameters in the `.query(sql, ['foo', 'bar'], callback?)` form
+    (Array.isArray(arg) ? arg : [])
+  );
+}
+
 function queryBeforeHook(args, extenderContext) {
   const awsRequestId = TracerGlobals.getHandlerInputs().context.awsRequestId;
   const transactionId = getCurrentTransactionId();
   const query = extractQueryFromArg(args[0]);
-  const values = Array.isArray(args[1]) ? args[1] : [];
+
+  const values = extractValuesFromQueryOptions(args[0]) || extractValuesFromQueryParameter(args[1]);
+
   const connectionParameters = this.config;
 
   const spanId = getRandomId();
@@ -75,7 +95,7 @@ function queryAfterHook(args, originalFnResult, extenderContext) {
 export const hookMySql = (mySqlClient = null) => {
   const mySql = mySqlClient || safeRequire('mysql/lib/Connection.js');
   if (mySql) {
-    logger.info('Starting to instrument mysql');
+    logger.debug('Starting to instrument mysql');
     hook(mySql.prototype, 'query', {
       beforeHook: queryBeforeHook,
       afterHook: queryAfterHook,
@@ -83,7 +103,7 @@ export const hookMySql = (mySqlClient = null) => {
   }
   const mySql2 = mySqlClient || safeRequire('mysql2');
   if (mySql2) {
-    logger.info('Starting to instrument mysql2');
+    logger.debug('Starting to instrument mysql2');
     hook(mySql2.Connection.prototype, 'execute', {
       beforeHook: queryBeforeHook,
       afterHook: queryAfterHook,
