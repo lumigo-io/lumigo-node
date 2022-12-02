@@ -109,7 +109,7 @@ class MongoClient {
       //workaround to check that this scope not been changed
       throw Error("This context has been changed")
     }
-    return new Promise(function(resolve, reject) {
+    return new Promise((resolve, reject) => {
       callback =
         typeof callback === 'function'
           ? callback
