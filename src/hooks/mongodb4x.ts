@@ -68,7 +68,7 @@ export const wrapMongoClient4xClass = (mongoClientLibrary: any) => {
       // wrap the original connect method. this references the original constructor
       // and not our overridden one, so we must attach the hooks to the resulting
       // client instance
-      wrappedClass.connect = (url: string, options: any, callback: Function) => {
+      wrappedClass.connect = function (url: string, options: any, callback: Function) {
         return new Promise((resolve, reject) => {
           try {
             callback =
@@ -78,7 +78,8 @@ export const wrapMongoClient4xClass = (mongoClientLibrary: any) => {
                 ? options
                 : undefined;
             options = typeof options !== 'function' ? options : undefined;
-            originalStaticConnect(...injectMonitoringCommand([url, options, callback]))
+            originalStaticConnect
+              .bind(this)(...injectMonitoringCommand([url, options, callback]))
               .then((client: any) => {
                 attachEventHooks(client);
                 resolve(client);
