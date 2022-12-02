@@ -3,7 +3,7 @@ import { safeRequire } from '../utils/requireUtils';
 import { configureMongoClient3xInstrumentation } from './mongodb3x';
 import { wrapMongoClient4xClass } from './mongodb4x';
 
-export const hookMongoDb = (mongoClientLibrary: any) => {
+export const hookMongoDb = (mongoClientLibrary: any | null = null) => {
   const mongoClientLibraries = mongoClientLibrary ? mongoClientLibrary : safeRequire('mongodb');
   const mongooseClients = safeRequire('node_modules/mongoose/node_modules/mongodb');
   const mongoClients = [mongoClientLibraries, mongooseClients].filter(Boolean);
