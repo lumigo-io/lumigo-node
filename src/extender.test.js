@@ -167,6 +167,32 @@ describe('extender', () => {
     expect(DummyCounterService.getDummyCounter()).toEqual(1);
   });
 
+  test('hook -> class', () => {
+    class Counter {
+      constructor() {
+        this.count = 0;
+      }
+
+      appendCount() {
+        this.count++;
+      }
+
+      getCount() {
+        return this.count;
+      }
+    }
+    extender.hook(Counter.prototype, 'appendCount', {
+      beforeHook: function () {
+        this.count++;
+      },
+    });
+
+    const counter = new Counter();
+    counter.appendCount();
+
+    expect(counter.getCount()).toEqual(2);
+  });
+
   test('hook -> multiple hooks', () => {
     let beforeCounter = 0;
     const beforeHandler = () => {
