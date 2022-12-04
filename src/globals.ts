@@ -19,36 +19,43 @@ export const DEFAULT_MAX_SIZE_FOR_REQUEST = 1024 * 500;
 export const MAX_TRACER_ADDED_DURATION_ALLOWED = 750;
 export const MIN_TRACER_ADDED_DURATION_ALLOWED = 200;
 
-export const SpansContainer = (() => {
-  let spansToSend = {};
-  let currentSpansSize = 0;
-  const addSpan = (span: { id: string }) => {
+export class SpansContainer {
+  private static spans: { [id: string]: BasicSpan } = {};
+  private static currentSpansSize: number = 0;
+
+  static addSpan(span: BasicSpan): boolean {
     // Memory optimization
-    if (spanHasErrors(span) || getMaxRequestSize() > currentSpansSize) {
-      spansToSend[span.id] = span;
-      currentSpansSize += getJSONBase64Size(span);
+    if (spanHasErrors(span) || getMaxRequestSize() > this.currentSpansSize) {
+      this.spans[span.id] = span;
+      this.currentSpansSize += getJSONBase64Size(span);
       logger.debug('Span created', span);
       return true;
     }
     return false;
-  };
-  const getSpans = () => Object.values(spansToSend);
-  const getSpanById = (spanId: string): any | null => spansToSend[spanId];
-  const changeSpanId = (oldId: string, newId: string) => {
-    const oldSpan = spansToSend[oldId];
+  }
+
+  static getSpans(): BasicSpan[] {
+    return Object.values(this.spans);
+  }
+
+  static getSpanById(spanId: string): BasicSpan | null {
+    return this.spans[spanId];
+  }
+
+  static changeSpanId(oldId: string, newId: string): void {
+    const oldSpan = this.spans[oldId];
     if (oldSpan) {
       oldSpan.id = newId;
-      spansToSend[newId] = oldSpan;
+      this.spans[newId] = oldSpan;
     }
-    delete spansToSend[oldId];
-  };
-  const clearSpans = () => {
-    currentSpansSize = 0;
-    spansToSend = {};
-  };
+    delete this.spans[oldId];
+  }
 
-  return { addSpan, getSpanById, getSpans, clearSpans, changeSpanId };
-})();
+  static clearSpans(): void {
+    this.currentSpansSize = 0;
+    this.spans = {};
+  }
+}
 
 export const GlobalTimer = (() => {
   let currentTimer = undefined;
