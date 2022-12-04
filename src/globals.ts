@@ -9,6 +9,7 @@ import {
   spanHasErrors,
 } from './utils';
 import { GlobalDurationTimer } from './utils/globalDurationTimer';
+import { BasicSpan } from './types/spans/basicSpan';
 
 const MAX_TAGS = 50;
 const MAX_TAG_KEY_LEN = 50;
@@ -21,7 +22,7 @@ export const MIN_TRACER_ADDED_DURATION_ALLOWED = 200;
 export const SpansContainer = (() => {
   let spansToSend = {};
   let currentSpansSize = 0;
-  const addSpan = (span) => {
+  const addSpan = (span: { id: string }) => {
     // Memory optimization
     if (spanHasErrors(span) || getMaxRequestSize() > currentSpansSize) {
       spansToSend[span.id] = span;
@@ -32,7 +33,7 @@ export const SpansContainer = (() => {
     return false;
   };
   const getSpans = () => Object.values(spansToSend);
-  const getSpanById = (spanId: string) => spansToSend[spanId];
+  const getSpanById = (spanId: string): any | null => spansToSend[spanId];
   const changeSpanId = (oldId: string, newId: string) => {
     const oldSpan = spansToSend[oldId];
     if (oldSpan) {

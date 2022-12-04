@@ -11,6 +11,7 @@ export interface SpanInfo {
 }
 
 export interface BasicSpan {
+  id: string;
   info: SpanInfo;
   vendor: Vendor;
   transactionId: string;
@@ -24,4 +25,10 @@ export interface BasicSpan {
   region: string;
   invokedArn: string;
   invokedVersion: string;
+}
+
+export interface BasicChildSpan extends BasicSpan {
+  type: string;
+  parentId: string;
+  reporterAwsRequestId: string;
 }

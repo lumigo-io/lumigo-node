@@ -13,7 +13,7 @@ import {
   sqsParser,
 } from '../parsers/aws';
 import { getSkipScrubPath, parseEvent } from '../parsers/eventParser';
-import { BasicSpan, SpanInfo } from '../types/spans/basicSpan';
+import { BasicChildSpan, BasicSpan, SpanInfo } from '../types/spans/basicSpan';
 import { FunctionSpan } from '../types/spans/functionSpan';
 import { HttpInfo } from '../types/spans/httpSpan';
 import {
@@ -70,7 +70,7 @@ export const isSpanIsFromAnotherInvocation = (span): boolean => {
   );
 };
 
-export const getBasicSpan = (transactionId: string): BasicSpan => {
+export const getBasicSpan = (id: string, transactionId: string): BasicSpan => {
   const { context: lambdaContext } = TracerGlobals.getHandlerInputs();
   const { token } = TracerGlobals.getTracerInputs();
 
@@ -98,6 +98,7 @@ export const getBasicSpan = (transactionId: string): BasicSpan => {
   }
 
   return {
+    id,
     info,
     vendor,
     transactionId,
@@ -128,7 +129,9 @@ const getEnvsForSpan = (hasError: boolean = false): string =>
 
 export const getFunctionSpan = (lambdaEvent: {}, lambdaContext: Context): FunctionSpan => {
   const transactionId = getCurrentTransactionId();
-  const basicSpan = getBasicSpan(transactionId);
+  const { functionName: name, awsRequestId, remainingTimeInMillis } = getContextInfo(lambdaContext);
+  const id = `${awsRequestId}_started`;
+  const basicSpan = getBasicSpan(id, transactionId);
   const info = { ...basicSpan.info, ...getEventInfo(lambdaEvent) };
   const type = FUNCTION_SPAN;
 
@@ -139,15 +142,11 @@ export const getFunctionSpan = (lambdaEvent: {}, lambdaContext: Context): Functi
   const event = getEventForSpan();
   const envs = getEnvsForSpan();
 
-  const { functionName: name, awsRequestId, remainingTimeInMillis } = getContextInfo(lambdaContext);
-
-  const id = `${awsRequestId}_started`;
   const maxFinishTime = started + remainingTimeInMillis;
 
   const startSpan = {
     ...basicSpan,
     info,
-    id,
     envs,
     name,
     type,
@@ -258,14 +257,17 @@ export const getHttpInfo = (requestData, responseData): HttpInfo => {
   return { host, request, response };
 };
 
-export const getBasicChildSpan = (transactionId, awsRequestId, spanId, spanType) => {
+export const getBasicChildSpan = (
+  transactionId: string,
+  awsRequestId: string,
+  spanId: string,
+  spanType: string
+): BasicChildSpan => {
   const { context } = TracerGlobals.getHandlerInputs();
   // @ts-ignore
   const { awsRequestId: reporterAwsRequestId } = context;
-  const id = spanId;
-  const type = spanType;
-  const basicSpan = getBasicSpan(transactionId);
-  return { ...basicSpan, id, type, parentId: awsRequestId, reporterAwsRequestId };
+  const basicSpan = getBasicSpan(spanId, transactionId);
+  return { ...basicSpan, id: spanId, type: spanType, parentId: awsRequestId, reporterAwsRequestId };
 };
 
 export const getHttpSpanTimings = (requestData, responseData) => {

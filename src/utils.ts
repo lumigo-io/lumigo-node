@@ -396,7 +396,7 @@ export const getRandomString = (evenNrChars) =>
     .toString('hex')
     .toLowerCase();
 
-export const getRandomId = () => {
+export const getRandomId = (): string => {
   const p1 = getRandomString(8);
   const p2 = getRandomString(4);
   const p3 = getRandomString(4);

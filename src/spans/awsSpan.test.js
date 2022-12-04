@@ -79,6 +79,7 @@ describe('awsSpan', () => {
 
   test('getBasicSpan', () => {
     const expectedBasicSpan = {
+      id: 'id',
       info: {
         traceId: {
           Root: '1-5cdcf03a-64a1b06067c2100c52e51ef4',
@@ -105,7 +106,7 @@ describe('awsSpan', () => {
     };
     spies.isWarm.mockReturnValueOnce(true);
 
-    expect(awsSpan.getBasicSpan('64a1b06067c2100c52e51ef4')).toEqual(expectedBasicSpan);
+    expect(awsSpan.getBasicSpan('id', '64a1b06067c2100c52e51ef4')).toEqual(expectedBasicSpan);
   });
 
   test('getBasicSpan turn is warm', () => {
