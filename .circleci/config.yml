@@ -5,7 +5,8 @@
 
 # How can I convert V2.1 to V2? Write the file in V2.1, run it in CircleCI and click "Configuration".
 
-version: 2
+version: 2.1
+
 commands:
   build_and_install_dependencies:
     parameters:
