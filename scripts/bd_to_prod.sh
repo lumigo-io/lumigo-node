@@ -36,7 +36,7 @@ echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
 npm run semantic-release
 
 echo "Creating lumigo-node layer"
-../utils/common_bash/create_layer.sh --layer-name lumigo-node-tracer --region ALL --package-folder "nodejs lumigo_wrapper" --version $(git describe --abbrev=0 --tags) --runtimes "nodejs10.x nodejs12.x nodejs14.x nodejs16.x"
+../utils/common_bash/create_layer.sh --layer-name lumigo-node-tracer --region ALL --package-folder "nodejs lumigo_wrapper" --version $(git describe --abbrev=0 --tags) --runtimes "nodejs10.x nodejs12.x nodejs14.x nodejs16.x nodejs18.x"
 
 echo "Creating layer latest version arn table md file (LAYERS.md)"
 cd ../larn && npm i -g
@@ -44,11 +44,13 @@ larn -r nodejs10.x -n layers/LAYERS10x --filter lumigo-node-tracer -p ~/lumigo-n
 larn -r nodejs12.x -n layers/LAYERS12x --filter lumigo-node-tracer -p ~/lumigo-node
 larn -r nodejs14.x -n layers/LAYERS14x --filter lumigo-node-tracer -p ~/lumigo-node
 larn -r nodejs16.x -n layers/LAYERS16x --filter lumigo-node-tracer -p ~/lumigo-node
+larn -r nodejs18.x -n layers/LAYERS18x --filter lumigo-node-tracer -p ~/lumigo-node
 cd ../lumigo-node
 git add layers/LAYERS10x.md
 git add layers/LAYERS12x.md
 git add layers/LAYERS14x.md
 git add layers/LAYERS16x.md
+git add layers/LAYERS18x.md
 git commit -m "docs: layers md [skip ci]"
 echo \{\"type\":\"Release\",\"repo\":\"${CIRCLE_PROJECT_REPONAME}\",\"buildUrl\":\"${CIRCLE_BUILD_URL}\"\} | curl -X POST "https://listener.logz.io:8071?token=${LOGZ}" -v --data-binary @-
 git push origin master
