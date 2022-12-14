@@ -14,7 +14,7 @@ export const hookMongoDb = (mongoClientLibrary: any | null = null) => {
   }
 
   const getVersion = (clientLibrary: any): string => {
-    if (clientLibrary.instrument) {
+    if (typeof clientLibrary.instrument === 'function') {
       return '3.x';
     }
     if (

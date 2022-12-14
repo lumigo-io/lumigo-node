@@ -136,6 +136,8 @@ export const getMockedMongoClientLibrary = () => {
   // eslint-disable-next-line camelcase
   MongoClientLibrary.max_delay = 0;
   MongoClientLibrary.MongoClient = MongoClient;
+  MongoClientLibrary.instrument = "Dummy";
+
 
   return MongoClientLibrary;
 };
