@@ -14,11 +14,18 @@ echo "Setting production ad NODE_ENV"
 export NODE_ENV=production
 
 echo "Getting latest changes from git"
-changes=$(git log $(git describe --tags --abbrev=0)..HEAD --oneline)
-echo ${changes}
+version="$(git describe --tags --abbrev=0)"
+changes=$(git log "${version}..HEAD" --oneline)
+echo "${changes}"
 
 echo "Creating layer file"
 ./scripts/prepare_layer_files.sh
 
-echo "Creating lumigo-node layer to us-east-1"
-~/source/utils/common_bash/create_layer.sh --layer-name lumigo-node-tracer --region us-east-1 --package-folder "nodejs lumigo_wrapper" --version $(git describe --abbrev=0 --tags) --runtimes "nodejs10.x nodejs12.x nodejs14.x nodejs16.x nodejs18.x"
+region="us-east-1"
+echo "Creating lumigo-node layer to ${region}"
+~/source/utils/common_bash/create_layer.sh \
+    --layer-name lumigo-node-tracer \
+    --region "$region" \
+    --package-folder "nodejs lumigo_wrapper" \
+    --version "$version" \
+    --runtimes "nodejs10.x nodejs12.x nodejs14.x nodejs16.x nodejs18.x"

@@ -1,6 +1,7 @@
 import * as logger from './logger';
 import type { TracerOptions } from './tracer';
 import type { LambdaContext } from './types/aws/awsEnvironment';
+import { BasicSpan } from './types/spans/basicSpan';
 import {
   getAutoTagKeys,
   getJSONBase64Size,
@@ -9,7 +10,6 @@ import {
   spanHasErrors,
 } from './utils';
 import { GlobalDurationTimer } from './utils/globalDurationTimer';
-import { BasicSpan } from './types/spans/basicSpan';
 
 const MAX_TAGS = 50;
 const MAX_TAG_KEY_LEN = 50;
