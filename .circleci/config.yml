@@ -45,7 +45,7 @@ workflows:
           - test
           - lumigo-orb/integration-test-parallel
 
-    - deploy-beta:
+    - deploy:
         filters:
           branches:
             only: master
