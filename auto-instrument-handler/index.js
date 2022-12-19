@@ -12,6 +12,15 @@ const getHandler = () => {
   );
 };
 
+const getHandlerAsync = async () => {
+  if (process.env[ORIGINAL_HANDLER_KEY] === undefined)
+    throw Error('Could not load the original handler. Please contact Lumigo.');
+  return load(
+      process.env.LAMBDA_TASK_ROOT,
+      process.env[ORIGINAL_HANDLER_KEY]
+  );
+};
+
 const removeLumigoFromStacktrace = err => {
   // Note: this function was copied from utils.js. Keep them both up to date.
   try {
@@ -42,9 +51,31 @@ const handler = (event, context, callback) => {
   return lumigo.trace(userHandler)(event, context, callback);
 };
 
-module.exports = { ORIGINAL_HANDLER_KEY, handler };
-try {
-  // require the user's handler during initialization time, just as without Lumigo
-   getHandler();
+const handlerAsync = async (event, context, callback) => {
+  let userHandler;
+  try {
+    userHandler = await getHandlerAsync();
+  } catch (e) {
+    throw removeLumigoFromStacktrace(e);
+  }
+  return lumigo.trace(userHandler)(event, context, callback);
+};
+
+switch (process.env.AWS_EXECUTION_ENV) {
+  case 'AWS_Lambda_nodejs12.x':
+    module.exports = { ORIGINAL_HANDLER_KEY, handler };
+    try {
+      // require the user's handler during initialization time, just as without Lumigo
+      getHandler();
+    } catch (e) {};
+    break;
+  default:
+    module.exports = { ORIGINAL_HANDLER_KEY, handler: handlerAsync };
+    try {
+      // require the user's handler during initialization time, just as without Lumigo
+      (async () => {
+        await getHandlerAsync();
+      })();
+    } catch (e) {}
+    break;
 }
-catch (e) {}

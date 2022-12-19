@@ -40,13 +40,11 @@ echo "Creating lumigo-node layer"
 
 echo "Creating layer latest version arn table md file (LAYERS.md)"
 cd ../larn && npm i -g
-larn -r nodejs10.x -n layers/LAYERS10x --filter lumigo-node-tracer -p ~/lumigo-node
 larn -r nodejs12.x -n layers/LAYERS12x --filter lumigo-node-tracer -p ~/lumigo-node
 larn -r nodejs14.x -n layers/LAYERS14x --filter lumigo-node-tracer -p ~/lumigo-node
 larn -r nodejs16.x -n layers/LAYERS16x --filter lumigo-node-tracer -p ~/lumigo-node
 larn -r nodejs18.x -n layers/LAYERS18x --filter lumigo-node-tracer -p ~/lumigo-node
 cd ../lumigo-node
-git add layers/LAYERS10x.md
 git add layers/LAYERS12x.md
 git add layers/LAYERS14x.md
 git add layers/LAYERS16x.md

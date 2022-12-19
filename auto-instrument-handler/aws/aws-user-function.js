@@ -21,6 +21,8 @@ const fs = require("fs");
 const FUNCTION_EXPR = /^([^.]*)\.(.*)$/;
 const RELATIVE_PATH_SUBSTRING = "..";
 
+let SUPPORTED_EXTENSIONS;
+
 /**
  * Break the full handler string into two pieces, the module root and the actual
  * handler string.
@@ -64,7 +66,16 @@ function _resolveHandler(object, nestedProperty) {
  * @return bool
  */
 function _canLoadAsFile(modulePath) {
-  return fs.existsSync(modulePath) || fs.existsSync(modulePath + ".js");
+  if (!!fs.existsSync(modulePath)) {
+    return modulePath;
+  }
+
+  for (var extension of SUPPORTED_EXTENSIONS) {
+    const handlerFile = modulePath + '.' + extension;
+    if (!!fs.existsSync(handlerFile)) {
+      return handlerFile;
+    }
+  }
 }
 
 /**
@@ -74,8 +85,9 @@ function _canLoadAsFile(modulePath) {
  */
 function _tryRequire(appRoot, moduleRoot, module) {
   let lambdaStylePath = path.resolve(appRoot, moduleRoot, module);
-  if (_canLoadAsFile(lambdaStylePath)) {
-    return require(lambdaStylePath);
+  let handlerFile = _canLoadAsFile(lambdaStylePath);
+  if (!!handlerFile) {
+    return require(handlerFile);
   } else {
     // Why not just require(module)?
     // Because require() is relative to __dirname, not process.cwd(). And the
@@ -107,6 +119,47 @@ function _loadUserApp(appRoot, moduleRoot, module) {
   }
 }
 
+/**
+ * Load the user's application or throw a descriptive error.
+ * @throws Runtime errors in two cases
+ *   1 - UserCodeSyntaxError if there's a syntax error while loading the module
+ *   2 - ImportModuleError if the module cannot be found
+ */
+async function _loadUserAppAsync(appRoot, moduleRoot, module) {
+  try {
+    return _tryRequireAsync(appRoot, moduleRoot, module);
+  } catch (e) {
+    if (e instanceof SyntaxError) {
+      throw new UserCodeSyntaxError(e);
+    } else if (e.code !== undefined && e.code === "MODULE_NOT_FOUND") {
+      throw new ImportModuleError(e);
+    } else {
+      throw e;
+    }
+  }
+}
+
+/**
+ * Attempt to load the user's module.
+ * Attempts to directly resolve the module relative to the application root,
+ * then falls back to the more general require().
+ */
+async function _tryRequireAsync(appRoot, moduleRoot, module) {
+  let lambdaStylePath = path.resolve(appRoot, moduleRoot, module);
+  let handlerFile = _canLoadAsFile(lambdaStylePath);
+  if (!!handlerFile) {
+    return await import(handlerFile);
+  } else {
+    // Why not just require(module)?
+    // Because require() is relative to __dirname, not process.cwd(). And the
+    // runtime implementation is not located in /var/task
+    let nodeStylePath = require.resolve(module, {
+      paths: [appRoot, moduleRoot]
+    });
+    return require(nodeStylePath);
+  }
+}
+
 function _throwIfInvalidHandler(fullHandlerString) {
   if (fullHandlerString.includes(RELATIVE_PATH_SUBSTRING)) {
     throw new MalformedHandlerName(
@@ -115,26 +168,7 @@ function _throwIfInvalidHandler(fullHandlerString) {
   }
 }
 
-/**
- * Load the user's function with the approot and the handler string.
- * @param appRoot {string}
- *   The path to the application root.
- * @param handlerString {string}
- *   The user-provided handler function in the form 'module.function'.
- * @return userFuction {function}
- *   The user's handler function. This function will be passed the event body,
- *   the context object, and the callback function.
- * @throws In five cases:-
- *   1 - if the handler string is incorrectly formatted an error is thrown
- *   2 - if the module referenced by the handler cannot be loaded
- *   3 - if the function in the handler does not exist in the module
- *   4 - if a property with the same name, but isn't a function, exists on the
- *       module
- *   5 - the handler includes illegal character sequences (like relative paths
- *       for traversing up the filesystem '..')
- *   Errors for scenarios known by the runtime, will be wrapped by Runtime.* errors.
- */
-module.exports.load = function(appRoot, fullHandlerString) {
+function loadSync(appRoot, fullHandlerString) {
   _throwIfInvalidHandler(fullHandlerString);
 
   let [moduleRoot, moduleAndHandler] = _moduleRootAndHandler(fullHandlerString);
@@ -155,3 +189,55 @@ module.exports.load = function(appRoot, fullHandlerString) {
 
   return handlerFunc;
 };
+
+async function loadAsync(appRoot, fullHandlerString) {
+  _throwIfInvalidHandler(fullHandlerString);
+
+  let [moduleRoot, moduleAndHandler] = _moduleRootAndHandler(fullHandlerString);
+  let [module, handlerPath] = _splitHandlerString(moduleAndHandler);
+
+  let userApp = await _loadUserAppAsync(appRoot, moduleRoot, module);
+  let handlerFunc = _resolveHandler(userApp, handlerPath);
+
+  if (!handlerFunc) {
+    throw new HandlerNotFound(
+      `${fullHandlerString} is undefined or not exported`
+    );
+  }
+
+  if (typeof handlerFunc !== "function") {
+    throw new HandlerNotFound(`${fullHandlerString} is not a function`);
+  }
+
+  return handlerFunc;
+};
+
+/**
+ * Load the user's function with the approot and the handler string.
+ * @param appRoot {string}
+ *   The path to the application root.
+ * @param handlerString {string}
+ *   The user-provided handler function in the form 'module.function'.
+ * @return userFuction {function}
+ *   The user's handler function. This function will be passed the event body,
+ *   the context object, and the callback function.
+ * @throws In five cases:-
+ *   1 - if the handler string is incorrectly formatted an error is thrown
+ *   2 - if the module referenced by the handler cannot be loaded
+ *   3 - if the function in the handler does not exist in the module
+ *   4 - if a property with the same name, but isn't a function, exists on the
+ *       module
+ *   5 - the handler includes illegal character sequences (like relative paths
+ *       for traversing up the filesystem '..')
+ *   Errors for scenarios known by the runtime, will be wrapped by Runtime.* errors.
+ */
+switch (process.env.AWS_EXECUTION_ENV) {
+  case 'AWS_Lambda_nodejs12.x':
+    SUPPORTED_EXTENSIONS = ['js'];
+    module.exports.load = loadSync;
+    break;
+  default:
+    SUPPORTED_EXTENSIONS = ['js', 'mjs', 'cjs'];
+    module.exports.load = loadAsync;
+    break;
+}
