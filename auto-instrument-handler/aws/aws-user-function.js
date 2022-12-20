@@ -65,12 +65,12 @@ function _resolveHandler(object, nestedProperty) {
  * @param string - the fully resolved file path to the module
  * @return bool
  */
-function _canLoadAsFile(modulePath) {
+function _canLoadAsFile(modulePath, supportedExtensions) {
   if (!!fs.existsSync(modulePath)) {
     return modulePath;
   }
 
-  for (var extension of SUPPORTED_EXTENSIONS) {
+  for (var extension of supportedExtensions) {
     const handlerFile = modulePath + '.' + extension;
     if (!!fs.existsSync(handlerFile)) {
       return handlerFile;
@@ -85,7 +85,7 @@ function _canLoadAsFile(modulePath) {
  */
 function _tryRequire(appRoot, moduleRoot, module) {
   let lambdaStylePath = path.resolve(appRoot, moduleRoot, module);
-  let handlerFile = _canLoadAsFile(lambdaStylePath);
+  let handlerFile = _canLoadAsFile(lambdaStylePath, ['js', 'cjs']);
   if (!!handlerFile) {
     return require(handlerFile);
   } else {
@@ -127,7 +127,7 @@ function _loadUserApp(appRoot, moduleRoot, module) {
  */
 async function _loadUserAppAsync(appRoot, moduleRoot, module) {
   try {
-    return _tryRequireAsync(appRoot, moduleRoot, module);
+    return _tryImportOrRequire(appRoot, moduleRoot, module);
   } catch (e) {
     if (e instanceof SyntaxError) {
       throw new UserCodeSyntaxError(e);
@@ -140,23 +140,77 @@ async function _loadUserAppAsync(appRoot, moduleRoot, module) {
 }
 
 /**
+ * Searches for the nearest package.json file, and returns `true` if the
+ * package.json has type `module`. See https://nodejs.org/api/modules.html#enabling
+ * @param {*} currentPath 
+ */
+async function isEsModule(handlerFile) {
+  /*
+   * If, while traversing the directory tree upwards, we hit root
+   * or a node_modules folder (which means we are getting out of the dependencies),
+   * we stop.
+   */
+  let currentDir = path.dirname(handlerFile);
+  while (currentDir !== '/' && !currentDir.endsWith('/node_modules')) {
+    const packageJsonFile = path.resolve(path.join(currentDir, 'package.json'));
+
+    if (fs.existsSync(packageJsonFile)) {
+      const { type } = require(packageJsonFile);
+ 
+      return type === 'module';
+    }
+
+    currentDir = path.dirname(currentDir);
+  }
+
+  return false;
+}
+
+/**
  * Attempt to load the user's module.
  * Attempts to directly resolve the module relative to the application root,
  * then falls back to the more general require().
  */
-async function _tryRequireAsync(appRoot, moduleRoot, module) {
+async function _tryImportOrRequire(appRoot, moduleRoot, module) {
   let lambdaStylePath = path.resolve(appRoot, moduleRoot, module);
-  let handlerFile = _canLoadAsFile(lambdaStylePath);
+  let handlerFile = _canLoadAsFile(lambdaStylePath, ['js', 'mjs', 'cjs']);
+
+  /*
+   * .cjs files must always be loaded as CommonJS modules (i.e., via `require`), see
+   * https://nodejs.org/api/modules.html#enabling.
+   *
+   * .mjs are always loaded as ES modules.
+   * 
+   * .js files could still be required to load as ES modules (i.e., via `import`) if
+   * their type in the nearest package.json is `module`, see https://nodejs.org/api/modules.html#enabling
+   */
+  const esModuleType = 'esmodule';
+  const commonJsModuleType = 'commonjs';
+
+  let moduleType = '';
   if (!!handlerFile) {
-    return await import(handlerFile);
-  } else {
-    // Why not just require(module)?
-    // Because require() is relative to __dirname, not process.cwd(). And the
-    // runtime implementation is not located in /var/task
-    let nodeStylePath = require.resolve(module, {
-      paths: [appRoot, moduleRoot]
-    });
-    return require(nodeStylePath);
+    if (handlerFile.endsWith('.mjs')) {
+      moduleType = esModuleType;
+    } else if (handlerFile.endsWith('.cjs')) {
+      moduleType = commonJsModuleType;
+    } else if (handlerFile.endsWith('.js')) {
+      moduleType = isEsModule(handlerFile) ? esModuleType : commonJsModuleType;
+    }
+  }
+
+  switch (moduleType) {
+    case esModuleType:
+      return await import(handlerFile);
+    case commonJsModuleType:
+      return require(handlerFile);
+    default:
+      // Why not just require(module)?
+      // Because require() is relative to __dirname, not process.cwd(). And the
+      // runtime implementation is not located in /var/task
+      let nodeStylePath = require.resolve(module, {
+        paths: [appRoot, moduleRoot]
+      });
+      return require(nodeStylePath); 
   }
 }
 
@@ -168,6 +222,27 @@ function _throwIfInvalidHandler(fullHandlerString) {
   }
 }
 
+/**
+ * Load the user's function synchronously with the approot and the handler string.
+ * @todo Remove this code path when Node.js 12 is no longer supported. 
+ *
+ * @param appRoot {string}
+ *   The path to the application root.
+ * @param handlerString {string}
+ *   The user-provided handler function in the form 'module.function'.
+ * @return userFuction {function}
+ *   The user's handler function. This function will be passed the event body,
+ *   the context object, and the callback function.
+ * @throws In five cases:-
+ *   1 - if the handler string is incorrectly formatted an error is thrown
+ *   2 - if the module referenced by the handler cannot be loaded
+ *   3 - if the function in the handler does not exist in the module
+ *   4 - if a property with the same name, but isn't a function, exists on the
+ *       module
+ *   5 - the handler includes illegal character sequences (like relative paths
+ *       for traversing up the filesystem '..')
+ *   Errors for scenarios known by the runtime, will be wrapped by Runtime.* errors.
+ */
 function loadSync(appRoot, fullHandlerString) {
   _throwIfInvalidHandler(fullHandlerString);
 
@@ -190,6 +265,26 @@ function loadSync(appRoot, fullHandlerString) {
   return handlerFunc;
 };
 
+/**
+ * Load the user's function asynchronously with the approot and the handler string.
+ * If the user function is an ES module, load it via `import`.
+ * @param appRoot {string}
+ *   The path to the application root.
+ * @param handlerString {string}
+ *   The user-provided handler function in the form 'module.function'.
+ * @return userFuction {function}
+ *   The user's handler function. This function will be passed the event body,
+ *   the context object, and the callback function.
+ * @throws In five cases:-
+ *   1 - if the handler string is incorrectly formatted an error is thrown
+ *   2 - if the module referenced by the handler cannot be loaded
+ *   3 - if the function in the handler does not exist in the module
+ *   4 - if a property with the same name, but isn't a function, exists on the
+ *       module
+ *   5 - the handler includes illegal character sequences (like relative paths
+ *       for traversing up the filesystem '..')
+ *   Errors for scenarios known by the runtime, will be wrapped by Runtime.* errors.
+ */
 async function loadAsync(appRoot, fullHandlerString) {
   _throwIfInvalidHandler(fullHandlerString);
 
@@ -212,32 +307,11 @@ async function loadAsync(appRoot, fullHandlerString) {
   return handlerFunc;
 };
 
-/**
- * Load the user's function with the approot and the handler string.
- * @param appRoot {string}
- *   The path to the application root.
- * @param handlerString {string}
- *   The user-provided handler function in the form 'module.function'.
- * @return userFuction {function}
- *   The user's handler function. This function will be passed the event body,
- *   the context object, and the callback function.
- * @throws In five cases:-
- *   1 - if the handler string is incorrectly formatted an error is thrown
- *   2 - if the module referenced by the handler cannot be loaded
- *   3 - if the function in the handler does not exist in the module
- *   4 - if a property with the same name, but isn't a function, exists on the
- *       module
- *   5 - the handler includes illegal character sequences (like relative paths
- *       for traversing up the filesystem '..')
- *   Errors for scenarios known by the runtime, will be wrapped by Runtime.* errors.
- */
 switch (process.env.AWS_EXECUTION_ENV) {
   case 'AWS_Lambda_nodejs12.x':
-    SUPPORTED_EXTENSIONS = ['js'];
     module.exports.load = loadSync;
     break;
   default:
-    SUPPORTED_EXTENSIONS = ['js', 'mjs', 'cjs'];
     module.exports.load = loadAsync;
     break;
 }
