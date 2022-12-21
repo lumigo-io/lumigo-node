@@ -144,7 +144,7 @@ async function _loadUserAppAsync(appRoot, moduleRoot, module) {
  * package.json has type `module`. See https://nodejs.org/api/modules.html#enabling
  * @param {*} currentPath 
  */
-async function isEsModule(handlerFile) {
+function isEsModule(handlerFile) {
   /*
    * If, while traversing the directory tree upwards, we hit root
    * or a node_modules folder (which means we are getting out of the dependencies),
