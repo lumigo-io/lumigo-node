@@ -87,7 +87,7 @@ function _tryRequire(appRoot, moduleRoot, module) {
   let lambdaStylePath = path.resolve(appRoot, moduleRoot, module);
   let handlerFile = _canLoadAsFile(lambdaStylePath, ['js', 'cjs']);
   if (!!handlerFile) {
-    return require(handlerFile);
+    return require(lambdaStylePath);
   } else {
     // Why not just require(module)?
     // Because require() is relative to __dirname, not process.cwd(). And the
@@ -202,7 +202,7 @@ async function _tryImportOrRequire(appRoot, moduleRoot, module) {
     case esModuleType:
       return await import(handlerFile);
     case commonJsModuleType:
-      return require(handlerFile);
+      return require(lambdaStylePath);
     default:
       // Why not just require(module)?
       // Because require() is relative to __dirname, not process.cwd(). And the
