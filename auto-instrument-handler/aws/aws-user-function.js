@@ -87,7 +87,7 @@ function _tryRequire(appRoot, moduleRoot, module) {
   let lambdaStylePath = path.resolve(appRoot, moduleRoot, module);
   let handlerFile = _canLoadAsFile(lambdaStylePath, ['js', 'cjs']);
   if (!!handlerFile) {
-    return require(handlerFile);
+    return require(lambdaStylePath);
   } else {
     // Why not just require(module)?
     // Because require() is relative to __dirname, not process.cwd(). And the
@@ -144,7 +144,7 @@ async function _loadUserAppAsync(appRoot, moduleRoot, module) {
  * package.json has type `module`. See https://nodejs.org/api/modules.html#enabling
  * @param {*} currentPath 
  */
-async function isEsModule(handlerFile) {
+function isEsModule(handlerFile) {
   /*
    * If, while traversing the directory tree upwards, we hit root
    * or a node_modules folder (which means we are getting out of the dependencies),
@@ -202,7 +202,7 @@ async function _tryImportOrRequire(appRoot, moduleRoot, module) {
     case esModuleType:
       return await import(handlerFile);
     case commonJsModuleType:
-      return require(handlerFile);
+      return require(lambdaStylePath);
     default:
       // Why not just require(module)?
       // Because require() is relative to __dirname, not process.cwd(). And the
