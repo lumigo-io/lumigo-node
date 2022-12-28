@@ -3,6 +3,7 @@ import * as logger from '../logger';
 import { getCurrentTransactionId } from '../spans/awsSpan';
 import { createMongoDbSpan, extendMongoDbSpan } from '../spans/mongoDbSpan';
 import { safeExecute } from '../utils';
+import { v4 as uuidv4 } from 'uuid';
 
 export const onStartedHook = (event: any) => {
   const awsRequestId: string = TracerGlobals.getHandlerInputs().context.awsRequestId;
@@ -30,7 +31,9 @@ export const onStartedHook = (event: any) => {
 
 export const onSucceededHook = (event: any) => {
   const { duration, reply, requestId } = event;
-  const currentSpan = SpansContainer.getSpanById(requestId);
+  const randomRequestId = uuidv4();
+  SpansContainer.changeSpanId(requestId, randomRequestId);
+  const currentSpan = SpansContainer.getSpanById(randomRequestId);
   if (currentSpan) {
     const extendedMondoDbSpan = extendMongoDbSpan(currentSpan, {
       duration,
@@ -42,7 +45,9 @@ export const onSucceededHook = (event: any) => {
 
 export const onFailedHook = (event: any) => {
   const { duration, failure, requestId } = event;
-  const currentSpan = SpansContainer.getSpanById(requestId);
+  const randomRequestId = uuidv4();
+  SpansContainer.changeSpanId(requestId, randomRequestId);
+  const currentSpan = SpansContainer.getSpanById(randomRequestId);
   if (currentSpan) {
     const extendedMondoDbSpan = extendMongoDbSpan(currentSpan, {
       duration,

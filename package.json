@@ -27,7 +27,8 @@
     "agentkeepalive": "^4.1.4",
     "axios": "0.24.0",
     "shimmer": "1.2.1",
-    "utf8": "^3.0.0"
+    "utf8": "^3.0.0",
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.14.5",
