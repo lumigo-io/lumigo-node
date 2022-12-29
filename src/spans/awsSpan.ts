@@ -66,7 +66,9 @@ export const getCurrentTransactionId = (): string => {
 
 export const isSpanIsFromAnotherInvocation = (span): boolean => {
   return (
-    !span.id.includes(span.reporterAwsRequestId) && span.parentId !== span.reporterAwsRequestId
+    span.id &&
+    !span.id.toString().includes(span.reporterAwsRequestId) &&
+    span.parentId !== span.reporterAwsRequestId
   );
 };
 
