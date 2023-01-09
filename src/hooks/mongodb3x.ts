@@ -1,9 +1,8 @@
-import { v4 as uuidv4 } from 'uuid';
 import { SpansContainer, TracerGlobals } from '../globals';
 import * as logger from '../logger';
 import { getCurrentTransactionId } from '../spans/awsSpan';
 import { createMongoDbSpan, extendMongoDbSpan } from '../spans/mongoDbSpan';
-import { safeExecute } from '../utils';
+import { getRandomId, safeExecute } from '../utils';
 
 const requestIdLookup = {};
 
@@ -12,7 +11,7 @@ export const onStartedHook = (event: any) => {
   const transactionId: string = getCurrentTransactionId();
   const { command, databaseName, commandName, requestId, operationId, connectionId } = event;
   const started: number = Date.now();
-  const randomRequestId = uuidv4();
+  const randomRequestId = getRandomId();
   requestIdLookup[requestId] = randomRequestId;
   const mongoSpan = createMongoDbSpan(
     transactionId,
