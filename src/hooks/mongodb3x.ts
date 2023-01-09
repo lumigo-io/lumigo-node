@@ -2,7 +2,7 @@ import { SpansContainer, TracerGlobals } from '../globals';
 import * as logger from '../logger';
 import { getCurrentTransactionId } from '../spans/awsSpan';
 import { createMongoDbSpan, extendMongoDbSpan } from '../spans/mongoDbSpan';
-import {getRandomId, safeExecute} from '../utils';
+import { getRandomId, safeExecute } from '../utils';
 
 const requestIdLookup = {};
 
