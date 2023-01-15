@@ -3,6 +3,7 @@ import { getEventInfo } from './events';
 import { TracerGlobals } from '../globals';
 import { LUMIGO_EVENT_KEY, STEP_FUNCTION_UID_KEY } from '../utils';
 import { Triggers } from '@lumigo/node-core';
+import { EventTriggerParser } from './trigger-parsers/trigger-parser-base';
 
 describe('events', () => {
   const getTestableTrigger = (event) => {
@@ -26,5 +27,19 @@ describe('events', () => {
         fromMessageIds: ['123'],
       },
     ]);
+  });
+
+  test('test exception in shouldHandle', () => {
+    class TestEventParser extends EventTriggerParser {
+      _shouldHandle = (event) => {
+        throw Error('Boom');
+      };
+
+      handle(message, targetId) {
+        return undefined;
+      }
+    }
+
+    expect(new TestEventParser().shouldHandle({})).toBeFalsy();
   });
 });

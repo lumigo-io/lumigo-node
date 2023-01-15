@@ -6,8 +6,9 @@ import {
   STEP_FUNCTION_UID_KEY,
 } from '../../utils';
 import { Triggers } from '@lumigo/node-core';
+import { EventTriggerParser } from './trigger-parser-base';
 
-export class StepFunctionEventParser extends Triggers.MessageTriggerParser {
+export class StepFunctionEventParser extends EventTriggerParser {
   _shouldHandle = (event: Triggers.IncomingMessage): boolean => {
     return isStepFunction() && event != null && !!recursiveGetKey(event, LUMIGO_EVENT_KEY);
   };
