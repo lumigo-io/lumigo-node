@@ -655,6 +655,26 @@ describe('tracer', () => {
     expect(spies.warnClient).toHaveBeenCalled();
   });
 
+  test('sendEndTraceSpans; span.id is not string', async () => {
+    spies.sendSpans.mockImplementationOnce(() => {});
+    spies.getEndFunctionSpan.mockReturnValueOnce({
+      x: 'y',
+      id: '1',
+      transactionId: '123',
+    });
+    spies.getCurrentTransactionId.mockReturnValueOnce('123');
+
+    TracerGlobals.setHandlerInputs({
+      event: { a: 1 },
+      context: { getRemainingTimeInMillis: () => MAX_TRACER_ADDED_DURATION_ALLOWED },
+    });
+    SpansContainer.addSpan({ transactionId: '123', id: 7 });
+    await tracer.sendEndTraceSpans({ id: '1_started' }, { err: null, data: null });
+    expect(spies.warnClient).not.toHaveBeenCalled();
+    expect(spies.clearGlobals).toHaveBeenCalled();
+    expect(TracerGlobals.getHandlerInputs().event).toEqual({});
+  });
+
   test('can not wrap twice', async () => {
     const token = TOKEN;
     const lumigoTracer = require('../index')({ token });
