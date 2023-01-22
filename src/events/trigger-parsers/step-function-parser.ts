@@ -1,25 +1,23 @@
-import { IncomingEvent, Trigger } from '../event-data.types';
-import { EventTriggerParser } from './trigger-parser-base';
 import {
   getRandomId,
   isStepFunction,
   LUMIGO_EVENT_KEY,
-  md5Hash,
   recursiveGetKey,
   STEP_FUNCTION_UID_KEY,
 } from '../../utils';
-import { EventTrigger } from '../event-trigger.enum';
+import { Triggers } from '@lumigo/node-core';
+import { EventTriggerParser } from './trigger-parser-base';
 
 export class StepFunctionEventParser extends EventTriggerParser {
-  _shouldHandle = (event: IncomingEvent): boolean => {
+  _shouldHandle = (event: Triggers.IncomingMessage): boolean => {
     return isStepFunction() && event != null && !!recursiveGetKey(event, LUMIGO_EVENT_KEY);
   };
 
-  handle = (event: IncomingEvent, targetId: string | null): Trigger => {
+  handle = (event: Triggers.IncomingMessage, targetId: string | null): Triggers.Trigger => {
     return {
       id: getRandomId(),
       targetId: targetId,
-      triggeredBy: EventTrigger.StepFunction,
+      triggeredBy: Triggers.MessageTrigger.StepFunction,
       fromMessageIds: [recursiveGetKey(event, LUMIGO_EVENT_KEY)[STEP_FUNCTION_UID_KEY]],
     };
   };

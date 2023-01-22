@@ -1,5 +1,3 @@
-import * as crypto from 'crypto';
-
 import {
   MAX_TRACER_ADDED_DURATION_ALLOWED,
   MIN_TRACER_ADDED_DURATION_ALLOWED,
@@ -7,10 +5,13 @@ import {
 } from './globals';
 import { isAwsContext } from './guards/awsGuards';
 import * as logger from './logger';
-import { sortify } from './tools/jsonSortify';
 import { AwsEnvironment, ContextInfo, LambdaContext } from './types/aws/awsEnvironment';
 import { EdgeUrl } from './types/common/edgeTypes';
+import { CommonUtils } from '@lumigo/node-core';
 
+export const getRandomId = CommonUtils.getRandomId;
+export const getRandomString = CommonUtils.getRandomString;
+export const md5Hash = CommonUtils.md5Hash;
 export const SPAN_PATH = '/api/spans';
 export const LUMIGO_TRACER_EDGE = 'lumigo-tracer-edge.golumigo.com';
 export const LUMIGO_DEFAULT_DOMAIN_SCRUBBERS =
@@ -168,10 +169,6 @@ const LUMIGO_STACK_PATTERNS = [
   new RegExp('/dist/lumigo.js:', 'i'),
   new RegExp('/node_modules/@lumigo/tracer/', 'i'),
 ];
-export const CHAINED_SERVICES_MAX_DEPTH = 'LUMIGO_CHAINED_SERVICES_MAX_DEPTH';
-export const DEFAULT_CHAINED_SERVICES_MAX_DEPTH = 3;
-export const CHAINED_SERVICES_MAX_WIDTH = 'LUMIGO_CHAINED_SERVICES_MAX_WIDTH';
-export const DEFAULT_CHAINED_SERVICES_MAX_WIDTH = 5;
 
 const validateEnvVar = (envVar: string, value: string = 'TRUE'): boolean =>
   !!(process.env[envVar] && process.env[envVar].toUpperCase() === value.toUpperCase());
@@ -241,18 +238,6 @@ export const getAgentKeepAlive = () => {
 export const getTimeoutMinDuration = () => {
   if (process.env[TIMEOUT_MIN_DURATION]) return parseFloat(process.env[TIMEOUT_MIN_DURATION]);
   return DEFAULT_TIMEOUT_MIN_DURATION;
-};
-
-export const getChainedServicesMaxDepth = () => {
-  if (process.env[CHAINED_SERVICES_MAX_DEPTH])
-    return parseFloat(process.env[CHAINED_SERVICES_MAX_DEPTH]);
-  return DEFAULT_CHAINED_SERVICES_MAX_DEPTH;
-};
-
-export const getChainedServicesMaxWidth = () => {
-  if (process.env[CHAINED_SERVICES_MAX_WIDTH])
-    return parseFloat(process.env[CHAINED_SERVICES_MAX_WIDTH]);
-  return DEFAULT_CHAINED_SERVICES_MAX_WIDTH;
 };
 
 export const isScrubKnownServicesOn = () => validateEnvVar(SCRUB_KNOWN_SERVICES_FLAG);
@@ -350,6 +335,8 @@ export const setSwitchOff = () => (process.env['LUMIGO_SWITCH_OFF'] = 'TRUE');
 
 export const setDebug = () => (process.env['LUMIGO_DEBUG'] = 'TRUE');
 
+export const unsetDebug = () => (process.env['LUMIGO_DEBUG'] = undefined);
+
 export const setTimeoutTimerDisabled = () => (process.env[TIMEOUT_ENABLE_FLAG] = 'FALSE');
 
 export function isString(x: any): x is string {
@@ -389,21 +376,6 @@ export function isObject(a: any): a is object {
 
 export const lowerCaseObjectKeys = (o) =>
   o ? Object.keys(o).reduce((c, k) => ((c[k.toLowerCase()] = o[k]), c), {}) : {};
-
-export const getRandomString = (evenNrChars) =>
-  crypto
-    .randomBytes(evenNrChars / 2)
-    .toString('hex')
-    .toLowerCase();
-
-export const getRandomId = (): string => {
-  const p1 = getRandomString(8);
-  const p2 = getRandomString(4);
-  const p3 = getRandomString(4);
-  const p4 = getRandomString(4);
-  const p5 = getRandomString(12);
-  return `${p1}-${p2}-${p3}-${p4}-${p5}`;
-};
 
 export const isAwsService = (host, responseData = undefined): boolean => {
   if (host && host.includes('amazonaws.com')) {
@@ -562,17 +534,6 @@ const recursiveGetKeyByDepth = (event, keyToSearch, maxDepth) => {
   };
   Object.keys(event).some(examineKey);
   return foundValue;
-};
-
-export const md5Hash = (item: {}): string | undefined => {
-  try {
-    const md5sum = crypto.createHash('md5');
-    md5sum.update(sortify(item));
-    return md5sum.digest('hex');
-  } catch (err) {
-    logger.warn('Failed to hash item', err);
-    return undefined;
-  }
 };
 
 export const isEncodingType = (encodingType): boolean =>

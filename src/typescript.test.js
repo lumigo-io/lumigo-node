@@ -1,5 +1,5 @@
 /* eslint-disable */
-const exmapleEvent = require('../testUtils/testdata/events/alb-lambda-target-request-headers-only');
+const exmapleEvent = require('../testUtils/testdata/events/apigw-request.json');
 const node10xEnv = require('../testUtils/testdata/env/node10x');
 import { handler as es2016handler } from '../testUtils/testdata/functions/typescript/ES2016';
 import { handler as es2015handler } from '../testUtils/testdata/functions/typescript/ES2015';
