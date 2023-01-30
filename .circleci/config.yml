@@ -34,12 +34,13 @@ workflows:
         context: common
         deploy_spec: node
         requires:
-          - lumigo-orb/be-deploy
+          - lumigo-orb/is_environment_available
     - lumigo-orb/integration-test-limited-flows:
         context: common
         deploy_spec: node
         tests_spec: testNode
         requires:
+          - lumigo-orb/be-deploy
           - lumigo-orb/integration-test-prep
     - lumigo-orb/integration-test-parallel:
         context: common
