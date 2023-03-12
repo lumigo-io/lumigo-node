@@ -1,8 +1,10 @@
 import { getRandomString } from '../utils';
 import { getCurrentTransactionId } from '../spans/awsSpan';
+import * as logger from '../logger';
 
 export const TRACEPARENT_HEADER_NAME = 'traceparent';
 export const TRACESTATE_HEADER_NAME = 'tracestate';
+export const SKIP_INJECT_HEADERS = ['x-amz-content-sha256'];
 // The regex was copied from:
 // https://github.com/open-telemetry/opentelemetry-python/blob/cad776a2031c84fb3c3a1af90ee2a939f3394b9a/opentelemetry-api/src/opentelemetry/trace/propagation/tracecontext.py#L28
 const TRACEPARENT_HEADER_FORMAT = /^([0-9a-f]{2})-([0-9a-f]{32})-([0-9a-f]{16})-([0-9a-f]{2})/;
@@ -11,7 +13,15 @@ const MALFORMED_SPAN_ID = '0'.repeat(16);
 
 const generateMessageId = (): string => getRandomString(16);
 
+export const shouldSkipTracePropagation = (headers: Record<string, string>): boolean => {
+  return Object.keys(headers).some((key) => SKIP_INJECT_HEADERS.includes(key.toLowerCase()));
+};
+
 export const addW3CTracePropagator = (headers: Record<string, string>): Record<string, string> => {
+  if (shouldSkipTracePropagation(headers)) {
+    logger.debug('Skipping trace propagation');
+    return headers;
+  }
   const messageId = generateMessageId();
   headers[TRACEPARENT_HEADER_NAME] = getTraceId(headers, getCurrentTransactionId(), messageId);
   headers[TRACESTATE_HEADER_NAME] = getTraceState(headers, messageId);
