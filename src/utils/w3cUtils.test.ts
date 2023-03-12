@@ -2,6 +2,7 @@ import { Utf8Utils } from './utf8Utils';
 import {
   addW3CTracePropagator,
   getW3CMessageId,
+  shouldSkipTracePropagation,
   TRACEPARENT_HEADER_NAME,
   TRACESTATE_HEADER_NAME,
 } from './w3cUtils';
@@ -67,5 +68,21 @@ describe('Utf8Utils', () => {
   test('getW3CMessageId -> malformed header', () => {
     const headers = { [TRACEPARENT_HEADER_NAME]: 'something else-aaaaaaaaaaaaaaaa-01' };
     expect(getW3CMessageId(headers)).toBeFalsy();
+  });
+
+  test('getW3CMessageId -> shouldSkipTracePropagation', () => {
+    expect(shouldSkipTracePropagation({})).toBeFalsy();
+    expect(shouldSkipTracePropagation({ another: 'header' })).toBeFalsy();
+    expect(shouldSkipTracePropagation({ 'x-amz-content-sha256': '123' })).toBeTruthy();
+    expect(shouldSkipTracePropagation({ 'X-amz-content-SHA256': '123' })).toBeTruthy();
+  });
+
+  test('getW3CMessageId -> dont add header to skipped context', () => {
+    const headers = { 'x-amz-content-sha256': '123' };
+    spies.getCurrentTransactionId.mockReturnValueOnce('111111111111112222222222');
+
+    addW3CTracePropagator(headers);
+
+    expect(headers).toEqual({ 'x-amz-content-sha256': '123' });
   });
 });
