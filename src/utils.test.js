@@ -89,7 +89,7 @@ describe('utils', () => {
     expect(utils.getTraceId(awsXAmznTraceId)).toEqual(expected);
 
     const awsXAmznLineageParentTraceId =
-      'Root=1-5b1d2450-6ac46730d346cad0e53f89d0;Sampled=1;Parent=59fa1aeb03c2ec1f;Lineage=a87bd80c:1|68fd508a:5|c512fbe3:2\n';
+      'Root=1-5b1d2450-6ac46730d346cad0e53f89d0;Sampled=1;Parent=59fa1aeb03c2ec1f;Lineage=a87bd80c:1|68fd508a:5|c512fbe3:2';
     const LineageParentExpected = {
       Parent: '59fa1aeb03c2ec1f',
       Root: '1-5b1d2450-6ac46730d346cad0e53f89d0',
