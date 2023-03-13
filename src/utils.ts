@@ -82,7 +82,7 @@ export const getTraceId = (awsXAmznTraceId) => {
   }
 
   const traceIdArr = awsXAmznTraceId.split(';');
-  if (traceIdArr.length !== 3) {
+  if (traceIdArr.length < 3) {
     throw new Error('Expected 3 semi-colon separated parts in _X_AMZN_TRACE_ID.');
   }
 
@@ -93,8 +93,11 @@ export const getTraceId = (awsXAmznTraceId) => {
     traceId[key] = value;
   });
 
-  if (!traceId['Root'] || !traceId['Parent'] || !traceId['Sampled']) {
+  if (!traceId['Root'] || !traceId['Sampled']) {
     throw new Error(`Either Root, Parent or Sampled weren't found in traceId.`);
+  }
+  if (!traceId['Parent']) {
+    traceId['Parent'] = getRandomString(16);
   }
 
   // @ts-ignore
