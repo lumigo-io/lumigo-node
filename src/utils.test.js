@@ -27,6 +27,7 @@ import {
   safeJsonParse,
   shouldPropagateW3C,
   shouldScrubDomain,
+  getTraceId,
 } from './utils';
 
 describe('utils', () => {
@@ -86,6 +87,24 @@ describe('utils', () => {
       transactionId: '6ac46730d346cad0e53f89d0',
     };
     expect(utils.getTraceId(awsXAmznTraceId)).toEqual(expected);
+
+    const awsXAmznLineageParentTraceId =
+      'Root=1-5b1d2450-6ac46730d346cad0e53f89d0;Sampled=1;Parent=59fa1aeb03c2ec1f;Lineage=a87bd80c:1|68fd508a:5|c512fbe3:2';
+    const LineageParentExpected = {
+      Parent: '59fa1aeb03c2ec1f',
+      Root: '1-5b1d2450-6ac46730d346cad0e53f89d0',
+      Sampled: '1',
+      transactionId: '6ac46730d346cad0e53f89d0',
+      Lineage: 'a87bd80c:1|68fd508a:5|c512fbe3:2',
+    };
+    expect(utils.getTraceId(awsXAmznLineageParentTraceId)).toEqual(LineageParentExpected);
+
+    const awsXAmznLineageNoParentTraceId =
+      'Root=1-5b1d2450-6ac46730d346cad0e53f89d0;Sampled=1;Lineage=a87bd80c:1|68fd508a:5|c512fbe3:2\n';
+    const lineageNoParentActual = utils.getTraceId(awsXAmznLineageNoParentTraceId);
+    expect(lineageNoParentActual.Root).toEqual('1-5b1d2450-6ac46730d346cad0e53f89d0');
+    expect(lineageNoParentActual.transactionId).toEqual('6ac46730d346cad0e53f89d0');
+    expect(lineageNoParentActual.Parent).toBeTruthy();
 
     expect(() => utils.getTraceId(null)).toThrow('Missing _X_AMZN_TRACE_ID in Lambda Env Vars.');
 
