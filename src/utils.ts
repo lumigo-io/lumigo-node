@@ -82,8 +82,8 @@ export const getTraceId = (awsXAmznTraceId) => {
   }
 
   const traceIdArr = awsXAmznTraceId.split(';');
-  if (traceIdArr.length !== 3) {
-    throw new Error('Expected 3 semi-colon separated parts in _X_AMZN_TRACE_ID.');
+  if (traceIdArr.length => 3) {
+    throw new Error('Expected at least 3 semi-colon separated parts in _X_AMZN_TRACE_ID.');
   }
 
   const traceId = {};
