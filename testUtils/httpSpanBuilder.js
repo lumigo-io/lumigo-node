@@ -94,6 +94,21 @@ export class HttpSpanBuilder {
     return { ...headers, ...obj };
   };
 
+  withInfoTraceId = (root, parent, sampled, transactionId) => {
+    this._span.info.traceId = {
+      "Root": root,
+      "Parent": parent,
+      "Sampled": sampled,
+      "transactionId": transactionId || parent,
+    };
+    return this;
+  };
+
+  withTransactionId = transactionId => {
+    this._span.transactionId = transactionId;
+    return this;
+  };
+
   withSpanId = spanId => {
     this._span.id = spanId;
     return this;

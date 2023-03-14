@@ -153,9 +153,10 @@ export const getTraceId = (awsXAmznTraceId) => {
       // Root is supposed to be 8 hexadecimal characters
       Root: root,
       // Root is supposed to be 24 hexadecimal characters
-      Parent: `${base64TraceId.slice(0, 24)}`,
+      Parent: base64TraceId.slice(0, 24),
       // We always sample :-)
       Sampled: '1',
+      transactionId: base64TraceId.slice(0, 24),
     };
   }
 };
