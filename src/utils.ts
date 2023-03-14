@@ -1,3 +1,4 @@
+import { Buffer } from 'buffer';
 import {
   MAX_TRACER_ADDED_DURATION_ALLOWED,
   MIN_TRACER_ADDED_DURATION_ALLOWED,
@@ -77,36 +78,86 @@ export const getTracerInfo = (): { name: string; version: string } => {
 };
 
 export const getTraceId = (awsXAmznTraceId) => {
-  if (!awsXAmznTraceId) {
-    throw new Error('Missing _X_AMZN_TRACE_ID in Lambda Env Vars.');
+  try {
+    if (!awsXAmznTraceId) {
+      throw new Error('Missing _X_AMZN_TRACE_ID environment variable.');
+    }
+
+    const traceIdArr = awsXAmznTraceId.split(';');
+    if (traceIdArr.length < 3) {
+      throw new Error(
+        'Expected 3 semi-colon separated parts in _X_AMZN_TRACE_ID environment variable.'
+      );
+    }
+
+    const traceId = {};
+    // XXX Populates Root, Parent and Sampled keys.
+    traceIdArr.forEach((item) => {
+      const [key, value] = item.split('=');
+      traceId[key] = value;
+    });
+
+    if (!traceId['Root'] || !traceId['Sampled']) {
+      throw new Error(
+        `Either Root or Sampled tokens weren't found in the _X_AMZN_TRACE_ID environment variable.`
+      );
+    }
+    if (!traceId['Parent']) {
+      traceId['Parent'] = getRandomString(16);
+    }
+
+    // @ts-ignore
+    const transactionId = traceId.Root.split('-')[2];
+
+    // @ts-ignore
+    traceId.transactionId = transactionId;
+
+    return traceId;
+  } catch (err) {
+    /*
+     * Generate deterministic (as this method may be invoked multiple times during the same invocation)
+     * transaction identifier based on the value of _X_AMZN_TRACE_ID or the invocation identifier
+     */
+    logger.warn(
+      'Could not parse the value of the _X_AMZN_TRACE_ID environment variable (error is available in debug logs setting ' +
+        "the LUMIGO_DEBUG environment variable to 'true'); the transaction in Lumigo may be incomplete"
+    );
+    logger.debug('Error while parsing the _X_AMZN_TRACE_ID environment variable:', err);
+
+    var traceId = awsXAmznTraceId;
+    if (!traceId) {
+      // If we do not have the _X_AMZN_TRACE_ID environment variable, we use
+      // the invocation identifier in the Lambda context
+      const { context } = TracerGlobals.getHandlerInputs();
+      traceId = context.awsRequestId;
+    }
+    if (!traceId) {
+      // OK, what is going on here: not even the context invocationId?!?
+      // Deperate times call for desperate measures: we accept the collision of trace IDs by
+      // using _key_ of the _X_AMZN_TRACE_ID env var, not the value
+      traceId = '_X_AMZN_TRACE_ID';
+      logger.warn(
+        'Could find neither the _X_AMZN_TRACE_ID environment variable, nor the invocation identifier in the context; ' +
+        'using a static transaction ID that will cause unrelated transactions to be merged in Lumigo. Please contact Lumigo support.'
+      )
+    }
+
+    var base64TraceId = Buffer.from(traceId).toString('hex');
+
+    while (base64TraceId.length < 24) {
+      base64TraceId += base64TraceId;
+    }
+    const root = base64TraceId.slice(1, 8);
+
+    return {
+      // Root is supposed to be 8 hexadecimal characters
+      Root: root,
+      // Root is supposed to be 24 hexadecimal characters
+      Parent: `${base64TraceId.slice(0, 24)}`,
+      // We always sample :-)
+      Sampled: '1',
+    };
   }
-
-  const traceIdArr = awsXAmznTraceId.split(';');
-  if (traceIdArr.length < 3) {
-    throw new Error('Expected 3 semi-colon separated parts in _X_AMZN_TRACE_ID.');
-  }
-
-  const traceId = {};
-  // XXX Populates Root, Parent and Sampled keys.
-  traceIdArr.forEach((item) => {
-    const [key, value] = item.split('=');
-    traceId[key] = value;
-  });
-
-  if (!traceId['Root'] || !traceId['Sampled']) {
-    throw new Error(`Either Root, Parent or Sampled weren't found in traceId.`);
-  }
-  if (!traceId['Parent']) {
-    traceId['Parent'] = getRandomString(16);
-  }
-
-  // @ts-ignore
-  const transactionId = traceId.Root.split('-')[2];
-
-  // @ts-ignore
-  traceId.transactionId = transactionId;
-
-  return traceId;
 };
 
 export const getPatchedTraceId = (awsXAmznTraceId): string => {
