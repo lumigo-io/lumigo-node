@@ -50,8 +50,10 @@ export const trace =
   (userHandler: Handler) =>
   async <Event = any>(event: Event, context?: Context, callback?: Callback): Promise<Handler> => {
     if (!!switchOff || isSwitchedOff()) {
-      info(`The '${SWITCH_OFF_FLAG}' environment variable is set to 'true': this invocation will not be traced by Lumigo`);
-      return userHandler(event, context, callback);  
+      info(
+        `The '${SWITCH_OFF_FLAG}' environment variable is set to 'true': this invocation will not be traced by Lumigo`
+      );
+      return userHandler(event, context, callback);
     }
 
     if (!isAwsEnvironment()) {
@@ -116,7 +118,7 @@ export const startTrace = async (functionSpan) => {
     const handlerInputs = TracerGlobals.getHandlerInputs();
 
     const shouldRunTracer =
-    !isSwitchedOff() && isAwsEnvironment() && isAwsContext(handlerInputs.context);
+      !isSwitchedOff() && isAwsEnvironment() && isAwsContext(handlerInputs.context);
     if (shouldRunTracer) {
       const tracerInputs = TracerGlobals.getTracerInputs();
       const { host, path } = getEdgeUrl();
