@@ -162,7 +162,6 @@ const AGENT_KEEPALIVE = 'LUMIGO_AGENT_KEEPALIVE_MS';
 const REUSE_CONNECTION = 'LUMIGO_REUSE_HTTP_CONNECTION';
 const KEEP_HEADERS = 'LUMIGO_KEEP_HTTP_HEADERS';
 const DEBUG_FLAG = 'LUMIGO_DEBUG';
-const SWITCH_OFF_FLAG = 'LUMIGO_SWITCH_OFF';
 const IS_STEP_FUNCTION_FLAG = 'LUMIGO_STEP_FUNCTION';
 const SCRUB_KNOWN_SERVICES_FLAG = 'LUMIGO_SCRUB_KNOWN_SERVICES';
 const LUMIGO_LOG_PREFIX = '[LUMIGO_LOG]';
@@ -172,6 +171,8 @@ const LUMIGO_STACK_PATTERNS = [
   new RegExp('/dist/lumigo.js:', 'i'),
   new RegExp('/node_modules/@lumigo/tracer/', 'i'),
 ];
+
+export const SWITCH_OFF_FLAG = 'LUMIGO_SWITCH_OFF';
 
 const validateEnvVar = (envVar: string, value: string = 'TRUE'): boolean =>
   !!(process.env[envVar] && process.env[envVar].toUpperCase() === value.toUpperCase());
@@ -278,7 +279,7 @@ export const isSwitchedOff = (): boolean =>
   safeExecute(
     () =>
       validateEnvVar(SWITCH_OFF_FLAG) ||
-      TracerGlobals.getTracerInputs().switchOff ||
+      TracerGlobals?.getTracerInputs()?.switchOff ||
       !isValidAlias()
   )();
 
