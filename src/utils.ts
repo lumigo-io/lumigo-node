@@ -138,8 +138,8 @@ export const getTraceId = (awsXAmznTraceId) => {
       traceId = '_X_AMZN_TRACE_ID';
       logger.warn(
         'Could find neither the _X_AMZN_TRACE_ID environment variable, nor the invocation identifier in the context; ' +
-        'using a static transaction ID that will cause unrelated transactions to be merged in Lumigo. Please contact Lumigo support.'
-      )
+          'using a static transaction ID that will cause unrelated transactions to be merged in Lumigo. Please contact Lumigo support.'
+      );
     }
 
     var base64TraceId = Buffer.from(traceId).toString('hex');
