@@ -33,7 +33,7 @@ import {
   safeExecute,
   setWarm,
 } from '../utils';
-import { payloadStringify, truncate } from '../utils/payloadStringify';
+import { payloadStringify, payloadStringifyWithContext, truncate } from '../utils/payloadStringify';
 import { Utf8Utils } from '../utils/utf8Utils';
 
 export const HTTP_SPAN = 'http';
@@ -126,8 +126,8 @@ const getEventForSpan = (hasError: boolean = false): string => {
   );
 };
 
-const getEnvsForSpan = (hasError: boolean = false): string =>
-  payloadStringify(process.env, getEventEntitySize(hasError));
+export const getEnvsForSpan = (hasError: boolean = false): string =>
+  payloadStringifyWithContext('environment', process.env, getEventEntitySize(hasError));
 
 export const getFunctionSpan = (lambdaEvent: {}, lambdaContext: Context): FunctionSpan => {
   const transactionId = getCurrentTransactionId();
@@ -287,7 +287,7 @@ export const getHttpSpan = (
   awsRequestId,
   randomRequestId,
   requestData,
-  responseData = { truncated: false }
+  responseData = { truncated: false, body: undefined, headers: undefined }
 ) => {
   let serviceData = {};
   try {
@@ -302,6 +302,18 @@ export const getHttpSpan = (
   const { awsServiceData, spanId } = serviceData;
 
   const prioritizedSpanId = getHttpSpanId(randomRequestId, spanId);
+  if (requestData) {
+    requestData.body &&
+      (requestData.body = payloadStringifyWithContext('requestBody', requestData.body));
+    requestData.headers &&
+      (requestData.headers = payloadStringifyWithContext('requestHeaders', requestData.headers));
+  }
+  if (responseData) {
+    responseData.body &&
+      (responseData.body = payloadStringifyWithContext('responseBody', responseData.body));
+    responseData.headers &&
+      (responseData.headers = payloadStringifyWithContext('responseHeaders', responseData.headers));
+  }
   const httpInfo = getHttpInfo(requestData, responseData);
 
   const basicHttpSpan = getBasicChildSpan(

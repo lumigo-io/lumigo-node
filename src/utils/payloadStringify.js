@@ -1,7 +1,13 @@
 import * as logger from '../logger';
 import {
+  getEnvVarsMaskingRegex,
   getEventEntitySize,
+  getRequestBodyMaskingRegex,
+  getRequestHeadersMaskingRegex,
+  getResponseBodyMaskingRegex,
+  getResponseHeadersMaskingRegex,
   isString,
+  LUMIGO_SECRET_MASKING_ALL_MAGIC,
   LUMIGO_SECRET_MASKING_REGEX,
   LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP,
   LUMIGO_WHITELIST_KEYS_REGEXES,
@@ -9,6 +15,7 @@ import {
   parseJsonFromEnvVar,
   safeExecute,
 } from '../utils';
+import { runOneTimeWrapper } from './functionUtils';
 
 const nativeTypes = ['string', 'bigint', 'number', 'undefined', 'boolean'];
 const SCRUBBED_TEXT = '****';
@@ -88,11 +95,12 @@ export const payloadStringify = (
   payload,
   maxPayloadSize = getEventEntitySize(),
   skipScrubPath = null,
-  truncated = false
+  truncated = false,
+  givenSecretRegexes = null
 ) => {
   let totalSize = 0;
   let refsFound = [];
-  const secretsRegexes = keyToOmitRegexes();
+  const secretsRegexes = givenSecretRegexes || keyToOmitRegexes();
   const whitelistRegexes = whitelistKeysRegexes();
   const secretItemsToSkipScrubbing = new Set(getItemsInPath(payload, skipScrubPath));
 
@@ -143,4 +151,47 @@ export const payloadStringify = (
     }
   }
   return result || '';
+};
+
+const invalidMaskingRegexWarning = runOneTimeWrapper((e) => {
+  logger.warn('Failed to parse the given masking regex', e);
+});
+
+export const payloadStringifyWithContext = (
+  context,
+  payload,
+  maxPayloadSize = getEventEntitySize(),
+  skipScrubPath = null,
+  truncated = false
+) => {
+  let givenSecretRegexes = null;
+  if (context === 'environment') {
+    givenSecretRegexes = getEnvVarsMaskingRegex();
+  } else if (context === 'requestBody') {
+    givenSecretRegexes = getRequestBodyMaskingRegex();
+  } else if (context === 'requestHeaders') {
+    givenSecretRegexes = getRequestHeadersMaskingRegex();
+  } else if (context === 'responseBody') {
+    givenSecretRegexes = getResponseBodyMaskingRegex();
+  } else if (context === 'responseHeaders') {
+    givenSecretRegexes = getResponseHeadersMaskingRegex();
+  }
+
+  if (givenSecretRegexes === LUMIGO_SECRET_MASKING_ALL_MAGIC) {
+    return SCRUBBED_TEXT;
+  } else if (givenSecretRegexes) {
+    try {
+      givenSecretRegexes = JSON.parse(givenSecretRegexes);
+      givenSecretRegexes = givenSecretRegexes.map((x) => new RegExp(x, 'i'));
+    } catch (e) {
+      invalidMaskingRegexWarning(e);
+      givenSecretRegexes = null;
+    }
+  }
+
+  if (isString(payload)) {
+    return payload.length > maxPayloadSize ? truncate(payload, maxPayloadSize) : payload;
+  }
+
+  return payloadStringify(payload, maxPayloadSize, skipScrubPath, truncated, givenSecretRegexes);
 };

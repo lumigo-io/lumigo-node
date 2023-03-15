@@ -1,5 +1,7 @@
 import { lowerCaseObjectKeys } from '../src/utils';
 import { payloadStringify } from '../src/utils/payloadStringify';
+import {isString} from "@lumigo/node-core/lib/utils";
+import {json} from "caniuse-lite/data/features";
 
 export class HttpSpanBuilder {
   static DEFAULT_ACCOUNT = '985323015126';
@@ -83,7 +85,7 @@ export class HttpSpanBuilder {
     };
   }
 
-  static parseHeaders = headers => lowerCaseObjectKeys(headers);
+  static parseHeaders = headers => JSON.stringify(lowerCaseObjectKeys(headers));
 
   static parseBody = body => {
     if (!body) body = '';
@@ -91,7 +93,7 @@ export class HttpSpanBuilder {
   };
 
   static addHeader = (headers, obj) => {
-    return { ...headers, ...obj };
+    return { ...(isString(headers)? JSON.parse(headers): headers), ...obj };
   };
 
   withSpanId = spanId => {
@@ -115,15 +117,17 @@ export class HttpSpanBuilder {
     this._span.info.httpInfo.host = host;
 
     const headers = HttpSpanBuilder.addHeader(this._span.info.httpInfo.request.headers, { host });
-    this._span.info.httpInfo.request.headers = headers;
+    this._span.info.httpInfo.request.headers = JSON.stringify(headers);
     return this;
   };
 
-  withRequest = request => {
+  withRequest = (request, parsed = true) => {
     this._span.info.httpInfo.request = { ...request, truncated: false };
-    this._span.info.httpInfo.request.headers = HttpSpanBuilder.parseHeaders(
-      this._span.info.httpInfo.request.headers
-    );
+    if (parsed) {
+      this._span.info.httpInfo.request.headers = HttpSpanBuilder.parseHeaders(
+          this._span.info.httpInfo.request.headers
+      );
+    }
     this._span.info.httpInfo.request.body = HttpSpanBuilder.parseBody(
       this._span.info.httpInfo.request.body
     );

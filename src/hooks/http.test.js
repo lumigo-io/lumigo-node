@@ -432,7 +432,7 @@ describe('http hook', () => {
         a: 'request',
         sendTime: 1,
         host: 'your.mind.com',
-        headers: { host: 'your.mind.com' },
+        headers: JSON.stringify({ host: 'your.mind.com' }),
         body: '',
       },
       responseData: {
@@ -473,7 +473,7 @@ describe('http hook', () => {
       .withStarted(1)
       .withAccountId('335722316285')
       .withResponse(testData.responseData)
-      .withRequest(testData.requestData)
+      .withRequest(testData.requestData, false)
       .withHost(testData.requestData.host)
       .build();
     const actual = SpansContainer.getSpans();
@@ -488,7 +488,7 @@ describe('http hook', () => {
         sendTime: 1,
         truncated: false,
         host: 'your.mind.com',
-        headers: { host: 'your.mind.com' },
+        headers: JSON.stringify({ host: 'your.mind.com' }),
         body: '',
       },
       responseData: {
@@ -530,7 +530,7 @@ describe('http hook', () => {
       .withStarted(1)
       .withAccountId('335722316285')
       .withResponse({ ...testData.responseData, body: 'start' + 'a'.repeat(2043) })
-      .withRequest(testData.requestData)
+      .withRequest(testData.requestData, false)
       .withHost(testData.requestData.host)
       .build();
     expect(SpansContainer.getSpans()).toEqual([expectedHttpSpan]);
@@ -571,7 +571,7 @@ describe('http hook', () => {
       .withStarted(1)
       .withAccountId('335722316285')
       .withResponse(testData.responseData)
-      .withRequest(testData.requestData)
+      .withRequest(testData.requestData, false)
       .withHost(testData.requestData.host)
       .build();
 
@@ -872,7 +872,7 @@ describe('http hook', () => {
 
     const span = SpansContainer.getSpans()[0];
 
-    expect(span.info.httpInfo.request.headers[TRACESTATE_HEADER_NAME]).toBeDefined();
+    expect(JSON.parse(span.info.httpInfo.request.headers)[TRACESTATE_HEADER_NAME]).toBeDefined();
   });
 
   test('wrapHttpLib - adding TRACESTATE_HEADER_NAME - headers exists', () => {
