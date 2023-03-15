@@ -1,7 +1,5 @@
 import { lowerCaseObjectKeys } from '../src/utils';
-import { payloadStringify } from '../src/utils/payloadStringify';
 import {isString} from "@lumigo/node-core/lib/utils";
-import {json} from "caniuse-lite/data/features";
 
 export class HttpSpanBuilder {
   static DEFAULT_ACCOUNT = '985323015126';
