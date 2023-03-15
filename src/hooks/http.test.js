@@ -817,7 +817,21 @@ describe('http hook', () => {
     HttpsScenarioBuilder.appendNextResponse(req, responseData.body);
 
     const spans = SpansContainer.getSpans();
-    expect(spans).toEqual([]);
+    const expectedSpan = new HttpSpanBuilder()
+      .withStarted(spans[0].started)
+      .withEnded(spans[0].ended)
+      .withTransactionId('36643236653363382d363061')
+      .withSpanId(spans[0].id)
+      .withInfoTraceId('6643236', '36643236653363382d363061', '1', '36643236653363382d363061')
+      .withHttpInfo({
+        host: HttpSpanBuilder.DEFAULT_HOST,
+        request: requestData,
+        response: responseData,
+      })
+      .withRequestTimesFromSpan(spans[0])
+      .build();
+
+    expect(spans).toEqual([expectedSpan]);
   });
 
   test('wrapHttpLib - simple flow', () => {

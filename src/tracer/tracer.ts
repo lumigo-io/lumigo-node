@@ -10,7 +10,7 @@ import {
 import { isAwsContext } from '../guards/awsGuards';
 import { Http } from '../hooks/http';
 import * as logger from '../logger';
-import { warnClient } from '../logger';
+import { info, warnClient } from '../logger';
 import { sendSingleSpan, sendSpans } from '../reporter';
 import {
   getEndFunctionSpan,
@@ -25,13 +25,14 @@ import {
   getTimeoutTimerBuffer,
   isAwsEnvironment,
   isPromise,
-  isStepFunction,
   isSwitchedOff,
+  isStepFunction,
   isTimeoutTimerEnabled,
   LUMIGO_EVENT_KEY,
   removeLumigoFromStacktrace,
   safeExecute,
   STEP_FUNCTION_UID_KEY,
+  SWITCH_OFF_FLAG,
 } from '../utils';
 import { runOneTimeWrapper } from '../utils/functionUtils';
 import { TraceOptions } from './trace-options.type';
@@ -48,6 +49,13 @@ export const trace =
   ({ token, debug, edgeHost, switchOff, stepFunction }: TraceOptions) =>
   (userHandler: Handler) =>
   async <Event = any>(event: Event, context?: Context, callback?: Callback): Promise<Handler> => {
+    if (!!switchOff || isSwitchedOff()) {
+      info(
+        `The '${SWITCH_OFF_FLAG}' environment variable is set to 'true': this invocation will not be traced by Lumigo`
+      );
+      return userHandler(event, context, callback);
+    }
+
     if (!isAwsEnvironment()) {
       warnClient('Tracer is disabled, running on non-aws environment');
       return userHandler(event, context, callback);
