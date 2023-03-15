@@ -1,4 +1,5 @@
 import { lowerCaseObjectKeys } from '../src/utils';
+import { payloadStringify } from '../src/utils/payloadStringify';
 
 export class HttpSpanBuilder {
   static DEFAULT_ACCOUNT = '985323015126';
@@ -133,10 +134,10 @@ export class HttpSpanBuilder {
     return this;
   };
 
-  withRequest = (request) => {
+  withRequest = request => {
     this._span.info.httpInfo.request = { ...request, truncated: false };
     this._span.info.httpInfo.request.headers = HttpSpanBuilder.parseHeaders(
-        this._span.info.httpInfo.request.headers
+      this._span.info.httpInfo.request.headers
     );
     this._span.info.httpInfo.request.body = HttpSpanBuilder.parseBody(
       this._span.info.httpInfo.request.body

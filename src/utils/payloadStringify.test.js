@@ -1,7 +1,9 @@
 import * as utils from '../utils';
 import {
+  LUMIGO_SECRET_MASKING_ALL_MAGIC,
   LUMIGO_SECRET_MASKING_REGEX,
   LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP,
+  LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_BODIES,
   LUMIGO_WHITELIST_KEYS_REGEXES,
 } from '../utils';
 import { keyToOmitRegexes, payloadStringify, shallowMask, truncate } from './payloadStringify';
@@ -276,6 +278,24 @@ describe('payloadStringify', () => {
   test('payloadStringify -> skipScrubPath empty array -> Do nothing', () => {
     const result = payloadStringify({ a: { key: 'c' } }, 1024, []);
     expect(result).toEqual(JSON.stringify({ a: { key: '****' } }));
+  });
+
+  test('shallowMask -> requestBody -> all', () => {
+    process.env[LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_BODIES] = LUMIGO_SECRET_MASKING_ALL_MAGIC;
+    expect(shallowMask('requestBody', 'body')).toEqual('****');
+    expect(shallowMask('requestBody', { a: 'b' })).toEqual('****');
+  });
+
+  test('shallowMask -> requestBody -> regex', () => {
+    process.env[LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_BODIES] = '[".*X.*"]';
+    expect(shallowMask('requestBody', { a: 'b', aXy: 'bla' })).toEqual({ a: 'b', aXy: '****' });
+  });
+
+  test('shallowMask -> requestBody -> fallback', () => {
+    expect(shallowMask('requestBody', { a: 'b', password: 'bla' })).toEqual({
+      a: 'b',
+      password: '****',
+    });
   });
 
   test('shallowMask -> string input -> Do nothing', () => {
