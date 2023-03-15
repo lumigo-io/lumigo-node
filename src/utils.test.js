@@ -106,15 +106,26 @@ describe('utils', () => {
     expect(lineageNoParentActual.transactionId).toEqual('6ac46730d346cad0e53f89d0');
     expect(lineageNoParentActual.Parent).toBeTruthy();
 
-    expect(() => utils.getTraceId(null)).toThrow('Missing _X_AMZN_TRACE_ID in Lambda Env Vars.');
+    expect(utils.getTraceId(null)).toEqual({
+      Root: 'f585f41',
+      Parent: '5f585f414d5a4e5f54524143',
+      Sampled: '1',
+      transactionId: '5f585f414d5a4e5f54524143',
+    });
 
-    expect(() => utils.getTraceId('x;y')).toThrow(
-      'Expected 3 semi-colon separated parts in _X_AMZN_TRACE_ID.'
-    );
+    expect(utils.getTraceId('x;y')).toEqual({
+      Root: '83b7978',
+      Parent: '783b79783b79783b79783b79',
+      Sampled: '1',
+      transactionId: '783b79783b79783b79783b79',
+    });
 
-    expect(() => utils.getTraceId('a=b;c=d;e=f')).toThrow(
-      "Either Root, Parent or Sampled weren't found in traceId."
-    );
+    expect(utils.getTraceId('a=b;c=d;e=f')).toEqual({
+      Root: '13d623b',
+      Parent: '613d623b633d643b653d6661',
+      Sampled: '1',
+      transactionId: '613d623b633d643b653d6661',
+    });
   });
 
   test('isObject', () => {

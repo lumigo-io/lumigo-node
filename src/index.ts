@@ -1,5 +1,12 @@
 import { trace, Tracer, TracerOptions } from './tracer';
-import { safeExecute, setSwitchOff, setVerboseMode, isValidToken } from './utils';
+import {
+  isSwitchedOff,
+  safeExecute,
+  setSwitchOff,
+  setVerboseMode,
+  isValidToken,
+  SWITCH_OFF_FLAG,
+} from './utils';
 import { ExecutionTags } from './globals';
 import startHooks from './hooks';
 import { HttpSpansAgent } from './httpSpansAgent';
@@ -25,8 +32,10 @@ function initTracer(options?: TracerOptions): Tracer {
 
   const token = assertValidToken(traceOptions.token || process.env.LUMIGO_TRACER_TOKEN);
 
-  safeExecute(startHooks)();
-  HttpSpansAgent.initAgent();
+  if (!traceOptions?.switchOff && !isSwitchedOff()) {
+    safeExecute(startHooks)();
+    HttpSpansAgent.initAgent();
+  }
 
   return {
     trace: trace({ ...traceOptions, token }),
