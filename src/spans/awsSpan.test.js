@@ -693,14 +693,14 @@ describe('awsSpan', () => {
           request: {
             truncated: false,
             body: 'the first rule of fight club',
-            headers: JSON.stringify({ Tyler: 'Durden' }),
+            headers: { Tyler: 'Durden' },
             host: 'your.mind.com',
             sendTime: 1234,
           },
           response: {
             truncated: false,
             body: 'Well, Tony is dead.',
-            headers: JSON.stringify({ Peter: 'Parker' }),
+            headers: { Peter: 'Parker' },
             receivedTime: 1256,
             statusCode: 200,
           },
@@ -766,7 +766,7 @@ describe('awsSpan', () => {
           host: 'your.mind.com',
           request: {
             body: 'the first rule of fight club',
-            headers: JSON.stringify({ Tyler: 'Durden' }),
+            headers: { Tyler: 'Durden' },
             host: 'your.mind.com',
             sendTime: 1234,
           },
@@ -830,7 +830,7 @@ describe('awsSpan', () => {
           host: 'your.mind.com',
           request: {
             body: 'the first rule of fight club',
-            headers: JSON.stringify({ Tyler: 'Durden' }),
+            headers: { Tyler: 'Durden' },
             host: 'your.mind.com',
             sendTime: 1234,
           },
@@ -926,11 +926,12 @@ describe('awsSpan', () => {
     );
     expect(result.info.httpInfo.request.body).toEqual('****');
     // Check that the request headers will get the default masking
-    expect(result.info.httpInfo.request.headers).toEqual(
-      JSON.stringify({ host: 'your.mind.com', password: '****' })
-    );
+    expect(result.info.httpInfo.request.headers).toEqual({
+      host: 'your.mind.com',
+      password: '****',
+    });
     expect(result.info.httpInfo.response.body).toEqual('****');
-    expect(result.info.httpInfo.response.headers).toEqual(JSON.stringify({ X: '****', z: 'A' }));
+    expect(result.info.httpInfo.response.headers).toEqual({ X: '****', z: 'A' });
   });
 
   test('getHttpSpan - secret masking malformed regex get default', () => {
@@ -948,9 +949,10 @@ describe('awsSpan', () => {
     };
 
     const result = awsSpan.getHttpSpan('123', '', '123', testData.requestData);
-    expect(result.info.httpInfo.request.headers).toEqual(
-      JSON.stringify({ host: 'your.mind.com', password: '****' })
-    );
+    expect(result.info.httpInfo.request.headers).toEqual({
+      host: 'your.mind.com',
+      password: '****',
+    });
   });
 
   test('getHttpSpanId - simple flow', () => {

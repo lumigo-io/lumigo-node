@@ -33,7 +33,7 @@ import {
   safeExecute,
   setWarm,
 } from '../utils';
-import { payloadStringify, payloadStringifyWithContext, truncate } from '../utils/payloadStringify';
+import { payloadStringify, shallowMask, truncate } from '../utils/payloadStringify';
 import { Utf8Utils } from '../utils/utf8Utils';
 
 export const HTTP_SPAN = 'http';
@@ -127,7 +127,7 @@ const getEventForSpan = (hasError: boolean = false): string => {
 };
 
 export const getEnvsForSpan = (hasError: boolean = false): string =>
-  payloadStringifyWithContext('environment', process.env, getEventEntitySize(hasError));
+  payloadStringify(shallowMask('environment', process.env), getEventEntitySize(hasError));
 
 export const getFunctionSpan = (lambdaEvent: {}, lambdaContext: Context): FunctionSpan => {
   const transactionId = getCurrentTransactionId();
@@ -303,16 +303,14 @@ export const getHttpSpan = (
 
   const prioritizedSpanId = getHttpSpanId(randomRequestId, spanId);
   if (requestData) {
-    requestData.body &&
-      (requestData.body = payloadStringifyWithContext('requestBody', requestData.body));
+    requestData.body && (requestData.body = shallowMask('requestBody', requestData.body));
     requestData.headers &&
-      (requestData.headers = payloadStringifyWithContext('requestHeaders', requestData.headers));
+      (requestData.headers = shallowMask('requestHeaders', requestData.headers));
   }
   if (responseData) {
-    responseData.body &&
-      (responseData.body = payloadStringifyWithContext('responseBody', responseData.body));
+    responseData.body && (responseData.body = shallowMask('responseBody', responseData.body));
     responseData.headers &&
-      (responseData.headers = payloadStringifyWithContext('responseHeaders', responseData.headers));
+      (responseData.headers = shallowMask('responseHeaders', responseData.headers));
   }
   const httpInfo = getHttpInfo(requestData, responseData);
 

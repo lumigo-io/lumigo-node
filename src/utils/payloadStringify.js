@@ -95,12 +95,11 @@ export const payloadStringify = (
   payload,
   maxPayloadSize = getEventEntitySize(),
   skipScrubPath = null,
-  truncated = false,
-  givenSecretRegexes = null
+  truncated = false
 ) => {
   let totalSize = 0;
   let refsFound = [];
-  const secretsRegexes = givenSecretRegexes || keyToOmitRegexes();
+  const secretsRegexes = keyToOmitRegexes();
   const whitelistRegexes = whitelistKeysRegexes();
   const secretItemsToSkipScrubbing = new Set(getItemsInPath(payload, skipScrubPath));
 
@@ -157,13 +156,26 @@ const invalidMaskingRegexWarning = runOneTimeWrapper((e) => {
   logger.warn('Failed to parse the given masking regex', e);
 });
 
-export const payloadStringifyWithContext = (
-  context,
-  payload,
-  maxPayloadSize = getEventEntitySize(),
-  skipScrubPath = null,
-  truncated = false
-) => {
+const shallowMaskByRegex = (payload, regexes) => {
+  regexes = regexes || keyToOmitRegexes();
+  if (isString(payload)) {
+    return payload;
+  }
+  if (typeof payload !== 'object') {
+    logger.warn('Failed to mask payload, payload is not an object or string', payload);
+    return payload;
+  }
+  return Object.keys(payload).reduce((acc, key) => {
+    if (keyContainsRegex(regexes, key)) {
+      acc[key] = SCRUBBED_TEXT;
+    } else {
+      acc[key] = payload[key];
+    }
+    return acc;
+  }, {});
+};
+
+export const shallowMask = (context, payload) => {
   let givenSecretRegexes = null;
   if (context === 'environment') {
     givenSecretRegexes = getEnvVarsMaskingRegex();
@@ -175,6 +187,8 @@ export const payloadStringifyWithContext = (
     givenSecretRegexes = getResponseBodyMaskingRegex();
   } else if (context === 'responseHeaders') {
     givenSecretRegexes = getResponseHeadersMaskingRegex();
+  } else {
+    logger.warn('Unknown context for shallowMask', context);
   }
 
   if (givenSecretRegexes === LUMIGO_SECRET_MASKING_ALL_MAGIC) {
@@ -189,9 +203,5 @@ export const payloadStringifyWithContext = (
     }
   }
 
-  if (isString(payload)) {
-    return payload.length > maxPayloadSize ? truncate(payload, maxPayloadSize) : payload;
-  }
-
-  return payloadStringify(payload, maxPayloadSize, skipScrubPath, truncated, givenSecretRegexes);
+  return shallowMaskByRegex(payload, givenSecretRegexes);
 };

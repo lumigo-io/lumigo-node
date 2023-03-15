@@ -4,7 +4,9 @@ import {
   LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP,
   LUMIGO_WHITELIST_KEYS_REGEXES,
 } from '../utils';
-import { keyToOmitRegexes, payloadStringify, truncate } from './payloadStringify';
+import { keyToOmitRegexes, payloadStringify, shallowMask, truncate } from './payloadStringify';
+import { ConsoleWritesForTesting } from '../../testUtils/consoleMocker';
+import { TracerGlobals } from '../globals';
 
 describe('payloadStringify', () => {
   test('payloadStringify -> simple flow -> object', () => {
@@ -274,5 +276,33 @@ describe('payloadStringify', () => {
   test('payloadStringify -> skipScrubPath empty array -> Do nothing', () => {
     const result = payloadStringify({ a: { key: 'c' } }, 1024, []);
     expect(result).toEqual(JSON.stringify({ a: { key: '****' } }));
+  });
+
+  test('shallowMask -> string input -> Do nothing', () => {
+    expect(shallowMask('requestBody', 'body')).toEqual('body');
+  });
+
+  test('shallowMask -> non object input -> Do nothing and warn', () => {
+    utils.setDebug();
+    TracerGlobals.setTracerInputs({});
+    expect(shallowMask('requestBody', 1)).toEqual(1);
+    expect(ConsoleWritesForTesting.getLogs()).toEqual([
+      {
+        msg: '#LUMIGO# - WARNING - "Failed to mask payload, payload is not an object or string"',
+        obj: '1',
+      },
+    ]);
+  });
+
+  test('shallowMask -> unknown context -> use default and warn', () => {
+    utils.setDebug();
+    TracerGlobals.setTracerInputs({});
+    expect(shallowMask('other', { a: 'b', password: 1234 })).toEqual({ a: 'b', password: '****' });
+    expect(ConsoleWritesForTesting.getLogs()).toEqual([
+      {
+        msg: '#LUMIGO# - WARNING - "Unknown context for shallowMask"',
+        obj: '"other"',
+      },
+    ]);
   });
 });
