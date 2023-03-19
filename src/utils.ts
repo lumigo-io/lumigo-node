@@ -643,3 +643,5 @@ export const getResponseHeadersMaskingRegex = (): string | undefined =>
   process.env[LUMIGO_SECRET_MASKING_REGEX_HTTP_RESPONSE_HEADERS];
 export const getEnvVarsMaskingRegex = (): string | undefined =>
   process.env[LUMIGO_SECRET_MASKING_REGEX_ENVIRONMENT];
+export const getHttpQueryParamsMaskingRegex = (): string | undefined =>
+  process.env[LUMIGO_SECRET_MASKING_REGEX_HTTP_QUERY_PARAMS];

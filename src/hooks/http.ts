@@ -29,9 +29,12 @@ import * as logger from '../logger';
 import * as extender from '../extender';
 import * as http from 'http';
 import * as https from 'https';
+const { parse: parseQuery } = require('querystring');
+
 import { GlobalDurationTimer } from '../utils/globalDurationTimer';
 import { runOneTimeWrapper } from '../utils/functionUtils';
 import { addW3CTracePropagator } from '../utils/w3cUtils';
+import { shallowMask } from '../utils/payloadStringify';
 
 export const hostBlaclist = new Set(['127.0.0.1']);
 
@@ -150,6 +153,16 @@ export class Http {
     return host === getEdgeHost() || hostBlaclist.has(host);
   }
 
+  static scrubQueryParams(search: string): string {
+    return (
+      safeExecute(() => {
+        const query = parseQuery(search.substring(1));
+        const scrubbedQuery = shallowMask('queryParams', query);
+        return '?' + new URLSearchParams(scrubbedQuery);
+      })() || ''
+    );
+  }
+
   @GlobalDurationTimer.timedSync()
   static parseHttpRequestOptions(options: ParseHttpRequestOptions = {}, url) {
     const host = Http.getHostFromOptionsOrUrl(options, url);
@@ -157,6 +170,7 @@ export class Http {
 
     let path = null;
     let port = null;
+    let search = null;
     let protocol = null;
 
     let { headers, method = 'GET' } = options;
@@ -164,7 +178,7 @@ export class Http {
 
     if (url) {
       const myUrl = new URL(url);
-      ({ pathname: path, port, protocol } = myUrl);
+      ({ pathname: path, port, protocol, search } = myUrl);
     } else {
       path = options.path || '/';
       port = options.port || options.defaultPort || (agent && agent.defaultPort) || 80;
@@ -175,7 +189,13 @@ export class Http {
       headers = addHeaders(headers, { host });
     }
 
-    const uri = `${host}${path}`;
+    if (!!search) {
+      search = Http.scrubQueryParams(search);
+    } else {
+      search = '';
+    }
+
+    const uri = `${host}${path}${search}`;
 
     return {
       truncated: false,

@@ -7,7 +7,7 @@ import {
   HttpsScenarioBuilder,
 } from '../../testUtils/httpsMocker';
 import { HttpSpanBuilder } from '../../testUtils/httpSpanBuilder';
-import { lowerCaseObjectKeys } from '../utils';
+import { lowerCaseObjectKeys, LUMIGO_SECRET_MASKING_REGEX_HTTP_QUERY_PARAMS } from '../utils';
 
 import { HandlerInputsBuilder } from '../../testUtils/handlerInputsBuilder';
 import {
@@ -414,7 +414,35 @@ describe('http hook', () => {
       method: 'POST',
       path: '/yo.php',
       truncated: false,
-      uri: 'asdf.io/yo.php',
+      uri: 'asdf.io/yo.php?ref=baba',
+      port: '1234',
+      protocol: 'https:',
+      sendTime: 895179612345,
+    };
+
+    expect(Http.parseHttpRequestOptions(options2, url2)).toEqual(expected2);
+  });
+
+  test('parseHttpRequestOptions - scrub query params', () => {
+    const sendTime = 895179612345;
+    MockDate.set(sendTime);
+
+    const headers = { X: 'Y', Z: 'A' };
+
+    const url2 = 'https://asdf.io:1234/yo.php?ref=baba&password=1234';
+    const options2 = { headers, method: 'POST' };
+    const expected2 = {
+      body: '',
+      headers: {
+        x: 'Y',
+        z: 'A',
+        host: 'asdf.io',
+      },
+      host: 'asdf.io',
+      method: 'POST',
+      path: '/yo.php',
+      truncated: false,
+      uri: 'asdf.io/yo.php?ref=baba&password=****',
       port: '1234',
       protocol: 'https:',
       sendTime: 895179612345,
@@ -1221,5 +1249,18 @@ describe('http hook', () => {
     HttpsMocker.request(requestData, () => {});
 
     expect(HttpsRequestsForTesting.getStartedRequests()).toEqual(1);
+  });
+
+  test('scrubQueryParams', () => {
+    expect(Http.scrubQueryParams('?password=123')).toEqual('?password=****');
+    expect(Http.scrubQueryParams('?plain=123')).toEqual('?plain=123');
+    expect(Http.scrubQueryParams('?password=123&plain=123')).toEqual('?password=****&plain=123');
+    expect(Http.scrubQueryParams('?password=123&plain=123&secret=123')).toEqual(
+      '?password=****&plain=123&secret=****'
+    );
+    process.env[LUMIGO_SECRET_MASKING_REGEX_HTTP_QUERY_PARAMS] = '["plain"]';
+    expect(Http.scrubQueryParams('?plain=123&bla=123')).toEqual('?plain=****&bla=123');
+
+    expect(Http.scrubQueryParams(1234)).toEqual('');
   });
 });

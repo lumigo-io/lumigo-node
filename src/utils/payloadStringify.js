@@ -2,6 +2,7 @@ import * as logger from '../logger';
 import {
   getEnvVarsMaskingRegex,
   getEventEntitySize,
+  getHttpQueryParamsMaskingRegex,
   getRequestBodyMaskingRegex,
   getRequestHeadersMaskingRegex,
   getResponseBodyMaskingRegex,
@@ -187,6 +188,8 @@ export const shallowMask = (context, payload) => {
     givenSecretRegexes = getResponseBodyMaskingRegex();
   } else if (context === 'responseHeaders') {
     givenSecretRegexes = getResponseHeadersMaskingRegex();
+  } else if (context === 'queryParams') {
+    givenSecretRegexes = getHttpQueryParamsMaskingRegex();
   } else {
     logger.warn('Unknown context for shallowMask', context);
   }
