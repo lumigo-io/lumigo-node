@@ -19,6 +19,18 @@ export const LUMIGO_DEFAULT_DOMAIN_SCRUBBERS =
   '["secretsmanager.*.amazonaws.com", "ssm.*.amazonaws.com", "kms.*.amazonaws.com", "sts..*amazonaws.com"]';
 export const LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP = 'LUMIGO_BLACKLIST_REGEX';
 export const LUMIGO_SECRET_MASKING_REGEX = 'LUMIGO_SECRET_MASKING_REGEX';
+export const LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_BODIES =
+  'LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_BODIES';
+export const LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_HEADERS =
+  'LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_HEADERS';
+export const LUMIGO_SECRET_MASKING_REGEX_HTTP_RESPONSE_BODIES =
+  'LUMIGO_SECRET_MASKING_REGEX_HTTP_RESPONSE_BODIES';
+export const LUMIGO_SECRET_MASKING_REGEX_HTTP_RESPONSE_HEADERS =
+  'LUMIGO_SECRET_MASKING_REGEX_HTTP_RESPONSE_HEADERS';
+export const LUMIGO_SECRET_MASKING_REGEX_HTTP_QUERY_PARAMS =
+  'LUMIGO_SECRET_MASKING_REGEX_HTTP_QUERY_PARAMS';
+export const LUMIGO_SECRET_MASKING_REGEX_ENVIRONMENT = 'LUMIGO_SECRET_MASKING_REGEX_ENVIRONMENT';
+export const LUMIGO_SECRET_MASKING_ALL_MAGIC = 'all';
 export const LUMIGO_WHITELIST_KEYS_REGEXES = 'LUMIGO_WHITELIST_KEYS_REGEXES';
 export const OMITTING_KEYS_REGEXES = [
   '.*pass.*',
@@ -621,3 +633,15 @@ export const filterObjectKeys = (
     }, {});
 
 export const isLambdaTraced = () => isAwsEnvironment() && !isSwitchedOff();
+export const getRequestBodyMaskingRegex = (): string | undefined =>
+  process.env[LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_BODIES];
+export const getRequestHeadersMaskingRegex = (): string | undefined =>
+  process.env[LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_HEADERS];
+export const getResponseBodyMaskingRegex = (): string | undefined =>
+  process.env[LUMIGO_SECRET_MASKING_REGEX_HTTP_RESPONSE_BODIES];
+export const getResponseHeadersMaskingRegex = (): string | undefined =>
+  process.env[LUMIGO_SECRET_MASKING_REGEX_HTTP_RESPONSE_HEADERS];
+export const getEnvVarsMaskingRegex = (): string | undefined =>
+  process.env[LUMIGO_SECRET_MASKING_REGEX_ENVIRONMENT];
+export const getHttpQueryParamsMaskingRegex = (): string | undefined =>
+  process.env[LUMIGO_SECRET_MASKING_REGEX_HTTP_QUERY_PARAMS];

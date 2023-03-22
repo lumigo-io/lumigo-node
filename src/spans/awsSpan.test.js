@@ -4,7 +4,17 @@ import { HandlerInputsBuilder } from '../../testUtils/handlerInputsBuilder';
 import { MAX_TRACER_ADDED_DURATION_ALLOWED, TracerGlobals } from '../globals';
 import * as awsParsers from '../parsers/aws';
 import * as utils from '../utils';
-import { EXECUTION_TAGS_KEY, getEventEntitySize, parseErrorObject } from '../utils';
+import {
+  EXECUTION_TAGS_KEY,
+  getEventEntitySize,
+  LUMIGO_SECRET_MASKING_ALL_MAGIC,
+  LUMIGO_SECRET_MASKING_REGEX_ENVIRONMENT,
+  LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_BODIES,
+  LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_HEADERS,
+  LUMIGO_SECRET_MASKING_REGEX_HTTP_RESPONSE_BODIES,
+  LUMIGO_SECRET_MASKING_REGEX_HTTP_RESPONSE_HEADERS,
+  parseErrorObject,
+} from '../utils';
 import { payloadStringify } from '../utils/payloadStringify';
 import * as awsSpan from './awsSpan';
 import { decodeHttpBody, HTTP_SPAN } from './awsSpan';
@@ -234,6 +244,12 @@ describe('awsSpan', () => {
     expect(awsSpan.removeStartedFromId(idWithStarted)).toEqual(
       '6d26e3c8-60a6-4cee-8a70-f525f47a4caf'
     );
+  });
+
+  test('getEnvsForSpan', () => {
+    process.env[LUMIGO_SECRET_MASKING_REGEX_ENVIRONMENT] = '["DONT_TELL"]';
+    process.env.DONT_TELL = '1234';
+    expect(JSON.parse(awsSpan.getEnvsForSpan()).DONT_TELL).toEqual('****');
   });
 
   test('getEndFunctionSpan', () => {
@@ -876,6 +892,67 @@ describe('awsSpan', () => {
 
     const result = awsSpan.getHttpSpan('', '', id, requestData);
     expect(result.service).toEqual('external');
+  });
+
+  test('getHttpSpan - secret masking different fields', () => {
+    process.env[LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_BODIES] = LUMIGO_SECRET_MASKING_ALL_MAGIC;
+    process.env[LUMIGO_SECRET_MASKING_REGEX_HTTP_RESPONSE_HEADERS] = '["X"]';
+    process.env[LUMIGO_SECRET_MASKING_REGEX_HTTP_RESPONSE_BODIES] = LUMIGO_SECRET_MASKING_ALL_MAGIC;
+
+    const testData = {
+      requestData: {
+        a: 'request',
+        sendTime: 1,
+        truncated: false,
+        host: 'your.mind.com',
+        headers: { host: 'your.mind.com', password: '1234' },
+        body: 'bla',
+      },
+      responseData: {
+        truncated: false,
+        statusCode: 200,
+        receivedTime: 895179612345,
+        headers: { X: 'Y', z: 'A' },
+        body: 'start',
+      },
+    };
+
+    const result = awsSpan.getHttpSpan(
+      '123',
+      '',
+      '123',
+      testData.requestData,
+      testData.responseData
+    );
+    expect(result.info.httpInfo.request.body).toEqual('****');
+    // Check that the request headers will get the default masking
+    expect(result.info.httpInfo.request.headers).toEqual({
+      host: 'your.mind.com',
+      password: '****',
+    });
+    expect(result.info.httpInfo.response.body).toEqual('****');
+    expect(result.info.httpInfo.response.headers).toEqual({ X: '****', z: 'A' });
+  });
+
+  test('getHttpSpan - secret masking malformed regex get default', () => {
+    process.env[LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_HEADERS] = '["X';
+
+    const testData = {
+      requestData: {
+        a: 'request',
+        sendTime: 1,
+        truncated: false,
+        host: 'your.mind.com',
+        headers: { host: 'your.mind.com', password: '1234' },
+        body: 'bla',
+      },
+    };
+
+    const result = awsSpan.getHttpSpan('123', '', '123', testData.requestData);
+    expect(result.info.httpInfo.request.headers).toEqual({
+      host: 'your.mind.com',
+      password: '****',
+    });
   });
 
   test('getHttpSpanId - simple flow', () => {

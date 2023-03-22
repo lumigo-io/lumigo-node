@@ -1,7 +1,14 @@
 import * as logger from '../logger';
 import {
+  getEnvVarsMaskingRegex,
   getEventEntitySize,
+  getHttpQueryParamsMaskingRegex,
+  getRequestBodyMaskingRegex,
+  getRequestHeadersMaskingRegex,
+  getResponseBodyMaskingRegex,
+  getResponseHeadersMaskingRegex,
   isString,
+  LUMIGO_SECRET_MASKING_ALL_MAGIC,
   LUMIGO_SECRET_MASKING_REGEX,
   LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP,
   LUMIGO_WHITELIST_KEYS_REGEXES,
@@ -9,6 +16,7 @@ import {
   parseJsonFromEnvVar,
   safeExecute,
 } from '../utils';
+import { runOneTimeWrapper } from './functionUtils';
 
 const nativeTypes = ['string', 'bigint', 'number', 'undefined', 'boolean'];
 const SCRUBBED_TEXT = '****';
@@ -143,4 +151,60 @@ export const payloadStringify = (
     }
   }
   return result || '';
+};
+
+const invalidMaskingRegexWarning = runOneTimeWrapper((e) => {
+  logger.warn('Failed to parse the given masking regex', e);
+});
+
+const shallowMaskByRegex = (payload, regexes) => {
+  regexes = regexes || keyToOmitRegexes();
+  if (isString(payload)) {
+    return payload;
+  }
+  if (typeof payload !== 'object') {
+    logger.warn('Failed to mask payload, payload is not an object or string', payload);
+    return payload;
+  }
+  return Object.keys(payload).reduce((acc, key) => {
+    if (keyContainsRegex(regexes, key)) {
+      acc[key] = SCRUBBED_TEXT;
+    } else {
+      acc[key] = payload[key];
+    }
+    return acc;
+  }, {});
+};
+
+export const shallowMask = (context, payload) => {
+  let givenSecretRegexes = null;
+  if (context === 'environment') {
+    givenSecretRegexes = getEnvVarsMaskingRegex();
+  } else if (context === 'requestBody') {
+    givenSecretRegexes = getRequestBodyMaskingRegex();
+  } else if (context === 'requestHeaders') {
+    givenSecretRegexes = getRequestHeadersMaskingRegex();
+  } else if (context === 'responseBody') {
+    givenSecretRegexes = getResponseBodyMaskingRegex();
+  } else if (context === 'responseHeaders') {
+    givenSecretRegexes = getResponseHeadersMaskingRegex();
+  } else if (context === 'queryParams') {
+    givenSecretRegexes = getHttpQueryParamsMaskingRegex();
+  } else {
+    logger.warn('Unknown context for shallowMask', context);
+  }
+
+  if (givenSecretRegexes === LUMIGO_SECRET_MASKING_ALL_MAGIC) {
+    return SCRUBBED_TEXT;
+  } else if (givenSecretRegexes) {
+    try {
+      givenSecretRegexes = JSON.parse(givenSecretRegexes);
+      givenSecretRegexes = givenSecretRegexes.map((x) => new RegExp(x, 'i'));
+    } catch (e) {
+      invalidMaskingRegexWarning(e);
+      givenSecretRegexes = null;
+    }
+  }
+
+  return shallowMaskByRegex(payload, givenSecretRegexes);
 };
