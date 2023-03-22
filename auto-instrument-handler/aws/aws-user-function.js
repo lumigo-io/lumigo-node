@@ -307,27 +307,57 @@ async function loadAsync(appRoot, fullHandlerString) {
     handlerFunc = _resolveHandler(userApp, handlerPath);
   } catch (err) {
     /*
-     * If the import failed *immediately*, which this file being on the first
-     * stack element, then chances are we are looking at a CommonJS module that
+     * If the import failed *immediately* (the import call from this file failed, not a
+     * nested one originating with a failure of the user code), which this file being on
+     * the first stack element, then chances are we are looking at a CommonJS module that
      * needs to be required instead of imported.
-     * 
-     * Stacks are returned as strings we need to parse :-(
      */
-    if (err.stack.toLowerCase().includes('error: cannot find module')) {
-      log(`Importing the '${fullHandlerString}' handler did not work`);
+    log(`Importing the '${fullHandlerString}' handler did not work: ${err}`);
+  
+    let tryRequireInstead = false;
+    const errorStack = err.stack.toLowerCase();
 
-      callSites = err.stack.split('\n');
-      requireStackFrameIndex = callSites.findIndex(line => line.toLowerCase().includes('require stack:'));
-      closestRequireStack = callSites[requireStackFrameIndex + 1]
-      if (closestRequireStack.includes(__filename)) {
-        log(`Trying to require the '${fullHandlerString}' handler instead`);
+    if (errorStack.includes('error: cannot find module')) {
+      /*
+       * Check that the error is something like this ('<handler>') be
+       * based on the value of 'fullHandlerString':
+       *
+       * "Error: Cannot find module '<handler>'",
+       * "Require stack:",
+       * "- /opt/nodejs/node_modules/lumigo-auto-instrument/aws/aws-user-function.js",
+       * "- /opt/nodejs/node_modules/lumigo-auto-instrument/index.js",
+       * "- /var/runtime/index.mjs",
+       * "    at Function.Module._resolveFilename (node:internal/modules/cjs/loader:995:15)",
+       * "    at Function.resolve (node:internal/modules/cjs/helpers:109:19)",
+       * "    at _tryImportOrRequire (/opt/nodejs/node_modules/lumigo-auto-instrument/aws/aws-user-function.js:216:35)",
+       * ...
+       *
+       * (Stacks are returned as strings we need to parse...)
+       * 
+       * We try to recover with a 'require' if the first stacktrace on the 'require stack' list
+       * looks like '/opt/nodejs/node_modules/lumigo-auto-instrument/aws/aws-user-function.js'.
+       */
+      const errorLines = errorStack.split('\n');
+      const requireStackFrameIndex = errorLines.findIndex(line => line.includes('require stack:'));
+      const closestRequireStack = errorLines[requireStackFrameIndex + 1];
+
+      tryRequireInstead = closestRequireStack.includes(__filename);
+    }
+
+    if (tryRequireInstead) {
+      log(`Trying to require the '${fullHandlerString}' handler instead`);
+
+      try {
         handlerFunc = loadSync(appRoot, fullHandlerString);
-      } else {
-        log(
-          `The importing error of the '${fullHandlerString}' handler does not seem to be related ` +
-          `with whether we import it or require it in the wrapper; skipping the require attempt to avoid side-effects: ${err}`
-        );
+      } catch (err) {
+        log(`Trying to require the '${fullHandlerString}' handler did not work either: ${err}`);
+        throw err;
       }
+    } else {
+      log(
+        `The importing error of the '${fullHandlerString}' handler does not seem to be related ` +
+        `with whether we import it or require it in the wrapper; skipping the require attempt to avoid side-effects: ${err}`
+      );
     }
   }
 
