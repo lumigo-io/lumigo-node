@@ -21,7 +21,11 @@ const fs = require("fs");
 const FUNCTION_EXPR = /^([^.]*)\.(.*)$/;
 const RELATIVE_PATH_SUBSTRING = "..";
 
-let SUPPORTED_EXTENSIONS;
+function log(message) {
+  if ((process.env.LUMIGO_DEBUG || '').toLowerCase() === 'true') {
+    console.log(`#LUMIGO# ${message}`);
+  }
+}
 
 /**
  * Break the full handler string into two pieces, the module root and the actual
@@ -297,13 +301,38 @@ async function loadAsync(appRoot, fullHandlerString) {
   let [moduleRoot, moduleAndHandler] = _moduleRootAndHandler(fullHandlerString);
   let [module, handlerPath] = _splitHandlerString(moduleAndHandler);
 
-  let userApp = await _loadUserAppAsync(appRoot, moduleRoot, module);
-  let handlerFunc = _resolveHandler(userApp, handlerPath);
+  let handlerFunc;
+  try {
+    let userApp = _loadUserApp(appRoot, moduleRoot, module);
+    handlerFunc = _resolveHandler(userApp, handlerPath);
+  } catch (err) {
+    /*
+     * If the import failed *immediately*, which this file being on the first
+     * stack element, then chances are we are looking at a CommonJS module that
+     * needs to be required instead of imported.
+     * 
+     * Stacks are returned as strings we need to parse :-(
+     */
+    if (err.stack.toLowerCase().includes('error: cannot find module')) {
+      log(`Importing the '${fullHandlerString}' handler did not work`);
+
+      callSites = err.stack.split('\n');
+      requireStackFrameIndex = callSites.findIndex(line => line.toLowerCase().includes('require stack:'));
+      closestRequireStack = callSites[requireStackFrameIndex + 1]
+      if (closestRequireStack.includes(__filename)) {
+        log(`Trying to require the '${fullHandlerString}' handler instead`);
+        handlerFunc = loadSync(appRoot, fullHandlerString);
+      } else {
+        log(
+          `The importing error of the '${fullHandlerString}' handler does not seem to be related ` +
+          `with whether we import it or require it in the wrapper; skipping the require attempt to avoid side-effects: ${err}`
+        );
+      }
+    }
+  }
 
   if (!handlerFunc) {
-    throw new HandlerNotFound(
-      `${fullHandlerString} is undefined or not exported`
-    );
+    throw new HandlerNotFound(`${fullHandlerString} is undefined or not exported`);
   }
 
   if (typeof handlerFunc !== "function") {

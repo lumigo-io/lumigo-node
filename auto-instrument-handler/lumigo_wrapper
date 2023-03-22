@@ -1,5 +1,40 @@
 #!/bin/bash
 
-export LUMIGO_ORIGINAL_HANDLER=$_HANDLER
-export _HANDLER="lumigo-auto-instrument.handler"
+# Enable case-insentive match of vars
+# https://www.gnu.org/software/bash/manual/html_node/The-Shopt-Builtin.html
+shopt -s nocasematch
+
+function log {
+    if [ "${LUMIGO_DEBUG}" = 'true' ]; then
+        echo "#LUMIGO# $1"
+    fi
+}
+
+# LUMIGO_NODE_OPTIONS_INJECTION has default true
+if [ "${LUMIGO_NODE_OPTIONS_INJECTION:-true}" = 'true' ]; then
+    log 'Using NODE_OPTIONS-based injection'
+
+    # Add the `@lumigo/tracer` package as required via an additional
+    # `--require/-r` command-line argument [1], added to the node runtime
+    # by means of the NODE_OPTIONS env var [2]
+    #
+    # [1] https://nodejs.org/api/cli.html#node_optionsoptions, since Node 1.6.0
+    # [2] https://nodejs.org/api/cli.html#node_optionsoptions, since Node 8.0
+    new_node_options='-r @lumigo/tracer'
+
+    if [ -n "${NODE_OPTIONS}" ]; then
+        log "Preserving pre-existing NODE_OPTIONS value: '${NODE_OPTIONS}'"
+    
+        # Preserve existing Node options, prepending our require
+        new_node_options="${new_node_options} ${NODE_OPTIONS}"
+    fi
+
+    export NODE_OPTIONS="${new_node_options}"
+else
+    log "Using legacy 'lumigo-auto-instrument.handler' injection"
+
+    export LUMIGO_ORIGINAL_HANDLER=$_HANDLER
+    export _HANDLER="lumigo-auto-instrument.handler"
+fi
+
 exec "$@"
