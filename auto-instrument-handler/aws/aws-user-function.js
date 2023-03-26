@@ -198,6 +198,8 @@ async function _tryImportOrRequire(appRoot, moduleRoot, module) {
       moduleType = commonJsModuleType;
     } else if (handlerFile.endsWith('.js')) {
       moduleType = isEsModule(handlerFile) ? esModuleType : commonJsModuleType;
+    } else {
+      moduleType = commonJsModuleType;
     }
   }
 
