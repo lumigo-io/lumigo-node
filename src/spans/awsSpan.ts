@@ -1,3 +1,4 @@
+import { payloadStringify, scrub, ScrubContext } from '@lumigo/node-core';
 import { Context } from 'aws-lambda';
 import { getEventInfo } from '../events';
 import { ExecutionTags, TracerGlobals } from '../globals';
@@ -35,8 +36,8 @@ import {
   SENDING_TIME_ID_KEY,
   setWarm,
   TRANSACTION_ID_KEY,
+  truncate,
 } from '../utils';
-import { payloadStringify, shallowMask, truncate } from '../utils/payloadStringify';
 import { Utf8Utils } from '../utils/utf8Utils';
 
 export const HTTP_SPAN = 'http';
@@ -146,13 +147,14 @@ const getEventForSpan = (hasError: boolean = false): string => {
   const event = TracerGlobals.getHandlerInputs().event;
   return payloadStringify(
     safeExecute(parseEvent, 'Failed to parse event', logger.LOG_LEVELS.WARNING, event)(event),
+    ScrubContext.DEFAULT,
     getEventEntitySize(hasError),
     getSkipScrubPath(event)
   );
 };
 
 export const getEnvsForSpan = (hasError: boolean = false): string =>
-  payloadStringify(shallowMask('environment', process.env), getEventEntitySize(hasError));
+  payloadStringify(process.env, ScrubContext.PROCESS_ENVIRONMENT, getEventEntitySize(hasError));
 
 export const getFunctionSpan = (lambdaEvent: {}, lambdaContext: Context): FunctionSpan => {
   const transactionId = getCurrentTransactionId();
@@ -328,14 +330,16 @@ export const getHttpSpan = (
 
   const prioritizedSpanId = getHttpSpanId(randomRequestId, spanId);
   if (requestData) {
-    requestData.body && (requestData.body = shallowMask('requestBody', requestData.body));
+    requestData.body &&
+      (requestData.body = scrub(requestData.body, ScrubContext.HTTP_REQUEST_BODY));
     requestData.headers &&
-      (requestData.headers = shallowMask('requestHeaders', requestData.headers));
+      (requestData.headers = scrub(requestData.headers, ScrubContext.HTTP_REQUEST_HEADERS));
   }
   if (responseData) {
-    responseData.body && (responseData.body = shallowMask('responseBody', responseData.body));
+    responseData.body &&
+      (responseData.body = scrub(responseData.body, ScrubContext.HTTP_RESPONSE_BODY));
     responseData.headers &&
-      (responseData.headers = shallowMask('responseHeaders', responseData.headers));
+      (responseData.headers = scrub(responseData.headers, ScrubContext.HTTP_RESPONSE_HEADERS));
   }
   const httpInfo = getHttpInfo(requestData, responseData);
 

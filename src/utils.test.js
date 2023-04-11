@@ -27,7 +27,6 @@ import {
   safeJsonParse,
   shouldPropagateW3C,
   shouldScrubDomain,
-  getTraceId,
 } from './utils';
 
 describe('utils', () => {

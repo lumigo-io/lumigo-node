@@ -318,7 +318,7 @@ describe('reporter', () => {
               },
               response: {
                 truncated: true,
-                body: `{"a":"${value}","b":"${value}","key":"****","password":"****","e":"${value}","secret":"****","f":"${value}","g":"${value}"}...[too long]`,
+                body: `{"a":"${value}","b":"${value}","key":"****","password":"****","e":"${value}","secret":"****","f":"${value}","g":"${value}"}✂`,
                 headers: '{"Peter":"Parker","content-type":"application/json"}',
               },
             },
@@ -335,7 +335,6 @@ describe('reporter', () => {
     test('forgeAndScrubRequestBody long response', () => {
       const value = 'a'.repeat(10);
       const long = 'a'.repeat(getEventEntitySize(true));
-      const shorter = 'a'.repeat(getEventEntitySize());
       const dummyEnd = 'dummyEnd';
       const spans = [
         {
@@ -362,6 +361,7 @@ describe('reporter', () => {
         },
         { dummyEnd },
       ];
+      const shorter = 'a'.repeat(1944);
       const expected = [
         {
           info: {
@@ -375,7 +375,7 @@ describe('reporter', () => {
               },
               response: {
                 truncated: false,
-                body: `{"key":"****","password":"****","e":"${value}","secret":"****","f":"${value}","g":"${value}","h":"${shorter}"}...[too long]`,
+                body: `{"key":"****","password":"****","e":"${value}","secret":"****","f":"${value}","g":"${value}","h":"${shorter}✂"}`,
                 headers: '{"Peter":"Parker","content-type":"application/json"}',
               },
             },
@@ -424,7 +424,7 @@ describe('reporter', () => {
               host: 'your.mind.com',
               request: {
                 truncated: true,
-                body: `{"key":"****","password":"****","e":"${value}","secret":"****","f":"${value}","g":"${value}"}...[too long]`,
+                body: `{"key":"****","password":"****","e":"${value}","secret":"****","f":"${value}","g":"${value}"}✂`,
                 headers: '{"Tyler":"Durden","secretKey":"****","content-type":"application/json"}',
                 host: 'your.mind.com',
               },
@@ -447,7 +447,7 @@ describe('reporter', () => {
     test('forgeAndScrubRequestBody long request', () => {
       const value = 'a'.repeat(10);
       const long = 'a'.repeat(getEventEntitySize(true));
-      const shorter = 'a'.repeat(getEventEntitySize());
+      const shorter = 'a'.repeat(getEventEntitySize() - 104 /* The size of the rest of the payload */);
       const dummyEnd = 'dummyEnd';
       const spans = [
         {
@@ -481,7 +481,7 @@ describe('reporter', () => {
               host: 'your.mind.com',
               request: {
                 truncated: false,
-                body: `{"key":"****","password":"****","e":"${value}","secret":"****","f":"${value}","g":"${value}","h":"${shorter}"}...[too long]`,
+                body: `{"key":"****","password":"****","e":"${value}","secret":"****","f":"${value}","g":"${value}","h":"${shorter}✂"}`,
                 headers: '{"Tyler":"Durden","secretKey":"****","content-type":"application/json"}',
                 host: 'your.mind.com',
               },

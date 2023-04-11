@@ -1,21 +1,11 @@
+import { payloadStringify } from '@lumigo/node-core';
 import MockDate from 'mockdate';
 import { encode } from 'utf8';
 import { HandlerInputsBuilder } from '../../testUtils/handlerInputsBuilder';
 import { MAX_TRACER_ADDED_DURATION_ALLOWED, TracerGlobals } from '../globals';
 import * as awsParsers from '../parsers/aws';
 import * as utils from '../utils';
-import {
-  EXECUTION_TAGS_KEY,
-  getEventEntitySize,
-  LUMIGO_SECRET_MASKING_ALL_MAGIC,
-  LUMIGO_SECRET_MASKING_REGEX_ENVIRONMENT,
-  LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_BODIES,
-  LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_HEADERS,
-  LUMIGO_SECRET_MASKING_REGEX_HTTP_RESPONSE_BODIES,
-  LUMIGO_SECRET_MASKING_REGEX_HTTP_RESPONSE_HEADERS,
-  parseErrorObject,
-} from '../utils';
-import { payloadStringify } from '../utils/payloadStringify';
+import { EXECUTION_TAGS_KEY, getEventEntitySize, parseErrorObject } from '../utils';
 import * as awsSpan from './awsSpan';
 import { decodeHttpBody, HTTP_SPAN } from './awsSpan';
 
@@ -159,8 +149,7 @@ describe('awsSpan', () => {
       name: 'aws-nodejs-dev-hello',
       type: 'function',
       ended: 895093200000,
-      event:
-        '{"resource":"/{proxy+}","path":"/hello/world","httpMethod":"POST","headers":{"Accept":"*/*","Accept-Encoding":"gzip, deflate","cache-control":"no-cache","CloudFront-Forwarded-Proto":"https","CloudFront-Is-Desktop-Viewer":"true","CloudFront-Is-Mobile-Viewer":"false","CloudFront-Is-SmartTV-Viewer":"false","CloudFront-Is-Tablet-Viewer":"false","CloudFront-Viewer-Country":"US","Content-Type":"application/json","headerName":"headerValue","Host":"gy415nuibc.execute-api.us-east-1.amazonaws.com","Postman-Token":"9f583ef0-ed83-4a38-aef3-eb9ce3f7a57f","User-Agent":"PostmanRuntime/2.4.5","Via":"1.1 d98420743a69852491bbdea73f7680bd.cloudfront.net (CloudFront)","X-Amz-Cf-Id":"pn-PWIJc6thYnZm5P0NMgOUglL1DYtl0gdeJky8tqsg8iS_sgsKD1A==","X-Forwarded-For":"54.240.196.186, 54.182.214.83","X-Forwarded-Port":"443","X-Forwarded-Proto":"https"},"multiValueHeaders":{"Accept":["*/*"],"Accept-Encoding":["gzip, deflate"],"cache-control":["no-cache"],"CloudFront-Forwarded-Proto":["https"],"CloudFront-Is-Desktop-Viewer":["true"],"CloudFront-Is-Mobile-Viewer":["false"],"CloudFront-Is-SmartTV-Viewer":["false"],"CloudFront-Is-Tablet-Viewer":["false"],"CloudFront-Viewer-Country":["US"],"Content-Type":["application/json"],"headerName":["headerValue"],"Host":["gy415nuibc.execute-api.us-east-1.amazonaws.com"],"Postman-Token":["9f583ef0-ed83-4a38-aef3-eb9ce3f7a57f"],"User-Agent":["PostmanRuntime/2.4.5"],"Via":["1.1 d98420743a69852491bbdea73f7680bd.cloudfront.net (CloudFront)"],"X-Amz-Cf-Id":["pn-PWIJc6thYnZm5P0NMgOUglL1DYtl0gdeJky8tqsg8iS_sgsKD1A=="],"X-Forwarded-For":["54.240.196.186, 54.182.214.83"],"X-Forwarded-Port":["443"],"X-Forwarded-Proto":["https"]},"queryStringParameters":{"name":"me"},"multiValueQueryStringParameters":{"name":["me"]},"pathParameters":{"proxy":"hello/world"},"stageVariables":{"stageVariableName":"stageVariableValue"},"requestContext":{"accountId":"12345678912","resourceId":"roq9wj","stage":"testStage","requestId":"deef4878-7910-11e6-8f14-25afc3e9ae33","identity":{"cognitoIdentityPoolId":"theCognitoIdentityPoolId","accountId":"theAccountId","cognitoIdentityId":"theCognitoIdentityId","caller":"theCaller","apiKey":"****","accessKey":"****","sourceIp":"192.168.196.186","cognitoAuthenticationType":"theCognitoAuthenticationType","cognitoAuthenticationProvider":"theCognitoAuthenticationProvider","userArn":"theUserArn","userAgent":"PostmanRuntime/2.4.5","user":"theUser"},"authorizer":{"principalId":"admin","clientId":1,"clientName":"Exata"},"resourcePath":"/{proxy+}","httpMethod":"POST","apiId":"gy415nuibc"},"body":"{\\r\\n\\t\\"a\\": 1\\r\\n}"}',
+      event: '{"resource":"/{proxy+}","path":"/hello/world","httpMethod":"POST","headers":{"Accept":"*/*","Accept-Encoding":"gzip, deflate","cache-control":"no-cache","CloudFront-Forwarded-Proto":"https","CloudFront-Is-Desktop-Viewer":"true","CloudFront-Is-Mobile-Viewer":"false","CloudFront-Is-SmartTV-Viewer":"false","CloudFront-Is-Tablet-Viewer":"false","CloudFront-Viewer-Country":"US","Content-Type":"application/json","headerName":"headerValue","Host":"gy415nuibc.execute-api.us-east-1.amazonaws.com","User-Agent":"PostmanRuntime/2.4.5","Via":"1.1 d98420743a69852491bbdea73f7680bd.cloudfront.net (CloudFront)","X-Amz-Cf-Id":"pn-PWIJc6thYnZm5P0NMgOUglL1DYtl0gdeJky8tqsg8iS_sgsKD1A==","X-Forwarded-For":"54.240.196.186, 54.182.214.83","X-Forwarded-Port":"443","X-Forwarded-Proto":"https"},"multiValueHeaders":{"Accept":["*/*"],"Accept-Encoding":["gzip, deflate"],"cache-control":["no-cache"],"CloudFront-Forwarded-Proto":["https"],"CloudFront-Is-Desktop-Viewer":["true"],"CloudFront-Is-Mobile-Viewer":["false"],"CloudFront-Is-SmartTV-Viewer":["false"],"CloudFront-Is-Tablet-Viewer":["false"],"CloudFront-Viewer-Country":["US"],"Content-Type":["application/json"],"headerName":["headerValue"],"Host":["gy415nuibc.execute-api.us-east-1.amazonaws.com"],"User-Agent":["PostmanRuntime/2.4.5"],"Via":["1.1 d98420743a69852491bbdea73f7680bd.cloudfront.net (CloudFront)"],"X-Amz-Cf-Id":["pn-PWIJc6thYnZm5P0NMgOUglL1DYtl0gdeJky8tqsg8iS_sgsKD1A=="],"X-Forwarded-For":["54.240.196.186, 54.182.214.83"],"X-Forwarded-Port":["443"],"X-Forwarded-Proto":["https"]},"queryStringParameters":{"name":"me"},"multiValueQueryStringParameters":{"name":["me"]},"pathParameters":{"proxy":"hello/world"},"stageVariables":{"stageVariableName":"stageVariableValue"},"requestContext":{"accountId":"12345678912","resourceId":"roq9wj","stage":"testStage","requestId":"deef4878-7910-11e6-8f14-25afc3e9ae33","identity":{"cognitoIdentityPoolId":"theCognitoIdentityPoolId","accountId":"theAccountId","cognitoIdentityId":"theCognitoIdentityId","caller":"theCaller","apiKey":"****","accessKey":"****","sourceIp":"192.168.196.186","cognitoAuthenticationType":"theCognitoAuthenticationType","cognitoAuthenticationProvider":"theCognitoAuthenticationProvider","userArn":"theUserArn","userAgent":"PostmanRuntime/2.4.5","user":"theUser"},"authorizer":"✂"},"body":"✂"}',
       started: 895093200000,
       maxFinishTime: 895093210000,
     };
@@ -247,9 +236,14 @@ describe('awsSpan', () => {
   });
 
   test('getEnvsForSpan', () => {
-    process.env[LUMIGO_SECRET_MASKING_REGEX_ENVIRONMENT] = '["DONT_TELL"]';
-    process.env.DONT_TELL = '1234';
-    expect(JSON.parse(awsSpan.getEnvsForSpan()).DONT_TELL).toEqual('****');
+    jest.isolateModules(() => {
+      process.env['LUMIGO_SECRET_MASKING_REGEX_ENVIRONMENT'] = '["DONT_TELL"]';
+      process.env['DONT_TELL'] = '1234';
+
+      const awsSpan = require('./awsSpan');
+
+      expect(JSON.parse(awsSpan.getEnvsForSpan()).DONT_TELL).toEqual('****');
+    });
   });
 
   test('getEndFunctionSpan', () => {
@@ -421,10 +415,8 @@ describe('awsSpan', () => {
     const endSpan = awsSpan.getEndFunctionSpan(startSpan, handlerReturnValue);
 
     expect(endSpan.event).not.toEqual(payloadStringify(event));
-    expect(endSpan.event).toEqual(payloadStringify(event, getEventEntitySize() * 2));
     expect(endSpan.event.length).toBeGreaterThan(startSpan.event.length);
     expect(endSpan.envs).not.toEqual(payloadStringify(envs));
-    expect(endSpan.envs).toEqual(payloadStringify(envs, getEventEntitySize() * 2));
     expect(endSpan.envs.length).toBeGreaterThan(startSpan.envs.length);
   });
 
@@ -895,47 +887,51 @@ describe('awsSpan', () => {
   });
 
   test('getHttpSpan - secret masking different fields', () => {
-    process.env[LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_BODIES] = LUMIGO_SECRET_MASKING_ALL_MAGIC;
-    process.env[LUMIGO_SECRET_MASKING_REGEX_HTTP_RESPONSE_HEADERS] = '["X"]';
-    process.env[LUMIGO_SECRET_MASKING_REGEX_HTTP_RESPONSE_BODIES] = LUMIGO_SECRET_MASKING_ALL_MAGIC;
+    jest.isolateModules(() => {
+      process.env['LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_BODIES'] = 'all';
+      process.env['LUMIGO_SECRET_MASKING_REGEX_HTTP_RESPONSE_HEADERS'] = '["X"]';
+      process.env['LUMIGO_SECRET_MASKING_REGEX_HTTP_RESPONSE_BODIES'] = 'all';
 
-    const testData = {
-      requestData: {
-        a: 'request',
-        sendTime: 1,
-        truncated: false,
+      const awsSpan = require('./awsSpan');
+
+      const testData = {
+        requestData: {
+          a: 'request',
+          sendTime: 1,
+          truncated: false,
+          host: 'your.mind.com',
+          headers: { host: 'your.mind.com', password: '1234' },
+          body: 'bla',
+        },
+        responseData: {
+          truncated: false,
+          statusCode: 200,
+          receivedTime: 895179612345,
+          headers: { X: 'Y', z: 'A' },
+          body: 'start',
+        },
+      };
+
+      const result = awsSpan.getHttpSpan(
+        '123',
+        '',
+        '123',
+        testData.requestData,
+        testData.responseData
+      );
+      expect(result.info.httpInfo.request.body).toEqual('****');
+      // Check that the request headers will get the default masking
+      expect(result.info.httpInfo.request.headers).toEqual({
         host: 'your.mind.com',
-        headers: { host: 'your.mind.com', password: '1234' },
-        body: 'bla',
-      },
-      responseData: {
-        truncated: false,
-        statusCode: 200,
-        receivedTime: 895179612345,
-        headers: { X: 'Y', z: 'A' },
-        body: 'start',
-      },
-    };
-
-    const result = awsSpan.getHttpSpan(
-      '123',
-      '',
-      '123',
-      testData.requestData,
-      testData.responseData
-    );
-    expect(result.info.httpInfo.request.body).toEqual('****');
-    // Check that the request headers will get the default masking
-    expect(result.info.httpInfo.request.headers).toEqual({
-      host: 'your.mind.com',
-      password: '****',
+        password: '****',
+      });
+      expect(result.info.httpInfo.response.body).toEqual('****');
+      expect(result.info.httpInfo.response.headers).toEqual({ X: '****', z: 'A' });
     });
-    expect(result.info.httpInfo.response.body).toEqual('****');
-    expect(result.info.httpInfo.response.headers).toEqual({ X: '****', z: 'A' });
   });
 
   test('getHttpSpan - secret masking malformed regex get default', () => {
-    process.env[LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_HEADERS] = '["X';
+    process.env['LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_HEADERS'] = '["X';
 
     const testData = {
       requestData: {

@@ -1,10 +1,10 @@
+import { payloadStringify } from '@lumigo/node-core';
 import { safeRequire } from '../utils/requireUtils';
 import * as logger from '../logger';
 import { hook } from '../extender';
 import { getRandomId, isObject } from '../utils';
 import { SpansContainer, TracerGlobals } from '../globals';
 import { extendSqlSpan, createSqlSpan } from '../spans/sqlSpan';
-import { payloadStringify } from '../utils/payloadStringify';
 import { getCurrentTransactionId, MYSQL_SPAN } from '../spans/awsSpan';
 
 const createResultHook = (currentSpan) => (args) => {

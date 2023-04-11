@@ -1,3 +1,4 @@
+import { runOneTimeWrapper } from '@lumigo/node-core/lib/common';
 import type { Callback, Context, Handler } from 'aws-lambda';
 
 import {
@@ -36,7 +37,6 @@ import {
   STEP_FUNCTION_UID_KEY,
   SWITCH_OFF_FLAG,
 } from '../utils';
-import { runOneTimeWrapper } from '../utils/functionUtils';
 import { TraceOptions } from './trace-options.type';
 
 export const HANDLER_CALLBACKED = 'handler_callbacked';

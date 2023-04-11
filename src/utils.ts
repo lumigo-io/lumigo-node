@@ -1,3 +1,5 @@
+import { CommonUtils } from '@lumigo/node-core';
+import { getEventEntitySize as coreGetEventEntitySize } from '@lumigo/node-core/lib/utils';
 import { Buffer } from 'buffer';
 import {
   MAX_TRACER_ADDED_DURATION_ALLOWED,
@@ -8,29 +10,15 @@ import { isAwsContext } from './guards/awsGuards';
 import * as logger from './logger';
 import { AwsEnvironment, ContextInfo, LambdaContext } from './types/aws/awsEnvironment';
 import { EdgeUrl } from './types/common/edgeTypes';
-import { CommonUtils } from '@lumigo/node-core';
 
 export const getRandomId = CommonUtils.getRandomId;
 export const getRandomString = CommonUtils.getRandomString;
 export const md5Hash = CommonUtils.md5Hash;
+export const getEventEntitySize = coreGetEventEntitySize;
 export const SPAN_PATH = '/api/spans';
 export const LUMIGO_TRACER_EDGE = 'lumigo-tracer-edge.golumigo.com';
 export const LUMIGO_DEFAULT_DOMAIN_SCRUBBERS =
   '["secretsmanager.*.amazonaws.com", "ssm.*.amazonaws.com", "kms.*.amazonaws.com", "sts..*amazonaws.com"]';
-export const LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP = 'LUMIGO_BLACKLIST_REGEX';
-export const LUMIGO_SECRET_MASKING_REGEX = 'LUMIGO_SECRET_MASKING_REGEX';
-export const LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_BODIES =
-  'LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_BODIES';
-export const LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_HEADERS =
-  'LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_HEADERS';
-export const LUMIGO_SECRET_MASKING_REGEX_HTTP_RESPONSE_BODIES =
-  'LUMIGO_SECRET_MASKING_REGEX_HTTP_RESPONSE_BODIES';
-export const LUMIGO_SECRET_MASKING_REGEX_HTTP_RESPONSE_HEADERS =
-  'LUMIGO_SECRET_MASKING_REGEX_HTTP_RESPONSE_HEADERS';
-export const LUMIGO_SECRET_MASKING_REGEX_HTTP_QUERY_PARAMS =
-  'LUMIGO_SECRET_MASKING_REGEX_HTTP_QUERY_PARAMS';
-export const LUMIGO_SECRET_MASKING_REGEX_ENVIRONMENT = 'LUMIGO_SECRET_MASKING_REGEX_ENVIRONMENT';
-export const LUMIGO_SECRET_MASKING_ALL_MAGIC = 'all';
 export const LUMIGO_WHITELIST_KEYS_REGEXES = 'LUMIGO_WHITELIST_KEYS_REGEXES';
 export const OMITTING_KEYS_REGEXES = [
   '.*pass.*',
@@ -416,17 +404,6 @@ export function isString(x: any): x is string {
 
 export const LUMIGO_MAX_ENTRY_SIZE = 2048;
 
-export const getEventEntitySize = (hasError = false) => {
-  const basicSize =
-    parseInt(process.env['MAX_EVENT_ENTITY_SIZE']) ||
-    parseInt(process.env['LUMIGO_MAX_ENTRY_SIZE']) ||
-    LUMIGO_MAX_ENTRY_SIZE;
-  if (hasError) {
-    return basicSize * 2;
-  }
-  return basicSize;
-};
-
 export const getConnectionTimeout = () => {
   return parseInt(process.env['LUMIGO_CONNECTION_TIMEOUT']) || DEFAULT_CONNECTION_TIMEOUT;
 };
@@ -636,15 +613,12 @@ export const filterObjectKeys = (
     }, {});
 
 export const isLambdaTraced = () => isAwsEnvironment() && !isSwitchedOff();
-export const getRequestBodyMaskingRegex = (): string | undefined =>
-  process.env[LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_BODIES];
-export const getRequestHeadersMaskingRegex = (): string | undefined =>
-  process.env[LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_HEADERS];
-export const getResponseBodyMaskingRegex = (): string | undefined =>
-  process.env[LUMIGO_SECRET_MASKING_REGEX_HTTP_RESPONSE_BODIES];
-export const getResponseHeadersMaskingRegex = (): string | undefined =>
-  process.env[LUMIGO_SECRET_MASKING_REGEX_HTTP_RESPONSE_HEADERS];
-export const getEnvVarsMaskingRegex = (): string | undefined =>
-  process.env[LUMIGO_SECRET_MASKING_REGEX_ENVIRONMENT];
-export const getHttpQueryParamsMaskingRegex = (): string | undefined =>
-  process.env[LUMIGO_SECRET_MASKING_REGEX_HTTP_QUERY_PARAMS];
+
+export const truncate = (str: string, maxLength: number, truncationString = '') => {
+  let toTruncate = str;
+  if (!isString(toTruncate)) {
+    logger.warn('Truncate was called on a non-string object', toTruncate);
+    toTruncate = '';
+  }
+  return toTruncate.substr(0, maxLength - truncationString.length).concat(truncationString);
+};

@@ -1,12 +1,5 @@
 import { trace, Tracer, TracerOptions } from './tracer';
-import {
-  isSwitchedOff,
-  safeExecute,
-  setSwitchOff,
-  setVerboseMode,
-  isValidToken,
-  SWITCH_OFF_FLAG,
-} from './utils';
+import { isSwitchedOff, safeExecute, setSwitchOff, setVerboseMode, isValidToken } from './utils';
 import { ExecutionTags } from './globals';
 import startHooks from './hooks';
 import { HttpSpansAgent } from './httpSpansAgent';
