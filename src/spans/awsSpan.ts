@@ -45,6 +45,7 @@ export const PG_SPAN = 'pg';
 export const MSSQL_SPAN = 'msSql';
 export const MYSQL_SPAN = 'mySql';
 export const NEO4J_SPAN = 'neo4j';
+export const ENRICHMENT_SPAN = 'enrichment';
 
 export const getSpanInfo = (): SpanInfo => {
   const tracer = getTracerInfo();
@@ -115,6 +116,22 @@ export const getBasicSpan = (id: string, transactionId: string): BasicSpan => {
     invokedArn,
     invokedVersion,
   };
+};
+
+export const generateEnrichmentSpan = (executionTags: any[], token: string) => {
+  if (!executionTags) {
+    return null;
+  }
+  const enrichmentSpan = {
+    type: ENRICHMENT_SPAN,
+    token: token,
+    transactionId: null,
+    invocationId: null,
+    [EXECUTION_TAGS_KEY]: executionTags,
+    sendingTime: new Date().getTime(),
+  };
+  logger.debug('Enrichment span created', enrichmentSpan);
+  return enrichmentSpan;
 };
 
 const getEventForSpan = (hasError: boolean = false): string => {
