@@ -118,15 +118,20 @@ export const getBasicSpan = (id: string, transactionId: string): BasicSpan => {
   };
 };
 
-export const generateEnrichmentSpan = (executionTags: any[], token: string) => {
+export const generateEnrichmentSpan = (
+  executionTags: any[],
+  token: string,
+  transactionId: string,
+  invocationId: string
+) => {
   if (!executionTags) {
     return null;
   }
   const enrichmentSpan = {
     type: ENRICHMENT_SPAN,
     token: token,
-    transactionId: null,
-    invocationId: null,
+    transactionId: transactionId,
+    invocationId: invocationId,
     [EXECUTION_TAGS_KEY]: executionTags,
     sendingTime: new Date().getTime(),
   };

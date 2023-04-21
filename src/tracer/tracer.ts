@@ -14,6 +14,7 @@ import { info, warnClient } from '../logger';
 import { sendSingleSpan, sendSpans } from '../reporter';
 import {
   generateEnrichmentSpan,
+  getCurrentTransactionId,
   getEndFunctionSpan,
   getFunctionSpan,
   isSpanIsFromAnotherInvocation,
@@ -248,8 +249,15 @@ const setupTimeoutTimer = () => {
         logger.debug('Invocation is about to timeout, sending trace data.');
         const spans = SpansContainer.getSpans();
         const { token } = TracerGlobals.getTracerInputs();
+        const transactionId = getCurrentTransactionId();
+        const awsRequestId: string = context.awsRequestId;
 
-        const enrichmentSpan = generateEnrichmentSpan(ExecutionTags.getTags(), token);
+        const enrichmentSpan = generateEnrichmentSpan(
+          ExecutionTags.getTags(),
+          token,
+          transactionId,
+          awsRequestId
+        );
         const spansToSend = [...spans, enrichmentSpan];
         SpansContainer.clearSpans();
         await sendSpans(spansToSend);
