@@ -25,13 +25,13 @@ import {
   getInvokedArn,
   getInvokedVersion,
   getTraceId,
-  getTracerInfo,
+  getTracerInfo, INVOCATION_ID_KEY,
   isAwsService,
   isString,
   isWarm,
   parseErrorObject,
-  safeExecute,
-  setWarm,
+  safeExecute, SENDING_TIME_ID_KEY,
+  setWarm, TRANSACTION_ID_KEY,
 } from '../utils';
 import { payloadStringify, shallowMask, truncate } from '../utils/payloadStringify';
 import { Utf8Utils } from '../utils/utf8Utils';
@@ -130,10 +130,10 @@ export const generateEnrichmentSpan = (
   const enrichmentSpan = {
     type: ENRICHMENT_SPAN,
     token: token,
-    transactionId: transactionId,
-    invocationId: invocationId,
+    [TRANSACTION_ID_KEY]: transactionId,
+    [INVOCATION_ID_KEY]: invocationId,
     [EXECUTION_TAGS_KEY]: executionTags,
-    sendingTime: new Date().getTime(),
+    [SENDING_TIME_ID_KEY]: new Date().getTime(),
   };
   logger.debug('Enrichment span created', enrichmentSpan);
   return enrichmentSpan;

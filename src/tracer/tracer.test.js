@@ -9,9 +9,15 @@ import { Http } from '../hooks/http';
 import * as logger from '../logger';
 import * as reporter from '../reporter';
 import * as awsSpan from '../spans/awsSpan';
-import { ENRICHMENT_SPAN, getFunctionSpan } from '../spans/awsSpan';
+import {ENRICHMENT_SPAN, getCurrentTransactionId, getFunctionSpan} from '../spans/awsSpan';
 import * as utils from '../utils';
-import { EXECUTION_TAGS_KEY, LUMIGO_EVENT_KEY, STEP_FUNCTION_UID_KEY } from '../utils';
+import {
+  EXECUTION_TAGS_KEY,
+  INVOCATION_ID_KEY,
+  LUMIGO_EVENT_KEY,
+  STEP_FUNCTION_UID_KEY,
+  TRANSACTION_ID_KEY
+} from '../utils';
 import * as tracer from './tracer';
 jest.mock('../hooks/http');
 
@@ -134,6 +140,8 @@ describe('tracer', () => {
         expect(sentSpans.length).toEqual(2);
         expect(sentSpans[1][1]['type']).toEqual(ENRICHMENT_SPAN);
         expect(sentSpans[1][1][EXECUTION_TAGS_KEY]).toEqual([{ key: 'key1', value: 'value1' }]);
+        expect(sentSpans[1][1][TRANSACTION_ID_KEY]).toEqual(getCurrentTransactionId());
+        expect(sentSpans[1][1][INVOCATION_ID_KEY]).toEqual(context.awsRequestId);
         expect(spies.getTags).toHaveBeenCalled();
         done();
       }, timeout + testBuffer);
