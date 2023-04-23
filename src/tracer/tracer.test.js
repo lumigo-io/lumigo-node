@@ -9,14 +9,14 @@ import { Http } from '../hooks/http';
 import * as logger from '../logger';
 import * as reporter from '../reporter';
 import * as awsSpan from '../spans/awsSpan';
-import {ENRICHMENT_SPAN, getCurrentTransactionId, getFunctionSpan} from '../spans/awsSpan';
+import { ENRICHMENT_SPAN, getCurrentTransactionId, getFunctionSpan } from '../spans/awsSpan';
 import * as utils from '../utils';
 import {
   EXECUTION_TAGS_KEY,
   INVOCATION_ID_KEY,
   LUMIGO_EVENT_KEY,
   STEP_FUNCTION_UID_KEY,
-  TRANSACTION_ID_KEY
+  TRANSACTION_ID_KEY,
 } from '../utils';
 import * as tracer from './tracer';
 jest.mock('../hooks/http');
@@ -134,12 +134,43 @@ describe('tracer', () => {
 
       setTimeout(() => {
         const requests = AxiosMocker.getRequests();
-        //1 for start span, 1 for SomeRandomHttpSpan + 1 enrichmentSpan
+        //2 requests: 1 for the start span, and another for the timeout spans
         expect(requests.length).toEqual(2);
         const sentSpans = AxiosMocker.getSentSpans();
         expect(sentSpans.length).toEqual(2);
         expect(sentSpans[1][1]['type']).toEqual(ENRICHMENT_SPAN);
         expect(sentSpans[1][1][EXECUTION_TAGS_KEY]).toEqual([{ key: 'key1', value: 'value1' }]);
+        expect(sentSpans[1][1][TRANSACTION_ID_KEY]).toEqual(getCurrentTransactionId());
+        expect(sentSpans[1][1][INVOCATION_ID_KEY]).toEqual(context.awsRequestId);
+        expect(spies.getTags).toHaveBeenCalled();
+        done();
+      }, timeout + testBuffer);
+    });
+  });
+
+  test('startTrace - timeout timer - no execution tags', (done) => {
+    const timeout = 2000;
+    const testBuffer = 50;
+
+    new EnvironmentBuilder().awsEnvironment().applyEnv();
+    const token = 't_1234';
+    globals.TracerGlobals.setTracerInputs({ token });
+
+    const { event, context } = new HandlerInputsBuilder().withTimeout(timeout).build();
+    TracerGlobals.setHandlerInputs({ event, context });
+    const functionSpan = getFunctionSpan(event, context);
+    tracer.startTrace(functionSpan).then(() => {
+      const span1 = { id: 'SomeRandomHttpSpan' };
+      SpansContainer.addSpan(span1);
+
+      setTimeout(() => {
+        const requests = AxiosMocker.getRequests();
+        //2 requests: 1 for the start span, and another for the timeout spans
+        expect(requests.length).toEqual(2);
+        const sentSpans = AxiosMocker.getSentSpans();
+        expect(sentSpans.length).toEqual(2);
+        expect(sentSpans[1][1]['type']).toEqual(ENRICHMENT_SPAN);
+        expect(sentSpans[1][1][EXECUTION_TAGS_KEY]).toEqual([]);
         expect(sentSpans[1][1][TRANSACTION_ID_KEY]).toEqual(getCurrentTransactionId());
         expect(sentSpans[1][1][INVOCATION_ID_KEY]).toEqual(context.awsRequestId);
         expect(spies.getTags).toHaveBeenCalled();

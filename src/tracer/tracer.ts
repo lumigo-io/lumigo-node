@@ -258,9 +258,10 @@ const setupTimeoutTimer = () => {
           transactionId,
           awsRequestId
         );
-        const spansToSend = [...spans, enrichmentSpan];
+        // @ts-ignore
+        spans.push(enrichmentSpan);
         SpansContainer.clearSpans();
-        await sendSpans(spansToSend);
+        await sendSpans(spans);
       }, remainingTimeInMillis - timeoutBuffer);
     }
   }

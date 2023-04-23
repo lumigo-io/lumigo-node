@@ -25,13 +25,16 @@ import {
   getInvokedArn,
   getInvokedVersion,
   getTraceId,
-  getTracerInfo, INVOCATION_ID_KEY,
+  getTracerInfo,
+  INVOCATION_ID_KEY,
   isAwsService,
   isString,
   isWarm,
   parseErrorObject,
-  safeExecute, SENDING_TIME_ID_KEY,
-  setWarm, TRANSACTION_ID_KEY,
+  safeExecute,
+  SENDING_TIME_ID_KEY,
+  setWarm,
+  TRANSACTION_ID_KEY,
 } from '../utils';
 import { payloadStringify, shallowMask, truncate } from '../utils/payloadStringify';
 import { Utf8Utils } from '../utils/utf8Utils';
