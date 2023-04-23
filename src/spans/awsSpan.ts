@@ -127,7 +127,7 @@ export const generateEnrichmentSpan = (
   transactionId: string,
   invocationId: string
 ) => {
-  if (!executionTags) {
+  if (executionTags.length === 0) {
     return null;
   }
   const enrichmentSpan = {

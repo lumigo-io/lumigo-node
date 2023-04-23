@@ -169,10 +169,7 @@ describe('tracer', () => {
         expect(requests.length).toEqual(2);
         const sentSpans = AxiosMocker.getSentSpans();
         expect(sentSpans.length).toEqual(2);
-        expect(sentSpans[1][1]['type']).toEqual(ENRICHMENT_SPAN);
-        expect(sentSpans[1][1][EXECUTION_TAGS_KEY]).toEqual([]);
-        expect(sentSpans[1][1][TRANSACTION_ID_KEY]).toEqual(getCurrentTransactionId());
-        expect(sentSpans[1][1][INVOCATION_ID_KEY]).toEqual(context.awsRequestId);
+        expect(sentSpans[1].length).toEqual(1);
         expect(spies.getTags).toHaveBeenCalled();
         done();
       }, timeout + testBuffer);
