@@ -9,9 +9,15 @@ import { Http } from '../hooks/http';
 import * as logger from '../logger';
 import * as reporter from '../reporter';
 import * as awsSpan from '../spans/awsSpan';
-import { getFunctionSpan } from '../spans/awsSpan';
+import { ENRICHMENT_SPAN, getCurrentTransactionId, getFunctionSpan } from '../spans/awsSpan';
 import * as utils from '../utils';
-import { LUMIGO_EVENT_KEY, STEP_FUNCTION_UID_KEY } from '../utils';
+import {
+  EXECUTION_TAGS_KEY,
+  INVOCATION_ID_KEY,
+  LUMIGO_EVENT_KEY,
+  STEP_FUNCTION_UID_KEY,
+  TRANSACTION_ID_KEY,
+} from '../utils';
 import * as tracer from './tracer';
 jest.mock('../hooks/http');
 
@@ -28,6 +34,7 @@ describe('tracer', () => {
   spies.getCurrentTransactionId = jest.spyOn(awsSpan, 'getCurrentTransactionId');
   spies.clearGlobals = jest.spyOn(globals, 'clearGlobals');
   spies.autoTagEvent = jest.spyOn(globals.ExecutionTags, 'autoTagEvent');
+  spies.getTags = jest.spyOn(globals.ExecutionTags, 'getTags');
   spies.warnClient = jest.spyOn(logger, 'warnClient');
   spies.logWarn = jest.spyOn(logger, 'warn');
 
@@ -104,6 +111,66 @@ describe('tracer', () => {
         const requests = AxiosMocker.getRequests();
         //1 for start span, 1 for SomeRandomHttpSpan
         expect(requests.length).toEqual(2);
+        done();
+      }, timeout + testBuffer);
+    });
+  });
+
+  test('startTrace - timeout timer - send execution tags', (done) => {
+    const timeout = 2000;
+    const testBuffer = 50;
+
+    new EnvironmentBuilder().awsEnvironment().applyEnv();
+    const token = 't_1234';
+    globals.TracerGlobals.setTracerInputs({ token });
+
+    const { event, context } = new HandlerInputsBuilder().withTimeout(timeout).build();
+    TracerGlobals.setHandlerInputs({ event, context });
+    const functionSpan = getFunctionSpan(event, context);
+    tracer.startTrace(functionSpan).then(() => {
+      const span1 = { id: 'SomeRandomHttpSpan' };
+      SpansContainer.addSpan(span1);
+      globals.ExecutionTags.addTag('key1', 'value1');
+
+      setTimeout(() => {
+        const requests = AxiosMocker.getRequests();
+        //2 requests: 1 for the start span, and another for the timeout spans
+        expect(requests.length).toEqual(2);
+        const sentSpans = AxiosMocker.getSentSpans();
+        expect(sentSpans.length).toEqual(2);
+        expect(sentSpans[1][1]['type']).toEqual(ENRICHMENT_SPAN);
+        expect(sentSpans[1][1][EXECUTION_TAGS_KEY]).toEqual([{ key: 'key1', value: 'value1' }]);
+        expect(sentSpans[1][1][TRANSACTION_ID_KEY]).toEqual(getCurrentTransactionId());
+        expect(sentSpans[1][1][INVOCATION_ID_KEY]).toEqual(context.awsRequestId);
+        expect(spies.getTags).toHaveBeenCalled();
+        done();
+      }, timeout + testBuffer);
+    });
+  });
+
+  test('startTrace - timeout timer - no execution tags', (done) => {
+    const timeout = 2000;
+    const testBuffer = 50;
+
+    new EnvironmentBuilder().awsEnvironment().applyEnv();
+    const token = 't_1234';
+    globals.TracerGlobals.setTracerInputs({ token });
+
+    const { event, context } = new HandlerInputsBuilder().withTimeout(timeout).build();
+    TracerGlobals.setHandlerInputs({ event, context });
+    const functionSpan = getFunctionSpan(event, context);
+    tracer.startTrace(functionSpan).then(() => {
+      const span1 = { id: 'SomeRandomHttpSpan' };
+      SpansContainer.addSpan(span1);
+
+      setTimeout(() => {
+        const requests = AxiosMocker.getRequests();
+        //2 requests: 1 for the start span, and another for the timeout spans
+        expect(requests.length).toEqual(2);
+        const sentSpans = AxiosMocker.getSentSpans();
+        expect(sentSpans.length).toEqual(2);
+        expect(sentSpans[1].length).toEqual(1);
+        expect(spies.getTags).toHaveBeenCalled();
         done();
       }, timeout + testBuffer);
     });
