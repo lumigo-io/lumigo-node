@@ -6,9 +6,7 @@
   "repository": "git@github.com:lumigo-io/lumigo-node.git",
   "private": false,
   "author": "Lumigo LTD (https://lumigo.io)",
-  "contributors": [
-    "Sagi Kedmi (https://sagi.io)"
-  ],
+  "contributors": ["Sagi Kedmi (https://sagi.io)"],
   "license": "Apache-2.0",
   "scripts": {
     "build": "rm -rf dist && tsc --build --force",
@@ -26,6 +24,7 @@
   "dependencies": {
     "@lumigo/node-core": "^1.13.0",
     "agentkeepalive": "^4.1.4",
+    "aws-sdk": "^2.927.0",
     "axios": "0.24.0",
     "shimmer": "1.2.1",
     "utf8": "^3.0.0"
@@ -49,7 +48,6 @@
     "@types/utf8": "^3.0.0",
     "@typescript-eslint/eslint-plugin": "^5.37.0",
     "@typescript-eslint/parser": "^5.37.0",
-    "aws-sdk": "^2.927.0",
     "axios-mock-adapter": "^1.19.0",
     "caniuse-lite": "^1.0.30001412",
     "codecov": "^3.8.2",

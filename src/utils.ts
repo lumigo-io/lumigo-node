@@ -9,14 +9,13 @@ import * as logger from './logger';
 import { AwsEnvironment, ContextInfo, LambdaContext } from './types/aws/awsEnvironment';
 import { EdgeUrl } from './types/common/edgeTypes';
 import { CommonUtils } from '@lumigo/node-core';
+import { config } from './config';
 
 export const getRandomId = CommonUtils.getRandomId;
 export const getRandomString = CommonUtils.getRandomString;
 export const md5Hash = CommonUtils.md5Hash;
 export const SPAN_PATH = '/api/spans';
 export const LUMIGO_TRACER_EDGE = 'lumigo-tracer-edge.golumigo.com';
-export const LUMIGO_DEFAULT_DOMAIN_SCRUBBERS =
-  '["secretsmanager.*.amazonaws.com", "ssm.*.amazonaws.com", "kms.*.amazonaws.com", "sts..*amazonaws.com"]';
 export const LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP = 'LUMIGO_BLACKLIST_REGEX';
 export const LUMIGO_SECRET_MASKING_REGEX = 'LUMIGO_SECRET_MASKING_REGEX';
 export const LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_BODIES =
@@ -546,12 +545,7 @@ export const parseQueryParams = (queryParams) => {
   )();
 };
 
-const domainScrubbers = () =>
-  JSON.parse(process.env.LUMIGO_DOMAINS_SCRUBBER || LUMIGO_DEFAULT_DOMAIN_SCRUBBERS).map(
-    (x) => new RegExp(x, 'i')
-  );
-
-export const shouldScrubDomain = (url, domains = domainScrubbers()): boolean => {
+export const shouldScrubDomain = (url, domains = config.domainScrubbers): boolean => {
   return !!url && domains.some((regex) => url.match(regex));
 };
 
