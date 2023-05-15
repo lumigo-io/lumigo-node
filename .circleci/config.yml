@@ -21,33 +21,55 @@ workflows:
         filters:
           branches:
             ignore: master
+
     - lumigo-orb/is_environment_available:
         context: common
         filters:
           branches:
             ignore: master
+
     - lumigo-orb/be-deploy:
         context: common
         requires:
           - lumigo-orb/is_environment_available
+
     - lumigo-orb/integration-test-prep:
         context: common
         deploy_spec: node
+        run_test_cleanup: false
         requires:
           - lumigo-orb/be-deploy
+
+    - lumigo-orb/integration-test-cleanup:
+        name: pre-test-cleanup
+        context: common
+        requires:
+          - lumigo-orb/integration-test-prep
+
     - lumigo-orb/integration-test-limited-flows:
         context: common
         deploy_spec: node
+        run_test_cleanup: false
         tests_spec: testNode
         requires:
-          - lumigo-orb/integration-test-prep
+          - pre-test-cleanup
+
     - lumigo-orb/integration-test-parallel:
         context: common
         deploy_spec: node
+        run_test_cleanup: false
         tests_spec: testNode
         requires:
           - lumigo-orb/integration-test-limited-flows
+
+    - lumigo-orb/integration-test-cleanup:
+        name: post-test-cleanup
+        context: common
+        requires:
+          - lumigo-orb/integration-test-parallel
+
     - lumigo-orb/workflow-completed-successfully:
+        context: common
         requires:
           - test
           - lumigo-orb/integration-test-parallel
