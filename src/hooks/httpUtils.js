@@ -1,4 +1,5 @@
 import { isEncodingType, safeExecute } from '../utils';
+import { TextDecoder } from 'util';
 
 export const isValidHttpRequestBody = (reqBody) =>
   !!(reqBody && (typeof reqBody === 'string' || reqBody instanceof Buffer));
@@ -20,13 +21,25 @@ export const extractBodyFromEmitSocketEvent = (socketEventArgs) => {
   })();
 };
 
+export const parseData = (data) => {
+  if (Buffer.isBuffer(data)) {
+    try {
+      return new TextDecoder('utf8', { fatal: true }).decode(data);
+    } catch (e) {
+      return data.toString('hex');
+    }
+  } else {
+    return data.toString();
+  }
+};
+
 export const extractBodyFromWriteOrEndFunc = (writeEventArgs) => {
   return safeExecute(() => {
     if (isValidHttpRequestBody(writeEventArgs[0])) {
       const encoding = isEncodingType(writeEventArgs[1]) ? writeEventArgs[1] : 'utf8';
       return typeof writeEventArgs[0] === 'string'
         ? Buffer.from(writeEventArgs[0]).toString(encoding)
-        : writeEventArgs[0].toString();
+        : parseData(writeEventArgs[0]);
     }
   })();
 };

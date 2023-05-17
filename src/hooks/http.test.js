@@ -451,62 +451,74 @@ describe('http hook', () => {
     expect(Http.parseHttpRequestOptions(options2, url2)).toEqual(expected2);
   });
 
-  test('createEmitResponseHandler - add span simple flow', () => {
-    const transactionId = HttpSpanBuilder.DEFAULT_TRANSACTION_ID;
-    const testData = {
-      randomId: 'DummyRandomId',
-      requestData: {
-        truncated: false,
-        a: 'request',
-        sendTime: 1,
-        host: 'your.mind.com',
-        headers: { host: 'your.mind.com' },
-        body: '',
-      },
-      responseData: {
-        statusCode: 200,
-        truncated: false,
-        receivedTime: 895179612345,
-        headers: { X: 'Y', z: 'A' },
-        body: 'SomeResponse',
-      },
-    };
-    const handlerInputs = new HandlerInputsBuilder()
-      .withAwsRequestId('DummyParentId')
-      .withInvokedFunctionArn('arn:aws:l:region:335722316285:function:dummy-func')
-      .build();
-    TracerGlobals.setHandlerInputs(handlerInputs);
+  [
+    ['someResponse', 'someResponse'], // non  buffer
+    [Buffer.from('1f8b0800000000000000', 'hex'), '1f8b0800000000000000'], // gzip header
+    [Buffer.from('f09f9592', 'hex'), '🕒'], // utf8
+  ].forEach(([responseBody, expected]) =>
+    test('createEmitResponseHandler - add span simple flow', () => {
+      const transactionId = HttpSpanBuilder.DEFAULT_TRANSACTION_ID;
+      const testData = {
+        randomId: 'DummyRandomId',
+        requestData: {
+          truncated: false,
+          a: 'request',
+          sendTime: 1,
+          host: 'your.mind.com',
+          headers: { host: 'your.mind.com' },
+          body: '',
+        },
+        responseData: {
+          statusCode: 200,
+          truncated: false,
+          receivedTime: 895179612345,
+          headers: { X: 'Y', z: 'A' },
+          body: responseBody,
+        },
+      };
+      const handlerInputs = new HandlerInputsBuilder()
+        .withAwsRequestId('DummyParentId')
+        .withInvokedFunctionArn('arn:aws:l:region:335722316285:function:dummy-func')
+        .build();
+      TracerGlobals.setHandlerInputs(handlerInputs);
 
-    let responseEmitter = new EventEmitter();
-    responseEmitter = Object.assign(responseEmitter, testData.responseData);
+      let responseEmitter = new EventEmitter();
+      responseEmitter = Object.assign(responseEmitter, testData.responseData);
 
-    MockDate.set(testData.responseData.receivedTime);
+      MockDate.set(testData.responseData.receivedTime);
 
-    Http.createEmitResponseHandler(
-      transactionId,
-      'DummyParentId2',
-      testData.requestData,
-      testData.randomId
-    )(responseEmitter);
+      Http.createEmitResponseHandler(
+        transactionId,
+        'DummyParentId2',
+        testData.requestData,
+        testData.randomId
+      )(responseEmitter);
 
-    responseEmitter.emit('data', testData.responseData.body);
-    responseEmitter.emit('end');
+      responseEmitter.emit('data', testData.responseData.body);
+      responseEmitter.emit('end');
 
-    const expectedHttpSpan = new HttpSpanBuilder()
-      .withSpanId(testData.randomId)
-      .withParentId('DummyParentId2')
-      .withReporterAwsRequestId('DummyParentId')
-      .withInvokedArn('arn:aws:l:region:335722316285:function:dummy-func')
-      .withEnded(testData.responseData.receivedTime)
-      .withStarted(1)
-      .withAccountId('335722316285')
-      .withResponse(testData.responseData)
-      .withRequest(testData.requestData)
-      .withHost(testData.requestData.host)
-      .build();
-    const actual = SpansContainer.getSpans();
-    expect(actual).toEqual([expectedHttpSpan]);
-  });
+      const expectedHttpSpan = new HttpSpanBuilder()
+        .withSpanId(testData.randomId)
+        .withParentId('DummyParentId2')
+        .withReporterAwsRequestId('DummyParentId')
+        .withInvokedArn('arn:aws:l:region:335722316285:function:dummy-func')
+        .withEnded(testData.responseData.receivedTime)
+        .withStarted(1)
+        .withAccountId('335722316285')
+        .withResponse({
+          statusCode: testData.responseData.statusCode,
+          truncated: false,
+          receivedTime: testData.responseData.receivedTime,
+          headers: testData.responseData.headers,
+          body: expected,
+        })
+        .withRequest(testData.requestData)
+        .withHost(testData.requestData.host)
+        .build();
+      const actual = SpansContainer.getSpans();
+      expect(actual).toEqual([expectedHttpSpan]);
+    })
+  );
   test('createEmitResponseHandler - add big span simple flow', () => {
     const transactionId = HttpSpanBuilder.DEFAULT_TRANSACTION_ID;
     const testData = {
