@@ -17,7 +17,7 @@ import {
 import {
   extractBodyFromEmitSocketEvent,
   extractBodyFromWriteOrEndFunc,
-  parseData,
+  httpDataToString,
 } from './httpUtils';
 import {
   ServiceData,
@@ -350,7 +350,7 @@ export class Http {
       const { headers, statusCode } = response;
       // add to body only if we didnt pass the max size
       if (args[0] === 'data' && body.length < maxPayloadSize) {
-        let chunk = parseData(args[1]);
+        let chunk = httpDataToString(args[1]);
         const allowedLengthToAdd = maxPayloadSize - body.length;
         //if we reached or close to limit get only substring of the part to reach the limit
         if (chunk.length > allowedLengthToAdd) {

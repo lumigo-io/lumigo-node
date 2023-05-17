@@ -21,7 +21,7 @@ export const extractBodyFromEmitSocketEvent = (socketEventArgs) => {
   })();
 };
 
-export const parseData = (data) => {
+export const httpDataToString = (data) => {
   if (Buffer.isBuffer(data)) {
     try {
       return new TextDecoder('utf8', { fatal: true }).decode(data);
@@ -39,7 +39,7 @@ export const extractBodyFromWriteOrEndFunc = (writeEventArgs) => {
       const encoding = isEncodingType(writeEventArgs[1]) ? writeEventArgs[1] : 'utf8';
       return typeof writeEventArgs[0] === 'string'
         ? Buffer.from(writeEventArgs[0]).toString(encoding)
-        : parseData(writeEventArgs[0]);
+        : httpDataToString(writeEventArgs[0]);
     }
   })();
 };
