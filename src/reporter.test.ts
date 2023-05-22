@@ -447,7 +447,9 @@ describe('reporter', () => {
     test('forgeAndScrubRequestBody long request', () => {
       const value = 'a'.repeat(10);
       const long = 'a'.repeat(getEventEntitySize(true));
-      const shorter = 'a'.repeat(getEventEntitySize() - 104 /* The size of the rest of the payload */);
+      const shorter = 'a'.repeat(
+        getEventEntitySize() - 104 /* The size of the rest of the payload */
+      );
       const dummyEnd = 'dummyEnd';
       const spans = [
         {
