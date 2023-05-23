@@ -36,7 +36,6 @@ import {
   SENDING_TIME_ID_KEY,
   setWarm,
   TRANSACTION_ID_KEY,
-  truncate,
 } from '../utils';
 import { Utf8Utils } from '../utils/utf8Utils';
 
@@ -190,25 +189,14 @@ export const getFunctionSpan = (lambdaEvent: {}, lambdaContext: Context): Functi
   return startSpan;
 };
 
-export const removeStartedFromId = (id) => id.split('_')[0];
+export const removeStartedFromId = (id: string) => id.split('_')[0];
 
 export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
   const { err, data } = handlerReturnValue;
   const id = removeStartedFromId(functionSpan.id);
-  let error = err ? parseErrorObject(err) : undefined;
+  const error = err ? parseErrorObject(err) : undefined;
   const ended = new Date().getTime();
-  let returnValue;
-  try {
-    returnValue = payloadStringify(data);
-  } catch (e) {
-    returnValue = truncate(data.toString(), getEventEntitySize(true));
-    error = parseErrorObject({
-      name: 'ReturnValueError',
-      message: `Could not JSON.stringify the return value. This will probably fail the lambda. Original error: ${
-        e && e.message
-      }`,
-    });
-  }
+  const returnValue = payloadStringify(data, ScrubContext.DEFAULT, getEventEntitySize(!!error));
   const event = error ? getEventForSpan(true) : functionSpan.event;
   const envs = error ? getEnvsForSpan(true) : functionSpan.envs;
   const newSpan = Object.assign({}, functionSpan, {
