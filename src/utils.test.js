@@ -1073,4 +1073,8 @@ describe('utils', () => {
       bb: 2,
     });
   });
+
+  test('truncate', () => {
+    expect(utils.truncate({}, 100)).toEqual('');
+  });
 });
