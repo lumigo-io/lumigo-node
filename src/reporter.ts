@@ -53,7 +53,7 @@ export const shouldTrim = (spans, maxSendBytes: number): boolean => {
 };
 
 const isJsonContent = (payload: any, headers: Object) => {
-  return isString(payload) && headers['content-type'] && headers['content-type'].includes('json');
+  return isString(payload) && headers['content-type']?.includes('json');
 };
 
 function scrub(
@@ -65,14 +65,14 @@ function scrub(
 ): string {
   try {
     if (isJsonContent(payload, headers)) {
-      if (truncated) payload = untruncateJson(payload);
-      return payloadStringify(JSON.parse(payload), scrubContext, sizeLimit, null, truncated);
-    } else {
-      return payloadStringify(payload, scrubContext, sizeLimit, null, truncated);
+      const jsonPayload = truncated ? untruncateJson(payload) : payload;
+      return payloadStringify(JSON.parse(jsonPayload), scrubContext, sizeLimit, null, truncated);
     }
   } catch (e) {
-    return payloadStringify(payload, scrubContext, sizeLimit, null, truncated);
+    logger.warn('An error occurred while stringifying JSON payload', e);
   }
+
+  return payloadStringify(payload, scrubContext, sizeLimit, null, truncated);
 }
 
 const scrubSpan = (span) => {
@@ -91,6 +91,25 @@ const scrubSpan = (span) => {
     } else {
       const isError = spanHasErrors(span);
       const sizeLimit = getEventEntitySize(isError);
+
+      if (span.info.httpInfo.request?.body) {
+        span.info.httpInfo.request.body = scrub(
+          decodeHttpBody(request.body, isError),
+          request.headers,
+          ScrubContext.HTTP_REQUEST_BODY,
+          sizeLimit,
+          span.info.httpInfo.request.truncated
+        );
+      }
+
+      if (span.info.httpInfo.request?.headers) {
+        span.info.httpInfo.request.headers = payloadStringify(
+          request.headers,
+          ScrubContext.HTTP_REQUEST_HEADERS,
+          sizeLimit
+        );
+      }
+
       if (span.info.httpInfo.response?.body) {
         span.info.httpInfo.response.body = scrub(
           decodeHttpBody(response.body, isError),
@@ -100,28 +119,14 @@ const scrubSpan = (span) => {
           span.info.httpInfo.response.truncated
         );
       }
-      if (span.info.httpInfo.request?.body) {
-        span.info.httpInfo.request.body = scrub(
-          decodeHttpBody(request.body, isError),
-          response.headers,
-          ScrubContext.HTTP_REQUEST_BODY,
-          sizeLimit,
-          span.info.httpInfo.request.truncated
-        );
-      }
-      if (span.info.httpInfo.request?.headers) {
-        span.info.httpInfo.request.headers = payloadStringify(
-          request.headers,
-          ScrubContext.HTTP_REQUEST_HEADERS,
-          sizeLimit
-        );
-      }
-      if (response?.headers)
+
+      if (response?.headers) {
         span.info.httpInfo.response.headers = payloadStringify(
           response.headers,
           ScrubContext.HTTP_RESPONSE_HEADERS,
           sizeLimit
         );
+      }
     }
   }
   return span;

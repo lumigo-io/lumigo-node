@@ -644,6 +644,38 @@ describe('reporter', () => {
       expect(actual).toEqual(expected);
     });
 
+    test('forgeAndScrubRequestBody - response with malformed JSON should be treated as string', () => {
+      const sendTime = 1234;
+      const receivedTime = 1256;
+
+      const dummyEnd = 'dummyEnd';
+      const spans = [
+        {
+          truncated: false,
+          info: {
+            httpInfo: {
+              host: 'your.mind.com',
+              request: {
+                host: 'your.mind.com',
+                headers: { 'content-type': 'application/json' },
+                body: '{"secret":"fo',
+                sendTime,
+              },
+              response: {
+                headers: {},
+                body: 'foo',
+                statusCode: 200,
+                receivedTime,
+              },
+            },
+          },
+        },
+        { dummyEnd },
+      ];
+
+      expect(spans[0]?.info?.httpInfo.request.body).toBe('{"secret":"fo');
+    });
+
     test('forgeAndScrubRequestBody - response with error should double payload size', () => {
       const sendTime = 1234;
       const receivedTime = 1256;
