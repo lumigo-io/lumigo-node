@@ -78,7 +78,7 @@ function scrub(
 /*
  * TODO! We should _not_ scrub spans *again*, this already done (or should be done) in the
  * instrumentations, so that we do not pay the performance overhead twice.
- * 
+ *
  * TODO! Move domain scrubbing in the instrumentations: we should not scrub and stringify
  * there data that we throw away here.
  */

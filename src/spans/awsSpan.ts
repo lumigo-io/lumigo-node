@@ -152,8 +152,17 @@ const getEventForSpan = (hasError: boolean = false): string => {
   );
 };
 
-export const getEnvsForSpan = (hasError: boolean = false): string =>
-  payloadStringify(process.env, ScrubContext.PROCESS_ENVIRONMENT, getEventEntitySize(hasError));
+export const getEnvsForSpan = (hasError: boolean = false): string => {
+  /*
+   * Stringify a shallow copy, as the built-in `process.env` the object
+   * does not play nice with the way we use Symbols in the scrubbing process.
+   */
+  return payloadStringify(
+    { ...process.env },
+    ScrubContext.PROCESS_ENVIRONMENT,
+    getEventEntitySize(hasError)
+  );
+};
 
 export const getFunctionSpan = (lambdaEvent: {}, lambdaContext: Context): FunctionSpan => {
   const transactionId = getCurrentTransactionId();
