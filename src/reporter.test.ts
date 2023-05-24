@@ -228,7 +228,7 @@ describe('reporter', () => {
       ];
       const expectedResultSize = getJSONBase64Size(spans);
       process.env.LUMIGO_DOMAINS_SCRUBBER = '["mind"]';
-      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize));
+      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize)!);
       expect(actual).toEqual(expected);
     });
     test('forgeAndScrubRequestBody', () => {
@@ -273,7 +273,7 @@ describe('reporter', () => {
       ];
       const expectedResultSize = getJSONBase64Size(spans);
 
-      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize));
+      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize)!);
       expect(actual).toEqual(expected);
     });
 
@@ -328,7 +328,7 @@ describe('reporter', () => {
       ];
       const expectedResultSize = getJSONBase64Size(spans);
 
-      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize));
+      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize)!);
       expect(actual).toEqual(expected);
     });
 
@@ -385,7 +385,7 @@ describe('reporter', () => {
       ];
       const expectedResultSize = getJSONBase64Size(spans);
 
-      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize));
+      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize)!);
       expect(actual).toEqual(expected);
     });
 
@@ -440,7 +440,7 @@ describe('reporter', () => {
       ];
       const expectedResultSize = getJSONBase64Size(spans);
 
-      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize));
+      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize)!);
       expect(actual).toEqual(expected);
     });
 
@@ -499,7 +499,7 @@ describe('reporter', () => {
       ];
       const expectedResultSize = getJSONBase64Size(spans);
 
-      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize));
+      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize)!);
       expect(actual).toEqual(expected);
     });
     test('forgeAndScrubRequestBody short response', () => {
@@ -544,7 +544,7 @@ describe('reporter', () => {
       ];
       const expectedResultSize = getJSONBase64Size(spans);
 
-      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize));
+      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize)!);
       expect(actual).toEqual(expected);
     });
 
@@ -590,7 +590,7 @@ describe('reporter', () => {
       ];
       const expectedResultSize = getJSONBase64Size(spans);
 
-      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize));
+      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize)!);
       expect(actual).toEqual(expected);
     });
 
@@ -640,7 +640,7 @@ describe('reporter', () => {
       ];
       const expectedResultSize = getJSONBase64Size(spans);
 
-      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize));
+      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize)!);
       expect(actual).toEqual(expected);
     });
 
@@ -732,10 +732,10 @@ describe('reporter', () => {
       const expectedResultSizeFail = getJSONBase64Size(spansFail);
 
       const spanSuccess = JSON.parse(
-        reporter.forgeAndScrubRequestBody(spansSuccess, expectedResultSizeSuccess)
+        reporter.forgeAndScrubRequestBody(spansSuccess, expectedResultSizeSuccess)!
       )[0];
       const spanError = JSON.parse(
-        reporter.forgeAndScrubRequestBody(spansFail, expectedResultSizeFail)
+        reporter.forgeAndScrubRequestBody(spansFail, expectedResultSizeFail)!
       )[0];
       expect(spanError.info.httpInfo.request.body.length).toBeGreaterThan(
         spanSuccess.info.httpInfo.request.body.length * 1.8 + 1
