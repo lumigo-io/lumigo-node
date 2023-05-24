@@ -30,7 +30,7 @@ export const createSqlSpan = (
       user: dbFields?.connectionParameters?.user,
     },
     query: normalizeQuery(dbFields?.query),
-    values: payloadStringify(dbFields?.values) || '',
+    values: payloadStringify(dbFields?.values),
   };
 };
 

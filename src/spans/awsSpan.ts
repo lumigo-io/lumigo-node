@@ -317,17 +317,17 @@ export const getHttpSpan = (
   const { awsServiceData, spanId } = serviceData;
 
   const prioritizedSpanId = getHttpSpanId(randomRequestId, spanId);
-  if (requestData) {
-    requestData.body &&
-      (requestData.body = scrub(requestData.body, ScrubContext.HTTP_REQUEST_BODY));
-    requestData.headers &&
-      (requestData.headers = scrub(requestData.headers, ScrubContext.HTTP_REQUEST_HEADERS));
+  if (requestData?.body) {
+    requestData.body = scrub(requestData.body, ScrubContext.HTTP_REQUEST_BODY);
   }
-  if (responseData) {
-    responseData.body &&
-      (responseData.body = scrub(responseData.body, ScrubContext.HTTP_RESPONSE_BODY));
-    responseData.headers &&
-      (responseData.headers = scrub(responseData.headers, ScrubContext.HTTP_RESPONSE_HEADERS));
+  if (requestData?.headers) {
+    requestData.headers = scrub(requestData.headers, ScrubContext.HTTP_REQUEST_HEADERS);
+  }
+  if (responseData?.body) {
+    responseData.body = scrub(responseData.body, ScrubContext.HTTP_RESPONSE_BODY);
+  }
+  if (responseData?.headers) {
+    responseData.headers = scrub(responseData.headers, ScrubContext.HTTP_RESPONSE_HEADERS);
   }
   const httpInfo = getHttpInfo(requestData, responseData);
 
