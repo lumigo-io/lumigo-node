@@ -1,5 +1,5 @@
+import { payloadStringify } from '@lumigo/node-core';
 import { getBasicChildSpan, REDIS_SPAN } from './awsSpan';
-import { payloadStringify } from '../utils/payloadStringify';
 
 export const createRedisSpan = (
   transactionId,

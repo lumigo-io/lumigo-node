@@ -1,3 +1,24 @@
+import { ScrubContext, scrub } from '@lumigo/node-core';
+import { runOneTimeWrapper } from '@lumigo/node-core/lib/common';
+
+import * as http from 'http';
+import * as https from 'https';
+
+import * as extender from '../extender';
+import { SpansContainer, TracerGlobals } from '../globals';
+import {
+  extractBodyFromEmitSocketEvent,
+  extractBodyFromWriteOrEndFunc,
+  httpDataToString,
+} from './httpUtils';
+import * as logger from '../logger';
+import {
+  ServiceData,
+  getServiceData,
+  getCurrentTransactionId,
+  getHttpInfo,
+  getHttpSpan,
+} from '../spans/awsSpan';
 import {
   addHeaders,
   getAWSEnvironment,
@@ -14,31 +35,11 @@ import {
   safeExecute,
   shouldPropagateW3C,
 } from '../utils';
-import {
-  extractBodyFromEmitSocketEvent,
-  extractBodyFromWriteOrEndFunc,
-  httpDataToString,
-} from './httpUtils';
-import {
-  ServiceData,
-  getServiceData,
-  getCurrentTransactionId,
-  getHttpInfo,
-  getHttpSpan,
-} from '../spans/awsSpan';
 import { URL } from 'url';
-import { SpansContainer, TracerGlobals } from '../globals';
-import * as logger from '../logger';
-
-import * as extender from '../extender';
-import * as http from 'http';
-import * as https from 'https';
 const { parse: parseQuery } = require('querystring');
 
 import { GlobalDurationTimer } from '../utils/globalDurationTimer';
-import { runOneTimeWrapper } from '../utils/functionUtils';
 import { addW3CTracePropagator } from '../utils/w3cUtils';
-import { shallowMask } from '../utils/payloadStringify';
 
 export const hostBlaclist = new Set(['127.0.0.1']);
 
@@ -161,7 +162,7 @@ export class Http {
     return (
       safeExecute(() => {
         const query = parseQuery(search.substring(1));
-        const scrubbedQuery = shallowMask('queryParams', query);
+        const scrubbedQuery = scrub(query, ScrubContext.HTTP_REQUEST_QUERY);
         return '?' + new URLSearchParams(scrubbedQuery);
       })() || ''
     );

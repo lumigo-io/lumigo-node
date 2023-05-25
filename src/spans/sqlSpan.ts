@@ -1,6 +1,6 @@
-import { filterObjectKeys, getEventEntitySize } from '../utils';
-import { payloadStringify, truncate } from '../utils/payloadStringify';
+import { payloadStringify } from '@lumigo/node-core';
 import { getBasicChildSpan } from './awsSpan';
+import { filterObjectKeys, getEventEntitySize, truncate } from '../utils';
 
 const normalizeQuery = (query: string | any): string => {
   if (typeof query === 'string') return truncate(query, getEventEntitySize());
@@ -24,13 +24,13 @@ export const createSqlSpan = (
     ...baseSpan,
     started: requestMetadata.started,
     connectionParameters: {
-      host: dbFields.connectionParameters.host,
-      port: dbFields.connectionParameters.port,
-      database: dbFields.connectionParameters.database,
-      user: dbFields.connectionParameters.user,
+      host: dbFields?.connectionParameters?.host,
+      port: dbFields?.connectionParameters?.port,
+      database: dbFields?.connectionParameters?.database,
+      user: dbFields?.connectionParameters?.user,
     },
-    query: normalizeQuery(dbFields.query),
-    values: dbFields.values ? payloadStringify(dbFields.values) : '',
+    query: normalizeQuery(dbFields?.query),
+    values: payloadStringify(dbFields?.values),
   };
 };
 
