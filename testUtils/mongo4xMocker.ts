@@ -68,7 +68,7 @@ class MongoClient {
   connect(options: any, callback: Function) {
     const self = this;
     options = options || self.options;
-    if (options.connectThrowsError) {
+    if (options?.connectThrowsError) {
       throw new Error('Connection failed: connectThrowsError');
     }
     return new Promise((resolve, reject) => {
@@ -102,7 +102,7 @@ class MongoClient {
   }
 
   static connect(url: string, options: any, callback: Function) {
-    if (options.connectThrowsError) {
+    if (options?.connectThrowsError) {
       throw new Error('Connection failed: connectThrowsError');
     }
     if (!(this && typeof this.prototype === "object")){

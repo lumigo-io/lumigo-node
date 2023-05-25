@@ -648,9 +648,8 @@ describe('tracer', () => {
 
     const spans = AxiosMocker.getSentSpans();
     expect(spans[1][0].return_value).toEqual('str');
-    expect(spans[1][0].error.message).toEqual(
-      'Could not JSON.stringify the return value. This will probably fail the lambda. Original error: FAIL'
-    );
+    expect(spans[1][0].event).toEqual('{}');
+    expect(spans[1][0].error).toBeUndefined();
   });
 
   test('trace; callback -> user raise error of type string', async () => {

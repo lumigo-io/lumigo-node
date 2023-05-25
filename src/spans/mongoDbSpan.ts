@@ -1,5 +1,5 @@
+import { payloadStringify } from '@lumigo/node-core';
 import { getBasicChildSpan, MONGO_SPAN } from './awsSpan';
-import { payloadStringify } from '../utils/payloadStringify';
 import { MongoDBSpan } from '../types/spans/mongoDBSpan';
 
 export const createMongoDbSpan = (
