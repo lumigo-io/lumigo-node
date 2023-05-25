@@ -228,7 +228,7 @@ describe('reporter', () => {
       ];
       const expectedResultSize = getJSONBase64Size(spans);
       process.env.LUMIGO_DOMAINS_SCRUBBER = '["mind"]';
-      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize));
+      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize)!);
       expect(actual).toEqual(expected);
     });
     test('forgeAndScrubRequestBody', () => {
@@ -273,7 +273,7 @@ describe('reporter', () => {
       ];
       const expectedResultSize = getJSONBase64Size(spans);
 
-      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize));
+      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize)!);
       expect(actual).toEqual(expected);
     });
 
@@ -318,7 +318,7 @@ describe('reporter', () => {
               },
               response: {
                 truncated: true,
-                body: `{"a":"${value}","b":"${value}","key":"****","password":"****","e":"${value}","secret":"****","f":"${value}","g":"${value}"}...[too long]`,
+                body: `{"a":"${value}","b":"${value}","key":"****","password":"****","e":"${value}","secret":"****","f":"${value}","g":"${value}"}✂`,
                 headers: '{"Peter":"Parker","content-type":"application/json"}',
               },
             },
@@ -328,14 +328,13 @@ describe('reporter', () => {
       ];
       const expectedResultSize = getJSONBase64Size(spans);
 
-      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize));
+      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize)!);
       expect(actual).toEqual(expected);
     });
 
     test('forgeAndScrubRequestBody long response', () => {
       const value = 'a'.repeat(10);
       const long = 'a'.repeat(getEventEntitySize(true));
-      const shorter = 'a'.repeat(getEventEntitySize());
       const dummyEnd = 'dummyEnd';
       const spans = [
         {
@@ -362,6 +361,7 @@ describe('reporter', () => {
         },
         { dummyEnd },
       ];
+      const shorter = 'a'.repeat(2044);
       const expected = [
         {
           info: {
@@ -375,7 +375,7 @@ describe('reporter', () => {
               },
               response: {
                 truncated: false,
-                body: `{"key":"****","password":"****","e":"${value}","secret":"****","f":"${value}","g":"${value}","h":"${shorter}"}...[too long]`,
+                body: `{"key":"****","password":"****","e":"${value}","secret":"****","f":"${value}","g":"${value}","h":"${shorter}✂"}`,
                 headers: '{"Peter":"Parker","content-type":"application/json"}',
               },
             },
@@ -385,7 +385,7 @@ describe('reporter', () => {
       ];
       const expectedResultSize = getJSONBase64Size(spans);
 
-      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize));
+      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize)!);
       expect(actual).toEqual(expected);
     });
 
@@ -424,7 +424,7 @@ describe('reporter', () => {
               host: 'your.mind.com',
               request: {
                 truncated: true,
-                body: `{"key":"****","password":"****","e":"${value}","secret":"****","f":"${value}","g":"${value}"}...[too long]`,
+                body: `{"key":"****","password":"****","e":"${value}","secret":"****","f":"${value}","g":"${value}"}✂`,
                 headers: '{"Tyler":"Durden","secretKey":"****","content-type":"application/json"}',
                 host: 'your.mind.com',
               },
@@ -440,14 +440,14 @@ describe('reporter', () => {
       ];
       const expectedResultSize = getJSONBase64Size(spans);
 
-      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize));
+      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize)!);
       expect(actual).toEqual(expected);
     });
 
     test('forgeAndScrubRequestBody long request', () => {
       const value = 'a'.repeat(10);
       const long = 'a'.repeat(getEventEntitySize(true));
-      const shorter = 'a'.repeat(getEventEntitySize());
+      const shorter = 'a'.repeat(2044);
       const dummyEnd = 'dummyEnd';
       const spans = [
         {
@@ -481,7 +481,7 @@ describe('reporter', () => {
               host: 'your.mind.com',
               request: {
                 truncated: false,
-                body: `{"key":"****","password":"****","e":"${value}","secret":"****","f":"${value}","g":"${value}","h":"${shorter}"}...[too long]`,
+                body: `{"key":"****","password":"****","e":"${value}","secret":"****","f":"${value}","g":"${value}","h":"${shorter}✂"}`,
                 headers: '{"Tyler":"Durden","secretKey":"****","content-type":"application/json"}',
                 host: 'your.mind.com',
               },
@@ -497,7 +497,7 @@ describe('reporter', () => {
       ];
       const expectedResultSize = getJSONBase64Size(spans);
 
-      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize));
+      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize)!);
       expect(actual).toEqual(expected);
     });
     test('forgeAndScrubRequestBody short response', () => {
@@ -542,7 +542,7 @@ describe('reporter', () => {
       ];
       const expectedResultSize = getJSONBase64Size(spans);
 
-      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize));
+      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize)!);
       expect(actual).toEqual(expected);
     });
 
@@ -588,7 +588,7 @@ describe('reporter', () => {
       ];
       const expectedResultSize = getJSONBase64Size(spans);
 
-      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize));
+      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize)!);
       expect(actual).toEqual(expected);
     });
 
@@ -638,8 +638,40 @@ describe('reporter', () => {
       ];
       const expectedResultSize = getJSONBase64Size(spans);
 
-      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize));
+      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize)!);
       expect(actual).toEqual(expected);
+    });
+
+    test('forgeAndScrubRequestBody - response with malformed JSON should be treated as string', () => {
+      const sendTime = 1234;
+      const receivedTime = 1256;
+
+      const dummyEnd = 'dummyEnd';
+      const spans = [
+        {
+          truncated: false,
+          info: {
+            httpInfo: {
+              host: 'your.mind.com',
+              request: {
+                host: 'your.mind.com',
+                headers: { 'content-type': 'application/json' },
+                body: '{"secret":"fo',
+                sendTime,
+              },
+              response: {
+                headers: {},
+                body: 'foo',
+                statusCode: 200,
+                receivedTime,
+              },
+            },
+          },
+        },
+        { dummyEnd },
+      ];
+
+      expect(spans[0]?.info?.httpInfo.request.body).toBe('{"secret":"fo');
     });
 
     test('forgeAndScrubRequestBody - response with error should double payload size', () => {
@@ -698,10 +730,10 @@ describe('reporter', () => {
       const expectedResultSizeFail = getJSONBase64Size(spansFail);
 
       const spanSuccess = JSON.parse(
-        reporter.forgeAndScrubRequestBody(spansSuccess, expectedResultSizeSuccess)
+        reporter.forgeAndScrubRequestBody(spansSuccess, expectedResultSizeSuccess)!
       )[0];
       const spanError = JSON.parse(
-        reporter.forgeAndScrubRequestBody(spansFail, expectedResultSizeFail)
+        reporter.forgeAndScrubRequestBody(spansFail, expectedResultSizeFail)!
       )[0];
       expect(spanError.info.httpInfo.request.body.length).toBeGreaterThan(
         spanSuccess.info.httpInfo.request.body.length * 1.8 + 1

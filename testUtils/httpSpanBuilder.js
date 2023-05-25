@@ -1,5 +1,4 @@
 import { lowerCaseObjectKeys } from '../src/utils';
-import { payloadStringify } from '../src/utils/payloadStringify';
 
 export class HttpSpanBuilder {
   static DEFAULT_ACCOUNT = '985323015126';
