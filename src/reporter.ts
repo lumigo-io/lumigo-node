@@ -1,5 +1,3 @@
-import { payloadStringify, ScrubContext } from '@lumigo/node-core';
-import untruncateJson from '@lumigo/node-core/lib/tools/untruncateJson';
 import {
   getEventEntitySize,
   getJSONBase64Size,
@@ -13,7 +11,9 @@ import {
 } from './utils';
 import * as logger from './logger';
 import { HttpSpansAgent } from './httpSpansAgent';
+import { payloadStringify } from './utils/payloadStringify';
 import { decodeHttpBody } from './spans/awsSpan';
+import untruncateJson from './tools/untrancateJson';
 export const NUMBER_OF_SPANS_IN_REPORT_OPTIMIZATION = 200;
 
 export const sendSingleSpan = async (span) => sendSpans([span]);
@@ -53,35 +53,22 @@ export const shouldTrim = (spans, maxSendBytes: number): boolean => {
 };
 
 const isJsonContent = (payload: any, headers: Object) => {
-  return isString(payload) && headers['content-type']?.includes('json');
+  return isString(payload) && headers['content-type'] && headers['content-type'].includes('json');
 };
 
-function scrub(
-  payload: any,
-  headers: any,
-  scrubContext: ScrubContext.HTTP_REQUEST_BODY | ScrubContext.HTTP_RESPONSE_BODY,
-  sizeLimit: number,
-  truncated = false
-): string {
+function scrub(payload: any, headers: any, sizeLimit: number, truncated = false): string {
   try {
     if (isJsonContent(payload, headers)) {
-      const jsonPayload = truncated ? untruncateJson(payload) : payload;
-      return payloadStringify(JSON.parse(jsonPayload), scrubContext, sizeLimit, null, truncated);
+      if (truncated) payload = untruncateJson(payload);
+      return payloadStringify(JSON.parse(payload), sizeLimit, null, truncated);
+    } else {
+      return payloadStringify(payload, sizeLimit, truncated);
     }
   } catch (e) {
-    logger.warn('An error occurred while stringifying JSON payload', e);
+    return payloadStringify(payload, sizeLimit, truncated);
   }
-
-  return payloadStringify(payload, scrubContext, sizeLimit, null, truncated);
 }
 
-/*
- * TODO! We should _not_ scrub spans *again*, this already done (or should be done) in the
- * instrumentations, so that we do not pay the performance overhead twice.
- *
- * TODO! Move domain scrubbing in the instrumentations: we should not scrub and stringify
- * there data that we throw away here.
- */
 const scrubSpan = (span) => {
   if (span.info?.httpInfo) {
     const { request, response, host } = span.info.httpInfo;
@@ -98,42 +85,27 @@ const scrubSpan = (span) => {
     } else {
       const isError = spanHasErrors(span);
       const sizeLimit = getEventEntitySize(isError);
-
-      if (span.info.httpInfo.request?.body) {
-        span.info.httpInfo.request.body = scrub(
-          decodeHttpBody(request.body, isError),
-          request.headers,
-          ScrubContext.HTTP_REQUEST_BODY,
-          sizeLimit,
-          span.info.httpInfo.request.truncated
-        );
-      }
-
-      if (span.info.httpInfo.request?.headers) {
-        span.info.httpInfo.request.headers = payloadStringify(
-          request.headers,
-          ScrubContext.HTTP_REQUEST_HEADERS,
-          sizeLimit
-        );
-      }
-
       if (span.info.httpInfo.response?.body) {
         span.info.httpInfo.response.body = scrub(
           decodeHttpBody(response.body, isError),
           response.headers,
-          ScrubContext.HTTP_RESPONSE_BODY,
           sizeLimit,
           span.info.httpInfo.response.truncated
         );
       }
-
-      if (response?.headers) {
-        span.info.httpInfo.response.headers = payloadStringify(
-          response.headers,
-          ScrubContext.HTTP_RESPONSE_HEADERS,
-          sizeLimit
+      if (span.info.httpInfo.request?.body) {
+        span.info.httpInfo.request.body = scrub(
+          decodeHttpBody(request.body, isError),
+          request.headers,
+          sizeLimit,
+          span.info.httpInfo.request.truncated
         );
       }
+      if (span.info.httpInfo.request?.headers) {
+        span.info.httpInfo.request.headers = payloadStringify(request.headers, sizeLimit);
+      }
+      if (response?.headers)
+        span.info.httpInfo.response.headers = payloadStringify(response.headers, sizeLimit);
     }
   }
   return span;
@@ -143,7 +115,7 @@ export function scrubSpans(resultSpans: any[]) {
   return resultSpans.filter((span) => safeExecute(scrubSpan, 'Failed to scrub span')(span));
 }
 
-// We mutate the spans directly to keep the memory footprint of the tracer to a minimum
+// We muted the spans itself to keep the memory footprint of the tracer to a minimum
 export const forgeAndScrubRequestBody = (spans, maxSendBytes): string | undefined => {
   const start = new Date().getTime();
   const beforeLength = spans.length;

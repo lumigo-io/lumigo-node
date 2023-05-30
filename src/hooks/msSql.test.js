@@ -1,9 +1,9 @@
-import { payloadStringify } from '@lumigo/node-core';
 import { HandlerInputsBuilder } from '../../testUtils/handlerInputsBuilder';
 import { createMockedClient, createMockedResponse } from '../../testUtils/msSqlMocker';
 import { SqlSpanBuilder } from '../../testUtils/sqlSpanBuilder';
 import { SpansContainer, TracerGlobals } from '../globals';
 import { MSSQL_SPAN } from '../spans/awsSpan';
+import { payloadStringify } from '../utils/payloadStringify';
 import { hookMssql } from './msSql';
 
 const DUMMY_CONNECTION_STRING =

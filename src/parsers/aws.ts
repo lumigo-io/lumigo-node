@@ -1,6 +1,6 @@
-import { traverse } from '@lumigo/node-core/lib/tools/xmlToJson';
-import * as logger from '../logger';
 import { md5Hash, parseQueryParams, removeDuplicates, safeGet, safeJsonParse } from '../utils';
+import { traverse } from '../tools/xmlToJson';
+import * as logger from '../logger';
 import { getW3CMessageId } from '../utils/w3cUtils';
 
 const extractDynamodbMessageId = (reqBody, method) => {
@@ -73,7 +73,7 @@ export const snsParser = (requestData, responseData) => {
   const { body: reqBody } = requestData;
   const { body: resBody } = responseData;
   const parsedRequestBody = reqBody ? parseQueryParams(reqBody) : undefined;
-  const parsedResponseBody = resBody ? traverse(resBody, undefined) : undefined;
+  const parsedResponseBody = resBody ? traverse(resBody) : undefined;
   let resourceName = undefined;
   if (parsedRequestBody && parsedRequestBody['TopicArn']) {
     resourceName = parsedRequestBody['TopicArn'];
@@ -125,7 +125,7 @@ export const sqsParser = (requestData, responseData) => {
   const { body: reqBody } = requestData;
   const { body: resBody } = responseData || {};
   const parsedReqBody = reqBody ? parseQueryParams(reqBody) : undefined;
-  const parsedResBody = resBody ? traverse(resBody, undefined) : undefined;
+  const parsedResBody = resBody ? traverse(resBody) : undefined;
   const resourceName = parsedReqBody ? parsedReqBody['QueueUrl'] : undefined;
   const awsServiceData = { resourceName };
   // @ts-ignore

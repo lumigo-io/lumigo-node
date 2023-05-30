@@ -1,10 +1,10 @@
-import { payloadStringify } from '@lumigo/node-core';
 import { safeRequire } from '../utils/requireUtils';
 import * as logger from '../logger';
 import { hook, hookPromise } from '../extender';
 import { getRandomId } from '../utils';
 import { SpansContainer, TracerGlobals } from '../globals';
 import { extendNeo4jSpan, createNeo4jSpan } from '../spans/neo4jSpan';
+import { payloadStringify } from '../utils/payloadStringify';
 import { getCurrentTransactionId, NEO4J_SPAN } from '../spans/awsSpan';
 
 function queryBeforeHook(args, extenderContext) {

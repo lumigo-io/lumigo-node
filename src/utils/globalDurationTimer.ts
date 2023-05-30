@@ -1,6 +1,6 @@
-import { runOneTimeWrapper } from '@lumigo/node-core/lib/common';
 import * as logger from '../logger';
 import { getTracerMaxDurationTimeout } from '../utils';
+import { runOneTimeWrapper } from './functionUtils';
 
 const warnTimeoutOnce = runOneTimeWrapper(() => {
   logger.warn('Lumigo tracer is no longer collecting data on the invocation.');
