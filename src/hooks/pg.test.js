@@ -1,8 +1,8 @@
-import { payloadStringify } from '@lumigo/node-core';
 import { HandlerInputsBuilder } from '../../testUtils/handlerInputsBuilder';
 import { createMockedClient, createMockedResponse } from '../../testUtils/pgMocker';
 import { SqlSpanBuilder } from '../../testUtils/sqlSpanBuilder';
 import { SpansContainer, TracerGlobals } from '../globals';
+import { payloadStringify } from '../utils/payloadStringify';
 import { hookPg } from './pg';
 
 const DUMMY_PG_OPTIONS = {

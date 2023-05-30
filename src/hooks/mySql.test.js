@@ -1,9 +1,9 @@
-import { payloadStringify } from '@lumigo/node-core';
 import { HandlerInputsBuilder } from '../../testUtils/handlerInputsBuilder';
 import { createMockedClient, createMockedResponse } from '../../testUtils/mySqlMocker';
 import { SqlSpanBuilder } from '../../testUtils/sqlSpanBuilder';
 import { SpansContainer, TracerGlobals } from '../globals';
 import { MYSQL_SPAN } from '../spans/awsSpan';
+import { payloadStringify } from '../utils/payloadStringify';
 import { hookMySql } from './mySql';
 
 const DUMMY_OPTIONS = {

@@ -1,4 +1,3 @@
-import { Triggers } from '@lumigo/node-core';
 import {
   getRandomId,
   isStepFunction,
@@ -6,6 +5,7 @@ import {
   recursiveGetKey,
   STEP_FUNCTION_UID_KEY,
 } from '../../utils';
+import { Triggers } from '@lumigo/node-core';
 import { EventTriggerParser } from './trigger-parser-base';
 
 export class StepFunctionEventParser extends EventTriggerParser {

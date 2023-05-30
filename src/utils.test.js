@@ -27,6 +27,7 @@ import {
   safeJsonParse,
   shouldPropagateW3C,
   shouldScrubDomain,
+  getTraceId,
 } from './utils';
 
 describe('utils', () => {
@@ -1072,9 +1073,5 @@ describe('utils', () => {
       aa: 1,
       bb: 2,
     });
-  });
-
-  test('truncate', () => {
-    expect(utils.truncate({}, 100)).toEqual('');
   });
 });

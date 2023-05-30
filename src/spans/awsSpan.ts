@@ -1,4 +1,3 @@
-import { payloadStringify, scrub, ScrubContext } from '@lumigo/node-core';
 import { Context } from 'aws-lambda';
 import { getEventInfo } from '../events';
 import { ExecutionTags, TracerGlobals } from '../globals';
@@ -37,6 +36,7 @@ import {
   setWarm,
   TRANSACTION_ID_KEY,
 } from '../utils';
+import { payloadStringify, shallowMask, truncate } from '../utils/payloadStringify';
 import { Utf8Utils } from '../utils/utf8Utils';
 
 export const HTTP_SPAN = 'http';
@@ -146,23 +146,13 @@ const getEventForSpan = (hasError: boolean = false): string => {
   const event = TracerGlobals.getHandlerInputs().event;
   return payloadStringify(
     safeExecute(parseEvent, 'Failed to parse event', logger.LOG_LEVELS.WARNING, event)(event),
-    ScrubContext.DEFAULT,
     getEventEntitySize(hasError),
     getSkipScrubPath(event)
   );
 };
 
-export const getEnvsForSpan = (hasError: boolean = false): string => {
-  /*
-   * Stringify a shallow copy, as the built-in `process.env` the object
-   * does not play nice with the way we use Symbols in the scrubbing process.
-   */
-  return payloadStringify(
-    { ...process.env },
-    ScrubContext.PROCESS_ENVIRONMENT,
-    getEventEntitySize(hasError)
-  );
-};
+export const getEnvsForSpan = (hasError: boolean = false): string =>
+  payloadStringify(shallowMask('environment', process.env), getEventEntitySize(hasError));
 
 export const getFunctionSpan = (lambdaEvent: {}, lambdaContext: Context): FunctionSpan => {
   const transactionId = getCurrentTransactionId();
@@ -198,14 +188,25 @@ export const getFunctionSpan = (lambdaEvent: {}, lambdaContext: Context): Functi
   return startSpan;
 };
 
-export const removeStartedFromId = (id: string) => id.split('_')[0];
+export const removeStartedFromId = (id) => id.split('_')[0];
 
 export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
   const { err, data } = handlerReturnValue;
   const id = removeStartedFromId(functionSpan.id);
-  const error = err ? parseErrorObject(err) : undefined;
+  let error = err ? parseErrorObject(err) : undefined;
   const ended = new Date().getTime();
-  const returnValue = payloadStringify(data, ScrubContext.DEFAULT, getEventEntitySize(!!error));
+  let returnValue;
+  try {
+    returnValue = payloadStringify(data);
+  } catch (e) {
+    returnValue = truncate(data.toString(), getEventEntitySize(true));
+    error = parseErrorObject({
+      name: 'ReturnValueError',
+      message: `Could not JSON.stringify the return value. This will probably fail the lambda. Original error: ${
+        e && e.message
+      }`,
+    });
+  }
   const event = error ? getEventForSpan(true) : functionSpan.event;
   const envs = error ? getEnvsForSpan(true) : functionSpan.envs;
   const newSpan = Object.assign({}, functionSpan, {
@@ -326,17 +327,15 @@ export const getHttpSpan = (
   const { awsServiceData, spanId } = serviceData;
 
   const prioritizedSpanId = getHttpSpanId(randomRequestId, spanId);
-  if (requestData?.body) {
-    requestData.body = scrub(requestData.body, ScrubContext.HTTP_REQUEST_BODY);
+  if (requestData) {
+    requestData.body && (requestData.body = shallowMask('requestBody', requestData.body));
+    requestData.headers &&
+      (requestData.headers = shallowMask('requestHeaders', requestData.headers));
   }
-  if (requestData?.headers) {
-    requestData.headers = scrub(requestData.headers, ScrubContext.HTTP_REQUEST_HEADERS);
-  }
-  if (responseData?.body) {
-    responseData.body = scrub(responseData.body, ScrubContext.HTTP_RESPONSE_BODY);
-  }
-  if (responseData?.headers) {
-    responseData.headers = scrub(responseData.headers, ScrubContext.HTTP_RESPONSE_HEADERS);
+  if (responseData) {
+    responseData.body && (responseData.body = shallowMask('responseBody', responseData.body));
+    responseData.headers &&
+      (responseData.headers = shallowMask('responseHeaders', responseData.headers));
   }
   const httpInfo = getHttpInfo(requestData, responseData);
 

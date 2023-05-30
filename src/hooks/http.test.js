@@ -1270,6 +1270,9 @@ describe('http hook', () => {
     expect(Http.scrubQueryParams('?password=123&plain=123&secret=123')).toEqual(
       '?password=****&plain=123&secret=****'
     );
+    process.env[LUMIGO_SECRET_MASKING_REGEX_HTTP_QUERY_PARAMS] = '["plain"]';
+    expect(Http.scrubQueryParams('?plain=123&bla=123')).toEqual('?plain=****&bla=123');
+
     expect(Http.scrubQueryParams(1234)).toEqual('');
   });
 });
