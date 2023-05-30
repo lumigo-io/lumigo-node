@@ -1,10 +1,10 @@
-import { payloadStringify } from '@lumigo/node-core';
 import * as neo4jSpan from '../../src/spans/neo4jSpan';
 import { HandlerInputsBuilder } from '../../testUtils/handlerInputsBuilder';
 import { createMockedClient, createMockedResponse } from '../../testUtils/neo4jMocker';
 import { Neo4jSpanBuilder } from '../../testUtils/neo4jSpanBuilder';
 import { SpansContainer, TracerGlobals } from '../globals';
 import { NEO4J_SPAN } from '../spans/awsSpan';
+import { payloadStringify } from '../utils/payloadStringify';
 import { hookNeo4j } from './neo4j';
 
 const DUMMY_OPTIONS = {
