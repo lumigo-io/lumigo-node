@@ -26,12 +26,15 @@ import {
   getInvokedVersion,
   getTraceId,
   getTracerInfo,
+  INVOCATION_ID_KEY,
   isAwsService,
   isString,
   isWarm,
   parseErrorObject,
   safeExecute,
+  SENDING_TIME_ID_KEY,
   setWarm,
+  TRANSACTION_ID_KEY,
 } from '../utils';
 import { payloadStringify, shallowMask, truncate } from '../utils/payloadStringify';
 import { Utf8Utils } from '../utils/utf8Utils';
@@ -45,6 +48,7 @@ export const PG_SPAN = 'pg';
 export const MSSQL_SPAN = 'msSql';
 export const MYSQL_SPAN = 'mySql';
 export const NEO4J_SPAN = 'neo4j';
+export const ENRICHMENT_SPAN = 'enrichment';
 
 export const getSpanInfo = (): SpanInfo => {
   const tracer = getTracerInfo();
@@ -115,6 +119,27 @@ export const getBasicSpan = (id: string, transactionId: string): BasicSpan => {
     invokedArn,
     invokedVersion,
   };
+};
+
+export const generateEnrichmentSpan = (
+  executionTags: any[],
+  token: string,
+  transactionId: string,
+  invocationId: string
+) => {
+  if (executionTags.length === 0) {
+    return null;
+  }
+  const enrichmentSpan = {
+    type: ENRICHMENT_SPAN,
+    token: token,
+    [TRANSACTION_ID_KEY]: transactionId,
+    [INVOCATION_ID_KEY]: invocationId,
+    [EXECUTION_TAGS_KEY]: executionTags,
+    [SENDING_TIME_ID_KEY]: new Date().getTime(),
+  };
+  logger.debug('Enrichment span created', enrichmentSpan);
+  return enrichmentSpan;
 };
 
 const getEventForSpan = (hasError: boolean = false): string => {

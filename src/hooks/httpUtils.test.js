@@ -88,6 +88,15 @@ describe('httpUtils', () => {
     expect(result).toEqual('BODY');
   });
 
+  test('extractBodyFromWriteOrEndFunc -> non utf8 buffer -> write(Buffer, callback)', () => {
+    const firstArg = Buffer.from('1f8b0800000000000000', 'hex');
+    const secArg = () => {};
+
+    const result = extractBodyFromWriteOrEndFunc([firstArg, secArg]);
+
+    expect(result).toEqual('1f8b0800000000000000');
+  });
+
   test('extractBodyFromWriteOrEndFunc -> simple flow -> write(str, callback)', () => {
     const firstArg = 'BODY';
     const secArg = () => {};
