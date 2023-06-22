@@ -72,5 +72,10 @@ const getTraceState = (headers: Record<string, string>, messageID: string): stri
 };
 
 export const getW3CMessageId = (headers: Record<string, string>): string | null => {
-  return parseW3CHeader(headers).spanId;
+  try {
+    return parseW3CHeader(headers).spanId;
+  } catch (e) {
+      logger.debug("Unable to parse W3C header, ".concat(e));
+      return null
+  }
 };
