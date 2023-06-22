@@ -70,6 +70,10 @@ describe('Utf8Utils', () => {
     expect(getW3CMessageId(headers)).toBeFalsy();
   });
 
+  test('getW3CMessageId -> doesnt crash', () => {
+    expect(getW3CMessageId('asdf')).toBeUndefined();
+  });
+
   test('getW3CMessageId -> shouldSkipTracePropagation', () => {
     expect(shouldSkipTracePropagation({})).toBeFalsy();
     expect(shouldSkipTracePropagation({ another: 'header' })).toBeFalsy();
