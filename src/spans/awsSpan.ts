@@ -38,6 +38,7 @@ import {
 } from '../utils';
 import { payloadStringify, shallowMask, truncate } from '../utils/payloadStringify';
 import { Utf8Utils } from '../utils/utf8Utils';
+import { getW3CMessageId } from '../utils/w3cUtils';
 
 export const HTTP_SPAN = 'http';
 export const FUNCTION_SPAN = 'function';
@@ -346,10 +347,15 @@ export const getHttpSpan = (
     HTTP_SPAN
   );
 
-  const info = Object.assign({}, basicHttpSpan.info, {
+  let info = Object.assign({}, basicHttpSpan.info, {
     httpInfo,
     ...awsServiceData,
   });
+
+  // add messageId based on W3cContextPropagation in case of messageId not present
+  if (!info.messageId) {
+    info.messageId = getW3CMessageId(requestData.headers);
+  }
 
   let service = EXTERNAL_SERVICE;
   try {
