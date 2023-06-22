@@ -75,7 +75,7 @@ export const getW3CMessageId = (headers: Record<string, string>): string | null 
   try {
     return parseW3CHeader(headers).spanId;
   } catch (e) {
-      logger.debug("Unable to parse W3C header, ".concat(e));
-      return undefined;
+    logger.debug('Unable to parse W3C header, '.concat(e));
+    return undefined;
   }
 };
