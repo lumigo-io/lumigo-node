@@ -38,7 +38,7 @@ import {
 } from '../utils';
 import { payloadStringify, shallowMask, truncate } from '../utils/payloadStringify';
 import { Utf8Utils } from '../utils/utf8Utils';
-import {getW3CMessageId} from "../utils/w3cUtils";
+import { getW3CMessageId } from '../utils/w3cUtils';
 
 export const HTTP_SPAN = 'http';
 export const FUNCTION_SPAN = 'function';

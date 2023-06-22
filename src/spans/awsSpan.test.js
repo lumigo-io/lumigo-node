@@ -18,6 +18,7 @@ import {
 import { payloadStringify } from '../utils/payloadStringify';
 import * as awsSpan from './awsSpan';
 import { decodeHttpBody, HTTP_SPAN } from './awsSpan';
+import { addW3CTracePropagator } from '../utils/w3cUtils';
 
 const exampleApiGatewayEvent = require('../../testUtils/testdata/events/apigw-request.json');
 
@@ -953,6 +954,24 @@ describe('awsSpan', () => {
       host: 'your.mind.com',
       password: '****',
     });
+  });
+
+  test('getHttpSpan - adds messageId for non-aws call when LUMIGO_PROPAGATE_W3C is present', () => {
+    let headers = { host: 'your.mind.com', password: '1234' };
+    addW3CTracePropagator(headers);
+
+    const testData = {
+      requestData: {
+        a: 'request',
+        sendTime: 1,
+        truncated: false,
+        host: 'your.mind.com',
+        headers: headers,
+        body: 'bla',
+      },
+    };
+    const result = awsSpan.getHttpSpan('123', '', '123', testData.requestData);
+    expect(result.info.messageId).not.toBeUndefined();
   });
 
   test('getHttpSpanId - simple flow', () => {
