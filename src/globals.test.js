@@ -399,6 +399,19 @@ describe('globals', () => {
     ]);
   });
 
+  test('autoTagEvent key not exists', () => {
+    process.env = { LUMIGO_AUTO_TAG: 'key1,key2' };
+    setLambdaAsTraced();
+
+    globals.ExecutionTags.autoTagEvent({
+      key1: 'value1',
+      key3: 'value3',
+      other: 'other',
+    });
+    const result = globals.ExecutionTags.getTags();
+    expect(result).toEqual([{ key: 'key1', value: 'value1' }]);
+  });
+
   test('autoTagEvent nested', () => {
     process.env = { LUMIGO_AUTO_TAG: 'key1.key2' };
     setLambdaAsTraced();
@@ -445,6 +458,43 @@ describe('globals', () => {
       { key: 'key1.key2', value: 'value' },
       { key: 'key3.key4', value: 'value2' },
     ]);
+    globals.ExecutionTags.clear();
+  });
+
+  test('autoTagEvent stringified', () => {
+    // happy flow
+    process.env = { LUMIGO_AUTO_TAG: 'key1.key2' };
+    setLambdaAsTraced();
+    globals.ExecutionTags.autoTagEvent({
+      key1: JSON.stringify({ key2: 'value' }),
+      key3: 'value3',
+    });
+    let result = globals.ExecutionTags.getTags();
+    expect(result).toEqual([{ key: 'key1.key2', value: 'value' }]);
+    globals.ExecutionTags.clear();
+
+    // happy flow event is stringified
+    process.env = { LUMIGO_AUTO_TAG: 'key1' };
+    setLambdaAsTraced();
+    globals.ExecutionTags.autoTagEvent(
+      JSON.stringify({
+        key1: 'value',
+        key3: 'value2',
+      })
+    );
+    result = globals.ExecutionTags.getTags();
+    expect(result).toEqual([{ key: 'key1', value: 'value' }]);
+    globals.ExecutionTags.clear();
+
+    // happy flow - stringified twice
+    process.env = { LUMIGO_AUTO_TAG: 'key1.key2.key3' };
+    setLambdaAsTraced();
+    globals.ExecutionTags.autoTagEvent({
+      key1: JSON.stringify({ key2: JSON.stringify({ key3: 'value' }) }),
+      key5: '1',
+    });
+    result = globals.ExecutionTags.getTags();
+    expect(result).toEqual([{ key: 'key1.key2.key3', value: 'value' }]);
     globals.ExecutionTags.clear();
   });
 

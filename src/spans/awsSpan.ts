@@ -153,7 +153,11 @@ const getEventForSpan = (hasError = false): string => {
 };
 
 export const getEnvsForSpan = (hasError = false): string =>
-  payloadStringify({ ...process.env}, ScrubContext.PROCESS_ENVIRONMENT, getEventEntitySize(hasError));
+  payloadStringify(
+    { ...process.env },
+    ScrubContext.PROCESS_ENVIRONMENT,
+    getEventEntitySize(hasError)
+  );
 
 export const getFunctionSpan = (lambdaEvent: {}, lambdaContext: Context): FunctionSpan => {
   const transactionId = getCurrentTransactionId();

@@ -10,6 +10,7 @@ import {
   spanHasErrors,
 } from './utils';
 import { GlobalDurationTimer } from './utils/globalDurationTimer';
+import { isString } from '@lumigo/node-core/lib/common';
 
 const MAX_TAGS = 50;
 const MAX_TAG_KEY_LEN = 50;
@@ -134,9 +135,19 @@ export const ExecutionTags = (() => {
   // @ts-ignore
   const clear = () => (global.tags = []);
 
+  const getValue = (obj, innerKey) => {
+    try {
+      if (obj && isString(obj) && obj[innerKey] === undefined) {
+        const parsedObj = JSON.parse(obj);
+        return parsedObj && parsedObj[innerKey];
+      }
+    } catch (err) {}
+    return obj && obj[innerKey];
+  };
+
   const autoTagEvent = (event) => {
     getAutoTagKeys().forEach((key) => {
-      const value = key.split('.').reduce((obj, innerKey) => obj && obj[innerKey], event);
+      const value = key.split('.').reduce(getValue, event);
       value && addTag(key, value);
     });
   };
