@@ -78,6 +78,11 @@ export const ExecutionTags = (() => {
   // @ts-ignore
   global.tags = [];
 
+  interface AutoTagEvent {
+    event: string;
+    keyToEventMap: any;
+  }
+
   const validateTag = (key, value, shouldLogErrors = true) => {
     key = String(key);
     value = String(value);
@@ -135,20 +140,33 @@ export const ExecutionTags = (() => {
   // @ts-ignore
   const clear = () => (global.tags = []);
 
-  const getValue = (obj, innerKey) => {
+  const getValue = (autoTagEvent: AutoTagEvent, innerKey) => {
+    let obj = autoTagEvent.event;
+    const eventByKey = autoTagEvent.keyToEventMap;
+    if (eventByKey && eventByKey[innerKey]) {
+      obj = eventByKey[innerKey];
+      return obj && { event: obj, keyToEventMap: eventByKey };
+    }
     try {
       if (obj && isString(obj) && obj[innerKey] === undefined) {
         const parsedObj = JSON.parse(obj);
-        return parsedObj && parsedObj[innerKey];
+        eventByKey[innerKey] = parsedObj[innerKey];
+        return parsedObj && { event: parsedObj[innerKey], keyToEventMap: eventByKey };
       }
     } catch (err) {}
-    return obj && obj[innerKey];
+    if (obj && obj[innerKey]) {
+      eventByKey[innerKey] = obj[innerKey];
+      return { event: obj[innerKey], keyToEventMap: eventByKey };
+    }
+    return { event: undefined, keyToEventMap: eventByKey };
   };
 
   const autoTagEvent = (event) => {
     getAutoTagKeys().forEach((key) => {
-      const value = key.split('.').reduce(getValue, event);
-      value && addTag(key, value);
+      const value: AutoTagEvent = key
+        .split('.')
+        .reduce(getValue, { event: event, keyToEventMap: {} });
+      value.event && addTag(key, value.event);
     });
   };
 
