@@ -162,10 +162,12 @@ export const ExecutionTags = (() => {
   };
 
   const autoTagEvent = (event) => {
+    let keyToEventMap: {} = {};
     getAutoTagKeys().forEach((key) => {
       const value: AutoTagEvent = key
         .split('.')
-        .reduce(getValue, { event: event, keyToEventMap: {} });
+        .reduce(getValue, { event: event, keyToEventMap: keyToEventMap });
+      keyToEventMap = { ...keyToEventMap, ...value.keyToEventMap };
       value.event && addTag(key, value.event);
     });
   };
