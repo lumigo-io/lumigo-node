@@ -392,10 +392,21 @@ describe('globals', () => {
       key3: 'value3',
       other: 'other',
     });
-    const result = globals.ExecutionTags.getTags();
+    let result = globals.ExecutionTags.getTags();
     expect(result).toEqual([
       { key: 'key1', value: 'value1' },
       { key: 'key2', value: '2' },
+    ]);
+    globals.ExecutionTags.clear();
+
+    globals.ExecutionTags.autoTagEvent({
+      key1: 'value1',
+      key2: JSON.stringify({ key2: 2 }),
+    });
+    result = globals.ExecutionTags.getTags();
+    expect(result).toEqual([
+      { key: 'key1', value: 'value1' },
+      { key: 'key2', value: '{"key2":2}' },
     ]);
   });
 
