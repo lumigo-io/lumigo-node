@@ -10,6 +10,7 @@ import {
   spanHasErrors,
 } from './utils';
 import { GlobalDurationTimer } from './utils/globalDurationTimer';
+import { isString } from '@lumigo/node-core/lib/common';
 
 const MAX_TAGS = 50;
 const MAX_TAG_KEY_LEN = 50;
@@ -77,6 +78,11 @@ export const ExecutionTags = (() => {
   // @ts-ignore
   global.tags = [];
 
+  interface AutoTagEvent {
+    event: string;
+    keyToEventMap: any;
+  }
+
   const validateTag = (key, value, shouldLogErrors = true) => {
     key = String(key);
     value = String(value);
@@ -134,10 +140,35 @@ export const ExecutionTags = (() => {
   // @ts-ignore
   const clear = () => (global.tags = []);
 
+  const getValue = (autoTagEvent: AutoTagEvent, innerKey) => {
+    let obj = autoTagEvent.event;
+    const eventByKey = autoTagEvent.keyToEventMap;
+    if (eventByKey && eventByKey[innerKey]) {
+      obj = eventByKey[innerKey];
+      return obj && { event: obj, keyToEventMap: eventByKey };
+    }
+    try {
+      if (obj && isString(obj) && obj[innerKey] === undefined) {
+        const parsedObj = JSON.parse(obj);
+        eventByKey[innerKey] = parsedObj[innerKey];
+        return parsedObj && { event: parsedObj[innerKey], keyToEventMap: eventByKey };
+      }
+    } catch (err) {}
+    if (obj && obj[innerKey]) {
+      eventByKey[innerKey] = obj[innerKey];
+      return { event: obj[innerKey], keyToEventMap: eventByKey };
+    }
+    return { event: undefined, keyToEventMap: eventByKey };
+  };
+
   const autoTagEvent = (event) => {
+    let keyToEventMap: {} = {};
     getAutoTagKeys().forEach((key) => {
-      const value = key.split('.').reduce((obj, innerKey) => obj && obj[innerKey], event);
-      value && addTag(key, value);
+      const value: AutoTagEvent = key
+        .split('.')
+        .reduce(getValue, { event: event, keyToEventMap: keyToEventMap });
+      keyToEventMap = { ...keyToEventMap, ...value.keyToEventMap };
+      value.event && addTag(key, value.event);
     });
   };
 

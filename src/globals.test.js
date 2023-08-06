@@ -399,6 +399,19 @@ describe('globals', () => {
     ]);
   });
 
+  test('autoTagEvent key not exists', () => {
+    process.env = { LUMIGO_AUTO_TAG: 'key1,key2' };
+    setLambdaAsTraced();
+
+    globals.ExecutionTags.autoTagEvent({
+      key1: 'value1',
+      key3: 'value3',
+      other: 'other',
+    });
+    const result = globals.ExecutionTags.getTags();
+    expect(result).toEqual([{ key: 'key1', value: 'value1' }]);
+  });
+
   test('autoTagEvent nested', () => {
     process.env = { LUMIGO_AUTO_TAG: 'key1.key2' };
     setLambdaAsTraced();
@@ -447,6 +460,25 @@ describe('globals', () => {
     ]);
     globals.ExecutionTags.clear();
   });
+
+  test.each`
+    envVarValue                        | event                                                                               | expectedTags
+    ${'foo.bar'}                       | ${{ foo: '{"bar":"lol","secret":"****"}' }}                                         | ${[{ key: 'foo.bar', value: 'lol' }]}
+    ${'key1'}                          | ${JSON.stringify({ key1: 'value', key3: 'value2' })}                                | ${[{ key: 'key1', value: 'value' }]}
+    ${'key1.key2'}                     | ${{ key1: JSON.stringify({ key2: 'value' }), key3: 'value3' }}                      | ${[{ key: 'key1.key2', value: 'value' }]}
+    ${'key1.key2.key3'}                | ${{ key1: JSON.stringify({ key2: JSON.stringify({ key3: 'value' }) }), key5: '1' }} | ${[{ key: 'key1.key2.key3', value: 'value' }]}
+    ${'key1.key2,key1.key2.key3,key1'} | ${{ key1: JSON.stringify({ key2: JSON.stringify({ key3: 'value' }) }), key5: '1' }} | ${[{ key: 'key1.key2', value: JSON.stringify({ key3: 'value' }) }, { key: 'key1.key2.key3', value: 'value' }, { key: 'key1', value: JSON.stringify({ key2: JSON.stringify({ key3: 'value' }) }) }]}
+  `(
+    'autoTagEvent for stringified events, envVarValue=$envVarValue',
+    ({ envVarValue, event, expectedTags }) => {
+      process.env = { LUMIGO_AUTO_TAG: envVarValue };
+      setLambdaAsTraced();
+      globals.ExecutionTags.autoTagEvent(event);
+      let result = globals.ExecutionTags.getTags();
+      expect(result).toEqual(expectedTags);
+      globals.ExecutionTags.clear();
+    }
+  );
 
   test.each`
     killSwitchValue | isAwsEnvironment | expectedRetValue | expectedTags
