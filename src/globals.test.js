@@ -445,29 +445,33 @@ describe('globals', () => {
     globals.ExecutionTags.clear();
 
     // happy flow - two nested
-    process.env = { LUMIGO_AUTO_TAG: 'key1.key2,key3.key4' };
+    process.env = { LUMIGO_AUTO_TAG: 'key1.key2,key3.key4,key4.key1' };
     setLambdaAsTraced();
 
     globals.ExecutionTags.autoTagEvent({
       key1: { key2: 'value' },
       key3: { key4: 'value2' },
+      key4: { key1: 'value3' },
       key5: '1',
     });
     result = globals.ExecutionTags.getTags();
     expect(result).toEqual([
       { key: 'key1.key2', value: 'value' },
       { key: 'key3.key4', value: 'value2' },
+      { key: 'key4.key1', value: 'value3' },
     ]);
     globals.ExecutionTags.clear();
   });
 
   test.each`
-    envVarValue                        | event                                                                               | expectedTags
-    ${'foo.bar'}                       | ${{ foo: '{"bar":"lol","secret":"****"}' }}                                         | ${[{ key: 'foo.bar', value: 'lol' }]}
-    ${'key1'}                          | ${JSON.stringify({ key1: 'value', key3: 'value2' })}                                | ${[{ key: 'key1', value: 'value' }]}
-    ${'key1.key2'}                     | ${{ key1: JSON.stringify({ key2: 'value' }), key3: 'value3' }}                      | ${[{ key: 'key1.key2', value: 'value' }]}
-    ${'key1.key2.key3'}                | ${{ key1: JSON.stringify({ key2: JSON.stringify({ key3: 'value' }) }), key5: '1' }} | ${[{ key: 'key1.key2.key3', value: 'value' }]}
-    ${'key1.key2,key1.key2.key3,key1'} | ${{ key1: JSON.stringify({ key2: JSON.stringify({ key3: 'value' }) }), key5: '1' }} | ${[{ key: 'key1.key2', value: JSON.stringify({ key3: 'value' }) }, { key: 'key1.key2.key3', value: 'value' }, { key: 'key1', value: JSON.stringify({ key2: JSON.stringify({ key3: 'value' }) }) }]}
+    envVarValue                        | event                                                                                     | expectedTags
+    ${'key1.key2,key3,key1'}           | ${{ key1: JSON.stringify({ key2: JSON.stringify({ key4: 'value' }) }), key5: '1' }}       | ${[{ key: 'key1.key2', value: JSON.stringify({ key4: 'value' }) }, { key: 'key1', value: JSON.stringify({ key2: JSON.stringify({ key4: 'value' }) }) }]}
+    ${'key1.key2,key3.key2'}           | ${{ key1: JSON.stringify({ key2: 'value' }), key3: JSON.stringify({ key2: 'value_1' }) }} | ${[{ key: 'key1.key2', value: 'value' }, { key: 'key3.key2', value: 'value_1' }]}
+    ${'foo.bar'}                       | ${{ foo: '{"bar":"lol","secret":"****"}' }}                                               | ${[{ key: 'foo.bar', value: 'lol' }]}
+    ${'key1'}                          | ${JSON.stringify({ key1: 'value', key3: 'value2' })}                                      | ${[{ key: 'key1', value: 'value' }]}
+    ${'key1.key2'}                     | ${{ key1: JSON.stringify({ key2: 'value' }), key3: 'value3' }}                            | ${[{ key: 'key1.key2', value: 'value' }]}
+    ${'key1.key2.key3'}                | ${{ key1: JSON.stringify({ key2: JSON.stringify({ key3: 'value' }) }), key5: '1' }}       | ${[{ key: 'key1.key2.key3', value: 'value' }]}
+    ${'key1.key2,key1.key2.key3,key1'} | ${{ key1: JSON.stringify({ key2: JSON.stringify({ key3: 'value' }) }), key5: '1' }}       | ${[{ key: 'key1.key2', value: JSON.stringify({ key3: 'value' }) }, { key: 'key1.key2.key3', value: 'value' }, { key: 'key1', value: JSON.stringify({ key2: JSON.stringify({ key3: 'value' }) }) }]}
   `(
     'autoTagEvent for stringified events, envVarValue=$envVarValue',
     ({ envVarValue, event, expectedTags }) => {
