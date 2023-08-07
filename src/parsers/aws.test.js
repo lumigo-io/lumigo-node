@@ -359,29 +359,29 @@ describe('aws parser', () => {
   [
     // send message single
     '<?xml version="1.0"?>' +
-    '<SendMessageResponse xmlns="http://queue.amazonaws.com/doc/2012-11-05/">' +
-    '  <SendMessageResult>' +
-    '    <MessageId>85dc3997-b060-47bc-9d89-c754d7260dbd</MessageId>' +
-    '    <MD5OfMessageBody>c5cb6abef11b88049177473a73ed662f</MD5OfMessageBody>' +
-    '  </SendMessageResult>' +
-    '  <ResponseMetadata>' +
-    '    <RequestId>b6b5a045-23c6-5e3a-a54f-f7dd99f7b379</RequestId>' +
-    '  </ResponseMetadata>' +
-    '</SendMessageResponse>',
+      '<SendMessageResponse xmlns="http://queue.amazonaws.com/doc/2012-11-05/">' +
+      '  <SendMessageResult>' +
+      '    <MessageId>85dc3997-b060-47bc-9d89-c754d7260dbd</MessageId>' +
+      '    <MD5OfMessageBody>c5cb6abef11b88049177473a73ed662f</MD5OfMessageBody>' +
+      '  </SendMessageResult>' +
+      '  <ResponseMetadata>' +
+      '    <RequestId>b6b5a045-23c6-5e3a-a54f-f7dd99f7b379</RequestId>' +
+      '  </ResponseMetadata>' +
+      '</SendMessageResponse>',
     // send message batch (with one record)
     '<?xml version="1.0"?>' +
-    '<SendMessageBatchResponse xmlns="http://queue.amazonaws.com/doc/2012-11-05/">' +
-    '  <SendMessageBatchResult>' +
-    '    <SendMessageBatchResultEntry>' +
-    '      <Id>11dd068c-fb3c-43e8-a2ae-1a914780735f</Id>' +
-    '      <MessageId>85dc3997-b060-47bc-9d89-c754d7260dbd</MessageId>' +
-    '      <MD5OfMessageBody>c5cb6abef11b88049177473a73ed662f</MD5OfMessageBody>' +
-    '    </SendMessageBatchResultEntry>' +
-    '  </SendMessageBatchResult>' +
-    '  <ResponseMetadata>' +
-    '    <RequestId>b6b5a045-23c6-5e3a-a54f-f7dd99f7b379</RequestId>' +
-    '  </ResponseMetadata>' +
-    '</SendMessageBatchResponse>',
+      '<SendMessageBatchResponse xmlns="http://queue.amazonaws.com/doc/2012-11-05/">' +
+      '  <SendMessageBatchResult>' +
+      '    <SendMessageBatchResultEntry>' +
+      '      <Id>11dd068c-fb3c-43e8-a2ae-1a914780735f</Id>' +
+      '      <MessageId>85dc3997-b060-47bc-9d89-c754d7260dbd</MessageId>' +
+      '      <MD5OfMessageBody>c5cb6abef11b88049177473a73ed662f</MD5OfMessageBody>' +
+      '    </SendMessageBatchResultEntry>' +
+      '  </SendMessageBatchResult>' +
+      '  <ResponseMetadata>' +
+      '    <RequestId>b6b5a045-23c6-5e3a-a54f-f7dd99f7b379</RequestId>' +
+      '  </ResponseMetadata>' +
+      '</SendMessageBatchResponse>',
   ].map((responseDataBody) =>
     test('sqsParser -> happy flow', () => {
       const queueUrl = 'https://sqs.us-west-2.amazonaws.com/33/random-queue-test';
@@ -416,34 +416,76 @@ describe('aws parser', () => {
 
   [
     // send message single
-    '{' +
-    '   "MD5OfMessageAttributes":"6e6aba56e93b3ddfdfe3fa28895feece",' +
-    '   "MD5OfMessageBody":"0d40eb1479f7e61b1a1c7a425c3949e4",' +
-    '   "MessageId":"c5aca29a-ff2f-4db5-94c3-90523d1ed4ca"' +
-    '}',
+    {
+      requestDataBody:
+        '{' +
+        '   "QueueUrl": "https://sqs.us-west-2.amazonaws.com/33/random-queue-test", ' +
+        '   "MessageBody": "This is a test message"' +
+        '}',
+      responseDataBody:
+        '{' +
+        '   "MD5OfMessageAttributes":"6e6aba56e93b3ddfdfe3fa28895feece",' +
+        '   "MD5OfMessageBody":"0d40eb1479f7e61b1a1c7a425c3949e4",' +
+        '   "MessageId":"c5aca29a-ff2f-4db5-94c3-90523d1ed4ca"' +
+        '}',
+    },
     // send message batch (with one record)
-    '{' +
-    '   "Failed":[],' +
-    '   "Successful":[' +
-    '     {' +
-    '        "Id":"1",' +
-    '        "MD5OfMessageBody":"68390233272823b7adf13a1db79b2cd7",' +
-    '        "MessageId":"c5aca29a-ff2f-4db5-94c3-90523d1ed4ca"' +
-    '     }' +
-    ']}'
-  ].map((responseDataBody) =>
+    {
+      requestDataBody:
+        '{' +
+        '   "QueueUrl": "https://sqs.us-west-2.amazonaws.com/33/random-queue-test", ' +
+        '   "Entries": [' +
+        '     {"Id": 1, "Message": "Message number 1"}' +
+        '   ]' +
+        '}',
+      responseDataBody:
+        '{' +
+        '   "Failed":[],' +
+        '   "Successful":[' +
+        '     {' +
+        '        "Id":"1",' +
+        '        "MD5OfMessageBody":"68390233272823b7adf13a1db79b2cd7",' +
+        '        "MessageId":"c5aca29a-ff2f-4db5-94c3-90523d1ed4ca"' +
+        '     }' +
+        ']}',
+    },
+    // send message batch with failed message (with one record)
+    {
+      requestDataBody:
+        '{' +
+        '   "QueueUrl": "https://sqs.us-west-2.amazonaws.com/33/random-queue-test", ' +
+        '   "Entries": [' +
+        '     {"Id": 1, "Message": "Message number 1"}' +
+        '   ]' +
+        '}',
+      responseDataBody:
+        '{' +
+        '   "Successful":[],' +
+        '   "Failed":[' +
+        '     {' +
+        '        "Id":"1",' +
+        '        "MD5OfMessageBody":"68390233272823b7adf13a1db79b2cd7",' +
+        '        "MessageId":"c5aca29a-ff2f-4db5-94c3-90523d1ed4ca"' +
+        '     }' +
+        ']}',
+    },
+  ].map(({ requestDataBody, responseDataBody }) =>
+    // Check different header values still work with JSON parsing
+    [
+      { 'x-amz-target': 'amazonsqs.sendmessage', 'content-type': 'application/x-amz-json-1.0' },
+      { 'X-Amz-Target': 'AmazonSQS.SendMessage', 'Content-Type': 'Application/X-Amz-JSON-1.0' },
+      { 'X-AMZ-TARGET': 'AMAZONSQS.SENDMESSAGE', 'CONTENT-TYPE': 'APPLICATION/X-AMZ-JSON-1.0' },
+    ].map((reqHeaders) => {
       test('sqsParser -> happy flow JSON format', () => {
         const queueUrl = 'https://sqs.us-west-2.amazonaws.com/33/random-queue-test';
         const requestData = {
           path: '/',
           port: 443,
           host: 'sqs.us-west-2.amazonaws.com',
-          // TODO: Figure out sent body of batch message request
-          body: `{"QueueUrl": "${queueUrl}", "MessageBody": "This is a test message"}`,
+          body: requestDataBody,
           method: 'POST',
           headers: {
-            'content-type': 'application/x-amz-json-1.0',
-            'X-Amz-Target': 'AmazonSQS.SendMessage',
+            ...reqHeaders,
             'content-length': 172,
             host: 'sqs.us-west-2.amazonaws.com',
             'x-amz-date': '20190730T082312Z',
@@ -461,8 +503,15 @@ describe('aws parser', () => {
             messageId: 'c5aca29a-ff2f-4db5-94c3-90523d1ed4ca',
           },
         });
-      })
+      });
+    })
   );
+
+  [
+    { 'x-amz-target': 'amazonsqs.sendmessage', 'content-type': 'application/x-amz-json-1.0' },
+    { 'X-Amz-Target': 'AmazonSQS.SendMessage', 'Content-Type': 'Application/X-Amz-JSON-1.0' },
+    { 'X-AMZ-TARGET': 'AMAZONSQS.SENDMESSAGE', 'CONTENT-TYPE': 'APPLICATION/X-AMZ-JSON-1.0' },
+  ].map((reqHeaders) => {});
 
   test('sqsParser -> truncated body', () => {
     const queueUrl = 'https://sqs.us-west-2.amazonaws.com/33/random-queue-test';
