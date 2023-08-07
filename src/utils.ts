@@ -277,10 +277,10 @@ export const safeGet = (obj, arr, dflt = null) => {
  * @param dflt Default value if no match is found
  */
 export const caseInsensitiveGet = (obj, key, dflt = null) => {
-  const lowerCaseKey = key.toLowerCase()
-  const matchingKey = Object.keys(obj).find(k => k.toLowerCase() === lowerCaseKey);
+  const lowerCaseKey = key.toLowerCase();
+  const matchingKey = Object.keys(obj).find((k) => k.toLowerCase() === lowerCaseKey);
   return matchingKey ? obj[matchingKey] : dflt;
-}
+};
 
 export const safeJsonParse = (obj, dflt = undefined) => {
   return safeExecute(
