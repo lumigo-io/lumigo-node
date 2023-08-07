@@ -1,4 +1,4 @@
-import { md5Hash, parseQueryParams, removeDuplicates, safeGet, safeJsonParse } from '../utils';
+import { md5Hash, parseQueryParams, removeDuplicates, safeGet, safeJsonParse, caseInsensitiveGet } from '../utils';
 import { traverse } from '../tools/xmlToJson';
 import * as logger from '../logger';
 import { getW3CMessageId } from '../utils/w3cUtils';
@@ -122,36 +122,56 @@ export const eventBridgeParser = (requestData, responseData) => {
 };
 
 export const sqsParser = (requestData, responseData) => {
-  const { body: reqBody } = requestData;
+  const { body: reqBody } = requestData || {};
+  const reqHeaders = requestData.headers ? requestData.headers : {}
   const { body: resBody } = responseData || {};
-  const parsedReqBody = reqBody ? parseQueryParams(reqBody) : undefined;
-  const parsedResBody = resBody ? traverse(resBody) : undefined;
-  const resourceName = parsedReqBody ? parsedReqBody['QueueUrl'] : undefined;
-  const awsServiceData = { resourceName };
-  // @ts-ignore
-  awsServiceData.messageId =
-    safeGet(parsedResBody, ['SendMessageResponse', 'SendMessageResult', 'MessageId'], undefined) ||
-    safeGet(
-      parsedResBody,
-      [
-        'SendMessageBatchResponse',
-        'SendMessageBatchResult',
-        'SendMessageBatchResultEntry',
-        0,
-        'MessageId',
-      ],
-      undefined
-    ) ||
-    safeGet(
-      parsedResBody,
-      [
-        'SendMessageBatchResponse',
-        'SendMessageBatchResult',
-        'SendMessageBatchResultEntry',
-        'MessageId',
-      ],
-      undefined
-    );
+
+  let awsServiceData = {}
+
+  if (caseInsensitiveGet(reqHeaders, 'x-amz-target', '').toLowerCase() === 'amazonsqs.sendmessage' &&
+      caseInsensitiveGet(reqHeaders, 'content-type', '').toLowerCase() === 'application/x-amz-json-1.0') {
+    // Request is in JSON format (see https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-making-api-requests-json.html)
+    const parsedReqBody = safeJsonParse(reqBody, {});
+    const parsedResBody = safeJsonParse(resBody, {});
+    const resourceName = parsedReqBody ? parsedReqBody['QueueUrl'] : undefined;
+    // awsServiceData = { resourceName };
+    const messageId =
+        safeGet(parsedResBody, ['MessageId'], undefined) ||
+        safeGet(parsedResBody, ['Successful', 0, 'MessageId'], undefined) ||
+        safeGet(parsedResBody, ['Failed', 0, 'MessageId'], undefined);
+    awsServiceData = { resourceName, messageId };
+  } else {
+    // Assume the default format XML
+    const parsedReqBody = reqBody ? parseQueryParams(reqBody) : undefined;
+    const parsedResBody = resBody ? traverse(resBody) : undefined;
+    const resourceName = parsedReqBody ? parsedReqBody['QueueUrl'] : undefined;
+    // @ts-ignore
+    const messageId =
+        safeGet(parsedResBody, ['SendMessageResponse', 'SendMessageResult', 'MessageId'], undefined) ||
+        safeGet(
+            parsedResBody,
+            [
+              'SendMessageBatchResponse',
+              'SendMessageBatchResult',
+              'SendMessageBatchResultEntry',
+              0,
+              'MessageId',
+            ],
+            undefined
+        ) ||
+        safeGet(
+            parsedResBody,
+            [
+              'SendMessageBatchResponse',
+              'SendMessageBatchResult',
+              'SendMessageBatchResultEntry',
+              'MessageId',
+            ],
+            undefined
+        );
+    awsServiceData = { resourceName, messageId };
+  }
+
   return { awsServiceData };
 };
 

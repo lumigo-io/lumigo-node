@@ -358,9 +358,30 @@ describe('aws parser', () => {
 
   [
     // send message single
-    '<?xml version="1.0"?><SendMessageResponse xmlns="http://queue.amazonaws.com/doc/2012-11-05/"><SendMessageResult><MessageId>85dc3997-b060-47bc-9d89-c754d7260dbd</MessageId><MD5OfMessageBody>c5cb6abef11b88049177473a73ed662f</MD5OfMessageBody></SendMessageResult><ResponseMetadata><RequestId>b6b5a045-23c6-5e3a-a54f-f7dd99f7b379</RequestId></ResponseMetadata></SendMessageResponse>',
+    '<?xml version="1.0"?>' +
+    '<SendMessageResponse xmlns="http://queue.amazonaws.com/doc/2012-11-05/">' +
+    '  <SendMessageResult>' +
+    '    <MessageId>85dc3997-b060-47bc-9d89-c754d7260dbd</MessageId>' +
+    '    <MD5OfMessageBody>c5cb6abef11b88049177473a73ed662f</MD5OfMessageBody>' +
+    '  </SendMessageResult>' +
+    '  <ResponseMetadata>' +
+    '    <RequestId>b6b5a045-23c6-5e3a-a54f-f7dd99f7b379</RequestId>' +
+    '  </ResponseMetadata>' +
+    '</SendMessageResponse>',
     // send message batch (with one record)
-    '<?xml version="1.0"?><SendMessageBatchResponse xmlns="http://queue.amazonaws.com/doc/2012-11-05/"><SendMessageBatchResult><SendMessageBatchResultEntry><Id>11dd068c-fb3c-43e8-a2ae-1a914780735f</Id><MessageId>85dc3997-b060-47bc-9d89-c754d7260dbd</MessageId><MD5OfMessageBody>c5cb6abef11b88049177473a73ed662f</MD5OfMessageBody></SendMessageBatchResultEntry></SendMessageBatchResult><ResponseMetadata><RequestId>b6b5a045-23c6-5e3a-a54f-f7dd99f7b379</RequestId></ResponseMetadata></SendMessageBatchResponse>',
+    '<?xml version="1.0"?>' +
+    '<SendMessageBatchResponse xmlns="http://queue.amazonaws.com/doc/2012-11-05/">' +
+    '  <SendMessageBatchResult>' +
+    '    <SendMessageBatchResultEntry>' +
+    '      <Id>11dd068c-fb3c-43e8-a2ae-1a914780735f</Id>' +
+    '      <MessageId>85dc3997-b060-47bc-9d89-c754d7260dbd</MessageId>' +
+    '      <MD5OfMessageBody>c5cb6abef11b88049177473a73ed662f</MD5OfMessageBody>' +
+    '    </SendMessageBatchResultEntry>' +
+    '  </SendMessageBatchResult>' +
+    '  <ResponseMetadata>' +
+    '    <RequestId>b6b5a045-23c6-5e3a-a54f-f7dd99f7b379</RequestId>' +
+    '  </ResponseMetadata>' +
+    '</SendMessageBatchResponse>',
   ].map((responseDataBody) =>
     test('sqsParser -> happy flow', () => {
       const queueUrl = 'https://sqs.us-west-2.amazonaws.com/33/random-queue-test';
@@ -408,11 +429,6 @@ describe('aws parser', () => {
     '        "Id":"1",' +
     '        "MD5OfMessageBody":"68390233272823b7adf13a1db79b2cd7",' +
     '        "MessageId":"c5aca29a-ff2f-4db5-94c3-90523d1ed4ca"' +
-    '     },' +
-    '     {' +
-    '        "Id":"2",' +
-    '        "MD5OfMessageBody":"88ef8f31ed540f1c4c03d5fdb06a7935",' +
-    '        "MessageId":"5d12af5a-cc33-4a29-92f6-dd1bd97eb0d5"' +
     '     }' +
     ']}'
   ].map((responseDataBody) =>
