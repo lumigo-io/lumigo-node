@@ -393,6 +393,61 @@ describe('aws parser', () => {
     })
   );
 
+  [
+    // send message single
+    '{' +
+    '   "MD5OfMessageAttributes":"6e6aba56e93b3ddfdfe3fa28895feece",' +
+    '   "MD5OfMessageBody":"0d40eb1479f7e61b1a1c7a425c3949e4",' +
+    '   "MessageId":"c5aca29a-ff2f-4db5-94c3-90523d1ed4ca"' +
+    '}',
+    // send message batch (with one record)
+    '{' +
+    '   "Failed":[],' +
+    '   "Successful":[' +
+    '     {' +
+    '        "Id":"1",' +
+    '        "MD5OfMessageBody":"68390233272823b7adf13a1db79b2cd7",' +
+    '        "MessageId":"c5aca29a-ff2f-4db5-94c3-90523d1ed4ca"' +
+    '     },' +
+    '     {' +
+    '        "Id":"2",' +
+    '        "MD5OfMessageBody":"88ef8f31ed540f1c4c03d5fdb06a7935",' +
+    '        "MessageId":"5d12af5a-cc33-4a29-92f6-dd1bd97eb0d5"' +
+    '     }' +
+    ']}'
+  ].map((responseDataBody) =>
+      test('sqsParser -> happy flow JSON format', () => {
+        const queueUrl = 'https://sqs.us-west-2.amazonaws.com/33/random-queue-test';
+        const requestData = {
+          path: '/',
+          port: 443,
+          host: 'sqs.us-west-2.amazonaws.com',
+          // TODO: Figure out sent body of batch message request
+          body: `{"QueueUrl": "${queueUrl}", "MessageBody": "This is a test message"}`,
+          method: 'POST',
+          headers: {
+            'content-type': 'application/x-amz-json-1.0',
+            'X-Amz-Target': 'AmazonSQS.SendMessage',
+            'content-length': 172,
+            host: 'sqs.us-west-2.amazonaws.com',
+            'x-amz-date': '20190730T082312Z',
+          },
+          protocol: 'https:',
+          sendTime: 1564474992235,
+        };
+        const responseData = { body: responseDataBody };
+
+        const result = aws.sqsParser(requestData, responseData);
+
+        expect(result).toEqual({
+          awsServiceData: {
+            resourceName: queueUrl,
+            messageId: 'c5aca29a-ff2f-4db5-94c3-90523d1ed4ca',
+          },
+        });
+      })
+  );
+
   test('sqsParser -> truncated body', () => {
     const queueUrl = 'https://sqs.us-west-2.amazonaws.com/33/random-queue-test';
     const encodedQueueUrl = encodeURIComponent(queueUrl);
