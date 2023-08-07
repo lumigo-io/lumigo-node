@@ -1,4 +1,11 @@
-import { md5Hash, parseQueryParams, removeDuplicates, safeGet, safeJsonParse, caseInsensitiveGet } from '../utils';
+import {
+  md5Hash,
+  parseQueryParams,
+  removeDuplicates,
+  safeGet,
+  safeJsonParse,
+  caseInsensitiveGet,
+} from '../utils';
 import { traverse } from '../tools/xmlToJson';
 import * as logger from '../logger';
 import { getW3CMessageId } from '../utils/w3cUtils';
@@ -123,22 +130,26 @@ export const eventBridgeParser = (requestData, responseData) => {
 
 export const sqsParser = (requestData, responseData) => {
   const { body: reqBody } = requestData || {};
-  const reqHeaders = requestData.headers ? requestData.headers : {}
+  const reqHeaders = requestData.headers ? requestData.headers : {};
   const { body: resBody } = responseData || {};
+  let awsServiceData = {};
 
-  let awsServiceData = {}
-
-  if (caseInsensitiveGet(reqHeaders, 'x-amz-target', '').toLowerCase() === 'amazonsqs.sendmessage' &&
-      caseInsensitiveGet(reqHeaders, 'content-type', '').toLowerCase() === 'application/x-amz-json-1.0') {
-    // Request is in JSON format (see https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-making-api-requests-json.html)
+  // Note: Currently json protocol is new and not commonly used, so the default case is XML.
+  // In the future when JSON usage is default you my want to switch so JSON is the default and XML
+  // protocol is specifically checked for
+  if (
+    caseInsensitiveGet(reqHeaders, 'x-amz-target', '').toLowerCase() === 'amazonsqs.sendmessage' &&
+    caseInsensitiveGet(reqHeaders, 'content-type', '').toLowerCase() ===
+      'application/x-amz-json-1.0'
+  ) {
+    // Request is in JSON format
     const parsedReqBody = safeJsonParse(reqBody, {});
     const parsedResBody = safeJsonParse(resBody, {});
     const resourceName = parsedReqBody ? parsedReqBody['QueueUrl'] : undefined;
-    // awsServiceData = { resourceName };
     const messageId =
-        safeGet(parsedResBody, ['MessageId'], undefined) ||
-        safeGet(parsedResBody, ['Successful', 0, 'MessageId'], undefined) ||
-        safeGet(parsedResBody, ['Failed', 0, 'MessageId'], undefined);
+      safeGet(parsedResBody, ['MessageId'], undefined) ||
+      safeGet(parsedResBody, ['Successful', 0, 'MessageId'], undefined) ||
+      safeGet(parsedResBody, ['Failed', 0, 'MessageId'], undefined);
     awsServiceData = { resourceName, messageId };
   } else {
     // Assume the default format XML
@@ -147,28 +158,32 @@ export const sqsParser = (requestData, responseData) => {
     const resourceName = parsedReqBody ? parsedReqBody['QueueUrl'] : undefined;
     // @ts-ignore
     const messageId =
-        safeGet(parsedResBody, ['SendMessageResponse', 'SendMessageResult', 'MessageId'], undefined) ||
-        safeGet(
-            parsedResBody,
-            [
-              'SendMessageBatchResponse',
-              'SendMessageBatchResult',
-              'SendMessageBatchResultEntry',
-              0,
-              'MessageId',
-            ],
-            undefined
-        ) ||
-        safeGet(
-            parsedResBody,
-            [
-              'SendMessageBatchResponse',
-              'SendMessageBatchResult',
-              'SendMessageBatchResultEntry',
-              'MessageId',
-            ],
-            undefined
-        );
+      safeGet(
+        parsedResBody,
+        ['SendMessageResponse', 'SendMessageResult', 'MessageId'],
+        undefined
+      ) ||
+      safeGet(
+        parsedResBody,
+        [
+          'SendMessageBatchResponse',
+          'SendMessageBatchResult',
+          'SendMessageBatchResultEntry',
+          0,
+          'MessageId',
+        ],
+        undefined
+      ) ||
+      safeGet(
+        parsedResBody,
+        [
+          'SendMessageBatchResponse',
+          'SendMessageBatchResult',
+          'SendMessageBatchResultEntry',
+          'MessageId',
+        ],
+        undefined
+      );
     awsServiceData = { resourceName, messageId };
   }
 
