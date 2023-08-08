@@ -507,11 +507,85 @@ describe('aws parser', () => {
     })
   );
 
-  [
-    { 'x-amz-target': 'amazonsqs.sendmessage', 'content-type': 'application/x-amz-json-1.0' },
-    { 'X-Amz-Target': 'AmazonSQS.SendMessage', 'Content-Type': 'Application/X-Amz-JSON-1.0' },
-    { 'X-AMZ-TARGET': 'AMAZONSQS.SENDMESSAGE', 'CONTENT-TYPE': 'APPLICATION/X-AMZ-JSON-1.0' },
-  ].map((reqHeaders) => {});
+  test('sqsParser -> not send message request json format', () => {
+    const queueUrl = 'https://sqs.us-west-2.amazonaws.com/33/random-queue-test';
+    const requestData = {
+      path: '/',
+      port: 443,
+      host: 'sqs.us-west-2.amazonaws.com',
+      body: `{"QueueUrl":"${queueUrl}"}`,
+      method: 'POST',
+      headers: {
+        'X-Amz-Target': 'AmazonSQS.UnknownTargetUnsupportedByAWS',
+        'Content-Type': 'application/x-amz-json-1.0',
+      },
+      protocol: 'https:',
+      sendTime: 1564474992235,
+    };
+    const responseData = {
+      body: '{"MessageId":"c5aca29a-ff2f-4db5-94c3-90523d1ed4ca"}',
+    };
+    const result = aws.sqsParser(requestData, responseData);
+    expect(result).toEqual({
+      awsServiceData: {
+        resourceName: queueUrl,
+        messageId: 'c5aca29a-ff2f-4db5-94c3-90523d1ed4ca',
+      },
+    });
+  });
+
+  test('sqsParser -> missing QueueUrl json format', () => {
+    const requestData = {
+      path: '/',
+      port: 443,
+      host: 'sqs.us-west-2.amazonaws.com',
+      body: '{}',
+      method: 'POST',
+      headers: {
+        'X-Amz-Target': 'AmazonSQS.UnknownTargetUnsupportedByAWS',
+        'Content-Type': 'application/x-amz-json-1.0',
+      },
+      protocol: 'https:',
+      sendTime: 1564474992235,
+    };
+    const responseData = {
+      body: '{"MessageId":"c5aca29a-ff2f-4db5-94c3-90523d1ed4ca"}',
+    };
+    const result = aws.sqsParser(requestData, responseData);
+    expect(result).toEqual({
+      awsServiceData: {
+        resourceName: undefined,
+        messageId: 'c5aca29a-ff2f-4db5-94c3-90523d1ed4ca',
+      },
+    });
+  });
+
+  test('sqsParser -> missing MessageId json format', () => {
+    const queueUrl = 'https://sqs.us-west-2.amazonaws.com/33/random-queue-test';
+    const requestData = {
+      path: '/',
+      port: 443,
+      host: 'sqs.us-west-2.amazonaws.com',
+      body: `{"QueueUrl":"${queueUrl}"}`,
+      method: 'POST',
+      headers: {
+        'X-Amz-Target': 'AmazonSQS.UnknownTargetUnsupportedByAWS',
+        'Content-Type': 'application/x-amz-json-1.0',
+      },
+      protocol: 'https:',
+      sendTime: 1564474992235,
+    };
+    const responseData = {
+      body: '{}',
+    };
+    const result = aws.sqsParser(requestData, responseData);
+    expect(result).toEqual({
+      awsServiceData: {
+        resourceName: queueUrl,
+        messageId: null,
+      },
+    });
+  });
 
   test('sqsParser -> truncated body', () => {
     const queueUrl = 'https://sqs.us-west-2.amazonaws.com/33/random-queue-test';

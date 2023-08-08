@@ -189,9 +189,8 @@ export const sqsParser = (requestData, responseData) => {
   // In the future when JSON usage is default you my want to switch so JSON is the default and XML
   // protocol is specifically checked for
   if (
-    caseInsensitiveGet(reqHeaders, 'x-amz-target', '').toLowerCase() === 'amazonsqs.sendmessage' &&
     caseInsensitiveGet(reqHeaders, 'content-type', '').toLowerCase() ===
-      'application/x-amz-json-1.0'
+    'application/x-amz-json-1.0'
   ) {
     return sqsParserJsonProtocol(requestData, responseData);
   } else {
