@@ -276,7 +276,7 @@ export const safeGet = (obj, arr, dflt = null) => {
  * @param key The key to search (can be upper / lower case or a mix of the two, it doesn't matter)
  * @param dflt Default value if no match is found
  */
-export const caseInsensitiveGet = (obj, key, dflt = null) => {
+export const caseInsensitiveGet = (obj: object, key: string, dflt: any = null) => {
   const lowerCaseKey = key.toLowerCase();
   const matchingKey = Object.keys(obj).find((k) => k.toLowerCase() === lowerCaseKey);
   return matchingKey ? obj[matchingKey] : dflt;
