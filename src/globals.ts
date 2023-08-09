@@ -168,7 +168,7 @@ export const ExecutionTags = (() => {
         );
       }
     } catch (err) {
-        logger.debug('Failed to parse json event as tag value', { error: err, event: obj });
+      logger.debug('Failed to parse json event as tag value', { error: err, event: obj });
     }
     return { event: undefined, keyToEvent: eventByKey, relativeKey: relativeKey };
   };
