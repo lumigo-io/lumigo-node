@@ -10,6 +10,7 @@ import {
   spanHasErrors,
 } from './utils';
 import { GlobalDurationTimer } from './utils/globalDurationTimer';
+import { isString } from '@lumigo/node-core/lib/common';
 
 const MAX_TAGS = 50;
 const MAX_TAG_KEY_LEN = 50;
@@ -77,6 +78,12 @@ export const ExecutionTags = (() => {
   // @ts-ignore
   global.tags = [];
 
+  interface AutoTagEvent {
+    event: string;
+    keyToEvent: any;
+    relativeKey: string;
+  }
+
   const validateTag = (key, value, shouldLogErrors = true) => {
     key = String(key);
     value = String(value);
@@ -134,10 +141,46 @@ export const ExecutionTags = (() => {
   // @ts-ignore
   const clear = () => (global.tags = []);
 
+  const getValue = (autoTagEvent: AutoTagEvent, innerKey) => {
+    const relativeKey = autoTagEvent.relativeKey
+      ? [autoTagEvent.relativeKey, innerKey].join('.')
+      : innerKey;
+    let obj = autoTagEvent.event;
+    const eventByKey = autoTagEvent.keyToEvent;
+    if (obj && obj[innerKey]) {
+      eventByKey[relativeKey] = obj;
+      return { event: obj[innerKey], keyToEvent: eventByKey, relativeKey: relativeKey };
+    }
+    if (eventByKey && eventByKey[relativeKey]) {
+      obj = eventByKey[relativeKey];
+      return obj && { event: obj[innerKey], keyToEvent: eventByKey, relativeKey: relativeKey };
+    }
+    try {
+      if (obj && isString(obj) && obj[innerKey] === undefined) {
+        const parsedObj = JSON.parse(obj);
+        eventByKey[relativeKey] = parsedObj;
+        return (
+          parsedObj && {
+            event: parsedObj[innerKey],
+            keyToEvent: eventByKey,
+            relativeKey: relativeKey,
+          }
+        );
+      }
+    } catch (err) {
+      logger.debug('Failed to parse json event as tag value', { error: err, event: obj });
+    }
+    return { event: undefined, keyToEvent: eventByKey, relativeKey: relativeKey };
+  };
+
   const autoTagEvent = (event) => {
+    let keyToEventMap: {} = {};
     getAutoTagKeys().forEach((key) => {
-      const value = key.split('.').reduce((obj, innerKey) => obj && obj[innerKey], event);
-      value && addTag(key, value);
+      const value: AutoTagEvent = key
+        .split('.')
+        .reduce(getValue, { event: event, keyToEvent: keyToEventMap, relativeKey: '' });
+      keyToEventMap = value.keyToEvent;
+      value.event && addTag(key, value.event);
     });
   };
 
