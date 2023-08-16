@@ -1,11 +1,11 @@
-import { safeRequire } from '../utils/requireUtils';
-import * as logger from '../logger';
+import { payloadStringify } from '@lumigo/node-core';
 import { hook } from '../extender';
-import { getRandomId, safeExecute, safeGet } from '../utils';
-import { createSqlSpan, extendSqlSpan } from '../spans/sqlSpan';
 import { SpansContainer, TracerGlobals } from '../globals';
-import { payloadStringify } from '../utils/payloadStringify';
+import * as logger from '../logger';
 import { getCurrentTransactionId, PG_SPAN } from '../spans/awsSpan';
+import { createSqlSpan, extendSqlSpan } from '../spans/sqlSpan';
+import { getRandomId, safeExecute, safeGet } from '../utils';
+import { safeRequire } from '../utils/requireUtils';
 
 function queryBeforeHook(args, extenderContext) {
   const awsRequestId = TracerGlobals.getHandlerInputs().context.awsRequestId;

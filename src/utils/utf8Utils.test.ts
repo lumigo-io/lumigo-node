@@ -1,6 +1,5 @@
-import { runOneTimeWrapper } from './functionUtils';
-import { Utf8Utils } from './utf8Utils';
 import { encode } from 'utf8';
+import { Utf8Utils } from './utf8Utils';
 
 describe('Utf8Utils', () => {
   test('safeDecode -> simple flow', () => {

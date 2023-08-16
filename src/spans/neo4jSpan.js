@@ -1,6 +1,6 @@
-import { getEventEntitySize } from '../utils';
-import { payloadStringify, truncate } from '../utils/payloadStringify';
+import { payloadStringify } from '@lumigo/node-core';
 import { getBasicChildSpan } from './awsSpan';
+import { getEventEntitySize, truncate } from '../utils';
 
 export const createNeo4jSpan = (
   transactionId,

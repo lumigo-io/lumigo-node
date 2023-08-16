@@ -1,5 +1,6 @@
+import { runOneTimeWrapper } from '@lumigo/node-core/lib/common';
 import { isDebug, isStoreLogs } from './utils';
-import { runOneTimeWrapper } from './utils/functionUtils';
+
 const LOG_PREFIX = '#LUMIGO#';
 const WARN_CLIENT_PREFIX = 'Lumigo Warning';
 const INTERNAL_ANALYTICS_PREFIX = 'Lumigo Analytic Log';
