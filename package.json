@@ -24,7 +24,7 @@
     "test": "npm run build && npm run jest"
   },
   "dependencies": {
-    "@lumigo/node-core": "^1.13.0",
+    "@lumigo/node-core": "1.13.0",
     "agentkeepalive": "^4.1.4",
     "axios": "0.24.0",
     "shimmer": "1.2.1",
