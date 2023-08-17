@@ -148,17 +148,17 @@ export const ExecutionTags = (() => {
     let obj = autoTagEvent.event;
     const eventByKey = autoTagEvent.keyToEvent;
     if (obj && obj[innerKey]) {
-      eventByKey[relativeKey] = obj;
+      eventByKey[relativeKey] = {value: obj, parsed: false};
       return { event: obj[innerKey], keyToEvent: eventByKey, relativeKey: relativeKey };
     }
-    if (eventByKey && eventByKey[relativeKey]) {
-      obj = eventByKey[relativeKey];
+    if (eventByKey && eventByKey[relativeKey] && eventByKey[relativeKey].value) {
+      obj = eventByKey[relativeKey].value;
       return obj && { event: obj[innerKey], keyToEvent: eventByKey, relativeKey: relativeKey };
     }
     try {
       if (obj && isString(obj) && obj[innerKey] === undefined) {
         const parsedObj = JSON.parse(obj);
-        eventByKey[relativeKey] = parsedObj;
+        eventByKey[relativeKey] = {value: parsedObj, parsed: true} ;
         return (
           parsedObj && {
             event: parsedObj[innerKey],
@@ -184,7 +184,7 @@ export const ExecutionTags = (() => {
     });
   };
 
-  return { addTag, getTags, clear, validateTag, autoTagEvent };
+  return { addTag, getTags, clear, validateTag, autoTagEvent, getValue };
 })();
 
 export const TracerGlobals = (() => {

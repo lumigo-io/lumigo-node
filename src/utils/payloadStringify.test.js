@@ -325,4 +325,77 @@ describe('payloadStringify', () => {
       },
     ]);
   });
+
+  test('shallowMask -> stringified payload', () => {
+    utils.setDebug();
+    process.env = {LUMIGO_SECRET_MASKING_EXACT_PATH: ['["body.data.me.details.firstName","body.data.me.details.lastName"]'], LUMIGO_SECRET_MASKING_REGEX: ['["^firstName$","^lastName$","^AWS_SESSION_TOKEN$","^AWS_SECRET_ACCESS_KEY$","^AWS_ACCESS_KEY_ID$"]'] };
+    TracerGlobals.setTracerInputs({});
+    // expect(
+    //   shallowMask('other', {
+    //     foo: '{"bar":"lol","password":"very_secret"}',
+    //     key2: JSON.stringify({ secret: JSON.stringify({ key2: 'value' }) }),
+    //   })
+    // ).toEqual({ foo: '{"bar":"lol","password":"****"}', key2: '{"secret":"****"}' });
+
+    expect(
+      shallowMask('', {
+        body: '{"data":{"me":{"__typename":"Customer","id":"16ae9199888","details":{"__typename":"Details","firstName":"Kastrati","lastName":"Dardan","dateOfBirth":"1996-07-09","contactEmail":"bla@gmail.com"},"customerProductInfos":[{"__typename":"CustomerProductInfo","id":"897456","state":"ORDERED","customLabel":null,"productId":"1","booked":"2022-08-10T17:55:26.114Z","lineActivationStateInfo":"FINISHED"}]}}} ',
+      })
+    ).toEqual({
+       body: '{"data":{"me":{"__typename":"Customer","id":"16ae9199888","details":{"__typename":"Details","firstName":"****","lastName":"****","dateOfBirth":"1996-07-09","contactEmail":"bla@gmail.com"},"customerProductInfos":[{"__typename":"CustomerProductInfo","id":"897456","state":"ORDERED","customLabel":null,"productId":"1","booked":"2022-08-10T17:55:26.114Z","lineActivationStateInfo":"FINISHED"}]}}}'
+    });
+  });
+
+  test('shallowMask -> stringified payload - nested stringified', () => {
+    utils.setDebug();
+    process.env = {LUMIGO_SECRET_MASKING_EXACT_PATH: ['["foo.password"]'], LUMIGO_SECRET_MASKING_REGEX: ['["^firstName$","^lastName$","^AWS_SESSION_TOKEN$","^AWS_SECRET_ACCESS_KEY$","^AWS_ACCESS_KEY_ID$"]'] };
+    TracerGlobals.setTracerInputs({});
+    // expect(
+    //   shallowMask('other', {
+    //     foo: '{"bar":"lol","password":"very_secret"}',
+    //     key2: JSON.stringify({ secret: JSON.stringify({ key2: 'value' }) }),
+    //   })
+    // ).toEqual({ foo: '{"bar":"lol","password":"****"}', key2: '{"secret":"****"}' });
+    expect(
+      shallowMask('other', {
+        foo: '{"password":"very_secret"}',
+        key2: JSON.stringify({ foo: '{"password":"very_secret"}' }),
+      })
+    ).toEqual({ foo: '{"password":"****"}', key2: JSON.stringify({ foo: '{"password":"very_secret"}' }) });
+  });
+
+  test('shallowMask -> stringified payload - nested stringified2', () => {
+    utils.setDebug();
+    process.env = {LUMIGO_SECRET_MASKING_EXACT_PATH: ['["key2.secret"]'], LUMIGO_SECRET_MASKING_REGEX: ['["^firstName$","^lastName$","^AWS_SESSION_TOKEN$","^AWS_SECRET_ACCESS_KEY$","^AWS_ACCESS_KEY_ID$"]'] };
+    TracerGlobals.setTracerInputs({});
+    expect(
+      shallowMask('other', {
+        foo: '{"bar":"lol","password":"very_secret"}',
+        key2: JSON.stringify({ secret: JSON.stringify({ key2: 'value' }) }),
+      })
+    ).toEqual({ foo: '{"bar":"lol","password":"very_secret"}', key2: '{"secret":"****"}' });
+
+  });
+
+  test('payloadStringify -> stringified payload - object', () => {
+    process.env = {LUMIGO_SECRET_MASKING_EXACT_PATH: ['["body.data.me.details.firstName","body.data.me.details.lastName"]'], LUMIGO_SECRET_MASKING_REGEX: ['["^firstName$","^lastName$","^AWS_SESSION_TOKEN$","^AWS_SECRET_ACCESS_KEY$","^AWS_ACCESS_KEY_ID$"]'] };
+    const result = payloadStringify(
+      {body:  '{"data":{"me":{"__typename":"Customer","id":"16ae9199888","details":{"__typename":"Details","firstName":"Kastrati","lastName":"Dardan","dateOfBirth":"1996-07-09","contactEmail":"bla@gmail.com"},"customerProductInfos":[{"__typename":"CustomerProductInfo","id":"897456","state":"ORDERED","customLabel":null,"productId":"1","booked":"2022-08-10T17:55:26.114Z","lineActivationStateInfo":"FINISHED"}]}}} ' },
+      9000
+    );
+    expect(result).toEqual(
+      JSON.stringify({ ExclusiveStartKey: 'value', KeyConditionExpression: 'value' })
+    );
+  });
+
+  test('payloadStringify -> stringified payload - string', () => {
+    process.env = {LUMIGO_SECRET_MASKING_EXACT_PATH: ['["body.data.me.details.firstName","body.data.me.details.lastName"]'], LUMIGO_SECRET_MASKING_REGEX: ['["^firstName$","^lastName$","^AWS_SESSION_TOKEN$","^AWS_SECRET_ACCESS_KEY$","^AWS_ACCESS_KEY_ID$"]'] };
+    const result = payloadStringify(
+      '{"data":{"me":{"__typename":"Customer","id":"16ae9199888","details":{"__typename":"Details","firstName":"Kastrati","lastName":"Dardan","dateOfBirth":"1996-07-09","contactEmail":"bla@gmail.com"},"customerProductInfos":[{"__typename":"CustomerProductInfo","id":"897456","state":"ORDERED","customLabel":null,"productId":"1","booked":"2022-08-10T17:55:26.114Z","lineActivationStateInfo":"FINISHED"}]}}} ',
+      9000
+    );
+    expect(result).toEqual(
+      JSON.stringify({ ExclusiveStartKey: 'value', KeyConditionExpression: 'value' })
+    );
+  });
 });

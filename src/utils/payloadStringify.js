@@ -7,6 +7,7 @@ import {
   getRequestHeadersMaskingRegex,
   getResponseBodyMaskingRegex,
   getResponseHeadersMaskingRegex,
+  getSecretMaskingExactPath, isObject,
   isString,
   LUMIGO_SECRET_MASKING_ALL_MAGIC,
   LUMIGO_SECRET_MASKING_REGEX,
@@ -16,7 +17,8 @@ import {
   parseJsonFromEnvVar,
   safeExecute,
 } from '../utils';
-import { runOneTimeWrapper } from './functionUtils';
+import {runOneTimeWrapper} from './functionUtils';
+import {ExecutionTags} from "../globals";
 
 const nativeTypes = ['string', 'bigint', 'number', 'undefined', 'boolean'];
 const SCRUBBED_TEXT = '****';
@@ -144,6 +146,10 @@ export const payloadStringify = (
       isPruned = true;
     }
   });
+  //TODO: SHANI -should the parse and scrub be here?
+  if (getSecretMaskingExactPath()) {
+    result =  recursivelyParseAndScrubJson(result);
+  }
   if (result && (isPruned || truncated)) {
     result = result.replace(/,null/g, '');
     if (!(payload instanceof Error)) {
@@ -156,6 +162,137 @@ export const payloadStringify = (
 const invalidMaskingRegexWarning = runOneTimeWrapper((e) => {
   logger.warn('Failed to parse the given masking regex', e);
 });
+
+
+
+// const getParsedPayload = (secretScrubReq, innerPath) => {
+//     let {payload: obj , keyToEvent: eventByKey , requestedPath , initialParsed, originalPayload} = secretScrubReq;
+//     initialParsed.initialPath = initialParsed.initialPath === undefined ? innerPath : initialParsed.initialPath;
+//     const relativePath = secretScrubReq.relativePath
+//       ? [secretScrubReq.relativePath, innerPath].join('.')
+//       : innerPath;
+//     if (obj && obj[innerPath]) {
+//       if (relativePath === requestedPath){
+//         obj[innerPath] = SCRUBBED_TEXT;
+//         eventByKey[relativePath] = obj;
+//         return {
+//             payload: obj[innerPath],
+//             keyToEvent: eventByKey,
+//             relativePath: relativePath,
+//             requestedPath: requestedPath,
+//           initialParsed: initialParsed,
+//           originalPayload: originalPayload
+//         };
+//       }
+//       eventByKey[relativePath] = obj;
+//       return {
+//           payload: obj[innerPath],
+//           keyToEvent: eventByKey,
+//           relativePath: relativePath,
+//           requestedPath: requestedPath,
+//         initialParsed: initialParsed,
+//         originalPayload:originalPayload
+//       };
+//     }
+//     if (eventByKey && eventByKey[relativePath]) {
+//       obj = eventByKey[relativePath];
+//       if (relativePath === requestedPath){
+//         obj[innerPath] = SCRUBBED_TEXT;
+//       }
+//       eventByKey[relativePath] = obj;
+//       initialParsed.value = relativePath;
+//       return obj && { payload: obj[innerPath], keyToEvent: eventByKey, relativePath: relativePath, requestedPath: requestedPath , initialParsed: initialParsed,
+//       originalPayload:originalPayload};
+//     }
+//     try {
+//       if (obj && isString(obj) && obj[innerPath] === undefined) {
+//         const parsedObj = JSON.parse(obj);
+//         //TODO: SHANI - is it's array need to recursive getParsedPayload
+//         if (Array.isArray(parsedObj)){
+//           let path = '';
+//           parsedObj.forEach((item, index) => {
+//             const value = getParsedPayload({payload: item, keyToEvent: eventByKey, relativePath: path , requestedPath: requestedPath , initialParsed: initialParsed, originalPayload:originalPayload}, innerPath);
+//             // eventByKey = value.keyToEvent;
+//             path = value.relativePath;
+//           })
+//         }
+//         initialParsed.value = relativePath;
+//         if (relativePath === requestedPath && parsedObj[innerPath]){
+//           parsedObj[innerPath] = SCRUBBED_TEXT;
+//           // need to replace the in the original payload the parsed object by the parsedPath
+//         }
+//         eventByKey[relativePath] = parsedObj;
+//         return (
+//           parsedObj && {
+//             payload: parsedObj[innerPath],
+//             keyToEvent: eventByKey,
+//             relativePath: relativePath,
+//             requestedPath: requestedPath,
+//             initialParsed: initialParsed,
+//             originalPayload:originalPayload
+//           }
+//         );
+//       }
+//     } catch (err) {
+//       logger.debug('Failed to parse json event as tag value', { error: err, event: obj });
+//     }
+//     return { payload: undefined, keyToEvent: eventByKey, relativePath: relativePath , requestedPath: requestedPath, initialParsed: initialParsed,
+//     originalPayload:originalPayload};
+//   };
+
+
+//TODO: SHANI - wrap in safeExecute
+function recursivelyParseAndScrubJson(payload) {
+  let secretPathEnvVar = getSecretMaskingExactPath();
+  let secretPath;
+  try {
+      secretPath = JSON.parse(secretPathEnvVar);
+    } catch (e) {
+      invalidMaskingRegexWarning(e);
+      secretPath = null;
+  }
+  if (!secretPath) {
+    return payload;
+  }
+  let keyToEventMap = {};
+  // secretPath.forEach((path) => {
+  //     const value = path
+  //       .split('.')
+  //       .reduce(getParsedPayload, { payload: payload, keyToEvent: keyToEventMap, relativePath: '', requestedPath: path , initialParsed:{initialPath:undefined, value:undefined}, originalPayload:payload});
+  //     keyToEventMap = value.keyToEvent;
+  //     const initialParsedValue = keyToEventMap[value.initialParsed.value];
+  //     if (initialParsedValue) {
+  //       if (isObject(payload)){
+  //         finalRes[value.initialParsed.initialPath] = JSON.stringify(initialParsedValue);
+  //       } else{
+  //         finalRes = JSON.stringify(initialParsedValue);
+  //       }
+  //     }
+  // });
+
+  secretPath.forEach((key) => {
+      const value = key
+        .split('.')
+        .reduce( ExecutionTags.getValue, { event: payload, keyToEvent: keyToEventMap, relativeKey: '' });
+      keyToEventMap = value.keyToEvent;
+      const splitKeys = key.split(".");
+      const keyToReplace = splitKeys.pop()
+      if (keyToEventMap[key] && keyToEventMap[key].value && keyToEventMap[key].value[keyToReplace]){
+        keyToEventMap[key].value[keyToReplace] = SCRUBBED_TEXT
+      }
+    });
+
+  Object.keys(keyToEventMap).map(key => {
+    if (keyToEventMap[key].parsed) {
+      keyToEventMap[key].value = JSON.stringify(keyToEventMap[key].value);
+    }
+    return keyToEventMap[key];
+  });
+
+  //TODO: SHANI - how do I return the final "un-parsed" payload?
+  return finalRes;
+}
+
 
 const shallowMaskByRegex = (payload, regexes) => {
   regexes = regexes || keyToOmitRegexes();
