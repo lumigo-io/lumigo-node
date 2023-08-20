@@ -107,7 +107,13 @@ export const payloadStringify = (
   const secretItemsToSkipScrubbing = new Set(getItemsInPath(payload, skipScrubPath));
 
   let isPruned = false;
-  let result = JSON.stringify(payload, function (key, value) {
+
+  let scrubbedByPathRes = payload;
+  if (getSecretMaskingExactPath()) {
+    scrubbedByPathRes =  scrubPayloadByPath(payload);
+  }
+
+  let result = JSON.stringify(scrubbedByPathRes, function (key, value) {
     const type = typeof value;
     const isObj = type === 'object';
     const isStr = type === 'string';
@@ -147,9 +153,9 @@ export const payloadStringify = (
     }
   });
   //TODO: SHANI -should the parse and scrub be here?
-  if (getSecretMaskingExactPath()) {
-    result =  recursivelyParseAndScrubJson(result);
-  }
+  // if (getSecretMaskingExactPath()) {
+  //   result =  recursivelyParseAndScrubJson(result);
+  // }
   if (result && (isPruned || truncated)) {
     result = result.replace(/,null/g, '');
     if (!(payload instanceof Error)) {
@@ -242,7 +248,7 @@ const invalidMaskingRegexWarning = runOneTimeWrapper((e) => {
 
 
 //TODO: SHANI - wrap in safeExecute
-function recursivelyParseAndScrubJson(payload) {
+function scrubPayloadByPath(payload) {
   let secretPathEnvVar = getSecretMaskingExactPath();
   let secretPath;
   try {
@@ -255,42 +261,38 @@ function recursivelyParseAndScrubJson(payload) {
     return payload;
   }
   let keyToEventMap = {};
-  // secretPath.forEach((path) => {
-  //     const value = path
-  //       .split('.')
-  //       .reduce(getParsedPayload, { payload: payload, keyToEvent: keyToEventMap, relativePath: '', requestedPath: path , initialParsed:{initialPath:undefined, value:undefined}, originalPayload:payload});
-  //     keyToEventMap = value.keyToEvent;
-  //     const initialParsedValue = keyToEventMap[value.initialParsed.value];
-  //     if (initialParsedValue) {
-  //       if (isObject(payload)){
-  //         finalRes[value.initialParsed.initialPath] = JSON.stringify(initialParsedValue);
-  //       } else{
-  //         finalRes = JSON.stringify(initialParsedValue);
-  //       }
-  //     }
-  // });
+  let firstParsedPath = undefined;
+  let isPayloadObj = isObject(payload);
 
   secretPath.forEach((key) => {
       const value = key
         .split('.')
-        .reduce( ExecutionTags.getValue, { event: payload, keyToEvent: keyToEventMap, relativeKey: '' });
+        .reduce( ExecutionTags.getValue, { event: payload, keyToEvent: keyToEventMap, relativeKey: '' , firstParsedPath: firstParsedPath});
       keyToEventMap = value.keyToEvent;
+      firstParsedPath = value.firstParsedPath;
       const splitKeys = key.split(".");
       const keyToReplace = splitKeys.pop()
-      if (keyToEventMap[key] && keyToEventMap[key].value && keyToEventMap[key].value[keyToReplace]){
-        keyToEventMap[key].value[keyToReplace] = SCRUBBED_TEXT
+      if (keyToEventMap[key] && keyToEventMap[key][keyToReplace]){
+        keyToEventMap[key][keyToReplace] = SCRUBBED_TEXT
       }
     });
 
-  Object.keys(keyToEventMap).map(key => {
-    if (keyToEventMap[key].parsed) {
-      keyToEventMap[key].value = JSON.stringify(keyToEventMap[key].value);
+  if (firstParsedPath){
+    const scrubbedResult = keyToEventMap[firstParsedPath];
+    const splitPath = firstParsedPath.split('.');
+    if (splitPath.length > 0){
+      const key = splitPath[0];
+        if (isPayloadObj){
+          let finalResult = {};
+          finalResult[key] = JSON.stringify(scrubbedResult);
+            return finalResult;
+        } else {
+          return JSON.stringify(scrubbedResult);
+        }
     }
-    return keyToEventMap[key];
-  });
+  }
 
-  //TODO: SHANI - how do I return the final "un-parsed" payload?
-  return finalRes;
+  return payload;
 }
 
 
@@ -303,6 +305,7 @@ const shallowMaskByRegex = (payload, regexes) => {
     logger.warn('Failed to mask payload, payload is not an object or string', payload);
     return payload;
   }
+  //TODO: SHANI -add call for recursivelyParseAndScrubJson
   return Object.keys(payload).reduce((acc, key) => {
     if (keyContainsRegex(regexes, key)) {
       acc[key] = SCRUBBED_TEXT;

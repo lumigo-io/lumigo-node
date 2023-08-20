@@ -74,15 +74,16 @@ export const GlobalTimer = (() => {
   return { setGlobalTimeout, clearTimer };
 })();
 
-export const ExecutionTags = (() => {
-  // @ts-ignore
-  global.tags = [];
-
-  interface AutoTagEvent {
+interface AutoTagEvent {
     event: string;
     keyToEvent: any;
     relativeKey: string;
-  }
+    firstParsedPath?: string;
+}
+
+export const ExecutionTags = (() => {
+  // @ts-ignore
+  global.tags = [];
 
   const validateTag = (key, value, shouldLogErrors = true) => {
     key = String(key);
@@ -148,29 +149,31 @@ export const ExecutionTags = (() => {
     let obj = autoTagEvent.event;
     const eventByKey = autoTagEvent.keyToEvent;
     if (obj && obj[innerKey]) {
-      eventByKey[relativeKey] = {value: obj, parsed: false};
-      return { event: obj[innerKey], keyToEvent: eventByKey, relativeKey: relativeKey };
+      eventByKey[relativeKey] = obj;
+      return { event: obj[innerKey], keyToEvent: eventByKey, relativeKey: relativeKey, firstParsedPath:autoTagEvent.firstParsedPath };
     }
-    if (eventByKey && eventByKey[relativeKey] && eventByKey[relativeKey].value) {
-      obj = eventByKey[relativeKey].value;
-      return obj && { event: obj[innerKey], keyToEvent: eventByKey, relativeKey: relativeKey };
+    if (eventByKey && eventByKey[relativeKey] && eventByKey[relativeKey]) {
+      obj = eventByKey[relativeKey];
+      return obj && { event: obj[innerKey], keyToEvent: eventByKey, relativeKey: relativeKey, firstParsedPath:autoTagEvent.firstParsedPath };
     }
     try {
       if (obj && isString(obj) && obj[innerKey] === undefined) {
         const parsedObj = JSON.parse(obj);
-        eventByKey[relativeKey] = {value: parsedObj, parsed: true} ;
+        eventByKey[relativeKey] =  parsedObj;
+        autoTagEvent.firstParsedPath= autoTagEvent.firstParsedPath? autoTagEvent.firstParsedPath : relativeKey;
         return (
           parsedObj && {
             event: parsedObj[innerKey],
             keyToEvent: eventByKey,
             relativeKey: relativeKey,
+            firstParsedPath:autoTagEvent.firstParsedPath
           }
         );
       }
     } catch (err) {
       logger.debug('Failed to parse json event as tag value', { error: err, event: obj });
     }
-    return { event: undefined, keyToEvent: eventByKey, relativeKey: relativeKey };
+    return { event: undefined, keyToEvent: eventByKey, relativeKey: relativeKey, firstParsedPath:autoTagEvent.firstParsedPath };
   };
 
   const autoTagEvent = (event) => {
