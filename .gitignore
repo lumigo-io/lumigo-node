@@ -13,3 +13,5 @@ nodejs
 d_example/
 .vscode
 globalConfig.json
+
+lumigo_wrapper

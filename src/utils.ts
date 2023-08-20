@@ -268,6 +268,19 @@ export const safeGet = (obj, arr, dflt = null) => {
   }
   return current || dflt;
 };
+/**
+ * Finds a value from object with case-insensitive match of keys.
+ * If multiple matching keys are found, the first is returned
+ *
+ * @param obj Object to get value from
+ * @param key The key to search (can be upper / lower case or a mix of the two, it doesn't matter)
+ * @param dflt Default value if no match is found
+ */
+export const caseInsensitiveGet = (obj: object, key: string, dflt: any = null) => {
+  const lowerCaseKey = key.toLowerCase();
+  const matchingKey = Object.keys(obj).find((k) => k.toLowerCase() === lowerCaseKey);
+  return matchingKey ? obj[matchingKey] : dflt;
+};
 
 export const safeJsonParse = (obj, dflt = undefined) => {
   return safeExecute(
