@@ -75,10 +75,9 @@ export const GlobalTimer = (() => {
 })();
 
 interface AutoTagEvent {
-    event: string;
-    keyToEvent: any;
-    relativeKey: string;
-    firstParsedPath?: string;
+  event: string;
+  keyToEvent: any;
+  relativeKey: string;
 }
 
 export const ExecutionTags = (() => {
@@ -150,30 +149,42 @@ export const ExecutionTags = (() => {
     const eventByKey = autoTagEvent.keyToEvent;
     if (obj && obj[innerKey]) {
       eventByKey[relativeKey] = obj;
-      return { event: obj[innerKey], keyToEvent: eventByKey, relativeKey: relativeKey, firstParsedPath:autoTagEvent.firstParsedPath };
+      return {
+        event: obj[innerKey],
+        keyToEvent: eventByKey,
+        relativeKey: relativeKey,
+      };
     }
     if (eventByKey && eventByKey[relativeKey] && eventByKey[relativeKey]) {
       obj = eventByKey[relativeKey];
-      return obj && { event: obj[innerKey], keyToEvent: eventByKey, relativeKey: relativeKey, firstParsedPath:autoTagEvent.firstParsedPath };
+      return (
+        obj && {
+          event: obj[innerKey],
+          keyToEvent: eventByKey,
+          relativeKey: relativeKey,
+        }
+      );
     }
     try {
       if (obj && isString(obj) && obj[innerKey] === undefined) {
         const parsedObj = JSON.parse(obj);
-        eventByKey[relativeKey] =  parsedObj;
-        autoTagEvent.firstParsedPath= autoTagEvent.firstParsedPath? autoTagEvent.firstParsedPath : relativeKey;
+        eventByKey[relativeKey] = parsedObj;
         return (
           parsedObj && {
             event: parsedObj[innerKey],
             keyToEvent: eventByKey,
             relativeKey: relativeKey,
-            firstParsedPath:autoTagEvent.firstParsedPath
           }
         );
       }
     } catch (err) {
       logger.debug('Failed to parse json event as tag value', { error: err, event: obj });
     }
-    return { event: undefined, keyToEvent: eventByKey, relativeKey: relativeKey, firstParsedPath:autoTagEvent.firstParsedPath };
+    return {
+      event: undefined,
+      keyToEvent: eventByKey,
+      relativeKey: relativeKey,
+    };
   };
 
   const autoTagEvent = (event) => {

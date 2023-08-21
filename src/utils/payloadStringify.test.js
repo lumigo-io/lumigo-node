@@ -1,6 +1,7 @@
 import * as utils from '../utils';
 import {
   LUMIGO_SECRET_MASKING_ALL_MAGIC,
+  LUMIGO_SECRET_MASKING_EXACT_PATH,
   LUMIGO_SECRET_MASKING_REGEX,
   LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP,
   LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_BODIES,
@@ -326,76 +327,36 @@ describe('payloadStringify', () => {
     ]);
   });
 
-  test('shallowMask -> stringified payload', () => {
+  test.each`
+    envVarValue                                                                | event                                                                                                                                                                                                                                                                                                                                                                                                                          | expectedResults
+    ${['["body.data.me.details.firstName", "data.me.details.lastName"]']}      | ${{ body: '{"data":{"me":{"__typename":"Customer","id":"16ae9199888","details":{"__typename":"Details","firstName":"Kastrati","lastName":"Dardan","dateOfBirth":"1996-07-09","contactEmail":"bla@gmail.com"},"customerProductInfos":[{"__typename":"CustomerProductInfo","id":"897456","state":"ORDERED","customLabel":null,"productId":"1","booked":"2022-08-10T17:55:26.114Z","lineActivationStateInfo":"FINISHED"}]}}}' }}  | ${JSON.stringify({ body: '{"data":{"me":{"__typename":"Customer","id":"16ae9199888","details":{"__typename":"Details","firstName":"****","lastName":"Dardan","dateOfBirth":"1996-07-09","contactEmail":"bla@gmail.com"},"customerProductInfos":[{"__typename":"CustomerProductInfo","id":"897456","state":"ORDERED","customLabel":null,"productId":"1","booked":"2022-08-10T17:55:26.114Z","lineActivationStateInfo":"FINISHED"}]}}}' })}
+    ${['["foo.password"]']}                                                    | ${{ foo: '{"password":"very_secret"}', key2: JSON.stringify({ foo: '{"password":"very_secret"}' }) }}                                                                                                                                                                                                                                                                                                                          | ${JSON.stringify({ foo: '{"password":"****"}', key2: '****' })}
+    ${['["foo2.bar4"]']}                                                       | ${{ foo: '{"bar":"lol","password":"very_secret"}', foo2: JSON.stringify({ bar4: JSON.stringify({ foo2: 'value' }) }) }}                                                                                                                                                                                                                                                                                                        | ${JSON.stringify({ foo: '{"bar":"lol","password":"very_secret"}', foo2: '{"bar4":"****"}' })}
+    ${['["foo.bar", "foo.password"]']}                                         | ${{ foo: '{"bar":"lol","password":"very_secret"}', foo2: JSON.stringify({ bar4: JSON.stringify({ foo2: 'value' }) }) }}                                                                                                                                                                                                                                                                                                        | ${JSON.stringify({ foo: '{"bar":"****","password":"****"}', foo2: JSON.stringify({ bar4: JSON.stringify({ foo2: 'value' }) }) })}
+    ${['["Records.object.foo"]']}                                              | ${{ Records: [{ secret: { key: 'value' } }, { object: { foo: 'value' } }] }}                                                                                                                                                                                                                                                                                                                                                   | ${JSON.stringify({ Records: [{ secret: '****' }, { object: { foo: '****' } }] })}
+    ${['["body.data.me.details.firstName", "body.data.me.details.lastName"]']} | ${{ body: '{"data":{"me":{"__typename":"Customer","id":"16ae9199888","details":{"__typename":"Details","firstName":"Kastrati","lastName":"Dardan","dateOfBirth":"1996-07-09","contactEmail":"bla@gmail.com"},"customerProductInfos":[{"__typename":"CustomerProductInfo","id":"897456","state":"ORDERED","customLabel":null,"productId":"1","booked":"2022-08-10T17:55:26.114Z","lineActivationStateInfo":"FINISHED"}]}}} ' }} | ${JSON.stringify({ body: '{"data":{"me":{"__typename":"Customer","id":"16ae9199888","details":{"__typename":"Details","firstName":"****","lastName":"****","dateOfBirth":"1996-07-09","contactEmail":"bla@gmail.com"},"customerProductInfos":[{"__typename":"CustomerProductInfo","id":"897456","state":"ORDERED","customLabel":null,"productId":"1","booked":"2022-08-10T17:55:26.114Z","lineActivationStateInfo":"FINISHED"}]}}}' })}
+    ${['["data.me.details.firstName","data.me.details.lastName"]']}            | ${'{"data":{"me":{"__typename":"Customer","id":"16ae9199888","details":{"__typename":"Details","firstName":"Kastrati","lastName":"Dardan","dateOfBirth":"1996-07-09","contactEmail":"bla@gmail.com"},"customerProductInfos":[{"__typename":"CustomerProductInfo","id":"897456","state":"ORDERED","customLabel":null,"productId":"1","booked":"2022-08-10T17:55:26.114Z","lineActivationStateInfo":"FINISHED"}]}}}'}            | ${JSON.stringify('{"data":{"me":{"__typename":"Customer","id":"16ae9199888","details":{"__typename":"Details","firstName":"****","lastName":"****","dateOfBirth":"1996-07-09","contactEmail":"bla@gmail.com"},"customerProductInfos":[{"__typename":"CustomerProductInfo","id":"897456","state":"ORDERED","customLabel":null,"productId":"1","booked":"2022-08-10T17:55:26.114Z","lineActivationStateInfo":"FINISHED"}]}}}')}
+    ${['["body.data.me.details.firstName","body.data.me.details.lastName"]']}  | ${'{"data":{"me":{"__typename":"Customer","id":"16ae9199888","details":{"__typename":"Details","firstName":"Kastrati","lastName":"Dardan","dateOfBirth":"1996-07-09","contactEmail":"bla@gmail.com"},"customerProductInfos":[{"__typename":"CustomerProductInfo","id":"897456","state":"ORDERED","customLabel":null,"productId":"1","booked":"2022-08-10T17:55:26.114Z","lineActivationStateInfo":"FINISHED"}]}}}'}            | ${JSON.stringify('{"data":{"me":{"__typename":"Customer","id":"16ae9199888","details":{"__typename":"Details","firstName":"Kastrati","lastName":"Dardan","dateOfBirth":"1996-07-09","contactEmail":"bla@gmail.com"},"customerProductInfos":[{"__typename":"CustomerProductInfo","id":"897456","state":"ORDERED","customLabel":null,"productId":"1","booked":"2022-08-10T17:55:26.114Z","lineActivationStateInfo":"FINISHED"}]}}}')}
+    ${['[]']}                                                                  | ${{ Records: [{ object: { key: 'value' } }, { object: { foo: 'value' } }] }}                                                                                                                                                                                                                                                                                                                                                   | ${JSON.stringify({ Records: [{ object: { key: '****' } }, { object: { foo: 'value' } }] })}
+  `(
+    'payloadStringify -> stringified payload with secret masking for exact path, envVarValue=$envVarValue',
+    ({ envVarValue, event, expectedResults }) => {
+      process.env = { LUMIGO_SECRET_MASKING_EXACT_PATH: envVarValue };
+      let result = payloadStringify(event, 9000);
+      expect(result).toEqual(expectedResults);
+    }
+  );
+
+  test('payloadStringify -> non object input for secret masking for exact path-> Do nothing and warn', () => {
+    process.env = { LUMIGO_SECRET_MASKING_EXACT_PATH: 'path' };
     utils.setDebug();
-    process.env = {LUMIGO_SECRET_MASKING_EXACT_PATH: ['["body.data.me.details.firstName","body.data.me.details.lastName"]'], LUMIGO_SECRET_MASKING_REGEX: ['["^firstName$","^lastName$","^AWS_SESSION_TOKEN$","^AWS_SECRET_ACCESS_KEY$","^AWS_ACCESS_KEY_ID$"]'] };
     TracerGlobals.setTracerInputs({});
-    // expect(
-    //   shallowMask('other', {
-    //     foo: '{"bar":"lol","password":"very_secret"}',
-    //     key2: JSON.stringify({ secret: JSON.stringify({ key2: 'value' }) }),
-    //   })
-    // ).toEqual({ foo: '{"bar":"lol","password":"****"}', key2: '{"secret":"****"}' });
-
-    expect(
-      shallowMask('', {
-        body: '{"data":{"me":{"__typename":"Customer","id":"16ae9199888","details":{"__typename":"Details","firstName":"Kastrati","lastName":"Dardan","dateOfBirth":"1996-07-09","contactEmail":"bla@gmail.com"},"customerProductInfos":[{"__typename":"CustomerProductInfo","id":"897456","state":"ORDERED","customLabel":null,"productId":"1","booked":"2022-08-10T17:55:26.114Z","lineActivationStateInfo":"FINISHED"}]}}} ',
+    const result = payloadStringify({ foo: '{"password":"very_secret"}' }, 1024);
+    expect(result).toEqual(JSON.stringify({ foo: '{"password":"very_secret"}' }));
+    expect(ConsoleWritesForTesting.getLogs()).toContainEqual(
+      expect.objectContaining({
+        ['msg']: '#LUMIGO# - WARNING - "Failed to parse the given masking exact path"',
       })
-    ).toEqual({
-       body: '{"data":{"me":{"__typename":"Customer","id":"16ae9199888","details":{"__typename":"Details","firstName":"****","lastName":"****","dateOfBirth":"1996-07-09","contactEmail":"bla@gmail.com"},"customerProductInfos":[{"__typename":"CustomerProductInfo","id":"897456","state":"ORDERED","customLabel":null,"productId":"1","booked":"2022-08-10T17:55:26.114Z","lineActivationStateInfo":"FINISHED"}]}}}'
-    });
-  });
-
-  test('shallowMask -> stringified payload - nested stringified', () => {
-    utils.setDebug();
-    process.env = {LUMIGO_SECRET_MASKING_EXACT_PATH: ['["foo.password"]'], LUMIGO_SECRET_MASKING_REGEX: ['["^firstName$","^lastName$","^AWS_SESSION_TOKEN$","^AWS_SECRET_ACCESS_KEY$","^AWS_ACCESS_KEY_ID$"]'] };
-    TracerGlobals.setTracerInputs({});
-    // expect(
-    //   shallowMask('other', {
-    //     foo: '{"bar":"lol","password":"very_secret"}',
-    //     key2: JSON.stringify({ secret: JSON.stringify({ key2: 'value' }) }),
-    //   })
-    // ).toEqual({ foo: '{"bar":"lol","password":"****"}', key2: '{"secret":"****"}' });
-    expect(
-      shallowMask('other', {
-        foo: '{"password":"very_secret"}',
-        key2: JSON.stringify({ foo: '{"password":"very_secret"}' }),
-      })
-    ).toEqual({ foo: '{"password":"****"}', key2: JSON.stringify({ foo: '{"password":"very_secret"}' }) });
-  });
-
-  test('shallowMask -> stringified payload - nested stringified2', () => {
-    utils.setDebug();
-    process.env = {LUMIGO_SECRET_MASKING_EXACT_PATH: ['["key2.secret"]'], LUMIGO_SECRET_MASKING_REGEX: ['["^firstName$","^lastName$","^AWS_SESSION_TOKEN$","^AWS_SECRET_ACCESS_KEY$","^AWS_ACCESS_KEY_ID$"]'] };
-    TracerGlobals.setTracerInputs({});
-    expect(
-      shallowMask('other', {
-        foo: '{"bar":"lol","password":"very_secret"}',
-        key2: JSON.stringify({ secret: JSON.stringify({ key2: 'value' }) }),
-      })
-    ).toEqual({ foo: '{"bar":"lol","password":"very_secret"}', key2: '{"secret":"****"}' });
-
-  });
-
-  test('payloadStringify -> stringified payload - object', () => {
-    process.env = {LUMIGO_SECRET_MASKING_EXACT_PATH: ['["body.data.me.details.firstName","body.data.me.details.lastName"]'], LUMIGO_SECRET_MASKING_REGEX: ['["^firstName$","^lastName$","^AWS_SESSION_TOKEN$","^AWS_SECRET_ACCESS_KEY$","^AWS_ACCESS_KEY_ID$"]'] };
-    const result = payloadStringify(
-      {body:  '{"data":{"me":{"__typename":"Customer","id":"16ae9199888","details":{"__typename":"Details","firstName":"Kastrati","lastName":"Dardan","dateOfBirth":"1996-07-09","contactEmail":"bla@gmail.com"},"customerProductInfos":[{"__typename":"CustomerProductInfo","id":"897456","state":"ORDERED","customLabel":null,"productId":"1","booked":"2022-08-10T17:55:26.114Z","lineActivationStateInfo":"FINISHED"}]}}} ' },
-      9000
-    );
-    expect(result).toEqual(
-      JSON.stringify({ ExclusiveStartKey: 'value', KeyConditionExpression: 'value' })
-    );
-  });
-
-  test('payloadStringify -> stringified payload - string', () => {
-    process.env = {LUMIGO_SECRET_MASKING_EXACT_PATH: ['["body.data.me.details.firstName","body.data.me.details.lastName"]'], LUMIGO_SECRET_MASKING_REGEX: ['["^firstName$","^lastName$","^AWS_SESSION_TOKEN$","^AWS_SECRET_ACCESS_KEY$","^AWS_ACCESS_KEY_ID$"]'] };
-    const result = payloadStringify(
-      '{"data":{"me":{"__typename":"Customer","id":"16ae9199888","details":{"__typename":"Details","firstName":"Kastrati","lastName":"Dardan","dateOfBirth":"1996-07-09","contactEmail":"bla@gmail.com"},"customerProductInfos":[{"__typename":"CustomerProductInfo","id":"897456","state":"ORDERED","customLabel":null,"productId":"1","booked":"2022-08-10T17:55:26.114Z","lineActivationStateInfo":"FINISHED"}]}}} ',
-      9000
-    );
-    expect(result).toEqual(
-      JSON.stringify({ ExclusiveStartKey: 'value', KeyConditionExpression: 'value' })
     );
   });
 });

@@ -7,7 +7,8 @@ import {
   getRequestHeadersMaskingRegex,
   getResponseBodyMaskingRegex,
   getResponseHeadersMaskingRegex,
-  getSecretMaskingExactPath, isObject,
+  getSecretMaskingExactPath,
+  getSecretPaths,
   isString,
   LUMIGO_SECRET_MASKING_ALL_MAGIC,
   LUMIGO_SECRET_MASKING_REGEX,
@@ -17,8 +18,7 @@ import {
   parseJsonFromEnvVar,
   safeExecute,
 } from '../utils';
-import {runOneTimeWrapper} from './functionUtils';
-import {ExecutionTags} from "../globals";
+import { runOneTimeWrapper } from './functionUtils';
 
 const nativeTypes = ['string', 'bigint', 'number', 'undefined', 'boolean'];
 const SCRUBBED_TEXT = '****';
@@ -94,6 +94,56 @@ const getItemsInPath = safeExecute(
   []
 );
 
+function scrubJsonStringBySecretPath(input, requestedPath, currentPath) {
+  try {
+    let realJson = JSON.parse(input);
+    const res = innerPathScrubbing(realJson, requestedPath, currentPath);
+    return JSON.stringify(res);
+  } catch (e) {
+    logger.debug('Failed to parse json payload for path scrubbing', { error: e, event: input });
+    return innerPathScrubbing(input, requestedPath, currentPath);
+  }
+}
+
+function scrubJsonBySecretPath(input, secretPaths, currentPath) {
+  return innerPathScrubbing(input, secretPaths, currentPath);
+}
+
+function keyExistsInPaths(paths, key) {
+  let allPathKeys = new Set();
+  paths.forEach((path) => {
+    const keys = new Set(path.split('.'));
+    allPathKeys = new Set([...allPathKeys, ...keys]);
+  });
+  return allPathKeys.has(key);
+}
+
+function innerPathScrubbing(input, secretPaths, currentPath) {
+  if (Array.isArray(input)) {
+    input.forEach((item) => {
+      scrubJsonBySecretPath(item, secretPaths, currentPath);
+    });
+  } else {
+    for (const key of Object.keys(input)) {
+      if (!keyExistsInPaths(secretPaths, key)) {
+        continue;
+      }
+      const newPath = currentPath ? currentPath + '.' + key : key;
+      if (secretPaths.includes(newPath)) {
+        input[key] = SCRUBBED_TEXT;
+        continue;
+      }
+      currentPath = newPath;
+      if (isString(input[key])) {
+        input[key] = scrubJsonStringBySecretPath(input[key], secretPaths, currentPath);
+      } else {
+        input[key] = scrubJsonBySecretPath(input[key], secretPaths, currentPath);
+      }
+    }
+  }
+  return input;
+}
+
 export const payloadStringify = (
   payload,
   maxPayloadSize = getEventEntitySize(),
@@ -108,12 +158,28 @@ export const payloadStringify = (
 
   let isPruned = false;
 
-  let scrubbedByPathRes = payload;
   if (getSecretMaskingExactPath()) {
-    scrubbedByPathRes =  scrubPayloadByPath(payload);
+    let secretPaths = getSecretPaths();
+    if (secretPaths.length > 0) {
+      if (isString(payload)) {
+        payload = safeExecute(
+          scrubJsonStringBySecretPath,
+          'Failed to scrub payload by exact path',
+          logger.LOG_LEVELS.DEBUG,
+          payload
+        )(payload, secretPaths, '');
+      } else {
+        payload = safeExecute(
+          scrubJsonBySecretPath,
+          'Failed to scrub payload by exact path',
+          logger.LOG_LEVELS.DEBUG,
+          payload
+        )(payload, secretPaths, '');
+      }
+    }
   }
 
-  let result = JSON.stringify(scrubbedByPathRes, function (key, value) {
+  let result = JSON.stringify(payload, function (key, value) {
     const type = typeof value;
     const isObj = type === 'object';
     const isStr = type === 'string';
@@ -152,10 +218,7 @@ export const payloadStringify = (
       isPruned = true;
     }
   });
-  //TODO: SHANI -should the parse and scrub be here?
-  // if (getSecretMaskingExactPath()) {
-  //   result =  recursivelyParseAndScrubJson(result);
-  // }
+
   if (result && (isPruned || truncated)) {
     result = result.replace(/,null/g, '');
     if (!(payload instanceof Error)) {
@@ -168,133 +231,6 @@ export const payloadStringify = (
 const invalidMaskingRegexWarning = runOneTimeWrapper((e) => {
   logger.warn('Failed to parse the given masking regex', e);
 });
-
-
-
-// const getParsedPayload = (secretScrubReq, innerPath) => {
-//     let {payload: obj , keyToEvent: eventByKey , requestedPath , initialParsed, originalPayload} = secretScrubReq;
-//     initialParsed.initialPath = initialParsed.initialPath === undefined ? innerPath : initialParsed.initialPath;
-//     const relativePath = secretScrubReq.relativePath
-//       ? [secretScrubReq.relativePath, innerPath].join('.')
-//       : innerPath;
-//     if (obj && obj[innerPath]) {
-//       if (relativePath === requestedPath){
-//         obj[innerPath] = SCRUBBED_TEXT;
-//         eventByKey[relativePath] = obj;
-//         return {
-//             payload: obj[innerPath],
-//             keyToEvent: eventByKey,
-//             relativePath: relativePath,
-//             requestedPath: requestedPath,
-//           initialParsed: initialParsed,
-//           originalPayload: originalPayload
-//         };
-//       }
-//       eventByKey[relativePath] = obj;
-//       return {
-//           payload: obj[innerPath],
-//           keyToEvent: eventByKey,
-//           relativePath: relativePath,
-//           requestedPath: requestedPath,
-//         initialParsed: initialParsed,
-//         originalPayload:originalPayload
-//       };
-//     }
-//     if (eventByKey && eventByKey[relativePath]) {
-//       obj = eventByKey[relativePath];
-//       if (relativePath === requestedPath){
-//         obj[innerPath] = SCRUBBED_TEXT;
-//       }
-//       eventByKey[relativePath] = obj;
-//       initialParsed.value = relativePath;
-//       return obj && { payload: obj[innerPath], keyToEvent: eventByKey, relativePath: relativePath, requestedPath: requestedPath , initialParsed: initialParsed,
-//       originalPayload:originalPayload};
-//     }
-//     try {
-//       if (obj && isString(obj) && obj[innerPath] === undefined) {
-//         const parsedObj = JSON.parse(obj);
-//         //TODO: SHANI - is it's array need to recursive getParsedPayload
-//         if (Array.isArray(parsedObj)){
-//           let path = '';
-//           parsedObj.forEach((item, index) => {
-//             const value = getParsedPayload({payload: item, keyToEvent: eventByKey, relativePath: path , requestedPath: requestedPath , initialParsed: initialParsed, originalPayload:originalPayload}, innerPath);
-//             // eventByKey = value.keyToEvent;
-//             path = value.relativePath;
-//           })
-//         }
-//         initialParsed.value = relativePath;
-//         if (relativePath === requestedPath && parsedObj[innerPath]){
-//           parsedObj[innerPath] = SCRUBBED_TEXT;
-//           // need to replace the in the original payload the parsed object by the parsedPath
-//         }
-//         eventByKey[relativePath] = parsedObj;
-//         return (
-//           parsedObj && {
-//             payload: parsedObj[innerPath],
-//             keyToEvent: eventByKey,
-//             relativePath: relativePath,
-//             requestedPath: requestedPath,
-//             initialParsed: initialParsed,
-//             originalPayload:originalPayload
-//           }
-//         );
-//       }
-//     } catch (err) {
-//       logger.debug('Failed to parse json event as tag value', { error: err, event: obj });
-//     }
-//     return { payload: undefined, keyToEvent: eventByKey, relativePath: relativePath , requestedPath: requestedPath, initialParsed: initialParsed,
-//     originalPayload:originalPayload};
-//   };
-
-
-//TODO: SHANI - wrap in safeExecute
-function scrubPayloadByPath(payload) {
-  let secretPathEnvVar = getSecretMaskingExactPath();
-  let secretPath;
-  try {
-      secretPath = JSON.parse(secretPathEnvVar);
-    } catch (e) {
-      invalidMaskingRegexWarning(e);
-      secretPath = null;
-  }
-  if (!secretPath) {
-    return payload;
-  }
-  let keyToEventMap = {};
-  let firstParsedPath = undefined;
-  let isPayloadObj = isObject(payload);
-
-  secretPath.forEach((key) => {
-      const value = key
-        .split('.')
-        .reduce( ExecutionTags.getValue, { event: payload, keyToEvent: keyToEventMap, relativeKey: '' , firstParsedPath: firstParsedPath});
-      keyToEventMap = value.keyToEvent;
-      firstParsedPath = value.firstParsedPath;
-      const splitKeys = key.split(".");
-      const keyToReplace = splitKeys.pop()
-      if (keyToEventMap[key] && keyToEventMap[key][keyToReplace]){
-        keyToEventMap[key][keyToReplace] = SCRUBBED_TEXT
-      }
-    });
-
-  if (firstParsedPath){
-    const scrubbedResult = keyToEventMap[firstParsedPath];
-    const splitPath = firstParsedPath.split('.');
-    if (splitPath.length > 0){
-      const key = splitPath[0];
-        if (isPayloadObj){
-          let finalResult = {};
-          finalResult[key] = JSON.stringify(scrubbedResult);
-            return finalResult;
-        } else {
-          return JSON.stringify(scrubbedResult);
-        }
-    }
-  }
-
-  return payload;
-}
-
 
 const shallowMaskByRegex = (payload, regexes) => {
   regexes = regexes || keyToOmitRegexes();
