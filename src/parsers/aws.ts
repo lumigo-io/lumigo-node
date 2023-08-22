@@ -1,4 +1,11 @@
-import { md5Hash, parseQueryParams, removeDuplicates, safeGet, safeJsonParse } from '../utils';
+import {
+  md5Hash,
+  parseQueryParams,
+  removeDuplicates,
+  safeGet,
+  safeJsonParse,
+  caseInsensitiveGet,
+} from '../utils';
 import { traverse } from '../tools/xmlToJson';
 import * as logger from '../logger';
 import { getW3CMessageId } from '../utils/w3cUtils';
@@ -121,15 +128,33 @@ export const eventBridgeParser = (requestData, responseData) => {
   return { awsServiceData };
 };
 
-export const sqsParser = (requestData, responseData) => {
-  const { body: reqBody } = requestData;
+const sqsParserJsonProtocol = (requestData, responseData) => {
+  const { body: reqBody } = requestData || {};
   const { body: resBody } = responseData || {};
+  let awsServiceData = {};
+
+  const parsedReqBody = safeJsonParse(reqBody, {});
+  const parsedResBody = safeJsonParse(resBody, {});
+  const resourceName = parsedReqBody ? parsedReqBody['QueueUrl'] : undefined;
+  const messageId =
+    safeGet(parsedResBody, ['MessageId'], undefined) ||
+    safeGet(parsedResBody, ['Successful', 0, 'MessageId'], undefined) ||
+    safeGet(parsedResBody, ['Failed', 0, 'MessageId'], undefined);
+  awsServiceData = { resourceName, messageId };
+
+  return { awsServiceData };
+};
+
+const sqsParserXmlProtocol = (requestData, responseData) => {
+  const { body: reqBody } = requestData || {};
+  const { body: resBody } = responseData || {};
+  let awsServiceData = {};
+
   const parsedReqBody = reqBody ? parseQueryParams(reqBody) : undefined;
   const parsedResBody = resBody ? traverse(resBody) : undefined;
   const resourceName = parsedReqBody ? parsedReqBody['QueueUrl'] : undefined;
-  const awsServiceData = { resourceName };
   // @ts-ignore
-  awsServiceData.messageId =
+  const messageId =
     safeGet(parsedResBody, ['SendMessageResponse', 'SendMessageResult', 'MessageId'], undefined) ||
     safeGet(
       parsedResBody,
@@ -152,7 +177,25 @@ export const sqsParser = (requestData, responseData) => {
       ],
       undefined
     );
+  awsServiceData = { resourceName, messageId };
+
   return { awsServiceData };
+};
+
+export const sqsParser = (requestData, responseData) => {
+  const reqHeaders = requestData.headers ? requestData.headers : {};
+
+  // Note: Currently json protocol is new and not commonly used, so the default case is XML.
+  // In the future when JSON usage is default you my want to switch so JSON is the default and XML
+  // protocol is specifically checked for
+  if (
+    caseInsensitiveGet(reqHeaders, 'content-type', '').toLowerCase() ===
+    'application/x-amz-json-1.0'
+  ) {
+    return sqsParserJsonProtocol(requestData, responseData);
+  } else {
+    return sqsParserXmlProtocol(requestData, responseData);
+  }
 };
 
 export const kinesisParser = (requestData, responseData) => {
