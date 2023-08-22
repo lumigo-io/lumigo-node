@@ -95,10 +95,10 @@ const getItemsInPath = safeExecute(
   []
 );
 
-function scrubJsonStringBySecretPath(input, secretPaths, currentPath) {
+function scrubJsonStringBySecretPath(input, secretPaths, uniquePaths, currentPath) {
   try {
     let realJson = JSON.parse(input);
-    const res = innerPathScrubbing(realJson, secretPaths, currentPath);
+    const res = innerPathScrubbing(realJson, secretPaths, uniquePaths, currentPath);
     return JSON.stringify(res);
   } catch (e) {
     logger.debug('Failed to parse json payload for path scrubbing', { error: e, event: input });
@@ -106,25 +106,28 @@ function scrubJsonStringBySecretPath(input, secretPaths, currentPath) {
   }
 }
 
-function scrubJsonBySecretPath(input, secretPaths, currentPath) {
-  return innerPathScrubbing(input, secretPaths, currentPath);
+function scrubJsonBySecretPath(input, secretPaths, uniquePaths, currentPath) {
+  return innerPathScrubbing(input, secretPaths, uniquePaths, currentPath);
 }
 
-function keyExistsInPaths(paths, key) {
+function getUniqPaths(paths) {
   let allPathKeys = [];
   paths.forEach((path) => {
     let keys = path.split('.');
     allPathKeys = [...allPathKeys, ...keys];
   });
-  const uniquePaths = allPathKeys.filter((x, i) => i === allPathKeys.indexOf(x));
-  logger.debug(`Checking if key ${key} exists in ${uniquePaths}`);
-  return uniquePaths.includes(key);
+  return allPathKeys.filter((x, i) => i === allPathKeys.indexOf(x));
 }
 
-function innerPathScrubbing(input, secretPaths, currentPath) {
+function keyExistsInPaths(paths, key) {
+  logger.debug(`Checking if key ${key} exists in ${paths}`);
+  return paths.includes(key);
+}
+
+function innerPathScrubbing(input, secretPaths, uniquePaths, currentPath) {
   if (Array.isArray(input)) {
     input.forEach((item) => {
-      input[item] = scrubJsonBySecretPath(item, secretPaths, currentPath);
+      input[item] = scrubJsonBySecretPath(item, secretPaths, uniquePaths, currentPath);
     });
     return input;
   }
@@ -132,7 +135,7 @@ function innerPathScrubbing(input, secretPaths, currentPath) {
     return input;
   } else {
     for (const key of Object.keys(input)) {
-      if (!keyExistsInPaths(secretPaths, key)) {
+      if (!keyExistsInPaths(uniquePaths, key)) {
         continue;
       }
       const newPath = currentPath ? currentPath + '.' + key : key;
@@ -142,9 +145,9 @@ function innerPathScrubbing(input, secretPaths, currentPath) {
       }
       currentPath = newPath;
       if (isString(input[key])) {
-        input[key] = scrubJsonStringBySecretPath(input[key], secretPaths, currentPath);
+        input[key] = scrubJsonStringBySecretPath(input[key], secretPaths, uniquePaths, currentPath);
       } else {
-        input[key] = scrubJsonBySecretPath(input[key], secretPaths, currentPath);
+        input[key] = scrubJsonBySecretPath(input[key], secretPaths, uniquePaths, currentPath);
       }
     }
   }
@@ -168,20 +171,21 @@ export const payloadStringify = (
   if (getSecretMaskingExactPath()) {
     let secretPaths = getSecretPaths();
     if (secretPaths.length > 0) {
+      const uniquePaths = getUniqPaths(secretPaths);
       if (isString(payload)) {
         payload = safeExecute(
           scrubJsonStringBySecretPath,
           FAILED_SCRUBBING_BY_PATH,
           logger.LOG_LEVELS.DEBUG,
           payload
-        )(payload, secretPaths, '');
+        )(payload, secretPaths, uniquePaths, '');
       } else {
         payload = safeExecute(
           scrubJsonBySecretPath,
           FAILED_SCRUBBING_BY_PATH,
           logger.LOG_LEVELS.DEBUG,
           payload
-        )(payload, secretPaths, '');
+        )(payload, secretPaths, uniquePaths, '');
       }
     }
   }
