@@ -25,7 +25,6 @@ const SCRUBBED_TEXT = '****';
 const TRUNCATED_TEXT = '...[too long]';
 const FAILED_SCRUBBING_BY_PATH = 'Failed to scrub payload by exact path';
 
-
 const isNativeType = (obj) => nativeTypes.includes(typeof obj);
 
 const keyToRegexes = (
@@ -112,12 +111,12 @@ function scrubJsonBySecretPath(input, secretPaths, currentPath) {
 }
 
 function keyExistsInPaths(paths, key) {
-  let allPathKeys =[];
+  let allPathKeys = [];
   paths.forEach((path) => {
     let keys = path.split('.');
     allPathKeys = [...allPathKeys, ...keys];
   });
-  const uniquePaths = allPathKeys.filter((x, i) => i === allPathKeys.indexOf(x))
+  const uniquePaths = allPathKeys.filter((x, i) => i === allPathKeys.indexOf(x));
   logger.debug(`Checking if key ${key} exists in ${uniquePaths}`);
   return uniquePaths.includes(key);
 }
@@ -130,8 +129,7 @@ function innerPathScrubbing(input, secretPaths, currentPath) {
   }
   if (isString(input)) {
     return input;
-  }
-  else {
+  } else {
     for (const key of Object.keys(input)) {
       if (!keyExistsInPaths(secretPaths, key)) {
         continue;
