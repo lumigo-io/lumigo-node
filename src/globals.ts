@@ -74,16 +74,15 @@ export const GlobalTimer = (() => {
   return { setGlobalTimeout, clearTimer };
 })();
 
-interface AutoTagEvent {
-  event: string;
-  keyToEvent: any;
-  relativeKey: string;
-}
-
 export const ExecutionTags = (() => {
   // @ts-ignore
   global.tags = [];
 
+  interface AutoTagEvent {
+    event: string;
+    keyToEvent: any;
+    relativeKey: string;
+  }
   const validateTag = (key, value, shouldLogErrors = true) => {
     key = String(key);
     value = String(value);
@@ -149,21 +148,11 @@ export const ExecutionTags = (() => {
     const eventByKey = autoTagEvent.keyToEvent;
     if (obj && obj[innerKey]) {
       eventByKey[relativeKey] = obj;
-      return {
-        event: obj[innerKey],
-        keyToEvent: eventByKey,
-        relativeKey: relativeKey,
-      };
+      return { event: obj[innerKey], keyToEvent: eventByKey, relativeKey: relativeKey };
     }
-    if (eventByKey && eventByKey[relativeKey] && eventByKey[relativeKey]) {
+    if (eventByKey && eventByKey[relativeKey]) {
       obj = eventByKey[relativeKey];
-      return (
-        obj && {
-          event: obj[innerKey],
-          keyToEvent: eventByKey,
-          relativeKey: relativeKey,
-        }
-      );
+      return obj && { event: obj[innerKey], keyToEvent: eventByKey, relativeKey: relativeKey };
     }
     try {
       if (obj && isString(obj) && obj[innerKey] === undefined) {
@@ -180,11 +169,7 @@ export const ExecutionTags = (() => {
     } catch (err) {
       logger.debug('Failed to parse json event as tag value', { error: err, event: obj });
     }
-    return {
-      event: undefined,
-      keyToEvent: eventByKey,
-      relativeKey: relativeKey,
-    };
+    return { event: undefined, keyToEvent: eventByKey, relativeKey: relativeKey };
   };
 
   const autoTagEvent = (event) => {
@@ -198,7 +183,7 @@ export const ExecutionTags = (() => {
     });
   };
 
-  return { addTag, getTags, clear, validateTag, autoTagEvent, getValue };
+  return { addTag, getTags, clear, validateTag, autoTagEvent };
 })();
 
 export const TracerGlobals = (() => {

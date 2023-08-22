@@ -23,6 +23,8 @@ import { runOneTimeWrapper } from './functionUtils';
 const nativeTypes = ['string', 'bigint', 'number', 'undefined', 'boolean'];
 const SCRUBBED_TEXT = '****';
 const TRUNCATED_TEXT = '...[too long]';
+const FAILED_SCRUBBING_BY_PATH = 'Failed to scrub payload by exact path';
+
 
 const isNativeType = (obj) => nativeTypes.includes(typeof obj);
 
@@ -110,12 +112,14 @@ function scrubJsonBySecretPath(input, secretPaths, currentPath) {
 }
 
 function keyExistsInPaths(paths, key) {
-  let allPathKeys = new Set();
+  let allPathKeys =[];
   paths.forEach((path) => {
-    const keys = new Set(path.split('.'));
-    allPathKeys = new Set([...allPathKeys, ...keys]);
+    let keys = path.split('.');
+    allPathKeys = [...allPathKeys, ...keys];
   });
-  return allPathKeys.has(key);
+  const uniquePaths = allPathKeys.filter((x, i) => i === allPathKeys.indexOf(x))
+  logger.debug(`Checking if key ${key} exists in ${uniquePaths}`);
+  return uniquePaths.includes(key);
 }
 
 function innerPathScrubbing(input, secretPaths, currentPath) {
@@ -123,7 +127,11 @@ function innerPathScrubbing(input, secretPaths, currentPath) {
     input.forEach((item) => {
       scrubJsonBySecretPath(item, secretPaths, currentPath);
     });
-  } else {
+  }
+  if (isString(input)) {
+    return input;
+  }
+  else {
     for (const key of Object.keys(input)) {
       if (!keyExistsInPaths(secretPaths, key)) {
         continue;
@@ -164,14 +172,14 @@ export const payloadStringify = (
       if (isString(payload)) {
         payload = safeExecute(
           scrubJsonStringBySecretPath,
-          'Failed to scrub payload by exact path',
+          FAILED_SCRUBBING_BY_PATH,
           logger.LOG_LEVELS.DEBUG,
           payload
         )(payload, secretPaths, '');
       } else {
         payload = safeExecute(
           scrubJsonBySecretPath,
-          'Failed to scrub payload by exact path',
+          FAILED_SCRUBBING_BY_PATH,
           logger.LOG_LEVELS.DEBUG,
           payload
         )(payload, secretPaths, '');
@@ -241,7 +249,6 @@ const shallowMaskByRegex = (payload, regexes) => {
     logger.warn('Failed to mask payload, payload is not an object or string', payload);
     return payload;
   }
-  //TODO: SHANI -add call for recursivelyParseAndScrubJson
   return Object.keys(payload).reduce((acc, key) => {
     if (keyContainsRegex(regexes, key)) {
       acc[key] = SCRUBBED_TEXT;
