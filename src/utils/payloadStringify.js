@@ -95,14 +95,14 @@ const getItemsInPath = safeExecute(
   []
 );
 
-function scrubJsonStringBySecretPath(input, requestedPath, currentPath) {
+function scrubJsonStringBySecretPath(input, secretPaths, currentPath) {
   try {
     let realJson = JSON.parse(input);
-    const res = innerPathScrubbing(realJson, requestedPath, currentPath);
+    const res = innerPathScrubbing(realJson, secretPaths, currentPath);
     return JSON.stringify(res);
   } catch (e) {
     logger.debug('Failed to parse json payload for path scrubbing', { error: e, event: input });
-    return innerPathScrubbing(input, requestedPath, currentPath);
+    return input;
   }
 }
 
@@ -124,8 +124,9 @@ function keyExistsInPaths(paths, key) {
 function innerPathScrubbing(input, secretPaths, currentPath) {
   if (Array.isArray(input)) {
     input.forEach((item) => {
-      scrubJsonBySecretPath(item, secretPaths, currentPath);
+      input[item] = scrubJsonBySecretPath(item, secretPaths, currentPath);
     });
+    return input;
   }
   if (isString(input)) {
     return input;
