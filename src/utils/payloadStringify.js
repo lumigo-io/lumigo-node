@@ -7,6 +7,8 @@ import {
   getRequestHeadersMaskingRegex,
   getResponseBodyMaskingRegex,
   getResponseHeadersMaskingRegex,
+  getSecretMaskingExactPath,
+  getSecretPaths,
   isString,
   LUMIGO_SECRET_MASKING_ALL_MAGIC,
   LUMIGO_SECRET_MASKING_REGEX,
@@ -21,6 +23,7 @@ import { runOneTimeWrapper } from './functionUtils';
 const nativeTypes = ['string', 'bigint', 'number', 'undefined', 'boolean'];
 const SCRUBBED_TEXT = '****';
 const TRUNCATED_TEXT = '...[too long]';
+const FAILED_SCRUBBING_BY_PATH = 'Failed to scrub payload by exact path';
 
 const isNativeType = (obj) => nativeTypes.includes(typeof obj);
 
@@ -92,6 +95,65 @@ const getItemsInPath = safeExecute(
   []
 );
 
+function scrubJsonStringBySecretPath(input, secretPaths, uniquePaths, currentPath) {
+  try {
+    let realJson = JSON.parse(input);
+    const res = innerPathScrubbing(realJson, secretPaths, uniquePaths, currentPath);
+    return JSON.stringify(res);
+  } catch (e) {
+    logger.debug('Failed to parse json payload for path scrubbing', { error: e, event: input });
+    return input;
+  }
+}
+
+function scrubJsonBySecretPath(input, secretPaths, uniquePaths, currentPath) {
+  return innerPathScrubbing(input, secretPaths, uniquePaths, currentPath);
+}
+
+function getUniqPaths(paths) {
+  let allPathKeys = [];
+  paths.forEach((path) => {
+    let keys = path.split('.');
+    allPathKeys = [...allPathKeys, ...keys];
+  });
+  return allPathKeys.filter((x, i) => i === allPathKeys.indexOf(x));
+}
+
+function keyExistsInPaths(paths, key) {
+  logger.debug(`Checking if key ${key} exists in ${paths}`);
+  return paths.includes(key);
+}
+
+function innerPathScrubbing(input, secretPaths, uniquePaths, currentPath) {
+  if (Array.isArray(input)) {
+    input.forEach((item) => {
+      input[item] = scrubJsonBySecretPath(item, secretPaths, uniquePaths, currentPath);
+    });
+    return input;
+  }
+  if (isString(input)) {
+    return input;
+  } else {
+    for (const key of Object.keys(input)) {
+      if (!keyExistsInPaths(uniquePaths, key)) {
+        continue;
+      }
+      const newPath = currentPath ? currentPath + '.' + key : key;
+      if (secretPaths.includes(newPath)) {
+        input[key] = SCRUBBED_TEXT;
+        continue;
+      }
+      currentPath = newPath;
+      if (isString(input[key])) {
+        input[key] = scrubJsonStringBySecretPath(input[key], secretPaths, uniquePaths, currentPath);
+      } else {
+        input[key] = scrubJsonBySecretPath(input[key], secretPaths, uniquePaths, currentPath);
+      }
+    }
+  }
+  return input;
+}
+
 export const payloadStringify = (
   payload,
   maxPayloadSize = getEventEntitySize(),
@@ -105,6 +167,29 @@ export const payloadStringify = (
   const secretItemsToSkipScrubbing = new Set(getItemsInPath(payload, skipScrubPath));
 
   let isPruned = false;
+
+  if (getSecretMaskingExactPath()) {
+    let secretPaths = getSecretPaths();
+    if (secretPaths.length > 0) {
+      const uniquePaths = getUniqPaths(secretPaths);
+      if (isString(payload)) {
+        payload = safeExecute(
+          scrubJsonStringBySecretPath,
+          FAILED_SCRUBBING_BY_PATH,
+          logger.LOG_LEVELS.DEBUG,
+          payload
+        )(payload, secretPaths, uniquePaths, '');
+      } else {
+        payload = safeExecute(
+          scrubJsonBySecretPath,
+          FAILED_SCRUBBING_BY_PATH,
+          logger.LOG_LEVELS.DEBUG,
+          payload
+        )(payload, secretPaths, uniquePaths, '');
+      }
+    }
+  }
+
   let result = JSON.stringify(payload, function (key, value) {
     const type = typeof value;
     const isObj = type === 'object';
@@ -144,6 +229,7 @@ export const payloadStringify = (
       isPruned = true;
     }
   });
+
   if (result && (isPruned || truncated)) {
     result = result.replace(/,null/g, '');
     if (!(payload instanceof Error)) {

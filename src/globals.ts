@@ -83,7 +83,6 @@ export const ExecutionTags = (() => {
     keyToEvent: any;
     relativeKey: string;
   }
-
   const validateTag = (key, value, shouldLogErrors = true) => {
     key = String(key);
     value = String(value);

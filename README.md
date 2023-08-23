@@ -80,9 +80,11 @@ You can read more about it [here](https://www.typescriptlang.org/tsconfig#esModu
 * `LUMIGO_DEBUG=TRUE` - Enables debug logging
 * `LUMIGO_SECRET_MASKING_REGEX='["regex1", "regex2"]'` - Prevents Lumigo from sending keys that match the supplied regular expressions. All regular expressions are case-insensitive. By default, Lumigo applies the following regular expressions: `[".*pass.*", ".*key.*", ".*secret.*", ".*credential.*", ".*passphrase.*"]`.
   * We support more granular masking using the following parameters. If not given, the above configuration is the fallback: `LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_BODIES`, `LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_HEADERS`, `LUMIGO_SECRET_MASKING_REGEX_HTTP_RESPONSE_BODIES`, `LUMIGO_SECRET_MASKING_REGEX_HTTP_RESPONSE_HEADERS`, `LUMIGO_SECRET_MASKING_REGEX_HTTP_QUERY_PARAMS`.
+* `LUMIGO_SECRET_MASKING_EXACT_PATH='["key1.key2", "key3.key4"]'` - Prevents Lumigo from sending keys that match the supplied path (we support nested fields). All paths are case-insensitive.
 * `LUMIGO_DOMAINS_SCRUBBER='[".*secret.*"]'` - Prevents Lumigo from collecting both request and response details from a list of domains. This accepts a comma-separated list of regular expressions that is JSON-formatted. By default, the tracer uses `["secretsmanager\..*\.amazonaws\.com", "ssm\..*\.amazonaws\.com", "kms\..*\.amazonaws\.com"]`. **Note** - These defaults are overridden when you define a different list of regular expressions.
 * `LUMIGO_PROPAGATE_W3C=TRUE` - Add W3C TraceContext headers to outgoing HTTP requests. This enables uninterrupted transactions with applications traced with OpenTelemetry.
 * `LUMIGO_SWITCH_OFF=TRUE` - In the event a critical issue arises, this turns off all actions that Lumigo takes in response to your code. This happens without a deployment, and is picked up on the next function run once the environment variable is present.
+* `LUMIGO_AUTO_TAG=key1.key2,key3` - Configure execution tags that will be driven directly from the event for the supplied key (we support nested fields).
 
 ### Step Functions
 

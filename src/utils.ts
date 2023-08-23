@@ -9,6 +9,7 @@ import * as logger from './logger';
 import { AwsEnvironment, ContextInfo, LambdaContext } from './types/aws/awsEnvironment';
 import { EdgeUrl } from './types/common/edgeTypes';
 import { CommonUtils } from '@lumigo/node-core';
+import { runOneTimeWrapper } from './utils/functionUtils';
 
 export const getRandomId = CommonUtils.getRandomId;
 export const getRandomString = CommonUtils.getRandomString;
@@ -31,6 +32,8 @@ export const LUMIGO_SECRET_MASKING_REGEX_HTTP_QUERY_PARAMS =
   'LUMIGO_SECRET_MASKING_REGEX_HTTP_QUERY_PARAMS';
 export const LUMIGO_SECRET_MASKING_REGEX_ENVIRONMENT = 'LUMIGO_SECRET_MASKING_REGEX_ENVIRONMENT';
 export const LUMIGO_SECRET_MASKING_ALL_MAGIC = 'all';
+
+export const LUMIGO_SECRET_MASKING_EXACT_PATH = 'LUMIGO_SECRET_MASKING_EXACT_PATH';
 export const LUMIGO_WHITELIST_KEYS_REGEXES = 'LUMIGO_WHITELIST_KEYS_REGEXES';
 export const OMITTING_KEYS_REGEXES = [
   '.*pass.*',
@@ -661,3 +664,20 @@ export const getEnvVarsMaskingRegex = (): string | undefined =>
   process.env[LUMIGO_SECRET_MASKING_REGEX_ENVIRONMENT];
 export const getHttpQueryParamsMaskingRegex = (): string | undefined =>
   process.env[LUMIGO_SECRET_MASKING_REGEX_HTTP_QUERY_PARAMS];
+
+export const getSecretMaskingExactPath = (): string | undefined =>
+  process.env[LUMIGO_SECRET_MASKING_EXACT_PATH];
+
+const invalidMaskingExactPathWarning = runOneTimeWrapper((e) => {
+  logger.warn('Failed to parse the given masking exact path', e);
+});
+
+export const getSecretPaths = (): string[] => {
+  let secretPaths = [];
+  try {
+    secretPaths = JSON.parse(getSecretMaskingExactPath());
+  } catch (e) {
+    invalidMaskingExactPathWarning(e);
+  }
+  return secretPaths;
+};
