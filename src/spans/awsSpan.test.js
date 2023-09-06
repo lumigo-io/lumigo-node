@@ -979,7 +979,7 @@ describe('awsSpan', () => {
     expect(result.info.messageId).not.toBeUndefined();
   });
 
-  test('getHttpSpan - append to w3c messageId if this is an API gateway', () => {
+  test('getHttpSpan - override w3c messageId if this is an API gateway', () => {
     let requestHeaders = { host: 'your.mind.com', password: '1234' };
     addW3CTracePropagator(requestHeaders);
 
@@ -1004,8 +1004,7 @@ describe('awsSpan', () => {
       testData.requestData,
       testData.responseData
     );
-    expect(result.info.messageIds).toContain('apigw-requestid');
-    expect(result.info.messageIds.length).toEqual(2);
+    expect(result.info.messageId).toEqual('apigw-requestid');
   });
 
   test('getHttpSpanId - simple flow', () => {
