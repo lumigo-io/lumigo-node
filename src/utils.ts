@@ -342,7 +342,7 @@ export const isDebug = (): boolean =>
 
 export const isLambdaWrapped = (): boolean => validateEnvVar(WRAPPED_FLAG);
 
-export const shouldPropagateW3C = (): boolean => validateEnvVar(LUMIGO_PROPAGATE_W3C);
+export const shouldPropagateW3C = (): boolean => !validateEnvVar(LUMIGO_PROPAGATE_W3C, 'FALSE');
 
 export const setLambdaWrapped = (): void => {
   process.env[WRAPPED_FLAG] = 'TRUE';

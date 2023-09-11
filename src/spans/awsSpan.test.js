@@ -22,7 +22,6 @@ import { addW3CTracePropagator } from '../utils/w3cUtils';
 
 const exampleApiGatewayEvent = require('../../testUtils/testdata/events/apigw-request.json');
 
-jest.mock('../parsers/aws');
 describe('awsSpan', () => {
   const spies = {};
   spies['isWarm'] = jest.spyOn(utils, 'isWarm');
@@ -544,43 +543,49 @@ describe('awsSpan', () => {
   });
 
   test('getAwsServicedata', () => {
-    const requestData = { a: 'b' };
-    const responseData = { d: 'd' };
-
+    const requestData = { a: 'b', headers: {} };
+    const responseData = { d: 'd', headers: {} };
     requestData.host = `dynamodb.amazonaws.com`;
 
+    jest.spyOn(awsParsers, 'dynamodbParser');
     awsSpan.getServiceData(requestData, responseData);
     expect(awsParsers.dynamodbParser).toHaveBeenCalledWith(requestData);
 
     requestData.host = `sns.amazonaws.com`;
 
+    jest.spyOn(awsParsers, 'snsParser');
     awsSpan.getServiceData(requestData, responseData);
     expect(awsParsers.snsParser).toHaveBeenCalledWith(requestData, responseData);
 
-    requestData.host = `lambda.amazonaws.com`;
-
-    awsSpan.getServiceData(requestData, responseData);
-    expect(awsParsers.lambdaParser).toHaveBeenCalledWith(requestData, responseData);
+    jest.spyOn(awsParsers, 'lambdaParser');
+    const lambdaRequest = { a: 'b', headers: {}, host: `lambda.amazonaws.com`, path: '///' };
+    awsSpan.getServiceData(lambdaRequest, responseData);
+    expect(awsParsers.lambdaParser).toHaveBeenCalledWith(lambdaRequest, responseData);
 
     requestData.host = `sqs.amazonaws.com`;
 
+    jest.spyOn(awsParsers, 'sqsParser');
     awsSpan.getServiceData(requestData, responseData);
     expect(awsParsers.sqsParser).toHaveBeenCalledWith(requestData, responseData);
 
     requestData.host = `kinesis.amazonaws.com`;
 
+    jest.spyOn(awsParsers, 'kinesisParser');
     awsSpan.getServiceData(requestData, responseData);
     expect(awsParsers.kinesisParser).toHaveBeenCalledWith(requestData, responseData);
 
     requestData.host = `events.us-west-2.amazonaws.com`;
 
+    jest.spyOn(awsParsers, 'eventBridgeParser');
     awsSpan.getServiceData(requestData, responseData);
     expect(awsParsers.eventBridgeParser).toHaveBeenCalledWith(requestData, responseData);
 
+    jest.spyOn(awsParsers, 'apigwParser');
     requestData.host = `random.random.execute-api.amazonaws.com`;
     awsSpan.getServiceData(requestData, responseData);
     expect(awsParsers.apigwParser).toHaveBeenCalledWith(requestData, responseData);
 
+    jest.spyOn(awsParsers, 'defaultParser');
     requestData.host = `deadbeef.amazonaws.com`;
     awsSpan.getServiceData(requestData, responseData);
     expect(awsParsers.defaultParser).toHaveBeenCalledWith(requestData, responseData);
@@ -972,6 +977,34 @@ describe('awsSpan', () => {
     };
     const result = awsSpan.getHttpSpan('123', '', '123', testData.requestData);
     expect(result.info.messageId).not.toBeUndefined();
+  });
+
+  test('getHttpSpan - override w3c messageId if this is an API gateway', () => {
+    let requestHeaders = { host: 'your.mind.com', password: '1234' };
+    addW3CTracePropagator(requestHeaders);
+
+    const testData = {
+      requestData: {
+        a: 'request',
+        sendTime: 1,
+        truncated: false,
+        host: 'blabla.execute-api.amazonaws.com',
+        headers: requestHeaders,
+        body: 'bla',
+      },
+      responseData: {
+        truncated: false,
+        headers: { 'apigw-requestid': 'apigw-requestid' },
+      },
+    };
+    const result = awsSpan.getHttpSpan(
+      '123',
+      '',
+      '123',
+      testData.requestData,
+      testData.responseData
+    );
+    expect(result.info.messageId).toEqual('apigw-requestid');
   });
 
   test('getHttpSpanId - simple flow', () => {
