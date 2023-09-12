@@ -5,7 +5,7 @@ orbs:
 
 defaults: &defaults
   docker:
-    - image: lumigo/ci:latest
+    - image: lumigo/ci-ubuntu2204:latest
       auth:
         username: lumigo
         password: $DOCKERHUB_PASSWORD
