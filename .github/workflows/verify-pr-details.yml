@@ -1,0 +1,29 @@
+name: Check PR title format
+
+on:
+  pull_request:
+    types:
+      # Everytime a PR is opened, reopened
+      - opened
+      - reopened
+      # Everytime a PR is edited (for example: changing the title)
+      - edited
+      # Everytime the PR head branch is updated (for example after pushing a new commit)
+      - synchronize
+
+jobs:
+  # Job that checks the title of the PR & makes sure it fits the semantic versioning format
+  check-pr-title:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR Title
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            const title = context.payload.pull_request.title;
+            console.log(`PR title: ${title}`);
+            const regex = /^(feat|fix|docs|style|refactor|perf|test|chore|build|ci)(\([a-z0-9-]+\))?: .{1,50}/;
+            if (!regex.test(title)) {
+                core.setFailed(`PR title "${title}" is not valid semantic commit format. Please use the following format: <type>(<scope>): <description>`);
+            }
