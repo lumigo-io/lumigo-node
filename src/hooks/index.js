@@ -12,6 +12,7 @@ import { hookMySql } from './mySql';
 import { hookNeo4j } from './neo4j';
 import { hookPg } from './pg';
 import { hookRedis } from './redis';
+import { hookFetch } from "./fetch";
 
 export default () => {
   if (!isSwitchedOff() && isAwsEnvironment()) {
@@ -24,6 +25,7 @@ export default () => {
       safeExecute(hookMssql)();
       safeExecute(hookNeo4j)();
       safeExecute(setLambdaWrapped)();
+      safeExecute(hookFetch)();
     }
   }
 };
