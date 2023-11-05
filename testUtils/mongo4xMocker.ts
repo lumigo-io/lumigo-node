@@ -68,7 +68,7 @@ class MongoClient {
   connect(options: any, callback: Function) {
     const self = this;
     options = options || self.options;
-    if (options.connectThrowsError) {
+    if (options && options.connectThrowsError) {
       throw new Error('Connection failed: connectThrowsError');
     }
     return new Promise((resolve, reject) => {
@@ -105,9 +105,9 @@ class MongoClient {
     if (options.connectThrowsError) {
       throw new Error('Connection failed: connectThrowsError');
     }
-    if (!(this && typeof this.prototype === "object")){
+    if (!(this && typeof this.prototype === 'object')) {
       //workaround to check that this scope not been changed
-      throw Error("This context has been changed")
+      throw Error('This context has been changed');
     }
     return new Promise((resolve, reject) => {
       callback =
@@ -136,8 +136,7 @@ export const getMockedMongoClientLibrary = () => {
   // eslint-disable-next-line camelcase
   MongoClientLibrary.max_delay = 0;
   MongoClientLibrary.MongoClient = MongoClient;
-  MongoClientLibrary.instrument = "Dummy";
-
+  MongoClientLibrary.instrument = 'Dummy';
 
   return MongoClientLibrary;
 };

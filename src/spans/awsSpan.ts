@@ -18,28 +18,29 @@ import { FunctionSpan } from '../types/spans/functionSpan';
 import { HttpInfo } from '../types/spans/httpSpan';
 import {
   EXECUTION_TAGS_KEY,
-  getAccountId,
+  INVOCATION_ID_KEY,
+  SENDING_TIME_ID_KEY,
+  TRANSACTION_ID_KEY,
   getAWSEnvironment,
+  getAccountId,
   getContextInfo,
   getEventEntitySize,
   getInvokedArn,
   getInvokedVersion,
   getTraceId,
   getTracerInfo,
-  INVOCATION_ID_KEY,
   isAwsService,
   isString,
   isWarm,
   parseErrorObject,
   safeExecute,
-  SENDING_TIME_ID_KEY,
   setWarm,
-  TRANSACTION_ID_KEY,
 } from '../utils';
 import { payloadStringify, shallowMask, truncate } from '../utils/payloadStringify';
 import { Utf8Utils } from '../utils/utf8Utils';
 import { getW3CMessageId } from '../utils/w3cUtils';
 
+export const FETCH_SPAN = 'fetch';
 export const HTTP_SPAN = 'http';
 export const FUNCTION_SPAN = 'function';
 export const EXTERNAL_SERVICE = 'external';
