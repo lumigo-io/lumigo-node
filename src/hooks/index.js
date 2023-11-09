@@ -12,7 +12,7 @@ import { hookMySql } from './mySql';
 import { hookNeo4j } from './neo4j';
 import { hookPg } from './pg';
 import { hookRedis } from './redis';
-import { hookFetch } from "./fetch";
+import { hookFetch } from './fetch';
 
 export default () => {
   if (!isSwitchedOff() && isAwsEnvironment()) {

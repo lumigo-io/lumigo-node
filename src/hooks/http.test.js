@@ -46,14 +46,14 @@ describe('http hook', () => {
     const requestData = {
       body: '',
     };
-    const randomRequstId = 'REQ';
+    const randomRequestId = 'REQ';
     const awsRequestId = HttpSpanBuilder.DEFAULT_PARENT_ID;
     const transactionId = HttpSpanBuilder.DEFAULT_TRANSACTION_ID;
     const wrapper = Http.httpRequestEmitBeforeHookWrapper(
       transactionId,
       awsRequestId,
       requestData,
-      randomRequstId
+      randomRequestId
     );
     const emitEventName = 'socket';
     const emitArg = {

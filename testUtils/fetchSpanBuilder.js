@@ -42,24 +42,44 @@ export class FetchSpanBuilder {
     this._span.ended = ended;
     return this;
   };
+  withHost = (host) => {
+    this._span['info.httpInfo.host'] = host;
+    return this;
+  };
+  withRoute = (route) => {
+    this._span['info.httpInfo.route'] = route;
+    return this;
+  };
   withUrl = (url) => {
-    this._span.url = url;
+    this._span['info.httpInfo.url'] = url;
+    return this;
+  };
+  withMethod = (method) => {
+    this._span['info.httpInfo.method'] = method;
     return this;
   };
   withOptions = (options) => {
     this._span.options = options;
     return this;
   };
-  withRequestCommand = (requestCommand) => {
-    this._span.requestCommand = requestCommand;
+  withRequestBody = (requestBody) => {
+    this._span['http.request.body'] = requestBody;
     return this;
   };
-  withResponse = (response) => {
-    this._span.response = response;
+  withRequestHeaders = (requestHeaders) => {
+    this._span['http.request.headers'] = requestHeaders;
+    return this;
+  };
+  withResponseBody = (responseBody) => {
+    this._span['http.response.body'] = responseBody;
+    return this;
+  };
+  withResponseHeaders = (responseHeaders) => {
+    this._span['http.response.headers'] = responseHeaders;
     return this;
   };
   withStatusCode = (statusCode) => {
-    this._span.statusCode = statusCode;
+    this._span['http.status_code'] = statusCode;
     return this;
   };
   withError = (error) => {
