@@ -5,6 +5,28 @@ import { FETCH_SPAN, getBasicChildSpan, getCurrentTransactionId } from '../spans
 import { getRandomId } from '../utils';
 import { payloadStringify } from '../utils/payloadStringify';
 
+const extractHeaders = (headers: any) => {
+  if (headers) {
+    try {
+      // convert map to object
+      const headersObject = {};
+      for (const [key, value] of headers) {
+        headersObject[key] = value;
+      }
+      return payloadStringify(headersObject);
+    } catch (err) {
+      try {
+        return payloadStringify(headers);
+      } catch (err) {
+        /* istanbul ignore next */
+        console.log('fetch headers stringify error', err);
+      }
+    }
+  }
+  /* istanbul ignore next */
+  return undefined;
+};
+
 export const beforeFetch = (args: any[], extenderContext: any) => {
   extenderContext.spanId = getRandomId();
 
@@ -41,16 +63,9 @@ export const beforeFetch = (args: any[], extenderContext: any) => {
     span[`info.httpInfo.${key}`] = httpInfo[key];
   }
 
-  if (options.headers) {
-    try {
-      const headers = {};
-      for (const [key, value] of options.headers) {
-        headers[key] = value;
-      }
-      span['http.request.headers'] = payloadStringify(headers);
-    } catch (e) {
-      span['http.request.headers'] = payloadStringify(options.headers);
-    }
+  const headers = extractHeaders(options.headers);
+  if (headers) {
+    span['http.request.headers'] = headers;
   }
 
   if (options.body) {
@@ -60,7 +75,7 @@ export const beforeFetch = (args: any[], extenderContext: any) => {
   SpansContainer.addSpan(span);
 };
 
-const getResponseBody = async (result: any): Promise<string | undefined> => {
+const extractResponseBody = async (result: any): Promise<string | undefined> => {
   try {
     const json = await result.json();
     return payloadStringify(json);
@@ -69,9 +84,11 @@ const getResponseBody = async (result: any): Promise<string | undefined> => {
       const text = await result.text();
       return payloadStringify(text);
     } catch (err) {
+      /* istanbul ignore next */
       console.log('fetch response body parse error', err);
     }
   }
+  /* istanbul ignore next */
   return undefined;
 };
 
@@ -83,18 +100,12 @@ export const afterFetch = (args: any[], originalFnResult: any, extenderContext: 
     // @ts-ignore
     currentSpan['http.status_code'] = result.status;
 
-    if (result.headers) {
-      let headers = undefined;
-      for (const [key, value] of result.headers) {
-        headers = headers || {};
-        headers[key] = value;
-      }
-      if (headers) {
-        currentSpan['http.response.headers'] = payloadStringify(headers);
-      }
+    const headers = extractHeaders(result.headers);
+    if (headers) {
+      currentSpan['http.response.headers'] = headers;
     }
 
-    const responseBody = await getResponseBody(result);
+    const responseBody = await extractResponseBody(result);
     if (result.ok) {
       if (responseBody) {
         currentSpan['http.response.body'] = responseBody;
@@ -127,6 +138,7 @@ export const hookFetch = () => {
       afterHook: afterFetch,
     });
   } catch (e) {
+    /* istanbul ignore next */
     console.log('hook fetch error', e);
   }
 };

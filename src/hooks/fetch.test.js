@@ -1,4 +1,4 @@
-import { mockFetchGlobal } from '../../testUtils/fetchMocker';
+import { generateHeadersMap, mockFetchGlobal } from '../../testUtils/fetchMocker';
 import { FetchSpanBuilder } from '../../testUtils/fetchSpanBuilder';
 import { HandlerInputsBuilder } from '../../testUtils/handlerInputsBuilder';
 import { SpansContainer, TracerGlobals } from '../globals';
@@ -19,7 +19,7 @@ describe('fetch', () => {
     TracerGlobals.setHandlerInputs(handlerInputs);
   });
 
-  test('hook fetch -> get text flow', async () => {
+  test('hook fetch -> get text', async () => {
     const responseHeaders = { 'Content-Type': 'text/plain' };
     const responseText = 'get request response text';
     mockFetchGlobal({
@@ -52,7 +52,88 @@ describe('fetch', () => {
     expect(spans).toEqual([expectedSpan]);
   });
 
-  test('hook fetch -> get json flow', async () => {
+  test('hook fetch -> get text with request headers dictionary', async () => {
+    const responseHeaders = { 'Content-Type': 'text/plain' };
+    const responseText = 'get request response text';
+    mockFetchGlobal({
+      status: 200,
+      headers: responseHeaders,
+      body: responseText,
+    });
+    hookFetch();
+
+    const requestHeaders = { 'Content-Type': 'text/plain' };
+    const fetchOptions = {
+      headers: requestHeaders,
+    };
+
+    const response = await fetch(TEST_URL, fetchOptions);
+    expect(response.ok).toEqual(true);
+    expect(await response.text()).toEqual(responseText);
+    expect(response.headers.get('Content-Type')).toEqual('text/plain');
+
+    await waitForSpans();
+    const spans = SpansContainer.getSpans();
+
+    const expectedSpan = new FetchSpanBuilder()
+      .withId(spans[0].id)
+      .withStarted(spans[0].started)
+      .withEnded(spans[0].ended)
+      .withHost(TEST_URL_HOST)
+      .withRoute(TEST_URL_ROUTE)
+      .withUrl(payloadStringify(TEST_URL))
+      .withMethod('GET')
+      .withOptions(payloadStringify(fetchOptions))
+      .withStatusCode(200)
+      .withResponseHeaders(payloadStringify(responseHeaders))
+      .withResponseBody(payloadStringify(responseText))
+      .withRequestHeaders(payloadStringify(requestHeaders))
+      .build();
+    expect(spans).toEqual([expectedSpan]);
+  });
+
+  test('hook fetch -> get text with request headers map', async () => {
+    const responseHeaders = { 'Content-Type': 'text/plain' };
+    const responseText = 'get request response text';
+    mockFetchGlobal({
+      status: 200,
+      headers: responseHeaders,
+      body: responseText,
+    });
+    hookFetch();
+
+    const requestHeadersObject = { 'Content-Type': 'text/plain' };
+    const requestHeadersMap = generateHeadersMap(requestHeadersObject);
+    const fetchOptions = {
+      headers: requestHeadersMap,
+    };
+
+    const response = await fetch(TEST_URL, fetchOptions);
+    expect(response.ok).toEqual(true);
+    expect(await response.text()).toEqual(responseText);
+    expect(response.headers.get('Content-Type')).toEqual('text/plain');
+
+    await waitForSpans();
+    const spans = SpansContainer.getSpans();
+
+    const expectedSpan = new FetchSpanBuilder()
+      .withId(spans[0].id)
+      .withStarted(spans[0].started)
+      .withEnded(spans[0].ended)
+      .withHost(TEST_URL_HOST)
+      .withRoute(TEST_URL_ROUTE)
+      .withUrl(payloadStringify(TEST_URL))
+      .withMethod('GET')
+      .withOptions(payloadStringify(fetchOptions))
+      .withStatusCode(200)
+      .withResponseHeaders(payloadStringify(responseHeaders))
+      .withResponseBody(payloadStringify(responseText))
+      .withRequestHeaders(payloadStringify(requestHeadersObject))
+      .build();
+    expect(spans).toEqual([expectedSpan]);
+  });
+
+  test('hook fetch -> get json', async () => {
     const responseHeaders = { 'Content-Type': 'application/json' };
     const responseJson = { a: 1, b: 2 };
     mockFetchGlobal({
@@ -85,7 +166,7 @@ describe('fetch', () => {
     expect(spans).toEqual([expectedSpan]);
   });
 
-  test('hook fetch -> post text flow', async () => {
+  test('hook fetch -> post text', async () => {
     const responseHeaders = { 'Content-Type': 'text/plain' };
     const responseText = 'post request response text';
     mockFetchGlobal({
@@ -128,7 +209,7 @@ describe('fetch', () => {
     expect(spans).toEqual([expectedSpan]);
   });
 
-  test('hook fetch -> post json flow', async () => {
+  test('hook fetch -> post json', async () => {
     const responseHeaders = { 'Content-Type': 'application/json' };
     const responseJson = {
       hello: 'to you too',
@@ -217,6 +298,38 @@ describe('fetch', () => {
       .withOptions(payloadStringify({}))
       .withStatusCode(404)
       .withError(responseError)
+      .build();
+    expect(spans).toEqual([expectedSpan]);
+  });
+
+  test('hook fetch -> invalid url', async () => {
+    mockFetchGlobal({
+      status: 500,
+    });
+    hookFetch();
+
+    const INVALID_URL = { url: 'invalid url, not a string' };
+
+    const t = async () => {
+      await fetch(INVALID_URL);
+    };
+
+    await expect(t()).rejects.toThrow(
+      'The "url" argument must be of type string. Received an instance of Object'
+    );
+
+    await waitForSpans();
+    const spans = SpansContainer.getSpans();
+
+    const expectedSpan = new FetchSpanBuilder()
+      .withId(spans[0].id)
+      .withStarted(spans[0].started)
+      .withEnded(undefined)
+      .withHost(undefined)
+      .withRoute(undefined)
+      .withOptions(JSON.stringify({}))
+      .withMethod('GET')
+      .withUrl(payloadStringify(INVALID_URL))
       .build();
     expect(spans).toEqual([expectedSpan]);
   });
