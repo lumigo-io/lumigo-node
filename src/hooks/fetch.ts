@@ -7,20 +7,25 @@ import { payloadStringify } from '../utils/payloadStringify';
 
 const extractHeaders = (headers: any) => {
   if (headers) {
+    const headersObject = {};
+    let numKeysFound = 0;
     try {
       // convert map to object
-      const headersObject = {};
       for (const [key, value] of headers) {
         headersObject[key] = value;
+        numKeysFound++;
       }
-      return payloadStringify(headersObject);
     } catch (err) {
-      try {
-        return payloadStringify(headers);
-      } catch (err) {
-        /* istanbul ignore next */
-        console.log('fetch headers stringify error', err);
-      }
+      console.log('fetch headers as map parse error', err);
+    }
+    if (numKeysFound > 0) {
+      return payloadStringify(headersObject);
+    }
+    try {
+      return payloadStringify(headers);
+    } catch (err) {
+      /* istanbul ignore next */
+      console.log('fetch headers stringify error', err);
     }
   }
   /* istanbul ignore next */
