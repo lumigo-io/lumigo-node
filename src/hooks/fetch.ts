@@ -1,6 +1,7 @@
 import * as url from 'url';
 import * as extender from '../extender';
 import { SpansContainer, TracerGlobals } from '../globals';
+import * as logger from '../logger';
 import { FETCH_SPAN, getBasicChildSpan, getCurrentTransactionId } from '../spans/awsSpan';
 import { getRandomId } from '../utils';
 import { payloadStringify } from '../utils/payloadStringify';
@@ -16,7 +17,7 @@ const extractHeaders = (headers: any) => {
         numKeysFound++;
       }
     } catch (err) {
-      console.log('fetch headers as map parse error', err);
+      logger.debug('fetch headers as map parse error', err);
     }
     if (numKeysFound > 0) {
       return payloadStringify(headersObject);
@@ -25,7 +26,7 @@ const extractHeaders = (headers: any) => {
       return payloadStringify(headers);
     } catch (err) {
       /* istanbul ignore next */
-      console.log('fetch headers stringify error', err);
+      logger.debug('fetch headers stringify error', err);
     }
   }
   /* istanbul ignore next */
@@ -40,7 +41,7 @@ export const beforeFetch = (args: any[], extenderContext: any) => {
   try {
     requestUrl = url.parse(fetchUrl, true);
   } catch (e) {
-    console.debug('parse url error', e);
+    logger.debug('parse url error', e);
   }
   const options = args[1] || {};
   const method = options.method || 'GET';
@@ -90,7 +91,7 @@ const extractResponseBody = async (result: any): Promise<string | undefined> => 
       return payloadStringify(text);
     } catch (err) {
       /* istanbul ignore next */
-      console.log('fetch response body parse error', err);
+      logger.debug('fetch response body parse error', err);
     }
   }
   /* istanbul ignore next */
@@ -144,6 +145,6 @@ export const hookFetch = () => {
     });
   } catch (e) {
     /* istanbul ignore next */
-    console.log('hook fetch error', e);
+    logger.debug('hook fetch error', e);
   }
 };
