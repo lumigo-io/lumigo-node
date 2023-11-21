@@ -19,6 +19,42 @@ type MockedResponseType = {
   ok: boolean;
 };
 
+const generateResponseObject = ({ headers, body, status, statusText, ok }): MockedResponseType => {
+  return {
+    clone: () => generateResponseObject({ headers, body, status, statusText, ok }),
+    headers: generateHeadersMap(headers),
+    json: () =>
+      new Promise((resolve, reject) => {
+        if (typeof body !== 'string') {
+          resolve(body);
+        } else {
+          try {
+            const parsedJson = JSON.parse(body);
+            resolve(parsedJson);
+          } catch (e) {
+            reject(e);
+          }
+        }
+      }),
+    text: () =>
+      new Promise((resolve, reject) => {
+        if (typeof body === 'string') {
+          resolve(body);
+        } else {
+          try {
+            const stringifiedBody = JSON.stringify(body);
+            resolve(stringifiedBody);
+          } catch (e) {
+            reject(e);
+          }
+        }
+      }),
+    status,
+    statusText,
+    ok,
+  } as MockedResponseType;
+};
+
 export const mockFetchGlobal = (options: any) => {
   options = options || {};
   const headers = options['headers'];
@@ -32,37 +68,6 @@ export const mockFetchGlobal = (options: any) => {
     // @ts-ignore
     url.parse(args[0]);
 
-    return Promise.resolve({
-      headers: generateHeadersMap(headers),
-      json: () =>
-        new Promise((resolve, reject) => {
-          if (typeof body !== 'string') {
-            resolve(body);
-          } else {
-            try {
-              const parsedJson = JSON.parse(body);
-              resolve(parsedJson);
-            } catch (e) {
-              reject(e);
-            }
-          }
-        }),
-      text: () =>
-        new Promise((resolve, reject) => {
-          if (typeof body === 'string') {
-            resolve(body);
-          } else {
-            try {
-              const stringifiedBody = JSON.stringify(body);
-              resolve(stringifiedBody);
-            } catch (e) {
-              reject(e);
-            }
-          }
-        }),
-      status,
-      statusText,
-      ok,
-    } as MockedResponseType);
+    return Promise.resolve(generateResponseObject({ headers, body, status, statusText, ok }));
   });
 };

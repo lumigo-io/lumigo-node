@@ -82,12 +82,13 @@ export const beforeFetch = (args: any[], extenderContext: any) => {
 };
 
 const extractResponseBody = async (result: any): Promise<string | undefined> => {
+  // NOTE: a response body can only be consumed once, so we clone it for every attempt
   try {
-    const json = await result.json();
+    const json = await result.clone().json();
     return payloadStringify(json);
   } catch (err) {
     try {
-      const text = await result.text();
+      const text = await result.clone().text();
       return payloadStringify(text);
     } catch (err) {
       /* istanbul ignore next */
