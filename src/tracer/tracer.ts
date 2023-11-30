@@ -1,4 +1,5 @@
 import type { Callback, Context, Handler } from 'aws-lambda';
+import type * as stream from 'stream';
 
 import {
   clearGlobals,
@@ -27,8 +28,8 @@ import {
   getTimeoutTimerBuffer,
   isAwsEnvironment,
   isPromise,
-  isSwitchedOff,
   isStepFunction,
+  isSwitchedOff,
   isTimeoutTimerEnabled,
   LUMIGO_EVENT_KEY,
   removeLumigoFromStacktrace,
@@ -47,10 +48,47 @@ export const MAX_ELEMENTS_IN_EXTRA = 10;
 export const LEAK_MESSAGE =
   'Execution leak detected. More information is available in: https://docs.lumigo.io/docs/execution-leak-detected';
 
+type StreamingSupportedHandler<TEvent = any, TResult = any> = (
+  event: TEvent,
+  param1?: Context | stream.Writable,
+  param2?: Callback | Context,
+  param3?: Callback<TResult>
+) => void | Promise<TResult>;
+
+function getHandlerParameters(
+  param1?: Context | stream.Writable,
+  param2?: Callback | Context,
+  param3?: Callback
+): { responseStream: stream.Writable; context: Context; callback: Callback } {
+  // if param1 is a writeable stream, we have a responseStream, otherwise we have a context
+  if (param1 && 'write' in param1) {
+    return {
+      responseStream: param1,
+      context: param2 as Context,
+      callback: param3,
+    };
+  }
+  return {
+    responseStream: undefined,
+    context: param1 as Context,
+    callback: param2 as Callback,
+  };
+}
+
 export const trace =
   ({ token, debug, edgeHost, switchOff, stepFunction }: TraceOptions) =>
-  (userHandler: Handler) =>
-  async <Event = any>(event: Event, context?: Context, callback?: Callback): Promise<Handler> => {
+  (userHandler: Handler & StreamingSupportedHandler) =>
+  async <Event = any>(
+    event: Event,
+    param1?: Context | stream.Writable,
+    param2?: Callback | Context,
+    param3?: Callback
+  ): Promise<Handler & StreamingSupportedHandler> => {
+    const { responseStream, context, callback } = getHandlerParameters(param1, param2, param3);
+    if (responseStream) {
+      info('responseStream detected, tracing streaming lambdas is not supported yet');
+      return userHandler(event, responseStream, context, callback);
+    }
     if (!!switchOff || isSwitchedOff()) {
       info(
         `The '${SWITCH_OFF_FLAG}' environment variable is set to 'true': this invocation will not be traced by Lumigo`
