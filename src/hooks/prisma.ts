@@ -26,11 +26,12 @@ async function queryExtension({ query, args, model, operation }) {
   SpansContainer.addSpan(prismaSpan);
 
   try {
-    const results = await query(args);
-    const extendedSpan = extendedPrismaSpan(prismaSpan, { results, ended: Date.now() });
+    const result = await query(args);
+    console.log('result', result);
+    const extendedSpan = extendedPrismaSpan(prismaSpan, { result, ended: Date.now() });
     SpansContainer.addSpan(extendedSpan);
 
-    return results;
+    return result;
   } catch (error) {
     const extendedSpan = extendedPrismaSpan(prismaSpan, {
       error: payloadStringify(error),

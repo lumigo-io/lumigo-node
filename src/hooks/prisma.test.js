@@ -1,7 +1,9 @@
 import { HandlerInputsBuilder } from '../../testUtils/handlerInputsBuilder';
 import { PrismaSpanBuilder } from '../../testUtils/prismaSpanBuilder';
 import { SpansContainer, TracerGlobals } from '../globals';
+import { getRandomId } from '../utils';
 import { hookPrisma } from './prisma';
+import { PrismaClient } from '@prisma/client';
 
 describe('Prisma', () => {
   describe("bad Prisma versions", () => {
@@ -66,11 +68,47 @@ describe('Prisma', () => {
         .withEnded(spans[0].ended)
         .withModelName('User')
         .withOperation('count')
-        .withQueryArgs({})
+        .withQueryArgs("{}")
         .withResult(count.toString())
         .build();
 
       expect(spans[0]).toEqual(expectedSpan);
     });
+
+    test('operation with arguments', async () => {
+      const email = getRandomId()
+
+      const user = await client.user.create({ data: { name: 'John Doe', email } });
+      await client.user.findFirst({ where: { id: user.id } });
+
+      const spans = SpansContainer.getSpans();
+      expect(spans).toHaveLength(2);
+
+      const [createUserSpan, findUserSpan] = spans;
+
+      const expectedCreateSpan = new PrismaSpanBuilder()
+        .withId(createUserSpan.id)
+        .withStarted(createUserSpan.started)
+        .withEnded(createUserSpan.ended)
+        .withModelName('User')
+        .withOperation('create')
+        .withQueryArgs(`{\"data\":{\"name\":\"John Doe\",\"email\":\"${email}\"}}`)
+        .withResult(`{\"id\":${user.id},\"email\":\"${email}\",\"name\":\"John Doe\"}`)
+        .build();
+
+      const expectedFindSpan = new PrismaSpanBuilder()
+        .withId(findUserSpan.id)
+        .withStarted(findUserSpan.started)
+        .withEnded(findUserSpan.ended)
+        .withModelName('User')
+        .withOperation('findFirst')
+        .withQueryArgs(`{\"where\":{\"id\":${user.id}}}`)
+        .withResult(`{\"id\":${user.id},\"email\":\"${email}\",\"name\":\"John Doe\"}`)
+        .warm()
+        .build();
+
+      expect(createUserSpan).toEqual(expectedCreateSpan);
+      expect(findUserSpan).toEqual(expectedFindSpan);
+    });
   })
-});
+})

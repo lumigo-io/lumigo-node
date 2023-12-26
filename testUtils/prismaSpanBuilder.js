@@ -52,7 +52,7 @@ export class PrismaSpanBuilder {
   }
 
   withQueryArgs = (queryArgs) => {
-    this._span.queryArgs = payloadStringify(queryArgs);
+    this._span.queryArgs = queryArgs;
     return this;
   }
 
@@ -66,13 +66,18 @@ export class PrismaSpanBuilder {
     return this;
   }
 
-  withResult = (results) => {
-    this._span.results = results;
+  withResult = (result) => {
+    this._span.result = result;
     return this;
   }
 
   withStarted = (started) => {
     this._span.started = started;
+    return this;
+  }
+
+  warm = () => {
+    this._span.readiness = 'warm';
     return this;
   }
 
