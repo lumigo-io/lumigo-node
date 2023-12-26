@@ -1,15 +1,6 @@
-import { filterObjectKeys, getEventEntitySize } from '../utils';
-import { payloadStringify, truncate } from '../utils/payloadStringify';
+import { payloadStringify } from '../utils/payloadStringify';
 import { getBasicChildSpan } from './awsSpan';
-
-const normalizeQuery = (query: string | any): string => {
-  if (typeof query === 'string') return truncate(query, getEventEntitySize());
-  if (typeof query === 'object') {
-    const filteredQuery = filterObjectKeys(query, (key) => !key.startsWith('_'));
-    return payloadStringify(filteredQuery);
-  }
-  return 'Unknown';
-};
+import { normalizeQuery } from './common';
 
 export const createSqlSpan = (
   transactionId,
