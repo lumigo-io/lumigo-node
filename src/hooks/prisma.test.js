@@ -4,38 +4,73 @@ import { SpansContainer, TracerGlobals } from '../globals';
 import { hookPrisma } from './prisma';
 
 describe('Prisma', () => {
-  let client;
+  describe("bad Prisma versions", () => {
+    afterEach(() => {
+      // Reset overrides made to the prisma-client after require() in each test
+      jest.resetModules()
+    });
 
-  beforeAll(() => {
-    const prismaClientLibrary = require('@prisma/client');
-    hookPrisma(prismaClientLibrary);
-    client = new prismaClientLibrary.PrismaClient();
-  });
+    let prismaClientLibrary
 
-  afterAll(() => client.$disconnect());
+    beforeEach(() => {
+      prismaClientLibrary = require('@prisma/client')
+    });
 
-  beforeEach(() => {
-    const handlerInputs = new HandlerInputsBuilder().build();
-    TracerGlobals.setHandlerInputs(handlerInputs);
-    SpansContainer.clearSpans();
-  });
+    test('no $extends hook', async () => {
+      // Override constructor
+      prismaClientLibrary.PrismaClient = function () {
+        return {
+          '$extends': 'not-a-function'
+        }
+      }
 
-  test('simple operation', async () => {
-    const count = await client.user.count();
+      hookPrisma(prismaClientLibrary);
 
-    const spans = SpansContainer.getSpans();
-    expect(spans).toHaveLength(1);
+      expect(() => new prismaClientLibrary.PrismaClient()).not.toThrow()
+    });
 
-    const expectedSpan = new PrismaSpanBuilder()
-      .withId(spans[0].id)
-      .withStarted(spans[0].started)
-      .withEnded(spans[0].ended)
-      .withModelName('User')
-      .withOperation('count')
-      .withQueryArgs({})
-      .withResult(count.toString())
-      .build();
+    test('no PrismaClient class', async () => {
+      delete prismaClientLibrary.PrismaClient
 
-    expect(spans[0]).toEqual(expectedSpan);
-  });
+      expect(() => hookPrisma(prismaClientLibrary)).not.toThrow()
+    });
+  })
+
+  describe("supported Prisma versions", () => {
+    let client;
+
+    beforeAll(() => {
+      const prismaClientLibrary = require('@prisma/client')
+      hookPrisma(prismaClientLibrary);
+      client = new prismaClientLibrary.PrismaClient();
+    })
+
+    beforeEach(() => {
+      const handlerInputs = new HandlerInputsBuilder().build();
+      TracerGlobals.setHandlerInputs(handlerInputs);
+
+      SpansContainer.clearSpans();
+    });
+
+    afterAll(() => client && client.$disconnect());
+
+    test('simple operation', async () => {
+      const count = await client.user.count();
+
+      const spans = SpansContainer.getSpans();
+      expect(spans).toHaveLength(1);
+
+      const expectedSpan = new PrismaSpanBuilder()
+        .withId(spans[0].id)
+        .withStarted(spans[0].started)
+        .withEnded(spans[0].ended)
+        .withModelName('User')
+        .withOperation('count')
+        .withQueryArgs({})
+        .withResult(count.toString())
+        .build();
+
+      expect(spans[0]).toEqual(expectedSpan);
+    });
+  })
 });

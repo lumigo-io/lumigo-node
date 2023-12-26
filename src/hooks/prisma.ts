@@ -45,13 +45,25 @@ export const hookPrisma = (prismaClientLibrary: unknown | null = null) => {
   const prismaLib = prismaClientLibrary ? prismaClientLibrary : safeRequire('@prisma/client');
 
   if (!prismaLib) {
-    logger.debug('Prisma client not found');
+    logger.debug('Prisma client not found, skipping hook');
     return;
   }
 
   const OriginalConstructor = prismaLib.PrismaClient;
+
+  if (!OriginalConstructor) {
+    logger.debug('PrismaClient class not found, skipping hook');
+    return;
+  }
+
   prismaLib.PrismaClient = function (...args) {
-    return new OriginalConstructor(...args).$extends({
+    const originalInstance = new OriginalConstructor(...args)
+
+    if (typeof originalInstance.$extends !== 'function') {
+      return originalInstance
+    }
+
+    return originalInstance.$extends({
       query: {
         $allOperations: queryExtension,
       },
