@@ -18,8 +18,8 @@ async function queryExtension({ query, args, model, operation }) {
       started: Date.now(),
     },
     {
-      modelName: model,
-      operation: operation,
+      model,
+      operation,
       queryArgs: args,
     }
   );

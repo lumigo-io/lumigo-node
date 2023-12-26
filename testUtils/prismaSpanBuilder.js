@@ -41,8 +41,8 @@ export class PrismaSpanBuilder {
     return this;
   }
 
-  withModelName = (modelName) => {
-    this._span.modelName = modelName;
+  withModel = (model) => {
+    this._span.model = model;
     return this;
   }
 

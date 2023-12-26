@@ -13,7 +13,7 @@ export const createPrismaSpan = (
   return {
     ...baseSpan,
     started: requestMetadata.started,
-    modelName: prismaFields.modelName,
+    model: prismaFields.model,
     operation: prismaFields.operation,
     queryArgs: prismaFields.queryArgs ? payloadStringify(prismaFields.queryArgs) : '',
   };
