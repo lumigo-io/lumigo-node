@@ -2,7 +2,7 @@ import { SpansContainer, TracerGlobals } from '../globals';
 import * as logger from '../logger';
 import { getCurrentTransactionId } from '../spans/awsSpan';
 import { createPrismaSpan, extendedPrismaSpan } from '../spans/prismaSpan';
-import { getRandomId } from '../utils';
+import { getRandomId, removeLumigoFromStacktrace } from '../utils';
 import { payloadStringify } from '../utils/payloadStringify';
 import { safeRequire } from '../utils/requireUtils';
 
@@ -27,7 +27,6 @@ async function queryExtension({ query, args, model, operation }) {
 
   try {
     const result = await query(args);
-    console.log('result', result);
     const extendedSpan = extendedPrismaSpan(prismaSpan, { result, ended: Date.now() });
     SpansContainer.addSpan(extendedSpan);
 

@@ -110,5 +110,41 @@ describe('Prisma', () => {
       expect(createUserSpan).toEqual(expectedCreateSpan);
       expect(findUserSpan).toEqual(expectedFindSpan);
     });
+
+    test("operation with error", async () => {
+      const email = getRandomId();
+
+      const user = await client.user.create({ data: { name: 'John Doe', email } });
+      await expect(client.user.create({ data: { name: 'John Doe', email } })).rejects.toThrowError("Unique constraint failed on the fields");
+
+      const spans = SpansContainer.getSpans();
+      expect(spans).toHaveLength(2);
+
+      const [successSpan, errorSpan] = spans;
+
+      const expectedSuccessSpan = new PrismaSpanBuilder()
+        .withId(successSpan.id)
+        .withStarted(successSpan.started)
+        .withEnded(successSpan.ended)
+        .withModelName('User')
+        .withOperation('create')
+        .withQueryArgs(`{\"data\":{\"name\":\"John Doe\",\"email\":\"${email}\"}}`)
+        .withResult(`{\"id\":${user.id},\"email\":\"${email}\",\"name\":\"John Doe\"}`)
+        .build();
+
+      const expectedErrorSpan = new PrismaSpanBuilder()
+        .withId(errorSpan.id)
+        .withStarted(errorSpan.started)
+        .withEnded(errorSpan.ended)
+        .withModelName('User')
+        .withOperation('create')
+        .withQueryArgs(`{\"data\":{\"name\":\"John Doe\",\"email\":\"${email}\"}}`)
+        .withError(expect.stringContaining("Unique constraint failed on the fields"))
+        .warm()
+        .build();
+
+      expect(successSpan).toEqual(expectedSuccessSpan);
+      expect(errorSpan).toEqual(expectedErrorSpan);
+    })
   })
 })
