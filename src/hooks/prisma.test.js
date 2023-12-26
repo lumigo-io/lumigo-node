@@ -146,5 +146,24 @@ describe('Prisma', () => {
       expect(successSpan).toEqual(expectedSuccessSpan);
       expect(errorSpan).toEqual(expectedErrorSpan);
     })
+
+    test("allows other user-extensions", async () => {
+      let extensionExecuted = false
+
+      const clientWithUserExtension = client.$extends({
+        query: {
+          $allOperations({ model, operation, args, query }) {
+            extensionExecuted = true
+            return query(args)
+          },
+        },
+      })
+
+      await clientWithUserExtension.user.findFirst({ where: { id: 1 } });
+
+      expect(extensionExecuted).toBe(true)
+    })
+
+    test.todo("raw query")
   })
 })
