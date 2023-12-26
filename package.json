@@ -41,6 +41,7 @@
     "@babel/preset-typescript": "^7.14.5",
     "@commitlint/cli": "^12.1.4",
     "@commitlint/config-conventional": "^12.1.4",
+    "@prisma/client": "^5.7.1",
     "@semantic-release/changelog": "^3.0.6",
     "@semantic-release/git": "^7.0.18",
     "@semantic-release/github": "^7.2.3",
@@ -65,6 +66,7 @@
     "mockdate": "^2.0.5",
     "mongo-mock": "^4.2.0",
     "prettier": "2.7.1",
+    "prisma": "^5.7.1",
     "semantic-release": "^19.0.5",
     "typescript": "^4.3.2"
   },
