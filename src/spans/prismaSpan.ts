@@ -24,7 +24,7 @@ export const extendedPrismaSpan = (prismaSpan, extendedFields) => {
     prismaSpan.error = payloadStringify(extendedFields.error);
   }
 
-  if (extendedFields.result) {
+  if (extendedFields.result !== undefined) {
     prismaSpan.result = payloadStringify(extendedFields.result);
   }
 

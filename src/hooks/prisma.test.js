@@ -3,7 +3,6 @@ import { PrismaSpanBuilder } from '../../testUtils/prismaSpanBuilder';
 import { SpansContainer, TracerGlobals } from '../globals';
 import { getRandomId } from '../utils';
 import { hookPrisma } from './prisma';
-import { PrismaClient } from '@prisma/client';
 
 describe('Prisma', () => {
   describe("bad Prisma versions", () => {
@@ -57,7 +56,7 @@ describe('Prisma', () => {
     afterAll(() => client && client.$disconnect());
 
     test('produces simple operation span', async () => {
-      const count = await client.user.count();
+      const count = await client.user.count({ where: { id: 123456 } });
 
       const spans = SpansContainer.getSpans();
       expect(spans).toHaveLength(1);
@@ -68,8 +67,8 @@ describe('Prisma', () => {
         .withEnded(spans[0].ended)
         .withModel('User')
         .withOperation('count')
-        .withQueryArgs("{}")
-        .withResult(count.toString())
+        .withQueryArgs("{\"where\":{\"id\":123456}}")
+        .withResult("0")
         .build();
 
       expect(spans[0]).toEqual(expectedSpan);

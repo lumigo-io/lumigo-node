@@ -2,7 +2,7 @@ import { SpansContainer, TracerGlobals } from '../globals';
 import * as logger from '../logger';
 import { getCurrentTransactionId } from '../spans/awsSpan';
 import { createPrismaSpan, extendedPrismaSpan } from '../spans/prismaSpan';
-import { getRandomId, removeLumigoFromStacktrace } from '../utils';
+import { getRandomId } from '../utils';
 import { payloadStringify } from '../utils/payloadStringify';
 import { safeRequire } from '../utils/requireUtils';
 
