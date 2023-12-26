@@ -57,10 +57,10 @@ export const hookPrisma = (prismaClientLibrary: unknown | null = null) => {
   }
 
   prismaLib.PrismaClient = function (...args) {
-    const originalInstance = new OriginalConstructor(...args)
+    const originalInstance = new OriginalConstructor(...args);
 
     if (typeof originalInstance.$extends !== 'function') {
-      return originalInstance
+      return originalInstance;
     }
 
     return originalInstance.$extends({
