@@ -189,29 +189,56 @@ describe('Prisma', () => {
       expect(rawQuerySpan).toEqual(expectedRawQuerySpan);
     });
 
-    test("handles long payloads", async () => {
-      const users = Array(30).fill(0).map(() => ({ name: getRandomId(), email: getRandomId() }));
-      await Promise.all(users.map((user) => client.user.create({ data: user })));
+    describe("handles long payloads", () => {
+      test("handles long query payloads", async () => {
+        await client.user.findMany({
+          where: {
+            id: { in: [...Array(2000).keys()].map(() => -1) },
+          },
+        });
 
-      await client.user.findMany();
+        const spans = SpansContainer.getSpans();
+        expect(spans).toHaveLength(1);
 
-      const spans = SpansContainer.getSpans();
-      expect(spans).toHaveLength(users.length + 1);
+        const [findUsersSpan] = spans;
 
-      const findAllUsersSpan = spans[spans.length - 1];
+        const expectedFindAllUsersSpan = new PrismaSpanBuilder()
+          .withId(findUsersSpan.id)
+          .withStarted(findUsersSpan.started)
+          .withEnded(findUsersSpan.ended)
+          .withModel('User')
+          .withOperation('findMany')
+          .withQueryArgs(expect.stringContaining('...[too long]'))
+          .withResult('[]')
+          .build();
 
-      const expectedFindAllUsersSpan = new PrismaSpanBuilder()
-        .withId(findAllUsersSpan.id)
-        .withStarted(findAllUsersSpan.started)
-        .withEnded(findAllUsersSpan.ended)
-        .withModel('User')
-        .withOperation('findMany')
-        .withQueryArgs('{}')
-        .withResult(expect.stringContaining('...[too long]'))
-        .warm()
-        .build();
+        expect(findUsersSpan).toEqual(expectedFindAllUsersSpan);
+      })
 
-      expect(findAllUsersSpan).toEqual(expectedFindAllUsersSpan);
+      test("handles long result payloads", async () => {
+        const users = Array(30).fill(0).map(() => ({ name: getRandomId(), email: getRandomId() }));
+        await Promise.all(users.map((user) => client.user.create({ data: user })));
+
+        await client.user.findMany();
+
+        const spans = SpansContainer.getSpans();
+        expect(spans).toHaveLength(users.length + 1);
+
+        const findAllUsersSpan = spans[spans.length - 1];
+
+        const expectedFindAllUsersSpan = new PrismaSpanBuilder()
+          .withId(findAllUsersSpan.id)
+          .withStarted(findAllUsersSpan.started)
+          .withEnded(findAllUsersSpan.ended)
+          .withModel('User')
+          .withOperation('findMany')
+          .withQueryArgs('{}')
+          .withResult(expect.stringContaining('...[too long]'))
+          .warm()
+          .build();
+
+        expect(findAllUsersSpan).toEqual(expectedFindAllUsersSpan);
+      })
     })
   });
 });
