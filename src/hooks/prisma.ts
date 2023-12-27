@@ -2,7 +2,7 @@ import { SpansContainer, TracerGlobals } from '../globals';
 import * as logger from '../logger';
 import { getCurrentTransactionId } from '../spans/awsSpan';
 import { createPrismaSpan, extendedPrismaSpan } from '../spans/prismaSpan';
-import { getRandomId } from '../utils';
+import { getRandomId, safeExecute } from '../utils';
 import { safeRequire } from '../utils/requireUtils';
 
 async function queryExtension({ query, args, model, operation }) {
@@ -56,16 +56,18 @@ export const hookPrisma = (prismaClientLibrary: unknown | null = null) => {
   }
 
   prismaLib.PrismaClient = function (...args) {
-    const originalInstance = new OriginalConstructor(...args);
+    const clientInstance = new OriginalConstructor(...args);
 
-    if (typeof originalInstance.$extends !== 'function') {
-      return originalInstance;
-    }
+    return safeExecute(() => {
+      if (typeof clientInstance.$extends !== 'function') {
+        return clientInstance;
+      }
 
-    return originalInstance.$extends({
-      query: {
-        $allOperations: queryExtension,
-      },
-    });
+      return clientInstance.$extends({
+        query: {
+          $allOperations: queryExtension,
+        },
+      });
+    }, clientInstance)();
   };
 };

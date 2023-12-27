@@ -35,6 +35,19 @@ describe('Prisma', () => {
 
       expect(() => hookPrisma(prismaClientLibrary)).not.toThrow();
     });
+
+    test('does not fail when $extends throws', async () => {
+      // Override constructor
+      prismaClientLibrary.PrismaClient = function () {
+        return {
+          $extends: () => { throw new Error('This is very bad!'); },
+        };
+      };
+
+      hookPrisma(prismaClientLibrary);
+
+      expect(() => new prismaClientLibrary.PrismaClient()).not.toThrow();
+    });
   });
 
   describe('supported Prisma versions', () => {
