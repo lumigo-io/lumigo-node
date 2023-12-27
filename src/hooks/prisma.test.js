@@ -85,6 +85,7 @@ describe('Prisma', () => {
         .build();
 
       expect(spans[0].started).toBeDefined();
+      expect(spans[0].ended).toBeDefined();
       expect(spans[0]).toEqual(expectedSpan);
     });
 
