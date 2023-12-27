@@ -91,8 +91,8 @@ describe('Prisma', () => {
         .withEnded(createUserSpan.ended)
         .withModel('User')
         .withOperation('create')
-        .withQueryArgs(`{\"data\":{\"name\":\"John Doe\",\"email\":\"${email}\"}}`)
-        .withResult(`{\"id\":${user.id},\"email\":\"${email}\",\"name\":\"John Doe\"}`)
+        .withQueryArgs(`{"data":{"name":"John Doe","email":"${email}"}}`)
+        .withResult(`{"id":${user.id},"email":"${email}","name":"John Doe"}`)
         .build();
 
       const expectedFindSpan = new PrismaSpanBuilder()
@@ -101,8 +101,8 @@ describe('Prisma', () => {
         .withEnded(findUserSpan.ended)
         .withModel('User')
         .withOperation('findFirst')
-        .withQueryArgs(`{\"where\":{\"id\":${user.id}}}`)
-        .withResult(`{\"id\":${user.id},\"email\":\"${email}\",\"name\":\"John Doe\"}`)
+        .withQueryArgs(`{"where":{"id":${user.id}}}`)
+        .withResult(`{"id":${user.id},"email":"${email}","name":"John Doe"}`)
         .warm()
         .build();
 
@@ -129,8 +129,8 @@ describe('Prisma', () => {
         .withEnded(successSpan.ended)
         .withModel('User')
         .withOperation('create')
-        .withQueryArgs(`{\"data\":{\"name\":\"John Doe\",\"email\":\"${email}\"}}`)
-        .withResult(`{\"id\":${user.id},\"email\":\"${email}\",\"name\":\"John Doe\"}`)
+        .withQueryArgs(`{"data":{"name":"John Doe","email":"${email}"}}`)
+        .withResult(`{"id":${user.id},"email":"${email}","name":"John Doe"}`)
         .build();
 
       const expectedErrorSpan = new PrismaSpanBuilder()
@@ -139,7 +139,7 @@ describe('Prisma', () => {
         .withEnded(errorSpan.ended)
         .withModel('User')
         .withOperation('create')
-        .withQueryArgs(`{\"data\":{\"name\":\"John Doe\",\"email\":\"${email}\"}}`)
+        .withQueryArgs(`{"data":{"name":"John Doe","email":"${email}"}}`)
         .withError(expect.stringContaining('Unique constraint failed on the fields'))
         .warm()
         .build();
@@ -180,7 +180,7 @@ describe('Prisma', () => {
         .withEnded(rawQuerySpan.ended)
         .withOperation('$queryRaw')
         .withQueryArgs(
-          `{\"values\":[\"${userId}\"],\"strings\":[\"SELECT * FROM User WHERE id = \",\";\"]}`
+          `{"values":["${userId}"],"strings":["SELECT * FROM User WHERE id = ",";"]}`
         )
         .withResult(`[]`)
         .build();
