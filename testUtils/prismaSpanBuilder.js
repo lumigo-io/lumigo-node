@@ -56,11 +56,6 @@ export class PrismaSpanBuilder {
     return this;
   }
 
-  withValues = (values) => {
-    this._span.values = values;
-    return this;
-  }
-
   withError = (error) => {
     this._span.error = error;
     return this;
