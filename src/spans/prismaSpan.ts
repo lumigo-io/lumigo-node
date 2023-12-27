@@ -1,6 +1,5 @@
 import { payloadStringify } from '../utils/payloadStringify';
 import { PRISMA_SPAN, getBasicChildSpan } from './awsSpan';
-import { normalizeQuery } from './common';
 
 export const createPrismaSpan = (
   transactionId,
