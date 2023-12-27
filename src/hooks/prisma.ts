@@ -3,7 +3,6 @@ import * as logger from '../logger';
 import { getCurrentTransactionId } from '../spans/awsSpan';
 import { createPrismaSpan, extendedPrismaSpan } from '../spans/prismaSpan';
 import { getRandomId } from '../utils';
-import { payloadStringify } from '../utils/payloadStringify';
 import { safeRequire } from '../utils/requireUtils';
 
 async function queryExtension({ query, args, model, operation }) {
@@ -33,7 +32,7 @@ async function queryExtension({ query, args, model, operation }) {
     return result;
   } catch (error) {
     const extendedSpan = extendedPrismaSpan(prismaSpan, {
-      error: payloadStringify(error),
+      error,
       ended: Date.now(),
     });
     SpansContainer.addSpan(extendedSpan);
