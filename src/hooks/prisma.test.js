@@ -187,5 +187,30 @@ describe('Prisma', () => {
 
       expect(rawQuerySpan).toEqual(expectedRawQuerySpan);
     });
+
+    test("handles long payloads", async () => {
+      const users = Array(30).fill(0).map(() => ({ name: getRandomId(), email: getRandomId() }));
+      await Promise.all(users.map((user) => client.user.create({ data: user })));
+
+      await client.user.findMany();
+
+      const spans = SpansContainer.getSpans();
+      expect(spans).toHaveLength(users.length + 1);
+
+      const findAllUsersSpan = spans[spans.length - 1];
+
+      const expectedFindAllUsersSpan = new PrismaSpanBuilder()
+        .withId(findAllUsersSpan.id)
+        .withStarted(findAllUsersSpan.started)
+        .withEnded(findAllUsersSpan.ended)
+        .withModel('User')
+        .withOperation('findMany')
+        .withQueryArgs('{}')
+        .withResult(expect.stringContaining('...[too long]'))
+        .warm()
+        .build();
+
+      expect(findAllUsersSpan).toEqual(expectedFindAllUsersSpan);
+    })
   });
 });
