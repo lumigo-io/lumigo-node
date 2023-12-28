@@ -67,7 +67,7 @@ class MongoClient {
 
   connect(options: any, callback: Function) {
     const self = this;
-    options = options || self.options;
+    options = options || self.options || {};
     if (options.connectThrowsError) {
       throw new Error('Connection failed: connectThrowsError');
     }

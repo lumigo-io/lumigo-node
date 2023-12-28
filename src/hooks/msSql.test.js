@@ -58,6 +58,9 @@ describe('msSql', () => {
     });
   });
 
+  /**
+   * @group unhandled-rejection-expected
+   */
   test('hook -> query (text: string, callback: Function) -> failed', (done) => {
     const client = createHookedClient({
       error: {

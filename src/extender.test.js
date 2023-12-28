@@ -262,13 +262,18 @@ describe('extender', () => {
     await p;
   });
 
+  /*
+   @group unhandled-rejection-expected
+   */
   test('hookPromise -> catchHandler', async () => {
+    expect.assertions(1);
+
     const p = Promise.reject(new Error('octopus'));
 
-    const catchHandler = (value) => {
-      expect(value).toEqual('octopus');
-    };
-    extender.hookPromise(p, { catchHandler: catchHandler });
-    await expect(p).rejects.toThrow();
+    extender.hookPromise(p, {
+      catchHandler: (value) => {
+        expect(value).toEqual('octopus');
+      },
+    });
   });
 });

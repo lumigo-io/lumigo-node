@@ -224,6 +224,9 @@ describe('index', () => {
     ]);
   });
 
+  /**
+   * @group unhandled-rejection-expected
+   */
   test('trace => UnhandledPromiseRejection', async () => {
     process.exit = jest.fn();
 

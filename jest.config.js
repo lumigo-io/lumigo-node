@@ -18,4 +18,5 @@ module.exports = {
   setupFilesAfterEnv: ['./testUtils/jest.setup.js'],
   silent: true,
   watchPathIgnorePatterns: ['globalConfig'],
+  runner: 'groups'
 };

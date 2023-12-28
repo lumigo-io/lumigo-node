@@ -67,6 +67,9 @@ describe('neo4j', () => {
     ]);
   });
 
+  /**
+   * @group unhandled-rejection-expected
+   */
   test('hook -> run (text: string, params: object) -> error', async () => {
     const query = 'not-a-neo4j-query';
     const params = {};

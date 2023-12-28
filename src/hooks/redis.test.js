@@ -60,6 +60,9 @@ describe('redis', () => {
     expect(spans).toEqual([expectedSpan]);
   });
 
+  /**
+   * @group unhandled-rejection-expected
+   */
   test('hook ioredis -> rejects', async () => {
     const connectionOptions = 'tracer-test-cluster.1meza6.ng.0001.usw1.cache.amazonaws.com';
     hookRedis(Ioredis);
