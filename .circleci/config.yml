@@ -82,20 +82,6 @@ workflows:
           branches:
             only: master
 
-    - deploy-beta:
-        context:
-          - common
-          - node.js
-        filters:
-          branches:
-             ignore:
-               - master
-          conditions:
-              all:
-                - <<: *changes
-                  expression: |
-                    /your_keyword/i.test(CIRCLE_COMMIT_MESSAGE)
-
 jobs:
   test:
     <<: *defaults
