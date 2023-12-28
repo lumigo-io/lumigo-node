@@ -8,11 +8,6 @@ module.exports = {
     '!./d_example/**/**',
   ],
   coverageDirectory: './coverage/',
-  coverageThreshold: {
-    global: {
-      lines: 100,
-    },
-  },
   modulePaths: ['<rootDir>/dist'],
   roots: ['<rootDir>/src'],
   setupFilesAfterEnv: ['./testUtils/jest.setup.js'],

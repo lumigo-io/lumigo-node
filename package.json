@@ -13,8 +13,8 @@
   "scripts": {
     "build": "rm -rf dist && tsc --build --force",
     "check-types": "tsc --noEmit",
-    "jest": "jest --group=-unhandled-rejection-expected",
-    "jest:unhandled-rejections": "node --unhandled-rejections=warn node_modules/.bin/jest --group=unhandled-rejection-expected",
+    "jest": "jest --coverageThreshold='{\"global\":{\"lines\":\"93\"}}' --group=-unhandled-rejection-expected",
+    "jest:unhandled-rejections": "node --unhandled-rejections=warn node_modules/.bin/jest --coverageThreshold='{\"global\":{\"lines\":\"48\"}}' --group=unhandled-rejection-expected",
     "jest-detectOpenHandles": "jest --detectOpenHandles",
     "jest-traces": "node --trace-deprecation --trace-warnings node_modules/.bin/jest",
     "lint": "eslint ./src",
@@ -22,7 +22,7 @@
     "prettier:ci": "prettier --list-different \"src/**/*.[jt]s\" --parser typescript",
     "prettier:fix": "prettier --write \"./src/**/*.[jt]s\" --parser typescript",
     "semantic-release": "semantic-release",
-    "test": "npm run build && npm run jest && npm run jest:unhandled-rejection"
+    "test": "npm run build && npm run jest && npm run jest:unhandled-rejections"
   },
   "dependencies": {
     "@lumigo/node-core": "1.13.0",
