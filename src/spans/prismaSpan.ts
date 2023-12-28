@@ -14,7 +14,7 @@ export const createPrismaSpan = (
     started: requestMetadata.started,
     model: prismaFields.model,
     operation: prismaFields.operation,
-    queryArgs: payloadStringify(prismaFields.queryArgs)
+    queryArgs: payloadStringify(prismaFields.queryArgs),
   };
 };
 

@@ -40,7 +40,9 @@ describe('Prisma', () => {
       // Override constructor
       prismaClientLibrary.PrismaClient = function () {
         return {
-          $extends: () => { throw new Error('This is very bad!'); },
+          $extends: () => {
+            throw new Error('This is very bad!');
+          },
         };
       };
 
@@ -194,17 +196,15 @@ describe('Prisma', () => {
         .withStarted(rawQuerySpan.started)
         .withEnded(rawQuerySpan.ended)
         .withOperation('$queryRaw')
-        .withQueryArgs(
-          `{"values":["${userId}"],"strings":["SELECT * FROM User WHERE id = ",";"]}`
-        )
+        .withQueryArgs(`{"values":["${userId}"],"strings":["SELECT * FROM User WHERE id = ",";"]}`)
         .withResult(`[]`)
         .build();
 
       expect(rawQuerySpan).toEqual(expectedRawQuerySpan);
     });
 
-    describe("handles long payloads", () => {
-      test("handles long query payloads", async () => {
+    describe('handles long payloads', () => {
+      test('handles long query payloads', async () => {
         await client.user.findMany({
           where: {
             id: { in: [...Array(2000).keys()].map(() => -1) },
@@ -227,10 +227,12 @@ describe('Prisma', () => {
           .build();
 
         expect(findUsersSpan).toEqual(expectedFindAllUsersSpan);
-      })
+      });
 
-      test("handles long result payloads", async () => {
-        const users = Array(30).fill(0).map(() => ({ name: getRandomId(), email: getRandomId() }));
+      test('handles long result payloads', async () => {
+        const users = Array(30)
+          .fill(0)
+          .map(() => ({ name: getRandomId(), email: getRandomId() }));
         await Promise.all(users.map((user) => client.user.create({ data: user })));
 
         await client.user.findMany();
@@ -252,7 +254,7 @@ describe('Prisma', () => {
           .build();
 
         expect(findAllUsersSpan).toEqual(expectedFindAllUsersSpan);
-      })
-    })
+      });
+    });
   });
 });
