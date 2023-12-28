@@ -44,7 +44,7 @@ export const hookPrisma = (prismaClientLibrary: unknown | null = null) => {
   const prismaLib = prismaClientLibrary ? prismaClientLibrary : safeRequire('@prisma/client');
 
   if (!prismaLib) {
-    logger.debug('Prisma client not found, skipping hook');
+    logger.debug('@prisma/client not found, skipping hook');
     return;
   }
 
