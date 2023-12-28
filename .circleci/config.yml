@@ -1,11 +1,11 @@
 version: 2.1
 
 orbs:
-  lumigo-orb: &lumigo_orb_version lumigo/lumigo-orb@volatile
+  lumigo-orb: &lumigo_orb_version lumigo/lumigo-orb@dev:ff42a1e
 
 defaults: &defaults
   docker:
-    - image: lumigo/ci:latest
+    - image: lumigo/ci:node16
       auth:
         username: lumigo
         password: $DOCKERHUB_PASSWORD
