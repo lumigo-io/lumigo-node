@@ -17,6 +17,14 @@ describe('Prisma', () => {
       prismaClientLibrary = require('@prisma/client');
     });
 
+    describe('with no module installed', () => {
+      test('does not fail on no client library', () => {
+        const requireFn = () => undefined;
+
+        expect(() => hookPrisma(undefined, requireFn)).not.toThrow();
+      });
+    });
+
     test('does not fail on no $extends hook', async () => {
       // Override constructor
       prismaClientLibrary.PrismaClient = function () {

@@ -40,8 +40,8 @@ async function queryExtension({ query, args, model, operation }) {
   }
 }
 
-export const hookPrisma = (prismaClientLibrary: unknown | null = null) => {
-  const prismaLib = prismaClientLibrary ? prismaClientLibrary : safeRequire('@prisma/client');
+export const hookPrisma = (prismaClientLibrary: unknown | null = null, requireFn = safeRequire) => {
+  const prismaLib = prismaClientLibrary ? prismaClientLibrary : requireFn('@prisma/client');
 
   if (!prismaLib) {
     logger.debug('@prisma/client not found, skipping hook');
