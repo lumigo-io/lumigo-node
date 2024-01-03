@@ -9,7 +9,7 @@ import { AxiosMocker } from './axiosMocker';
 import { ConsoleMocker, ConsoleWritesForTesting } from './consoleMocker';
 import { HttpsRequestsForTesting, HttpsScenarioBuilder } from './httpsMocker';
 import { MongoMockerEventEmitter } from './mongodbEventEmitterMocker';
-import {unsetDebug} from "../src/utils";
+import { unsetDebug } from "../src/utils";
 
 jest.mock('../package.json');
 jest.mock('https');

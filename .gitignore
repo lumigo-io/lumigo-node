@@ -15,3 +15,7 @@ d_example/
 globalConfig.json
 
 lumigo_wrapper
+
+# Prisma test-related files - only the schema file is used by the Jest setup flow
+testUtils/prisma/**
+!testUtils/prisma/schema.prisma

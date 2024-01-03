@@ -50,6 +50,7 @@ export const MSSQL_SPAN = 'msSql';
 export const MYSQL_SPAN = 'mySql';
 export const NEO4J_SPAN = 'neo4j';
 export const ENRICHMENT_SPAN = 'enrichment';
+export const PRISMA_SPAN = 'prisma';
 
 export const getSpanInfo = (): SpanInfo => {
   const tracer = getTracerInfo();

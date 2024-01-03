@@ -16,6 +16,7 @@ module.exports = {
   modulePaths: ['<rootDir>/dist'],
   roots: ['<rootDir>/src'],
   setupFilesAfterEnv: ['./testUtils/jest.setup.js'],
+  globalSetup: './testUtils/prismaSetup.js',
   silent: true,
   watchPathIgnorePatterns: ['globalConfig'],
 };
