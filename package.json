@@ -26,7 +26,7 @@
   "dependencies": {
     "@lumigo/node-core": "1.13.0",
     "agentkeepalive": "^4.1.4",
-    "axios": "0.24.0",
+    "axios": "1.6.5",
     "shimmer": "1.2.1",
     "utf8": "^3.0.0"
   },
