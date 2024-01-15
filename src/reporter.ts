@@ -12,7 +12,13 @@ import {
 import * as logger from './logger';
 import { HttpSpansAgent } from './httpSpansAgent';
 import { payloadStringify } from './utils/payloadStringify';
-import { decodeHttpBody } from './spans/awsSpan';
+import {
+  decodeHttpBody,
+  FUNCTION_SPAN,
+  getSpanInfo,
+  getSpanMetadata,
+  spansPrioritySorter,
+} from './spans/awsSpan';
 import untruncateJson from './tools/untrancateJson';
 export const NUMBER_OF_SPANS_IN_REPORT_OPTIMIZATION = 200;
 
@@ -115,6 +121,41 @@ export function scrubSpans(resultSpans: any[]) {
   return resultSpans.filter((span) => safeExecute(scrubSpan, 'Failed to scrub span')(span));
 }
 
+export function getPrioritizedSpans(spans: any[], maxSendBytes: number): any[] {
+  logger.debug('Using smart spans prioritization');
+  spans.sort(spansPrioritySorter);
+  let currentSize = 0;
+  const spansToSendSizes = {};
+  const spansToSend = {};
+
+  // First we try to take only the spans metadata
+  for (let index = 0; index < spans.length; index++) {
+    const spanMetadata = getSpanMetadata(spans[index]);
+    spansToSendSizes[index] = 0;
+    if (spanMetadata == undefined) continue;
+    const spanMetadataSize = getJSONBase64Size(spanMetadata);
+
+    if (currentSize + spanMetadata < maxSendBytes) {
+      spansToSendSizes[index] = spanMetadataSize;
+      spansToSend[index] = spanMetadata;
+      currentSize += spanMetadataSize;
+    }
+  }
+
+  // Replace metadata span with full spans
+  for (let index = 0; index < spans.length; index++) {
+    const spanSize = getJSONBase64Size(spans[index]);
+    const spanMetadataSize = spansToSendSizes[index];
+
+    if (currentSize + spanSize - spanMetadataSize < maxSendBytes) {
+      spansToSend[index] = spans[index];
+      currentSize += spanSize - spanMetadataSize;
+    }
+  }
+
+  return Object.values(spansToSend);
+}
+
 // We muted the spans itself to keep the memory footprint of the tracer to a minimum
 export const forgeAndScrubRequestBody = (spans, maxSendBytes): string | undefined => {
   const start = new Date().getTime();
@@ -124,13 +165,9 @@ export const forgeAndScrubRequestBody = (spans, maxSendBytes): string | undefine
     logger.debug(
       `Starting trim spans [${spans.length}] bigger than: [${maxSendBytes}] before send`
     );
-
-    const functionEndSpan = spans.pop();
-    spans.sort((a, b) => (spanHasErrors(a) ? -1 : spanHasErrors(b) ? 1 : 0));
-    let totalSize = getJSONBase64Size(functionEndSpan) + getJSONBase64Size(spans);
-    while (totalSize > maxSendBytes && spans.length > 0)
-      totalSize -= getJSONBase64Size(spans.pop());
-    spans.push(functionEndSpan);
+    if (getJSONBase64Size(spans) > maxSendBytes && spans.length > 0) {
+      spans = getPrioritizedSpans(spans, maxSendBytes);
+    }
   }
   spans = scrubSpans(spans);
   if (originalSize - spans.length > 0) {

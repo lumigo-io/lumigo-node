@@ -7,6 +7,7 @@ import * as reporter from './reporter';
 import { scrubSpans, sendSpans } from './reporter';
 import * as utils from './utils';
 import { getEventEntitySize, getJSONBase64Size, setDebug } from './utils';
+import { FUNCTION_SPAN, HTTP_SPAN } from './spans/awsSpan';
 
 describe('reporter', () => {
   test('sendSingleSpan', async () => {
@@ -44,16 +45,16 @@ describe('reporter', () => {
   });
 
   test('sendSpans - use tracerInputs', async () => {
-    TracerGlobals.setTracerInputs({ maxSizeForRequest: 10 });
+    TracerGlobals.setTracerInputs({ maxSizeForRequest: 50 });
     const spans = [
       { a: 'b', c: 'd' },
-      { e: 'f', g: 'h' },
+      { e: 'f', g: 'h', type: FUNCTION_SPAN },
     ];
 
     await reporter.sendSpans(spans);
 
     const sentSpans = AxiosMocker.getSentSpans();
-    expect(sentSpans).toEqual([[{ e: 'f', g: 'h' }]]);
+    expect(sentSpans).toEqual([[{ e: 'f', g: 'h', type: FUNCTION_SPAN }]]);
   });
 
   test('sendSpans - simple flow', async () => {
@@ -117,11 +118,15 @@ describe('reporter', () => {
   });
 
   test('forgeRequestBody - simple flow', async () => {
-    const dummy = 'dummy';
-    const dummyEnd = 'dummyEnd';
-    const spans = [{ dummy }, { dummy }, { dummyEnd }];
+    const dummy = { dummy: 'dummy', type: HTTP_SPAN };
+    const dummyEnd = { dummy: 'dummyEnd', type: FUNCTION_SPAN };
+    const spans = [
+      JSON.parse(JSON.stringify(dummy)),
+      JSON.parse(JSON.stringify(dummy)),
+      JSON.parse(JSON.stringify(dummyEnd)),
+    ];
 
-    const expectedResult = [{ dummy }, { dummyEnd }];
+    const expectedResult = [dummyEnd, dummy];
     const expectedResultSize = getJSONBase64Size(expectedResult);
 
     expect(reporter.forgeAndScrubRequestBody(spans, expectedResultSize)).toEqual(
@@ -719,12 +724,12 @@ describe('reporter', () => {
   });
 
   test('forgeRequestBody - cut spans', async () => {
-    const dummy = 'dummy';
-    const dummyEnd = 'dummyEnd';
-    const error = 'error';
+    const dummy = { dummy: 'dummy', type: HTTP_SPAN };
+    const end = { end: 'dummyEnd', type: FUNCTION_SPAN };
+    const error = { dummy: 'dummy', type: HTTP_SPAN, error: 'error' };
 
-    const spans = [{ dummy }, { dummy, error }, { dummyEnd }];
-    const expectedResult = [{ dummy, error }, { dummyEnd }];
+    const spans = [dummy, error, end];
+    const expectedResult = [JSON.parse(JSON.stringify(end)), JSON.parse(JSON.stringify(error))];
     const expectedResultSize = getJSONBase64Size(expectedResult);
 
     expect(reporter.forgeAndScrubRequestBody(spans, expectedResultSize)).toEqual(
