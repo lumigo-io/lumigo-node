@@ -24,3 +24,12 @@ jobs:
         with:
           disallowScopes: |
             release
+          types: |
+            build
+            ci
+            docs
+            feat
+            fix
+            perf
+            refactor
+            test
