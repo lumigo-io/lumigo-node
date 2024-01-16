@@ -82,16 +82,7 @@ export const getSpanPriority = (span): number => {
 };
 
 export const spansPrioritySorter = (span1: any, span2: any): number => {
-  const span1Priority = getSpanPriority(span1);
-  const span2Priority = getSpanPriority(span2);
-
-  if (span1Priority < span2Priority) {
-    return -1;
-  } else if (span1Priority > span2Priority) {
-    return 1;
-  } else {
-    return 0;
-  }
+  return Math.sign(getSpanPriority(span1) - getSpanPriority(span2));
 };
 
 export const getSpanMetadata = (span: any): any => {

@@ -51,12 +51,6 @@ export const sendSpans = async (spans: any[]): Promise<void> => {
   safeExecute(logSpans)(rtt, spans);
 };
 
-export const shouldTrim = (spans, maxSendBytes: number): boolean => {
-  return (
-    spans.length > NUMBER_OF_SPANS_IN_REPORT_OPTIMIZATION || getJSONBase64Size(spans) > maxSendBytes
-  );
-};
-
 const isJsonContent = (payload: any, headers: Object) => {
   return isString(payload) && headers['content-type'] && headers['content-type'].includes('json');
 };
@@ -131,7 +125,7 @@ export function getPrioritizedSpans(spans: any[], maxSendBytes: number): any[] {
   for (let index = 0; index < spans.length; index++) {
     const spanMetadata = getSpanMetadata(spans[index]);
     spansToSendSizes[index] = 0;
-    if (spanMetadata == undefined) continue;
+    if (spanMetadata === undefined) continue;
     const spanMetadataSize = getJSONBase64Size(spanMetadata);
 
     if (currentSize + spanMetadataSize < maxSendBytes) {
@@ -165,14 +159,16 @@ export const forgeAndScrubRequestBody = (
   const start = new Date().getTime();
   const beforeLength = spans.length;
   const originalSize = spans.length;
+  const size = getJSONBase64Size(spans);
 
-  if (!isPruneTraceOff() && shouldTrim(spans, maxRequestSize)) {
+  if (
+    (!isPruneTraceOff() && spans.length > NUMBER_OF_SPANS_IN_REPORT_OPTIMIZATION) ||
+    size > maxSendBytes
+  ) {
     logger.debug(
       `Starting trim spans [${spans.length}] bigger than: [${maxRequestSize}] before send`
     );
-    if (getJSONBase64Size(spans) > maxRequestSize && spans.length > 0) {
-      spans = getPrioritizedSpans(spans, maxRequestSize);
-    }
+    spans = getPrioritizedSpans(spans, maxRequestSize);
   }
   spans = scrubSpans(spans);
   if (originalSize - spans.length > 0) {

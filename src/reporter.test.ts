@@ -145,8 +145,8 @@ describe('reporter', () => {
       },
     };
 
-    const spans = [error, end];
-    const expectedSpans = [error, end];
+    const spans = [end, error];
+    const expectedSpans = [end, error];
     const size = getJSONBase64Size(expectedSpans);
     TracerGlobals.setTracerInputs({ maxSizeForRequest: size - 30, maxSizeForRequestOnError: size });
 
@@ -974,7 +974,6 @@ describe('reporter', () => {
 
     const spy = jest.spyOn(utils, 'getJSONBase64Size');
 
-    expect(reporter.shouldTrim(spans, 1)).toEqual(true);
     expect(spy).not.toBeCalled();
   });
 

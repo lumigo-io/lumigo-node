@@ -6,6 +6,7 @@ import {
   getAutoTagKeys,
   getJSONBase64Size,
   getMaxRequestSize,
+  getMaxRequestSizeOnError,
   isLambdaTraced,
   spanHasErrors,
 } from './utils';
@@ -26,8 +27,8 @@ export class SpansContainer {
   private static currentSpansSize: number = 0;
 
   static addSpan(span: BasicSpan): boolean {
-    // Memory optimization
-    if (spanHasErrors(span) || getMaxRequestSize() > this.currentSpansSize) {
+    // Memory optimization, take up to 10x maxSize because of smart span selection logic
+    if (spanHasErrors(span) || getMaxRequestSizeOnError() * 10 > this.currentSpansSize) {
       this.spans[span.id] = span;
       this.currentSpansSize += getJSONBase64Size(span);
       logger.debug('Span created', span);
