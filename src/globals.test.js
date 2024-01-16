@@ -1,6 +1,10 @@
 import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
 import * as globals from './globals';
-import { DEFAULT_MAX_SIZE_FOR_REQUEST, MAX_TRACER_ADDED_DURATION_ALLOWED } from './globals';
+import {
+  DEFAULT_MAX_SIZE_FOR_REQUEST,
+  DEFAULT_MAX_SIZE_FOR_REQUEST_ON_ERROR,
+  MAX_TRACER_ADDED_DURATION_ALLOWED,
+} from './globals';
 import { getMaxRequestSize } from './utils';
 
 describe('globals', () => {
@@ -228,6 +232,7 @@ describe('globals', () => {
     const edgeHost = 'zarathustra.com';
     const isStepFunction = false;
     const maxSizeForRequest = 1234;
+    const maxSizeForRequestOnError = 12345;
     globals.TracerGlobals.setTracerInputs({
       token,
       debug,
@@ -235,6 +240,7 @@ describe('globals', () => {
       switchOff,
       isStepFunction,
       maxSizeForRequest,
+      maxSizeForRequestOnError,
     });
     expect(globals.TracerGlobals.getTracerInputs()).toEqual({
       token,
@@ -244,6 +250,7 @@ describe('globals', () => {
       isStepFunction,
       lambdaTimeout: MAX_TRACER_ADDED_DURATION_ALLOWED,
       maxSizeForRequest,
+      maxSizeForRequestOnError,
     });
     globals.TracerGlobals.clearTracerInputs();
     expect(globals.TracerGlobals.getTracerInputs()).toEqual({
@@ -254,6 +261,7 @@ describe('globals', () => {
       switchOff: false,
       isStepFunction: false,
       maxSizeForRequest: DEFAULT_MAX_SIZE_FOR_REQUEST,
+      maxSizeForRequestOnError: DEFAULT_MAX_SIZE_FOR_REQUEST_ON_ERROR,
     });
   });
 
@@ -296,6 +304,7 @@ describe('globals', () => {
       isStepFunction: false,
       lambdaTimeout: MAX_TRACER_ADDED_DURATION_ALLOWED,
       maxSizeForRequest: DEFAULT_MAX_SIZE_FOR_REQUEST,
+      maxSizeForRequestOnError: DEFAULT_MAX_SIZE_FOR_REQUEST_ON_ERROR,
     });
   });
 

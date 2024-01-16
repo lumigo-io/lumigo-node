@@ -17,7 +17,7 @@ import {
   isEmptyString,
   isEncodingType,
   isObject,
-  LUMIGO_MAX_ENTRY_SIZE,
+  DEFAULT_LUMIGO_MAX_ENTRY_SIZE,
   parseErrorObject,
   parseQueryParams,
   recursiveGetKey,
@@ -281,8 +281,8 @@ describe('utils', () => {
   });
 
   test('getEventEntitySize MAX_EVENT_ENTITY_SIZE', () => {
-    expect(utils.getEventEntitySize()).toBe(LUMIGO_MAX_ENTRY_SIZE);
-    expect(utils.getEventEntitySize(true)).toBe(LUMIGO_MAX_ENTRY_SIZE * 2);
+    expect(utils.getEventEntitySize()).toBe(DEFAULT_LUMIGO_MAX_ENTRY_SIZE);
+    expect(utils.getEventEntitySize(true)).toBe(DEFAULT_LUMIGO_MAX_ENTRY_SIZE * 2);
     process.env.MAX_EVENT_ENTITY_SIZE = '2048';
     expect(utils.getEventEntitySize()).toBe(2048);
   });
@@ -293,9 +293,21 @@ describe('utils', () => {
     expect(utils.getEventEntitySize()).toBe(2048);
   });
 
+  test('getEventEntitySize LUMIGO_MAX_ENTRY_SIZE_ON_ERROR', () => {
+    delete process.env.MAX_EVENT_ENTITY_SIZE_ON_ERROR;
+    process.env.LUMIGO_MAX_ENTRY_SIZE_ON_ERROR = '10000';
+    expect(utils.getEventEntitySize(true)).toBe(10000);
+  });
+
+  test('getEventEntitySize LUMIGO_MAX_ENTRY_SIZE_ON_ERROR is 2x LUMIGO_MAX_ENTRY_SIZE', () => {
+    delete process.env.MAX_EVENT_ENTITY_SIZE;
+    process.env.LUMIGO_MAX_ENTRY_SIZE = '4096';
+    expect(utils.getEventEntitySize(true)).toBe(4096 * 2);
+  });
+
   test('getEventEntitySize NaN', () => {
     process.env.MAX_EVENT_ENTITY_SIZE = 'A 2048';
-    expect(utils.getEventEntitySize()).toBe(LUMIGO_MAX_ENTRY_SIZE);
+    expect(utils.getEventEntitySize()).toBe(DEFAULT_LUMIGO_MAX_ENTRY_SIZE);
   });
 
   test('getConnectionTimeout => simple flow', () => {

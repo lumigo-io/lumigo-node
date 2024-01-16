@@ -2,6 +2,7 @@ import {
   getEventEntitySize,
   getJSONBase64Size,
   getMaxRequestSize,
+  getMaxRequestSizeOnError,
   isPruneTraceOff,
   isSendOnlyIfErrors,
   isString,
@@ -12,13 +13,7 @@ import {
 import * as logger from './logger';
 import { HttpSpansAgent } from './httpSpansAgent';
 import { payloadStringify } from './utils/payloadStringify';
-import {
-  decodeHttpBody,
-  FUNCTION_SPAN,
-  getSpanInfo,
-  getSpanMetadata,
-  spansPrioritySorter,
-} from './spans/awsSpan';
+import { decodeHttpBody, getSpanMetadata, spansPrioritySorter } from './spans/awsSpan';
 import untruncateJson from './tools/untrancateJson';
 export const NUMBER_OF_SPANS_IN_REPORT_OPTIMIZATION = 200;
 
@@ -40,7 +35,11 @@ export const sendSpans = async (spans: any[]): Promise<void> => {
     logger.debug('No Spans was sent, `SEND_ONLY_IF_ERROR` is on and no span has error');
     return;
   }
-  const reqBody = safeExecute(forgeAndScrubRequestBody)(spans, getMaxRequestSize());
+  const reqBody = safeExecute(forgeAndScrubRequestBody)(
+    spans,
+    getMaxRequestSize(),
+    getMaxRequestSizeOnError()
+  );
 
   const roundTripStart = Date.now();
   if (reqBody) {
@@ -157,16 +156,22 @@ export function getPrioritizedSpans(spans: any[], maxSendBytes: number): any[] {
 }
 
 // We muted the spans itself to keep the memory footprint of the tracer to a minimum
-export const forgeAndScrubRequestBody = (spans, maxSendBytes): string | undefined => {
+export const forgeAndScrubRequestBody = (
+  spans,
+  maxSendBytes,
+  maxSendBytesOnError
+): string | undefined => {
+  const maxRequestSize = spans.some(spanHasErrors) ? maxSendBytesOnError : maxSendBytes;
   const start = new Date().getTime();
   const beforeLength = spans.length;
   const originalSize = spans.length;
-  if (!isPruneTraceOff() && shouldTrim(spans, maxSendBytes)) {
+
+  if (!isPruneTraceOff() && shouldTrim(spans, maxRequestSize)) {
     logger.debug(
-      `Starting trim spans [${spans.length}] bigger than: [${maxSendBytes}] before send`
+      `Starting trim spans [${spans.length}] bigger than: [${maxRequestSize}] before send`
     );
-    if (getJSONBase64Size(spans) > maxSendBytes && spans.length > 0) {
-      spans = getPrioritizedSpans(spans, maxSendBytes);
+    if (getJSONBase64Size(spans) > maxRequestSize && spans.length > 0) {
+      spans = getPrioritizedSpans(spans, maxRequestSize);
     }
   }
   spans = scrubSpans(spans);

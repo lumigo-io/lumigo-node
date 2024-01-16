@@ -119,6 +119,79 @@ describe('reporter', () => {
     expect(sentSpans).toEqual([spans]);
   });
 
+  test(`forgeAndScrubRequestBody - use requestSizeOnError when having error span`, async () => {
+    const end = {
+      end: 'dummyEnd',
+      type: FUNCTION_SPAN,
+      envs: { firstEnvKey: 'First environment variable value' },
+    };
+    const error = {
+      dummy: 'dummy',
+      type: HTTP_SPAN,
+      error: 'error',
+      info: {
+        httpInfo: {
+          host: 'your.mind.com',
+          request: {
+            host: 'your.mind.com',
+            headers: {
+              'content-type': 'json',
+            },
+            body: JSON.stringify({
+              body: 'no response because we have an error',
+            }),
+          },
+        },
+      },
+    };
+
+    const spans = [error, end];
+    const expectedSpans = [error, end];
+    const size = getJSONBase64Size(expectedSpans);
+    TracerGlobals.setTracerInputs({ maxSizeForRequest: size - 30, maxSizeForRequestOnError: size });
+
+    await reporter.sendSpans(spans);
+
+    const sentSpans = AxiosMocker.getSentSpans();
+    expect(sentSpans).toEqual([expectedSpans]);
+  });
+
+  test(`forgeAndScrubRequestBody - don't use requestSizeOnError when all spans succeed`, async () => {
+    const end = {
+      end: 'dummyEnd',
+      type: FUNCTION_SPAN,
+      envs: { firstEnvKey: 'First environment variable value' },
+    };
+    const dummy = {
+      dummy: 'dummy',
+      type: HTTP_SPAN,
+      info: {
+        httpInfo: {
+          host: 'your.mind.com',
+          request: {
+            host: 'your.mind.com',
+            headers: {
+              'content-type': 'json',
+            },
+            body: JSON.stringify({
+              body: 'no response because we have an error',
+            }),
+          },
+        },
+      },
+    };
+
+    const spans = [dummy, dummy, end];
+    const expectedSpans = [end, dummy];
+    const size = getJSONBase64Size(expectedSpans);
+    TracerGlobals.setTracerInputs({ maxSizeForRequest: size, maxSizeForRequestOnError: size * 2 });
+
+    await reporter.sendSpans(spans);
+
+    const sentSpans = AxiosMocker.getSentSpans();
+    expect(sentSpans).toEqual([expectedSpans]);
+  });
+
   test(`forgeAndScrubRequestBody - with smart prioritization only metadata`, async () => {
     const dummy = {
       dummy: 'dummy',
@@ -177,7 +250,7 @@ describe('reporter', () => {
     const spans = [dummy, error, end];
     const expectedSpans = [endMetadata, errorMetadata, dummyMetadata];
     const size = getJSONBase64Size(expectedSpans);
-    TracerGlobals.setTracerInputs({ maxSizeForRequest: size });
+    TracerGlobals.setTracerInputs({ maxSizeForRequest: size, maxSizeForRequestOnError: size });
 
     await reporter.sendSpans(spans);
 
@@ -241,7 +314,7 @@ describe('reporter', () => {
     const spans = [dummy, error, end];
     const expectedSpans = [end, error, dummyMetadata];
     const size = getJSONBase64Size(expectedSpans);
-    TracerGlobals.setTracerInputs({ maxSizeForRequest: size });
+    TracerGlobals.setTracerInputs({ maxSizeForRequest: size, maxSizeForRequestOnError: size });
 
     await reporter.sendSpans(spans);
 
@@ -261,9 +334,9 @@ describe('reporter', () => {
     const expectedResult = [dummyEnd, dummy];
     const expectedResultSize = getJSONBase64Size(expectedResult);
 
-    expect(reporter.forgeAndScrubRequestBody(spans, expectedResultSize)).toEqual(
-      JSON.stringify(expectedResult)
-    );
+    expect(
+      reporter.forgeAndScrubRequestBody(spans, expectedResultSize, expectedResultSize)
+    ).toEqual(JSON.stringify(expectedResult));
   });
 
   describe('forgeAndScrubRequestBody parsing tests', () => {
@@ -321,7 +394,11 @@ describe('reporter', () => {
       ];
       const expectedResultSize = getJSONBase64Size(spans);
 
-      const actual = reporter.forgeAndScrubRequestBody(spans, expectedResultSize);
+      const actual = reporter.forgeAndScrubRequestBody(
+        spans,
+        expectedResultSize,
+        expectedResultSize
+      );
       expect(actual).toEqual(JSON.stringify(expectedResult));
     });
 
@@ -365,7 +442,9 @@ describe('reporter', () => {
       ];
       const expectedResultSize = getJSONBase64Size(spans);
       process.env.LUMIGO_DOMAINS_SCRUBBER = '["mind"]';
-      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize));
+      const actual = JSON.parse(
+        reporter.forgeAndScrubRequestBody(spans, expectedResultSize, expectedResultSize)
+      );
       expect(actual).toEqual(expected);
     });
     test('forgeAndScrubRequestBody', () => {
@@ -410,7 +489,9 @@ describe('reporter', () => {
       ];
       const expectedResultSize = getJSONBase64Size(spans);
 
-      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize));
+      const actual = JSON.parse(
+        reporter.forgeAndScrubRequestBody(spans, expectedResultSize, expectedResultSize)
+      );
       expect(actual).toEqual(expected);
     });
 
@@ -465,7 +546,9 @@ describe('reporter', () => {
       ];
       const expectedResultSize = getJSONBase64Size(spans);
 
-      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize));
+      const actual = JSON.parse(
+        reporter.forgeAndScrubRequestBody(spans, expectedResultSize, expectedResultSize)
+      );
       expect(actual).toEqual(expected);
     });
 
@@ -522,7 +605,9 @@ describe('reporter', () => {
       ];
       const expectedResultSize = getJSONBase64Size(spans);
 
-      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize));
+      const actual = JSON.parse(
+        reporter.forgeAndScrubRequestBody(spans, expectedResultSize, expectedResultSize)
+      );
       expect(actual).toEqual(expected);
     });
 
@@ -577,7 +662,9 @@ describe('reporter', () => {
       ];
       const expectedResultSize = getJSONBase64Size(spans);
 
-      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize));
+      const actual = JSON.parse(
+        reporter.forgeAndScrubRequestBody(spans, expectedResultSize, expectedResultSize)
+      );
       expect(actual).toEqual(expected);
     });
 
@@ -634,7 +721,9 @@ describe('reporter', () => {
       ];
       const expectedResultSize = getJSONBase64Size(spans);
 
-      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize));
+      const actual = JSON.parse(
+        reporter.forgeAndScrubRequestBody(spans, expectedResultSize, expectedResultSize)
+      );
       expect(actual).toEqual(expected);
     });
     test('forgeAndScrubRequestBody short response', () => {
@@ -679,7 +768,9 @@ describe('reporter', () => {
       ];
       const expectedResultSize = getJSONBase64Size(spans);
 
-      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize));
+      const actual = JSON.parse(
+        reporter.forgeAndScrubRequestBody(spans, expectedResultSize, expectedResultSize)
+      );
       expect(actual).toEqual(expected);
     });
 
@@ -725,7 +816,9 @@ describe('reporter', () => {
       ];
       const expectedResultSize = getJSONBase64Size(spans);
 
-      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize));
+      const actual = JSON.parse(
+        reporter.forgeAndScrubRequestBody(spans, expectedResultSize, expectedResultSize)
+      );
       expect(actual).toEqual(expected);
     });
 
@@ -775,7 +868,9 @@ describe('reporter', () => {
       ];
       const expectedResultSize = getJSONBase64Size(spans);
 
-      const actual = JSON.parse(reporter.forgeAndScrubRequestBody(spans, expectedResultSize));
+      const actual = JSON.parse(
+        reporter.forgeAndScrubRequestBody(spans, expectedResultSize, expectedResultSize)
+      );
       expect(actual).toEqual(expected);
     });
 
@@ -835,10 +930,14 @@ describe('reporter', () => {
       const expectedResultSizeFail = getJSONBase64Size(spansFail);
 
       const spanSuccess = JSON.parse(
-        reporter.forgeAndScrubRequestBody(spansSuccess, expectedResultSizeSuccess)
+        reporter.forgeAndScrubRequestBody(
+          spansSuccess,
+          expectedResultSizeSuccess,
+          expectedResultSizeSuccess
+        )
       )[0];
       const spanError = JSON.parse(
-        reporter.forgeAndScrubRequestBody(spansFail, expectedResultSizeFail)
+        reporter.forgeAndScrubRequestBody(spansFail, expectedResultSizeFail, expectedResultSizeFail)
       )[0];
       expect(spanError.info.httpInfo.request.body.length).toBeGreaterThan(
         spanSuccess.info.httpInfo.request.body.length * 1.8 + 1
@@ -864,9 +963,9 @@ describe('reporter', () => {
     const expectedResult = [JSON.parse(JSON.stringify(end)), JSON.parse(JSON.stringify(error))];
     const expectedResultSize = getJSONBase64Size(expectedResult);
 
-    expect(reporter.forgeAndScrubRequestBody(spans, expectedResultSize)).toEqual(
-      JSON.stringify(expectedResult)
-    );
+    expect(
+      reporter.forgeAndScrubRequestBody(spans, expectedResultSize, expectedResultSize)
+    ).toEqual(JSON.stringify(expectedResult));
   });
 
   test('forgeRequestBody - cut spans - skip initiate stringify (performance boost)', async () => {
@@ -886,12 +985,12 @@ describe('reporter', () => {
     const error = 'error';
     const spans = [{ dummy }, { dummy, error }, { dummyEnd }];
 
-    expect(reporter.forgeAndScrubRequestBody(spans, 100)).toEqual(JSON.stringify(spans));
-    expect(reporter.forgeAndScrubRequestBody([], 100)).toEqual(undefined);
+    expect(reporter.forgeAndScrubRequestBody(spans, 100, 100)).toEqual(JSON.stringify(spans));
+    expect(reporter.forgeAndScrubRequestBody([], 100, 100)).toEqual(undefined);
   });
 
   test('forgeRequestBody - empty list', async () => {
-    expect(reporter.forgeAndScrubRequestBody([], 100)).toEqual(undefined);
+    expect(reporter.forgeAndScrubRequestBody([], 100, 100)).toEqual(undefined);
   });
 
   test('scrubSpans missing http fields', () => {
@@ -1039,7 +1138,7 @@ describe('reporter', () => {
     expect(logs.length).toEqual(2);
     expect(logs[0].msg).toEqual('#LUMIGO# - WARNING - "Error in Lumigo tracer"');
     expect(logs[1].msg).toEqual('#LUMIGO# - WARNING - "Error in Lumigo tracer"');
-    expect(JSON.parse(logs[0].obj).message).toEqual('resultSpans.filter is not a function');
+    expect(JSON.parse(logs[0].obj).message).toEqual('spans.some is not a function');
     expect(JSON.parse(logs[1].obj).message).toEqual('spans.map is not a function');
     expect(JSON.parse(logs[0].obj).stack).toBeTruthy();
     expect(JSON.parse(logs[1].obj).stack).toBeTruthy();
