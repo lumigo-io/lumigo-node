@@ -24,3 +24,6 @@ jobs:
         with:
           disallowScopes: |
             release
+          types: |
+            fix
+            feat
