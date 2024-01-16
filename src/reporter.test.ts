@@ -7,7 +7,7 @@ import * as reporter from './reporter';
 import { scrubSpans, sendSpans } from './reporter';
 import * as utils from './utils';
 import { getEventEntitySize, getJSONBase64Size, setDebug } from './utils';
-import { FUNCTION_SPAN, HTTP_SPAN } from './spans/awsSpan';
+import { FUNCTION_SPAN, getSpanMetadata, HTTP_SPAN } from './spans/awsSpan';
 
 describe('reporter', () => {
   test('sendSingleSpan', async () => {
@@ -45,16 +45,18 @@ describe('reporter', () => {
   });
 
   test('sendSpans - use tracerInputs', async () => {
-    TracerGlobals.setTracerInputs({ maxSizeForRequest: 50 });
+    const endSpan = { e: 'f', g: 'h', type: FUNCTION_SPAN };
+    const expectedSpans = [JSON.parse(JSON.stringify(endSpan))];
+    TracerGlobals.setTracerInputs({ maxSizeForRequest: 80 });
     const spans = [
-      { a: 'b', c: 'd' },
+      { keyWithData: 'valueWithData', anotherKeyWithData: 'anotherValueWithData' },
       { e: 'f', g: 'h', type: FUNCTION_SPAN },
     ];
 
     await reporter.sendSpans(spans);
 
     const sentSpans = AxiosMocker.getSentSpans();
-    expect(sentSpans).toEqual([[{ e: 'f', g: 'h', type: FUNCTION_SPAN }]]);
+    expect(sentSpans).toEqual([expectedSpans]);
   });
 
   test('sendSpans - simple flow', async () => {
@@ -115,6 +117,136 @@ describe('reporter', () => {
 
     const sentSpans = AxiosMocker.getSentSpans();
     expect(sentSpans).toEqual([spans]);
+  });
+
+  test(`forgeAndScrubRequestBody - with smart prioritization only metadata`, async () => {
+    const dummy = {
+      dummy: 'dummy',
+      type: HTTP_SPAN,
+      info: {
+        httpInfo: {
+          host: 'your.mind.com',
+          request: {
+            host: 'your.mind.com',
+            headers: {
+              'content-type': 'json',
+            },
+            body: JSON.stringify({
+              body: 'aaaaaaaa',
+            }),
+          },
+          response: {
+            headers: {
+              'content-type': 'json',
+            },
+            body: JSON.stringify({
+              longBodyKey: 'body with very long value that we think we need to cut in the middle',
+            }),
+          },
+        },
+      },
+    };
+    const end = {
+      end: 'dummyEnd',
+      type: FUNCTION_SPAN,
+      envs: { firstEnvKey: 'First environment variable value' },
+    };
+    const error = {
+      dummy: 'dummy',
+      type: HTTP_SPAN,
+      error: 'error',
+      info: {
+        httpInfo: {
+          host: 'your.mind.com',
+          request: {
+            host: 'your.mind.com',
+            headers: {
+              'content-type': 'json',
+            },
+            body: JSON.stringify({
+              body: 'no response because we have an error',
+            }),
+          },
+        },
+      },
+    };
+    const dummyMetadata = getSpanMetadata(dummy);
+    const errorMetadata = getSpanMetadata(error);
+    const endMetadata = getSpanMetadata(end);
+
+    const spans = [dummy, error, end];
+    const expectedSpans = [endMetadata, errorMetadata, dummyMetadata];
+    const size = getJSONBase64Size(expectedSpans);
+    TracerGlobals.setTracerInputs({ maxSizeForRequest: size });
+
+    await reporter.sendSpans(spans);
+
+    const sentSpans = AxiosMocker.getSentSpans();
+    expect(sentSpans).toEqual([expectedSpans]);
+  });
+
+  test(`sendSpans - with smart prioritization with partial full spans`, async () => {
+    const dummy = {
+      dummy: 'dummy',
+      type: HTTP_SPAN,
+      info: {
+        httpInfo: {
+          host: 'your.mind.com',
+          request: {
+            host: 'your.mind.com',
+            headers: {
+              'content-type': 'json',
+            },
+            body: JSON.stringify({
+              body: 'aaaaaaaa',
+            }),
+          },
+          response: {
+            headers: {
+              'content-type': 'json',
+            },
+            body: JSON.stringify({
+              longBodyKey: 'body with very long value that we think we need to cut in the middle',
+            }),
+          },
+        },
+      },
+    };
+    const end = {
+      end: 'dummyEnd',
+      type: FUNCTION_SPAN,
+      envs: { firstEnvKey: 'First environment variable value' },
+    };
+    const error = {
+      dummy: 'dummy',
+      type: HTTP_SPAN,
+      error: 'error',
+      info: {
+        httpInfo: {
+          host: 'your.mind.com',
+          request: {
+            host: 'your.mind.com',
+            headers: {
+              'content-type': 'json',
+            },
+            body: JSON.stringify({
+              body: 'no response because we have an error',
+            }),
+          },
+        },
+      },
+    };
+    const dummyMetadata = getSpanMetadata(dummy);
+
+    const spans = [dummy, error, end];
+    const expectedSpans = [end, error, dummyMetadata];
+    const size = getJSONBase64Size(expectedSpans);
+    TracerGlobals.setTracerInputs({ maxSizeForRequest: size });
+
+    await reporter.sendSpans(spans);
+
+    const sentSpans = AxiosMocker.getSentSpans();
+    expect(sentSpans).toEqual([expectedSpans]);
   });
 
   test('forgeRequestBody - simple flow', async () => {

@@ -135,7 +135,7 @@ export function getPrioritizedSpans(spans: any[], maxSendBytes: number): any[] {
     if (spanMetadata == undefined) continue;
     const spanMetadataSize = getJSONBase64Size(spanMetadata);
 
-    if (currentSize + spanMetadata < maxSendBytes) {
+    if (currentSize + spanMetadataSize < maxSendBytes) {
       spansToSendSizes[index] = spanMetadataSize;
       spansToSend[index] = spanMetadata;
       currentSize += spanMetadataSize;

@@ -63,6 +63,13 @@ export class RedisSpanBuilder {
     return this;
   };
 
+  onlyMetadata = () => {
+    delete this._span?.requestArgs;
+    delete this._span?.response;
+    this._span['isMetadata'] = true;
+    return this;
+  }
+
   build = () => {
     return this._span;
   };

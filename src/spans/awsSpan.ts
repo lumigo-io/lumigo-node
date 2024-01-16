@@ -99,45 +99,46 @@ export const getSpanMetadata = (span: any): any => {
   spanCopy['isMetadata'] = true;
 
   if (spanCopy.type === FUNCTION_SPAN) {
-    return {};
+    delete spanCopy?.envs;
+    return spanCopy;
   } else if (spanCopy.type === ENRICHMENT_SPAN) {
     return {};
   } else if (spanCopy.type === HTTP_SPAN) {
-    spanCopy?.request?.remove('headers');
-    spanCopy?.request?.remove('body');
-    spanCopy?.response?.remove('headers');
-    spanCopy?.response?.remove('body');
-    return {};
+    delete spanCopy?.info?.httpInfo?.request?.headers;
+    delete spanCopy?.info?.httpInfo?.request?.body;
+    delete spanCopy?.info?.httpInfo?.response?.headers;
+    delete spanCopy?.info?.httpInfo?.response?.body;
+    return spanCopy;
   } else if (spanCopy.type === MONGO_SPAN) {
-    spanCopy?.remove('request');
-    spanCopy?.remove('response');
+    delete spanCopy?.request;
+    delete spanCopy?.response;
     return spanCopy;
   } else if (spanCopy.type === REDIS_SPAN) {
-    spanCopy?.remove('requestArgs');
-    spanCopy?.remove('response');
+    delete spanCopy?.requestArgs;
+    delete spanCopy?.response;
     return spanCopy;
   } else if (spanCopy.type === NEO4J_SPAN) {
-    spanCopy?.remove('summary');
-    spanCopy?.remove('query');
-    spanCopy?.remove('values');
-    spanCopy?.remove('response');
+    delete spanCopy?.summary;
+    delete spanCopy?.query;
+    delete spanCopy?.values;
+    delete spanCopy?.response;
     return spanCopy;
   } else if (
     spanCopy.type === PG_SPAN ||
     spanCopy.type === MYSQL_SPAN ||
     spanCopy.type === MSSQL_SPAN
   ) {
-    spanCopy?.remove('query');
-    spanCopy?.remove('values');
-    spanCopy?.remove('response');
+    delete spanCopy?.query;
+    delete spanCopy?.values;
+    delete spanCopy?.response;
     return spanCopy;
   } else if (spanCopy.type === PRISMA_SPAN) {
-    spanCopy?.remove('queryArgs');
-    spanCopy?.remove('result');
+    delete spanCopy?.queryArgs;
+    delete spanCopy?.result;
     return spanCopy;
   }
   logger.warn(`Got unknown span type: ${spanCopy.type}`);
-  return {};
+  return spanCopy;
 };
 
 export const getCurrentTransactionId = (): string => {

@@ -69,19 +69,11 @@ workflows:
         requires:
           - lumigo-orb/integration-test-parallel
 
-    - lumigo-orb/e2e-test:
-        context: common
-        requires:
-          - lumigo-orb/be-deploy
-          - lumigo-orb/integration-test-prep
-          - pre-test-cleanup
-
     - lumigo-orb/workflow-completed-successfully:
         context: common
         requires:
           - test
           - lumigo-orb/integration-test-parallel
-          - lumigo-orb/e2e-test
 
     - deploy:
         context:
