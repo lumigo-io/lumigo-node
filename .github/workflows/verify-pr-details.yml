@@ -25,5 +25,11 @@ jobs:
           disallowScopes: |
             release
           types: |
-            fix
+            build
+            ci
+            docs
             feat
+            fix
+            perf
+            refactor
+            test
