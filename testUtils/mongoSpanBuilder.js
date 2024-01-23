@@ -66,6 +66,13 @@ export class MongoSpanBuilder {
     return this;
   };
 
+  onlyMetadata = () => {
+    delete this._span?.request;
+    delete this._span?.response;
+    this._span['isMetadata'] = true;
+    return this;
+  }
+
   build = () => {
     return this._span;
   };

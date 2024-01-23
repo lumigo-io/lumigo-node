@@ -2,6 +2,7 @@ import {
   getEventEntitySize,
   getJSONBase64Size,
   getMaxRequestSize,
+  getMaxRequestSizeOnError,
   isPruneTraceOff,
   isSendOnlyIfErrors,
   isString,
@@ -12,7 +13,7 @@ import {
 import * as logger from './logger';
 import { HttpSpansAgent } from './httpSpansAgent';
 import { payloadStringify } from './utils/payloadStringify';
-import { decodeHttpBody } from './spans/awsSpan';
+import { decodeHttpBody, getSpanMetadata, spansPrioritySorter } from './spans/awsSpan';
 import untruncateJson from './tools/untrancateJson';
 export const NUMBER_OF_SPANS_IN_REPORT_OPTIMIZATION = 200;
 
@@ -34,7 +35,11 @@ export const sendSpans = async (spans: any[]): Promise<void> => {
     logger.debug('No Spans was sent, `SEND_ONLY_IF_ERROR` is on and no span has error');
     return;
   }
-  const reqBody = safeExecute(forgeAndScrubRequestBody)(spans, getMaxRequestSize());
+  const reqBody = safeExecute(forgeAndScrubRequestBody)(
+    spans,
+    getMaxRequestSize(),
+    getMaxRequestSizeOnError()
+  );
 
   const roundTripStart = Date.now();
   if (reqBody) {
@@ -44,12 +49,6 @@ export const sendSpans = async (spans: any[]): Promise<void> => {
   const rtt = roundTripEnd - roundTripStart;
 
   safeExecute(logSpans)(rtt, spans);
-};
-
-export const shouldTrim = (spans, maxSendBytes: number): boolean => {
-  return (
-    spans.length > NUMBER_OF_SPANS_IN_REPORT_OPTIMIZATION || getJSONBase64Size(spans) > maxSendBytes
-  );
 };
 
 const isJsonContent = (payload: any, headers: Object) => {
@@ -115,22 +114,61 @@ export function scrubSpans(resultSpans: any[]) {
   return resultSpans.filter((span) => safeExecute(scrubSpan, 'Failed to scrub span')(span));
 }
 
+export function getPrioritizedSpans(spans: any[], maxSendBytes: number): any[] {
+  logger.debug('Using smart spans prioritization');
+  spans.sort(spansPrioritySorter);
+  let currentSize = 0;
+  const spansToSendSizes = {};
+  const spansToSend = {};
+
+  // First we try to take only the spans metadata
+  for (let index = 0; index < spans.length; index++) {
+    const spanMetadata = getSpanMetadata(spans[index]);
+    spansToSendSizes[index] = 0;
+    if (spanMetadata === undefined) continue;
+    const spanMetadataSize = getJSONBase64Size(spanMetadata);
+
+    if (currentSize + spanMetadataSize < maxSendBytes) {
+      spansToSendSizes[index] = spanMetadataSize;
+      spansToSend[index] = spanMetadata;
+      currentSize += spanMetadataSize;
+    }
+  }
+
+  // Replace metadata span with full spans
+  for (let index = 0; index < spans.length; index++) {
+    const spanSize = getJSONBase64Size(spans[index]);
+    const spanMetadataSize = spansToSendSizes[index];
+
+    if (currentSize + spanSize - spanMetadataSize < maxSendBytes) {
+      spansToSend[index] = spans[index];
+      currentSize += spanSize - spanMetadataSize;
+    }
+  }
+
+  return Object.values(spansToSend);
+}
+
 // We muted the spans itself to keep the memory footprint of the tracer to a minimum
-export const forgeAndScrubRequestBody = (spans, maxSendBytes): string | undefined => {
+export const forgeAndScrubRequestBody = (
+  spans,
+  maxSendBytes,
+  maxSendBytesOnError
+): string | undefined => {
+  const maxRequestSize = spans.some(spanHasErrors) ? maxSendBytesOnError : maxSendBytes;
   const start = new Date().getTime();
   const beforeLength = spans.length;
   const originalSize = spans.length;
-  if (!isPruneTraceOff() && shouldTrim(spans, maxSendBytes)) {
-    logger.debug(
-      `Starting trim spans [${spans.length}] bigger than: [${maxSendBytes}] before send`
-    );
+  const size = getJSONBase64Size(spans);
 
-    const functionEndSpan = spans.pop();
-    spans.sort((a, b) => (spanHasErrors(a) ? -1 : spanHasErrors(b) ? 1 : 0));
-    let totalSize = getJSONBase64Size(functionEndSpan) + getJSONBase64Size(spans);
-    while (totalSize > maxSendBytes && spans.length > 0)
-      totalSize -= getJSONBase64Size(spans.pop());
-    spans.push(functionEndSpan);
+  if (
+    (!isPruneTraceOff() && spans.length > NUMBER_OF_SPANS_IN_REPORT_OPTIMIZATION) ||
+    size > maxSendBytes
+  ) {
+    logger.debug(
+      `Starting trim spans [${spans.length}] bigger than: [${maxRequestSize}] before send`
+    );
+    spans = getPrioritizedSpans(spans, maxRequestSize);
   }
   spans = scrubSpans(spans);
   if (originalSize - spans.length > 0) {

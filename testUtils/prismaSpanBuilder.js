@@ -76,6 +76,13 @@ export class PrismaSpanBuilder {
     return this;
   }
 
+  onlyMetadata = () => {
+    delete this._span?.queryArgs;
+    delete this._span?.result;
+    this._span['isMetadata'] = true;
+    return this;
+  }
+
   withEnded = (ended) => {
     this._span.ended = ended;
     return this;

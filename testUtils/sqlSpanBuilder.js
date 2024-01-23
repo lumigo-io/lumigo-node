@@ -73,6 +73,14 @@ export class SqlSpanBuilder {
     return this;
   };
 
+  onlyMetadata = () => {
+    delete this._span?.query;
+    delete this._span?.values;
+    delete this._span?.response;
+    this._span['isMetadata'] = true;
+    return this;
+  };
+
   build = () => {
     return this._span;
   };

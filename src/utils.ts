@@ -375,6 +375,8 @@ export const getValidAliases = () =>
   })() || [];
 
 export const getMaxRequestSize = () => TracerGlobals.getTracerInputs().maxSizeForRequest;
+export const getMaxRequestSizeOnError = () =>
+  TracerGlobals.getTracerInputs().maxSizeForRequestOnError;
 
 export const getInvokedArn = () => {
   // @ts-ignore
@@ -430,15 +432,15 @@ export function isString(x: any): x is string {
   return Object.prototype.toString.call(x) === '[object String]';
 }
 
-export const LUMIGO_MAX_ENTRY_SIZE = 2048;
+export const DEFAULT_LUMIGO_MAX_ENTRY_SIZE = 2048;
 
 export const getEventEntitySize = (hasError = false) => {
   const basicSize =
     parseInt(process.env['MAX_EVENT_ENTITY_SIZE']) ||
     parseInt(process.env['LUMIGO_MAX_ENTRY_SIZE']) ||
-    LUMIGO_MAX_ENTRY_SIZE;
+    DEFAULT_LUMIGO_MAX_ENTRY_SIZE;
   if (hasError) {
-    return basicSize * 2;
+    return parseInt(process.env['LUMIGO_MAX_ENTRY_SIZE_ON_ERROR']) || basicSize * 2;
   }
   return basicSize;
 };

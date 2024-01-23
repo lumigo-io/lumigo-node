@@ -34,11 +34,13 @@ import {
   safeExecute,
   SENDING_TIME_ID_KEY,
   setWarm,
+  spanHasErrors,
   TRANSACTION_ID_KEY,
 } from '../utils';
 import { payloadStringify, shallowMask, truncate } from '../utils/payloadStringify';
 import { Utf8Utils } from '../utils/utf8Utils';
 import { getW3CMessageId } from '../utils/w3cUtils';
+import { int } from 'aws-sdk/clients/datapipeline';
 
 export const HTTP_SPAN = 'http';
 export const FUNCTION_SPAN = 'function';
@@ -64,6 +66,70 @@ export const getSpanInfo = (): SpanInfo => {
   const traceId = getTraceId(awsXAmznTraceId);
 
   return { traceId, tracer, logGroupName, logStreamName };
+};
+
+export const getSpanPriority = (span): number => {
+  if (span.type === FUNCTION_SPAN) {
+    return 0;
+  }
+  if (span.type === ENRICHMENT_SPAN) {
+    return 1;
+  }
+  if (spanHasErrors(span)) {
+    return 2;
+  }
+  return 3;
+};
+
+export const spansPrioritySorter = (span1: any, span2: any): number => {
+  return Math.sign(getSpanPriority(span1) - getSpanPriority(span2));
+};
+
+export const getSpanMetadata = (span: any): any => {
+  const spanCopy = JSON.parse(JSON.stringify(span));
+  spanCopy['isMetadata'] = true;
+
+  if (spanCopy.type === FUNCTION_SPAN) {
+    delete spanCopy?.envs;
+    return spanCopy;
+  } else if (spanCopy.type === ENRICHMENT_SPAN) {
+    return {};
+  } else if (spanCopy.type === HTTP_SPAN) {
+    delete spanCopy?.info?.httpInfo?.request?.headers;
+    delete spanCopy?.info?.httpInfo?.request?.body;
+    delete spanCopy?.info?.httpInfo?.response?.headers;
+    delete spanCopy?.info?.httpInfo?.response?.body;
+    return spanCopy;
+  } else if (spanCopy.type === MONGO_SPAN) {
+    delete spanCopy?.request;
+    delete spanCopy?.response;
+    return spanCopy;
+  } else if (spanCopy.type === REDIS_SPAN) {
+    delete spanCopy?.requestArgs;
+    delete spanCopy?.response;
+    return spanCopy;
+  } else if (spanCopy.type === NEO4J_SPAN) {
+    delete spanCopy?.summary;
+    delete spanCopy?.query;
+    delete spanCopy?.values;
+    delete spanCopy?.response;
+    return spanCopy;
+  } else if (
+    spanCopy.type === PG_SPAN ||
+    spanCopy.type === MYSQL_SPAN ||
+    spanCopy.type === MSSQL_SPAN
+  ) {
+    delete spanCopy?.query;
+    delete spanCopy?.values;
+    delete spanCopy?.response;
+    return spanCopy;
+  } else if (spanCopy.type === PRISMA_SPAN) {
+    delete spanCopy?.queryArgs;
+    delete spanCopy?.result;
+    return spanCopy;
+  }
+  logger.warn(`Got unknown span type: ${spanCopy.type}`);
+  return spanCopy;
 };
 
 export const getCurrentTransactionId = (): string => {
