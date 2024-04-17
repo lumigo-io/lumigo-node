@@ -175,6 +175,27 @@ describe('aws parser', () => {
     expect(aws.lambdaParser(requestData, responseData)).toEqual(expected);
   });
 
+  test('lambdaParser with w3c headers', () => {
+    const resourceName = 'FunctionName';
+    const path = `/2015-03-31/functions/${resourceName}/invocations?Qualifier=Qualifier`;
+    const invocationType = 'InvocationType';
+    const headers = {
+      'x-amz-invocation-type': invocationType,
+      traceparent: '00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01',
+    };
+    const requestData = { path, headers };
+    const responseData = { headers: {} };
+    const expected = {
+      awsServiceData: {
+        resourceName,
+        invocationType,
+        messageId: 'b7ad6b7169203331',
+      },
+      spanId: '',
+    };
+    expect(aws.lambdaParser(requestData, responseData)).toEqual(expected);
+  });
+
   test('lambdaParser with arn', () => {
     const resourceName = 'FunctionName';
     const arn = `arn:aws:lambda:eu-central-1:123847209798:function:${resourceName}`;

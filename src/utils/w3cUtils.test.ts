@@ -85,4 +85,17 @@ describe('Utf8Utils', () => {
 
     expect(headers).toEqual({ 'x-amz-content-sha256': '123' });
   });
+
+  test('getW3CMessageId -> happy flow 2', () => {
+    const expectedMessageId = '60726f2dcd4368ef';
+    const headers = {
+      'Content-Type': 'application/json',
+      Host: 'api.demo.com',
+      traceparent: `00-f51902cc11e211457bc5491900000000-${expectedMessageId}-01`,
+      tracestate: `lumigo=${expectedMessageId}`,
+      'User-Agent': 'node-fetch/1.0 (+https://github.com/bitinn/node-fetch)',
+    };
+    const actualMessageId = getW3CMessageId(headers);
+    expect(actualMessageId).toEqual(expectedMessageId);
+  });
 });

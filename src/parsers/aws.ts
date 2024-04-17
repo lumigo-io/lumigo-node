@@ -71,7 +71,14 @@ export const lambdaParser = (requestData, responseData) => {
   const spanId = responseHeaders
     ? responseHeaders['x-amzn-requestid'] || responseHeaders['x-amz-requestid'] || ''
     : '';
-  const awsServiceData = { resourceName, invocationType };
+  const messageId = spanId ? spanId : getW3CMessageId(requestData.headers);
+  const awsServiceData: { resourceName: string; invocationType: string; messageId?: string } = {
+    resourceName,
+    invocationType,
+  };
+  if (messageId) {
+    awsServiceData.messageId = messageId;
+  }
   return { awsServiceData, spanId };
 };
 
