@@ -25,8 +25,13 @@ export const MIN_TRACER_ADDED_DURATION_ALLOWED = 200;
 export class SpansContainer {
   private static spans: { [id: string]: BasicSpan } = {};
   private static currentSpansSize: number = 0;
+  private static totalSpans: number = 0;
 
   static addSpan(span: BasicSpan): boolean {
+    if (!(span.id in this.spans)) {
+      // We call add span also for updating spans with their end part
+      this.totalSpans += 1;
+    }
     // Memory optimization, take up to 10x maxSize because of smart span selection logic
     if (spanHasErrors(span) || getMaxRequestSizeOnError() * 10 > this.currentSpansSize) {
       this.spans[span.id] = span;
@@ -50,13 +55,19 @@ export class SpansContainer {
     if (oldSpan) {
       oldSpan.id = newId;
       this.spans[newId] = oldSpan;
+      this.totalSpans -= 1;
     }
     delete this.spans[oldId];
   }
 
   static clearSpans(): void {
     this.currentSpansSize = 0;
+    this.totalSpans = 0;
     this.spans = {};
+  }
+
+  static getTotalSpans(): number {
+    return this.totalSpans;
   }
 }
 

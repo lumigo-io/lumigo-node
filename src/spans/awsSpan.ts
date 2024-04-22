@@ -1,6 +1,6 @@
 import { Context } from 'aws-lambda';
 import { getEventInfo } from '../events';
-import { ExecutionTags, TracerGlobals } from '../globals';
+import { ExecutionTags, SpansContainer, TracerGlobals } from '../globals';
 import * as logger from '../logger';
 import {
   apigwParser,
@@ -277,6 +277,7 @@ export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
   }
   const event = error ? getEventForSpan(true) : functionSpan.event;
   const envs = error ? getEnvsForSpan(true) : functionSpan.envs;
+  const totalSpans = SpansContainer.getTotalSpans();
   const newSpan = Object.assign({}, functionSpan, {
     id,
     ended,
@@ -286,6 +287,7 @@ export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
     [EXECUTION_TAGS_KEY]: ExecutionTags.getTags(),
     event,
     envs,
+    totalSpans,
   });
   logger.debug('End span created', newSpan);
   return newSpan;
