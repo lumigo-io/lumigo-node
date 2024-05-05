@@ -37,11 +37,11 @@ export const onSucceededHook = (event: any) => {
   const currentSpan = SpansContainer.getSpanById(requestIdLookup[requestId]);
   delete requestIdLookup[requestId];
   if (currentSpan) {
-    const extendedMondoDbSpan = extendMongoDbSpan(currentSpan, {
+    const extendedMongoDbSpan = extendMongoDbSpan(currentSpan, {
       duration,
       reply,
     });
-    SpansContainer.addSpan(extendedMondoDbSpan);
+    SpansContainer.addSpan(extendedMongoDbSpan);
   }
 };
 
@@ -50,11 +50,11 @@ export const onFailedHook = (event: any) => {
   const currentSpan = SpansContainer.getSpanById(requestIdLookup[requestId]);
   delete requestIdLookup[requestId];
   if (currentSpan) {
-    const extendedMondoDbSpan = extendMongoDbSpan(currentSpan, {
+    const extendedMongoDbSpan = extendMongoDbSpan(currentSpan, {
       duration,
       failure,
     });
-    SpansContainer.addSpan(extendedMondoDbSpan);
+    SpansContainer.addSpan(extendedMongoDbSpan);
   }
 };
 

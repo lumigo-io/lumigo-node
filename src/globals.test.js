@@ -18,8 +18,10 @@ describe('globals', () => {
     globals.SpansContainer.addSpan(span1);
     globals.SpansContainer.addSpan(span2);
     expect(globals.SpansContainer.getSpans()).toEqual([span1, span2]);
+    expect(globals.SpansContainer.getTotalSpans()).toEqual(2);
     globals.SpansContainer.clearSpans();
     expect(globals.SpansContainer.getSpans()).toEqual([]);
+    expect(globals.SpansContainer.getTotalSpans()).toEqual(0);
   });
 
   test('SpansContainer - override spans', () => {
@@ -28,6 +30,7 @@ describe('globals', () => {
     globals.SpansContainer.addSpan(span1);
     globals.SpansContainer.addSpan(span2);
     expect(globals.SpansContainer.getSpans()).toEqual([span2]);
+    expect(globals.SpansContainer.getTotalSpans()).toEqual(1);
   });
 
   test('SpansContainer - changeSpanId', () => {
@@ -35,10 +38,12 @@ describe('globals', () => {
     globals.SpansContainer.addSpan(span1);
     globals.SpansContainer.changeSpanId('1', '2');
     expect(globals.SpansContainer.getSpans()).toEqual([{ a: 'b', id: '2' }]);
+    expect(globals.SpansContainer.getTotalSpans()).toEqual(0);
   });
 
   test('SpansContainer - changeSpanId -> old span not exist', () => {
     globals.SpansContainer.changeSpanId('1', '2');
+    expect(globals.SpansContainer.getTotalSpans()).toEqual(0);
     //Nothing fails
   });
 
