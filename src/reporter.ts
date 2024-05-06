@@ -9,12 +9,15 @@ import {
   safeExecute,
   shouldScrubDomain,
   spanHasErrors,
+  shouldTryZip,
 } from './utils';
 import * as logger from './logger';
 import { HttpSpansAgent } from './httpSpansAgent';
 import { payloadStringify } from './utils/payloadStringify';
 import { decodeHttpBody, getSpanMetadata, spansPrioritySorter } from './spans/awsSpan';
 import untruncateJson from './tools/untrancateJson';
+import { gzipSync } from 'zlib';
+
 export const NUMBER_OF_SPANS_IN_REPORT_OPTIMIZATION = 200;
 
 export const sendSingleSpan = async (span) => sendSpans([span]);
@@ -38,7 +41,8 @@ export const sendSpans = async (spans: any[]): Promise<void> => {
   const reqBody = safeExecute(forgeAndScrubRequestBody)(
     spans,
     getMaxRequestSize(),
-    getMaxRequestSizeOnError()
+    getMaxRequestSizeOnError(),
+    shouldTryZip()
   );
 
   const roundTripStart = Date.now();
@@ -153,18 +157,33 @@ export function getPrioritizedSpans(spans: any[], maxSendBytes: number): any[] {
 export const forgeAndScrubRequestBody = (
   spans,
   maxSendBytes,
-  maxSendBytesOnError
+  maxSendBytesOnError,
+  shouldTryZip: boolean = false
 ): string | undefined => {
   const maxRequestSize = spans.some(spanHasErrors) ? maxSendBytesOnError : maxSendBytes;
   const start = new Date().getTime();
   const beforeLength = spans.length;
   const originalSize = spans.length;
   const size = getJSONBase64Size(spans);
+  if (spans.length == 0) {
+    return undefined;
+  }
 
   if (
     (!isPruneTraceOff() && spans.length > NUMBER_OF_SPANS_IN_REPORT_OPTIMIZATION) ||
     size > maxSendBytes
   ) {
+    if (shouldTryZip) {
+      logger.debug(`Trying to zip spans, size [${size}], bigger than: [${maxRequestSize}]`);
+      const zippedSpans = gzipSync(JSON.stringify(spans)).toString('base64');
+      const zippedSize = getJSONBase64Size(zippedSpans);
+      logger.debug(`Zipped spans size [${zippedSize}]`);
+      // If the zipped size is small enough, we send the zipped spans
+      // Otherwise, we trim the spans
+      if (zippedSize <= maxRequestSize) {
+        return JSON.stringify(zippedSpans);
+      }
+    }
     logger.debug(
       `Starting trim spans [${spans.length}] bigger than: [${maxRequestSize}] before send`
     );

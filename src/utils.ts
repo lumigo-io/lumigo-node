@@ -35,6 +35,7 @@ export const LUMIGO_SECRET_MASKING_ALL_MAGIC = 'all';
 
 export const LUMIGO_SECRET_MASKING_EXACT_PATH = 'LUMIGO_SECRET_MASKING_EXACT_PATH';
 export const LUMIGO_WHITELIST_KEYS_REGEXES = 'LUMIGO_WHITELIST_KEYS_REGEXES';
+export const LUMIGO_SUPPORT_LARGE_INVOCATIONS = 'LUMIGO_SUPPORT_LARGE_INVOCATIONS';
 export const OMITTING_KEYS_REGEXES = [
   '.*pass.*',
   '.*key.*',
@@ -343,6 +344,8 @@ export const isDebug = (): boolean =>
 export const isLambdaWrapped = (): boolean => validateEnvVar(WRAPPED_FLAG);
 
 export const shouldPropagateW3C = (): boolean => !validateEnvVar(LUMIGO_PROPAGATE_W3C, 'FALSE');
+
+export const shouldTryZip = (): boolean => validateEnvVar(LUMIGO_SUPPORT_LARGE_INVOCATIONS);
 
 export const setLambdaWrapped = (): void => {
   process.env[WRAPPED_FLAG] = 'TRUE';
