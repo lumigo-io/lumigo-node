@@ -8,6 +8,7 @@ import { scrubSpans, sendSpans } from './reporter';
 import * as utils from './utils';
 import { getEventEntitySize, getJSONBase64Size, setDebug } from './utils';
 import { FUNCTION_SPAN, getSpanMetadata, HTTP_SPAN } from './spans/awsSpan';
+import { unzipSync } from 'zlib';
 
 describe('reporter', () => {
   test('sendSingleSpan', async () => {
@@ -443,7 +444,7 @@ describe('reporter', () => {
       const expectedResultSize = getJSONBase64Size(spans);
       process.env.LUMIGO_DOMAINS_SCRUBBER = '["mind"]';
       const actual = JSON.parse(
-        reporter.forgeAndScrubRequestBody(spans, expectedResultSize, expectedResultSize)
+        reporter.forgeAndScrubRequestBody(spans, expectedResultSize, expectedResultSize)!
       );
       expect(actual).toEqual(expected);
     });
@@ -490,7 +491,7 @@ describe('reporter', () => {
       const expectedResultSize = getJSONBase64Size(spans);
 
       const actual = JSON.parse(
-        reporter.forgeAndScrubRequestBody(spans, expectedResultSize, expectedResultSize)
+        reporter.forgeAndScrubRequestBody(spans, expectedResultSize, expectedResultSize)!
       );
       expect(actual).toEqual(expected);
     });
@@ -547,7 +548,7 @@ describe('reporter', () => {
       const expectedResultSize = getJSONBase64Size(spans);
 
       const actual = JSON.parse(
-        reporter.forgeAndScrubRequestBody(spans, expectedResultSize, expectedResultSize)
+        reporter.forgeAndScrubRequestBody(spans, expectedResultSize, expectedResultSize)!
       );
       expect(actual).toEqual(expected);
     });
@@ -606,7 +607,7 @@ describe('reporter', () => {
       const expectedResultSize = getJSONBase64Size(spans);
 
       const actual = JSON.parse(
-        reporter.forgeAndScrubRequestBody(spans, expectedResultSize, expectedResultSize)
+        reporter.forgeAndScrubRequestBody(spans, expectedResultSize, expectedResultSize)!
       );
       expect(actual).toEqual(expected);
     });
@@ -663,7 +664,7 @@ describe('reporter', () => {
       const expectedResultSize = getJSONBase64Size(spans);
 
       const actual = JSON.parse(
-        reporter.forgeAndScrubRequestBody(spans, expectedResultSize, expectedResultSize)
+        reporter.forgeAndScrubRequestBody(spans, expectedResultSize, expectedResultSize)!
       );
       expect(actual).toEqual(expected);
     });
@@ -722,7 +723,7 @@ describe('reporter', () => {
       const expectedResultSize = getJSONBase64Size(spans);
 
       const actual = JSON.parse(
-        reporter.forgeAndScrubRequestBody(spans, expectedResultSize, expectedResultSize)
+        reporter.forgeAndScrubRequestBody(spans, expectedResultSize, expectedResultSize)!
       );
       expect(actual).toEqual(expected);
     });
@@ -769,7 +770,7 @@ describe('reporter', () => {
       const expectedResultSize = getJSONBase64Size(spans);
 
       const actual = JSON.parse(
-        reporter.forgeAndScrubRequestBody(spans, expectedResultSize, expectedResultSize)
+        reporter.forgeAndScrubRequestBody(spans, expectedResultSize, expectedResultSize)!
       );
       expect(actual).toEqual(expected);
     });
@@ -817,7 +818,7 @@ describe('reporter', () => {
       const expectedResultSize = getJSONBase64Size(spans);
 
       const actual = JSON.parse(
-        reporter.forgeAndScrubRequestBody(spans, expectedResultSize, expectedResultSize)
+        reporter.forgeAndScrubRequestBody(spans, expectedResultSize, expectedResultSize)!
       );
       expect(actual).toEqual(expected);
     });
@@ -869,7 +870,7 @@ describe('reporter', () => {
       const expectedResultSize = getJSONBase64Size(spans);
 
       const actual = JSON.parse(
-        reporter.forgeAndScrubRequestBody(spans, expectedResultSize, expectedResultSize)
+        reporter.forgeAndScrubRequestBody(spans, expectedResultSize, expectedResultSize)!
       );
       expect(actual).toEqual(expected);
     });
@@ -934,10 +935,14 @@ describe('reporter', () => {
           spansSuccess,
           expectedResultSizeSuccess,
           expectedResultSizeSuccess
-        )
+        )!
       )[0];
       const spanError = JSON.parse(
-        reporter.forgeAndScrubRequestBody(spansFail, expectedResultSizeFail, expectedResultSizeFail)
+        reporter.forgeAndScrubRequestBody(
+          spansFail,
+          expectedResultSizeFail,
+          expectedResultSizeFail
+        )!
       )[0];
       expect(spanError.info.httpInfo.request.body.length).toBeGreaterThan(
         spanSuccess.info.httpInfo.request.body.length * 1.8 + 1
@@ -1141,5 +1146,103 @@ describe('reporter', () => {
     expect(JSON.parse(logs[1].obj).message).toEqual('spans.map is not a function');
     expect(JSON.parse(logs[0].obj).stack).toBeTruthy();
     expect(JSON.parse(logs[1].obj).stack).toBeTruthy();
+  });
+
+  test('sending a huge payload, bigger than the regular limit, zipping and geeting is back completely', async () => {
+    const token = 'DEADBEEF';
+    TracerGlobals.setTracerInputs({ token });
+    const span = {
+      id: 'aacf6530-cade-774b-84a5-3c95e58009d2',
+      info: {
+        traceId: {
+          Root: '1-66350ad2-17e1c33628691ff954d510dd',
+          Parent: '7c500ef2404493cf',
+          Sampled: '0',
+          Lineage: '04b9c687:0',
+          transactionId: '17e1c33628691ff954d510dd',
+        },
+        tracer: {
+          name: '@lumigo/tracer',
+          version: '1.91.0',
+        },
+        logGroupName: '/aws/lambda/testing-nodejs-lambda-multiple-spans',
+        logStreamName: '2024/05/03/[$LATEST]2b5d907384984bcd8c81a505acc40f06',
+        httpInfo: {
+          host: 'restcountries.com',
+          request: {
+            truncated: false,
+            path: '/v3.1/name/eesti',
+            port: '',
+            uri: 'restcountries.com/v3.1/name/eesti',
+            host: 'restcountries.com',
+            body: '',
+            method: 'GET',
+            headers: {
+              traceparent: '00-17e1c33628691ff954d510dd00000000-399cda8a2fadf29e-01',
+              tracestate: 'lumigo=399cda8a2fadf29e',
+              host: 'restcountries.com',
+            },
+            protocol: 'https:',
+            sendTime: 1714752221056,
+          },
+          response: {
+            truncated: false,
+          },
+        },
+        messageId: '399cda8a2fadf29e',
+      },
+      vendor: 'AWS',
+      transactionId: '17e1c33628691ff954d510dd',
+      account: '654654327014',
+      memoryAllocated: '128',
+      version: '$LATEST',
+      runtime: 'AWS_Lambda_nodejs18.x',
+      readiness: 'warm',
+      messageVersion: 2,
+      token: 't_c0e660dae2b84a739c361',
+      region: 'us-west-2',
+      invokedArn:
+        'arn:aws:lambda:us-west-2:654654327014:function:testing-nodejs-lambda-multiple-spans',
+      invokedVersion: '$LATEST',
+      type: 'http',
+      parentId: '4c831d94-f597-45ca-9ab8-8c123c9a5595',
+      reporterAwsRequestId: '4c831d94-f597-45ca-9ab8-8c123c9a5595',
+      service: 'external',
+      started: 1714752221056,
+    };
+
+    // create a big array of spans which is definitely bigger than the limit
+    const bigSpans = new Array(reporter.NUMBER_OF_SPANS_IN_REPORT_OPTIMIZATION * 2).fill(span);
+
+    // set env var to make sure we are zipping
+    process.env.LUMIGO_SUPPORT_LARGE_INVOCATIONS = 'TRUE';
+
+    await reporter.sendSpans(bigSpans);
+    const sentSpansZipped = AxiosMocker.getSentSpans();
+
+    // The payload should be one string - zipped and base64 encoded
+    expect(sentSpansZipped.length).toEqual(1);
+    const unzippedSpans = JSON.parse(
+      unzipSync(Buffer.from(sentSpansZipped[0], 'base64')).toString()
+    );
+
+    expect(unzippedSpans).toEqual(bigSpans);
+  });
+
+  test('sending a small payload while turning the zip flag on and making sure it is not zipped', async () => {
+    const token = 'DEADBEEF';
+    TracerGlobals.setTracerInputs({ token });
+    const span = {
+      id: 'aacf6530-cade-774b-84a5-3c95e58009d2',
+    };
+
+    // Turn on the zip flag, even though the payload is small and should not go to the zip part
+    process.env.LUMIGO_SUPPORT_LARGE_INVOCATIONS = 'TRUE';
+    const spans = [span];
+
+    await reporter.sendSpans(spans);
+    const sentSpans = AxiosMocker.getSentSpans();
+
+    expect(sentSpans).toEqual([spans]);
   });
 });
