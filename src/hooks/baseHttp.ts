@@ -71,6 +71,19 @@ export type ParseHttpRequestOptions = {
   uri?: { hostname?: string };
 };
 
+export type RequestData = {
+  host: string;
+  body: any;
+  headers: any;
+  path: string;
+  truncated: boolean;
+  port: number;
+  uri: string;
+  method: string;
+  protocol: string;
+  sendTime: number;
+};
+
 export class BaseHttp {
   /**
    * Starts an HTTP request tracing span
@@ -123,12 +136,11 @@ export class BaseHttp {
       Object.assign(headers, addedHeaders);
     }
 
-    returnData.requestData = BaseHttp.parseHttpRequestOptions(options, url);
+    const requestData = BaseHttp.parseHttpRequestOptions(options, url);
+    returnData.requestData = requestData;
 
     if (isTimeoutTimerEnabled()) {
-      const httpSpan = getHttpSpan(transactionId, awsRequestId, requestRandomId, {
-        headers,
-      });
+      const httpSpan = getHttpSpan(transactionId, awsRequestId, requestRandomId, requestData);
       SpansContainer.addSpan(httpSpan);
       returnData.httpSpan = httpSpan;
     }
@@ -260,7 +272,7 @@ export class BaseHttp {
   }: {
     transactionId: string;
     awsRequestId: string;
-    requestData: { body: string };
+    requestData: RequestData;
     requestRandomId: string;
     response: { headers: {}; statusCode: number };
   }): (args: any[]) => void {
@@ -333,7 +345,7 @@ export class BaseHttp {
   }
 
   @GlobalDurationTimer.timedSync()
-  static parseHttpRequestOptions(options: ParseHttpRequestOptions = {}, url?: string) {
+  static parseHttpRequestOptions(options: ParseHttpRequestOptions = {}, url?: string): RequestData {
     const host = BaseHttp._getHostFromOptionsOrUrl({ options, url });
     const agent = options.agent || options._defaultAgent;
 
