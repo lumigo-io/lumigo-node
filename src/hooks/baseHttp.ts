@@ -40,20 +40,20 @@ export const hostBlaclist = new Set(['127.0.0.1']);
 
 type HttpRequestTracingConfig = {
   // Headers of the request, including user defined headers & added headers
-  headers?: {};
+  headers: {};
 
   // Headers added to the original headers
-  addedHeaders?: {};
+  addedHeaders: {};
 
   // The HTTP span that was created for this request (Will be updated in place in the request response lifecycle)
   httpSpan?: BasicChildSpan;
 
   requestData?: { body: string };
 
-  requestRandomId?: string;
+  requestRandomId: string;
 
-  awsRequestId?: string;
-  transactionId?: string;
+  awsRequestId: string;
+  transactionId: string;
 };
 
 export type ParseHttpRequestOptions = {
@@ -84,7 +84,7 @@ export class BaseHttp {
   }: {
     options: ParseHttpRequestOptions;
     url: string;
-  }): HttpRequestTracingConfig {
+  }): HttpRequestTracingConfig | undefined {
     // Gather basic info for creating the HTTP span
     const host = BaseHttp._getHostFromOptionsOrUrl({ options, url });
     const headers = options.headers || {};
@@ -96,10 +96,18 @@ export class BaseHttp {
     const shouldIgnoreReq =
       BaseHttp.isBlacklisted(host) || !isValidAlias() || GlobalDurationTimer.isTimePassed();
     if (shouldIgnoreReq) {
-      return {};
+      return undefined;
     }
 
     logger.debug('Starting hook', { host, url, headers });
+
+    const returnData: HttpRequestTracingConfig = {
+      addedHeaders,
+      headers,
+      requestRandomId,
+      awsRequestId,
+      transactionId,
+    };
 
     const isRequestToAwsService = isAwsService(host);
     if (isRequestToAwsService && !isKeepHeadersOn()) {
@@ -115,24 +123,16 @@ export class BaseHttp {
       Object.assign(headers, addedHeaders);
     }
 
-    const requestData = BaseHttp.parseHttpRequestOptions(options, url);
+    returnData.requestData = BaseHttp.parseHttpRequestOptions(options, url);
 
     if (isTimeoutTimerEnabled()) {
       const httpSpan = getHttpSpan(transactionId, awsRequestId, requestRandomId, {
         headers,
       });
       SpansContainer.addSpan(httpSpan);
-      return {
-        httpSpan,
-        addedHeaders,
-        headers,
-        requestData,
-        requestRandomId,
-        awsRequestId,
-        transactionId,
-      };
+      returnData.httpSpan = httpSpan;
     }
-    return {};
+    return returnData;
   }
 
   static _getHostFromOptionsOrUrl({

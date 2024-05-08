@@ -92,27 +92,31 @@ export class Http {
   static httpBeforeRequestWrapper(args, extenderContext) {
     extenderContext.isTracedDisabled = true;
     const { url, options = {} } = Http.httpRequestArguments(args);
-    const {
-      addedHeaders = undefined,
-      httpSpan = undefined,
-      requestData = undefined,
-      requestRandomId = undefined,
-      awsRequestId = undefined,
-      transactionId = undefined,
-    } = BaseHttp.onRequestCreated({
+    const requestTracingData = BaseHttp.onRequestCreated({
       options,
       url,
     });
-
-    if (!httpSpan) {
+    if (!requestTracingData) {
       return;
     }
+    const {
+      addedHeaders,
+      requestRandomId,
+      awsRequestId,
+      transactionId,
+      httpSpan = undefined,
+      requestData = undefined,
+    } = requestTracingData;
 
     extenderContext.awsRequestId = awsRequestId;
     extenderContext.transactionId = transactionId;
     extenderContext.requestRandomId = requestRandomId;
-    extenderContext.requestData = requestData;
-    extenderContext.currentSpan = httpSpan;
+    if (requestData) {
+      extenderContext.requestData = requestData;
+    }
+    if (httpSpan) {
+      extenderContext.currentSpan = httpSpan;
+    }
 
     if (addedHeaders) {
       Http.addOptionsToHttpRequestArguments(args, options);
