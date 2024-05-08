@@ -48,7 +48,7 @@ type HttpRequestTracingConfig = {
   // The HTTP span that was created for this request (Will be updated in place in the request response lifecycle)
   httpSpan?: BasicChildSpan;
 
-  requestData?: { body: string };
+  requestData?: RequestData;
 
   requestRandomId: string;
 
@@ -72,16 +72,16 @@ export type ParseHttpRequestOptions = {
 };
 
 export type RequestData = {
-  host: string;
-  body: any;
-  headers: any;
-  path: string;
-  truncated: boolean;
-  port: number;
-  uri: string;
-  method: string;
-  protocol: string;
-  sendTime: number;
+  host?: string;
+  body?: any;
+  headers?: any;
+  path?: string;
+  truncated?: boolean;
+  port?: number;
+  uri?: string;
+  method?: string;
+  protocol?: string;
+  sendTime?: number;
 };
 
 export class BaseHttp {

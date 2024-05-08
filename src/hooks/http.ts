@@ -101,6 +101,7 @@ export class Http {
     }
     const {
       addedHeaders,
+      headers,
       requestRandomId,
       awsRequestId,
       transactionId,
@@ -119,6 +120,7 @@ export class Http {
     }
 
     if (addedHeaders) {
+      options.headers = headers;
       Http.addOptionsToHttpRequestArguments(args, options);
     }
     extenderContext.isTracedDisabled = false;
