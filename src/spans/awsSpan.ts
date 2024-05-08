@@ -348,7 +348,7 @@ export const decodeHttpBody = (httpBody: any, hasError: boolean): any | string =
   return httpBody;
 };
 
-export const getHttpInfo = (requestData, responseData): HttpInfo => {
+export const getHttpInfo = (requestData: RequestData, responseData): HttpInfo => {
   const { host } = requestData;
   const request = Object.assign({}, requestData);
   const response = Object.assign({}, responseData);
@@ -417,7 +417,7 @@ export const getHttpSpan = (
     HTTP_SPAN
   );
 
-  let info = Object.assign({}, basicHttpSpan.info, {
+  const info = Object.assign({}, basicHttpSpan.info, {
     httpInfo,
     ...awsServiceData,
   });

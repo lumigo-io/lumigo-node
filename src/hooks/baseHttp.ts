@@ -166,23 +166,6 @@ export class BaseHttp {
     return 'localhost';
   }
 
-  // static createSendRequestDataHandler({
-  //   requestData,
-  //   currentSpan,
-  // }: {
-  //   requestData: { body: string };
-  //   currentSpan: BasicChildSpan;
-  // }) {
-  //   return function (data: Object, encoding: string) {
-  //     GlobalDurationTimer.start();
-  //     if (isEmptyString(requestData.body)) {
-  //       const body = extractBodyFromWriteOrEndFunc(args);
-  //       Http.aggregateRequestBodyToSpan(body, requestData, currentSpan, getEventEntitySize(true));
-  //     }
-  //     GlobalDurationTimer.stop();
-  //   };
-  // }
-
   /**
    * Returns a handler that should be called every time request body data is sent to the server.
    * This handler will collect the request body and add it to the current span.
@@ -198,7 +181,7 @@ export class BaseHttp {
     requestData,
     currentSpan = undefined,
   }: {
-    requestData: { body: string };
+    requestData: RequestData;
     currentSpan?: BasicChildSpan;
   }): Function {
     return function (args: any[]) {
@@ -231,7 +214,7 @@ export class BaseHttp {
     requestData,
     currentSpan = undefined,
   }: {
-    requestData: { body: string };
+    requestData: RequestData;
     currentSpan?: BasicChildSpan;
   }): Function {
     return function (socketEventArgs: {}) {
@@ -324,9 +307,9 @@ export class BaseHttp {
 
   static aggregateRequestBodyToSpan(
     body,
-    requestData,
-    currentSpan,
-    maxSize = getEventEntitySize(true)
+    requestData: RequestData,
+    currentSpan: BasicChildSpan,
+    maxSize: number = getEventEntitySize(true)
   ) {
     let serviceData: ServiceData = {};
     if (body && !requestData.truncated) {
