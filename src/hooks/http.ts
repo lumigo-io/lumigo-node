@@ -16,17 +16,6 @@ export type Agent = {
 };
 
 export class Http {
-  // static httpRequestEndWrapper(requestData, currentSpan) {
-  //   return function (args) {
-  //     GlobalDurationTimer.start();
-  //     if (isEmptyString(requestData.body)) {
-  //       const body = extractBodyFromWriteOrEndFunc(args);
-  //       Http.aggregateRequestBodyToSpan(body, requestData, currentSpan, getEventEntitySize(true));
-  //     }
-  //     GlobalDurationTimer.stop();
-  //   };
-  // }
-
   @GlobalDurationTimer.timedSync()
   static httpRequestArguments(args: any[]): { url?: string; options?: any; callback?: Function } {
     if (args.length === 0) {
