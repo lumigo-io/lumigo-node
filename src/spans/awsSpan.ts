@@ -417,10 +417,7 @@ export const getHttpSpan = (
     HTTP_SPAN
   );
 
-  const info = Object.assign({}, basicHttpSpan.info, {
-    httpInfo,
-    ...awsServiceData,
-  });
+  const info = Object.assign({}, basicHttpSpan.info, { httpInfo }, awsServiceData);
 
   // add messageId based on W3cContextPropagation in case of messageId not present
   if (!info.messageId) {
