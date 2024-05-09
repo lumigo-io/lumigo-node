@@ -58,6 +58,13 @@ describe('Utf8Utils', () => {
     expect(headers[TRACESTATE_HEADER_NAME]).toEqual(`lumigo=${parts[2]}`);
   });
 
+  test('addW3CTracePropagator -> no new headers added', () => {
+    const headers = { 'x-amz-content-sha256': '123' };
+    const returnedHeaders = addW3CTracePropagator(headers);
+    expect(headers).toEqual({ 'x-amz-content-sha256': '123' });
+    expect(returnedHeaders).toEqual({ 'x-amz-content-sha256': '123' });
+  });
+
   test('getW3CMessageId -> happy flow', () => {
     const headers = {
       [TRACEPARENT_HEADER_NAME]: '00-11111111111111111111111100000000-aaaaaaaaaaaaaaaa-01',

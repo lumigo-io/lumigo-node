@@ -33,10 +33,6 @@ export const getW3CTracerPropagatorAdditionalHeaders = (
 
 export const addW3CTracePropagator = (headers: Record<string, string>): Record<string, string> => {
   const additionalHeaders = getW3CTracerPropagatorAdditionalHeaders(headers);
-  if (!additionalHeaders) {
-    return headers;
-  }
-
   return Object.assign(headers, additionalHeaders);
 };
 
