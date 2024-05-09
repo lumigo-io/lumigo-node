@@ -320,6 +320,7 @@ export class BaseHttp {
       requestData.truncated = truncated;
     }
     if (currentSpan) {
+      // @ts-ignore
       currentSpan.info.httpInfo = getHttpInfo(requestData, {});
       Object.assign(currentSpan.info, {
         ...serviceData.awsServiceData,
