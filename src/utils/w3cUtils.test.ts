@@ -62,7 +62,7 @@ describe('Utf8Utils', () => {
     { 'x-amz-content-sha256': '123' },
     { 'x-amz-content-sha256': '123', 'Content-Type': 'application/json' },
   ].map((headers) => {
-    test(`aaddW3CTracePropagator -> no new headers added`, () => {
+    test(`aaddW3CTracePropagator -> no new headers added when sha256 header present`, () => {
       const originalHeaders = { ...headers };
       const returnedHeaders = addW3CTracePropagator(headers);
       expect(headers).toEqual(originalHeaders);
