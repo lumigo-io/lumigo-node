@@ -366,7 +366,7 @@ export class BaseHttp {
       port,
       uri,
       host,
-      body: '', // XXX Filled by the httpRequestEndWrapper or httpRequestEmitBeforeHookWrapper ( / Write)
+      body: '', // Filled by the httpRequestEndWrapper or httpRequestEmitBeforeHookWrapper ( / Write)
       method,
       headers: lowerCaseObjectKeys(modifiedHeaders),
       protocol,
