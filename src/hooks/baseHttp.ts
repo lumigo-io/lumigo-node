@@ -59,7 +59,6 @@ type HttpRequestTracingConfig = {
 export type ParseHttpRequestOptions = {
   agent?: Agent;
   _defaultAgent?: Agent;
-  // eslint-disable-next-line no-undef
   headers?: Record<string, string>;
   method?: 'GET' | 'POST';
   protocol?: string;
