@@ -36,7 +36,7 @@ import { parse as parseQuery } from 'querystring';
 import { shallowMask } from '../utils/payloadStringify';
 import { Agent } from './http';
 
-export const hostBlaclist = new Set(['127.0.0.1']);
+export const hostBlacklist = new Set(['127.0.0.1']);
 
 type HttpRequestTracingConfig = {
   // Headers of the request, including user defined headers & added headers
@@ -303,7 +303,7 @@ export class BaseHttp {
   }
 
   static isBlacklisted(host: string) {
-    return host === getEdgeHost() || hostBlaclist.has(host);
+    return host === getEdgeHost() || hostBlacklist.has(host);
   }
 
   static aggregateRequestBodyToSpan(
