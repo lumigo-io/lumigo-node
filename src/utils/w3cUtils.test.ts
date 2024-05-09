@@ -58,11 +58,16 @@ describe('Utf8Utils', () => {
     expect(headers[TRACESTATE_HEADER_NAME]).toEqual(`lumigo=${parts[2]}`);
   });
 
-  test('addW3CTracePropagator -> no new headers added', () => {
-    const headers = { 'x-amz-content-sha256': '123' };
-    const returnedHeaders = addW3CTracePropagator(headers);
-    expect(headers).toEqual({ 'x-amz-content-sha256': '123' });
-    expect(returnedHeaders).toEqual({ 'x-amz-content-sha256': '123' });
+  [
+    { 'x-amz-content-sha256': '123' },
+    { 'x-amz-content-sha256': '123', 'Content-Type': 'application/json' },
+  ].map((headers) => {
+    test(`aaddW3CTracePropagator -> no new headers added`, () => {
+      const originalHeaders = { ...headers };
+      const returnedHeaders = addW3CTracePropagator(headers);
+      expect(headers).toEqual(originalHeaders);
+      expect(returnedHeaders).toEqual(originalHeaders);
+    });
   });
 
   test('getW3CMessageId -> happy flow', () => {
