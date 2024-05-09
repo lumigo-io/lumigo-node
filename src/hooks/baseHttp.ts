@@ -147,6 +147,7 @@ export class BaseHttp {
     return returnData;
   }
 
+  @GlobalDurationTimer.timedSync()
   static _getHostFromOptionsOrUrl({
     options,
     url = undefined,

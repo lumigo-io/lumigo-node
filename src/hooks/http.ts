@@ -57,13 +57,6 @@ export class Http {
     }
     return { url, options, callback };
   }
-  @GlobalDurationTimer.timedSync()
-  static getHostFromOptionsOrUrl(options, url) {
-    if (url) {
-      return new URL(url).hostname;
-    }
-    return options.hostname || options.host || (options.uri && options.uri.hostname) || 'localhost';
-  }
 
   static addOptionsToHttpRequestArguments(originalArgs, newOptions) {
     // We're switching on the different signatures of http:

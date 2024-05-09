@@ -279,6 +279,7 @@ describe('http hook', () => {
     expect(BaseHttp._getHostFromOptionsOrUrl({ options: options2 })).toEqual('asdf2.com');
     expect(BaseHttp._getHostFromOptionsOrUrl({ options: options3 })).toEqual('asdf3.com');
     expect(BaseHttp._getHostFromOptionsOrUrl({ options: options4 })).toEqual('localhost');
+    expect(BaseHttp._getHostFromOptionsOrUrl({})).toEqual('localhost');
 
     const url1 = 'https://asdf.io:1234/yo?ref=baba';
     expect(BaseHttp._getHostFromOptionsOrUrl({ options: {}, url: url1 })).toEqual('asdf.io');
