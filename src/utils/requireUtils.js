@@ -1,6 +1,7 @@
 import * as logger from '../logger';
 
 export const safeRequire = (libId) => {
+  // Dummy comment, will be removed
   try {
     const customReq =
       // eslint-disable-next-line no-undef,camelcase
