@@ -83,6 +83,11 @@ export type RequestData = {
   sendTime?: number;
 };
 
+export type httpRequestCreatedParams = {
+  options?: ParseHttpRequestOptions;
+  url?: string;
+};
+
 export class BaseHttp {
   /**
    * Starts an HTTP request tracing span
@@ -93,10 +98,7 @@ export class BaseHttp {
   static onRequestCreated({
     options,
     url,
-  }: {
-    options: ParseHttpRequestOptions;
-    url: string;
-  }): HttpRequestTracingConfig | undefined {
+  }: httpRequestCreatedParams): HttpRequestTracingConfig | undefined {
     // Gather basic info for creating the HTTP span
     const host = BaseHttp._getHostFromOptionsOrUrl({ options, url });
     const headers = options.headers || {};
@@ -150,13 +152,7 @@ export class BaseHttp {
   }
 
   @GlobalDurationTimer.timedSync()
-  static _getHostFromOptionsOrUrl({
-    options,
-    url = undefined,
-  }: {
-    options?: ParseHttpRequestOptions;
-    url?: string;
-  }) {
+  static _getHostFromOptionsOrUrl({ options, url = undefined }: httpRequestCreatedParams) {
     if (url) {
       return new URL(url).hostname;
     }
@@ -304,16 +300,16 @@ export class BaseHttp {
     };
   }
 
-  static isBlacklisted(host: string) {
+  static isBlacklisted(host: string): boolean {
     return host === getEdgeHost() || hostBlacklist.has(host);
   }
 
   static aggregateRequestBodyToSpan(
-    body,
+    body: string,
     requestData: RequestData,
     currentSpan: BasicChildSpan,
     maxSize: number = getEventEntitySize(true)
-  ) {
+  ): void {
     let serviceData: ServiceData = {};
     if (body && !requestData.truncated) {
       requestData.body += body;
