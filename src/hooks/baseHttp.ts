@@ -125,14 +125,17 @@ export class BaseHttp {
     if (isRequestToAwsService && !isKeepHeadersOn()) {
       const { awsXAmznTraceId } = getAWSEnvironment();
       addedHeaders['X-Amzn-Trace-Id'] = getPatchedTraceId(awsXAmznTraceId);
-      Object.assign(headers, addedHeaders);
     }
 
     if (shouldPropagateW3C()) {
       safeExecute(() => {
         Object.assign(addedHeaders, getW3CTracerPropagatorAdditionalHeaders(headers));
       })();
+    }
+
+    if (addedHeaders) {
       Object.assign(headers, addedHeaders);
+      options.headers = headers;
     }
 
     const requestData = BaseHttp.parseHttpRequestOptions(options, url);
