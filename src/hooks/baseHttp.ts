@@ -38,7 +38,7 @@ import { Agent } from './http';
 
 export const hostBlacklist = new Set(['127.0.0.1']);
 
-type HttpRequestTracingConfig = {
+export type HttpRequestTracingConfig = {
   // Headers of the request, including user defined headers & added headers
   headers: {};
 
@@ -60,7 +60,7 @@ export type ParseHttpRequestOptions = {
   agent?: Agent;
   _defaultAgent?: Agent;
   headers?: Record<string, string>;
-  method?: 'GET' | 'POST';
+  method?: string;
   protocol?: string;
   path?: string;
   port?: number;
@@ -102,6 +102,7 @@ export class BaseHttp {
     // Gather basic info for creating the HTTP span
     const host = BaseHttp._getHostFromOptionsOrUrl({ options, url });
     const headers = options.headers || {};
+    options.headers = headers;
     const addedHeaders = {};
     const { awsRequestId } = TracerGlobals.getHandlerInputs().context;
     const transactionId = getCurrentTransactionId();
