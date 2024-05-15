@@ -1,6 +1,7 @@
 import { safeRequire } from '../utils/requireUtils';
 import { BaseHttp, HttpRequestTracingConfig, ParseHttpRequestOptions } from './baseHttp';
 import { Buffer } from 'buffer';
+import * as logger from '../logger';
 
 export interface UndiciRequest {
   origin: string;
@@ -66,14 +67,17 @@ export class UndiciInstrumentation {
   private requestContext: WeakMap<UndiciRequest, UndiciRequestTracingConfig>;
 
   constructor() {
-    this.diagch = safeRequire('diagnostic-channel');
+    this.diagch = safeRequire('diagnostics_channel');
     this.requestContext = new WeakMap<UndiciRequest, UndiciRequestTracingConfig>();
   }
 
   static startInstrumentation() {
     const undiciInstrumentation = new UndiciInstrumentation();
     if (undiciInstrumentation.libAvailable()) {
+      logger.debug('Undici library available, attaching instrumentation hooks');
       undiciInstrumentation.hookUndici();
+    } else {
+      logger.debug('Undici library not available, skipping instrumentation');
     }
   }
 
