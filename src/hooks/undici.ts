@@ -1,5 +1,6 @@
 import { safeRequire } from '../utils/requireUtils';
 import { BaseHttp, HttpRequestTracingConfig, ParseHttpRequestOptions } from './baseHttp';
+import { Buffer } from 'buffer';
 
 export interface UndiciRequest {
   origin: string;
@@ -23,7 +24,7 @@ export interface UndiciResponse {
 
 export interface ListenerRecord {
   name: string;
-  channel: any; // TODO: This is of type Channel, find where I can import it from
+  channel: any; // type Channel, but we can't annotate it because we only import undici at runtime in case it isn't available
   onMessage: (message: any, name: string) => void;
 }
 
@@ -31,19 +32,10 @@ export interface RequestMessage {
   request: UndiciRequest;
 }
 
-export interface RequestHeadersMessage {
-  request: UndiciRequest;
-  socket: any;
-}
-
-export interface ResponseHeadersMessage {
-  request: UndiciRequest;
-  response: UndiciResponse;
-}
-
 export interface RequestTrailersMessage {
   request: UndiciRequest;
   response: UndiciResponse;
+  trailers: Buffer[];
 }
 
 export interface RequestErrorMessage {
@@ -51,15 +43,31 @@ export interface RequestErrorMessage {
   error: Error;
 }
 
+interface ResponseData {
+  headers?: Record<string, string>;
+  statusCode?: number;
+  body?: string;
+  // The time when all the response data was received, including all the body chunks
+  receivedTime?: number;
+  truncated?: boolean;
+  isNetworkError?: boolean;
+}
+
+interface UndiciRequestTracingConfig extends HttpRequestTracingConfig {
+  response?: ResponseData;
+  responseDataHandler?: (data: any) => void;
+  responseEndHandler?: () => void;
+}
+
 export class UndiciInstrumentation {
   private readonly diagch?: {
     channel: (name: string) => any;
   };
-  private requestContext: WeakMap<UndiciRequest, HttpRequestTracingConfig>;
+  private requestContext: WeakMap<UndiciRequest, UndiciRequestTracingConfig>;
 
   constructor() {
     this.diagch = safeRequire('diagnostic-channel');
-    this.requestContext = new WeakMap<UndiciRequest, HttpRequestTracingConfig>();
+    this.requestContext = new WeakMap<UndiciRequest, UndiciRequestTracingConfig>();
   }
 
   static startInstrumentation() {
@@ -84,9 +92,6 @@ export class UndiciInstrumentation {
     // Request created, but no connection to remote server has been made yet
     this.subscribeToChannel('undici:request:create', this.onRequestCreated.bind(this));
 
-    // Response metadata was received (headers, status code), and about to start loading response body
-    this.subscribeToChannel('undici:request:headers', this.onResponseHeaders.bind(this));
-
     // The response was received in full, request is complete
     this.subscribeToChannel('undici:request:trailers', this.onDone.bind(this));
 
@@ -102,7 +107,7 @@ export class UndiciInstrumentation {
    * @param {string | string[]} headers
    * @returns {Record<string, string>}
    */
-  static parseHeaders(headers: string | string[]): Record<string, string> {
+  static parseRequestHeaders(headers: string | string[]): Record<string, string> {
     const parsedHeaders = {};
     if (Array.isArray(headers) && headers.length % 2 === 0) {
       for (let i = 0; i + 1 < headers.length; i += 2) {
@@ -118,6 +123,17 @@ export class UndiciInstrumentation {
     return parsedHeaders;
   }
 
+  static parseResponseHeaders(headers: Buffer[]): Record<string, string> {
+    const parsedHeaders = {};
+    for (let idx = 0; idx < headers.length; idx = idx + 2) {
+      const name = headers[idx].toString().toLowerCase();
+      const value = headers[idx + 1];
+      parsedHeaders[name] = value.toString();
+    }
+
+    return parsedHeaders;
+  }
+
   private static parseHttpRequestArguments({ request }: RequestMessage): {
     url: string;
     options: any;
@@ -125,7 +141,7 @@ export class UndiciInstrumentation {
     const rawUrl = request.origin + request.path;
     const url = new URL(rawUrl);
     const urlScheme = url.protocol.replace(':', '');
-    const headers = UndiciInstrumentation.parseHeaders(request.headers);
+    const headers = UndiciInstrumentation.parseRequestHeaders(request.headers);
 
     const options: ParseHttpRequestOptions = {
       headers,
@@ -149,7 +165,73 @@ export class UndiciInstrumentation {
     request: UndiciRequest;
     addedHeaders: Record<string, string>;
   }): void {
-    // TODO: Implement this
+    const headerEntries = Object.entries(addedHeaders);
+
+    for (let i = 0; i < headerEntries.length; i++) {
+      const [k, v] = headerEntries[i];
+
+      if (typeof request.addHeader === 'function') {
+        request.addHeader(k, v);
+      } else if (typeof request.headers === 'string') {
+        request.headers += `${k}: ${v}\r\n`;
+      } else if (Array.isArray(request.headers)) {
+        // undici@6.11.0 accidentally, briefly removed `request.addHeader()`.
+        request.headers.push(k, v);
+      }
+    }
+  }
+
+  private addResponseToContext({
+    requestContext,
+    response,
+    isNetworkError = false,
+  }: {
+    requestContext: UndiciRequestTracingConfig;
+    response?: UndiciResponse;
+    isNetworkError?: boolean;
+  }): void {
+    if (!requestContext) {
+      return;
+    }
+
+    if (!requestContext.response) {
+      requestContext.response = {};
+    }
+    if (response) {
+      Object.assign(requestContext.response, {
+        headers: UndiciInstrumentation.parseResponseHeaders(response.headers),
+        statusCode: response.statusCode,
+      });
+    }
+    if (isNetworkError) {
+      requestContext.response.isNetworkError = true;
+    }
+  }
+
+  private addResponseHandler(requestContext: UndiciRequestTracingConfig): void {
+    if (
+      !requestContext ||
+      requestContext.responseDataHandler ||
+      requestContext.responseEndHandler ||
+      !requestContext.response
+    ) {
+      return;
+    }
+
+    const responseHandler = BaseHttp.createResponseDataWriterHandler({
+      transactionId: requestContext.transactionId,
+      awsRequestId: requestContext.awsRequestId,
+      requestData: requestContext.requestData,
+      requestRandomId: requestContext.requestRandomId,
+      response: requestContext.response,
+    });
+    requestContext.responseDataHandler = (data) => {
+      responseHandler(['data', data]);
+    };
+    requestContext.responseEndHandler = () => {
+      requestContext.response.receivedTime = new Date().getTime();
+      responseHandler(['end']);
+    };
   }
 
   /**
@@ -183,25 +265,11 @@ export class UndiciInstrumentation {
     this.requestContext.set(request, requestTracingData);
   }
 
-  onResponseHeaders({ request, response }: ResponseHeadersMessage): void {
-    const requestContext = this.requestContext.get(request);
-    if (!requestContext) {
-      return;
-    }
-
-    const { httpSpan = undefined } = requestContext;
-    if (!httpSpan) {
-      return;
-    }
-
-    // TODO: Add the response headers & status code to the request context, + mark the request as erroneous if the status code is an error
-  }
-
   /**
    * This is the last event we receive if the request went without any errors
    * @param {RequestTrailersMessage} message
    */
-  onDone({ request }: RequestTrailersMessage): void {
+  onDone({ request, response, trailers }: RequestTrailersMessage): void {
     const requestContext = this.requestContext.get(request);
     if (!requestContext) {
       return;
@@ -212,7 +280,14 @@ export class UndiciInstrumentation {
       return;
     }
 
-    // TODO: The request is complete, call the BaseHttp.createResponseDataWriterHandler to create the final span
+    this.addResponseToContext({ requestContext, response });
+    this.addResponseHandler(requestContext);
+
+    // TODO: Test that we don't get any encoding errors (utf-8 / ascii / binary for example)
+    trailers.map((trailer) => {
+      requestContext.responseDataHandler(trailer.toString());
+    });
+    requestContext.responseEndHandler();
   }
 
   /**
@@ -235,7 +310,9 @@ export class UndiciInstrumentation {
       return;
     }
 
-    // TODO: Mark the request as erroneous, and call the BaseHttp.createResponseDataWriterHandler to create the final span
-    // TODO: Add an erroneous property to the request context that will be respected by the BaseHttp.createResponseDataWriterHandler func
+    this.addResponseToContext({ requestContext, isNetworkError: true });
+    this.addResponseHandler(requestContext);
+
+    requestContext.responseEndHandler();
   }
 }

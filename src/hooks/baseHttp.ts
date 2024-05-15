@@ -83,6 +83,16 @@ export type RequestData = {
   sendTime?: number;
 };
 
+export type ResponseData = {
+  headers?: Record<string, string>;
+  statusCode?: number;
+  body?: string;
+  // The time when all the response data was received, including all the body chunks
+  receivedTime?: number;
+  truncated?: boolean;
+  isNetworkError?: boolean;
+};
+
 export type httpRequestCreatedParams = {
   options?: ParseHttpRequestOptions;
   url?: string;
@@ -257,11 +267,11 @@ export class BaseHttp {
     awsRequestId: string;
     requestData: RequestData;
     requestRandomId: string;
-    response: { headers: {}; statusCode: number };
+    response: ResponseData;
   }): (args: any[]) => void {
     let body = '';
     const { headers, statusCode } = response;
-    const maxPayloadSize = getEventEntitySize(statusCode >= 400);
+    const maxPayloadSize = getEventEntitySize(isErroneousResponse(response));
     return function (args: any[]) {
       GlobalDurationTimer.start();
       const receivedTime = new Date().getTime();
@@ -278,7 +288,7 @@ export class BaseHttp {
         body += chunk;
       }
       if (args[0] === 'end') {
-        const responseData = {
+        const responseData: ResponseData = {
           statusCode,
           receivedTime,
           body,
@@ -383,4 +393,8 @@ export class BaseHttp {
       })() || ''
     );
   }
+}
+
+function isErroneousResponse(responseData: ResponseData): boolean {
+  return responseData.isNetworkError || responseData.statusCode >= 400;
 }

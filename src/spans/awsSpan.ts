@@ -40,7 +40,7 @@ import {
 import { payloadStringify, shallowMask, truncate } from '../utils/payloadStringify';
 import { Utf8Utils } from '../utils/utf8Utils';
 import { getW3CMessageId } from '../utils/w3cUtils';
-import { RequestData } from '../hooks/baseHttp';
+import { RequestData, ResponseData } from '../hooks/baseHttp';
 
 export const HTTP_SPAN = 'http';
 export const FUNCTION_SPAN = 'function';
@@ -383,7 +383,7 @@ export const getHttpSpan = (
   awsRequestId,
   randomRequestId,
   requestData: RequestData,
-  responseData = { truncated: false, body: undefined, headers: undefined }
+  responseData: ResponseData = { truncated: false, body: undefined, headers: undefined }
 ) => {
   let serviceData = {};
   try {

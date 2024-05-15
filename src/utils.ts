@@ -126,10 +126,7 @@ export const getTraceId = (awsXAmznTraceId) => {
     }
 
     // @ts-ignore
-    const transactionId = traceId.Root.split('-')[2];
-
-    // @ts-ignore
-    traceId.transactionId = transactionId;
+    traceId.transactionId = traceId.Root.split('-')[2];
 
     return traceId;
   } catch (err) {
@@ -466,7 +463,7 @@ export function isObject(a: any): a is object {
   return !!a && a.constructor === Object;
 }
 
-export const lowerCaseObjectKeys = (o) =>
+export const lowerCaseObjectKeys = (o?: {}) =>
   o ? Object.keys(o).reduce((c, k) => ((c[k.toLowerCase()] = o[k]), c), {}) : {};
 
 export const isAwsService = (host, responseData = undefined): boolean => {
