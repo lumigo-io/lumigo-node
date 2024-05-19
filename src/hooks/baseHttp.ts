@@ -268,11 +268,11 @@ export class BaseHttp {
     requestData: RequestData;
     requestRandomId: string;
     response: ResponseData;
-  }): (args: any[]) => void {
+  }): (args: any[]) => { truncated: boolean } {
     let body = '';
     const { headers, statusCode } = response;
     const maxPayloadSize = getEventEntitySize(isErroneousResponse(response));
-    return function (args: any[]) {
+    return function (args: any[]): { truncated: boolean } {
       GlobalDurationTimer.start();
       const receivedTime = new Date().getTime();
       let truncated = false;
@@ -308,6 +308,10 @@ export class BaseHttp {
         SpansContainer.addSpan(httpSpan);
       }
       GlobalDurationTimer.stop();
+
+      return {
+        truncated,
+      };
     };
   }
 

@@ -598,6 +598,22 @@ export function safeExecute<T>(
   };
 }
 
+export function safeExecuteAsync<T>(
+  callback: Function,
+  message: string = 'Error in Lumigo tracer',
+  logLevel: string = logger.LOG_LEVELS.WARNING,
+  defaultReturn: T = undefined
+): Function {
+  return async function (...args) {
+    try {
+      return await callback.apply(this, args);
+    } catch (err) {
+      logger.log(logLevel, message, err);
+      return defaultReturn;
+    }
+  };
+}
+
 export const recursiveGetKey = (event, keyToSearch) => {
   return recursiveGetKeyByDepth(event, keyToSearch, recursiveGetKeyDepth());
 };
