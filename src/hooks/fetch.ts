@@ -1,6 +1,5 @@
 import { BaseHttp, ParseHttpRequestOptions, RequestData, UrlAndRequestOptions } from './baseHttp';
 import * as logger from '../logger';
-import { hookFunc, hookPromiseAsyncHandlers } from '../extender';
 import { TextDecoder } from 'util';
 import { getEventEntitySize } from '../utils';
 
@@ -16,9 +15,9 @@ interface ResponseData {
 
 interface RequestExtenderContext {
   isTracedDisabled?: boolean;
-  awsRequestId: string;
-  transactionId: string;
-  requestRandomId: string;
+  awsRequestId?: string;
+  transactionId?: string;
+  requestRandomId?: string;
   currentSpan?: any;
   requestData?: RequestData;
   response?: Response;
@@ -45,21 +44,37 @@ export class FetchInstrumentation {
   }
 
   private static attachHooks(): void {
+    const originalFetch = fetch;
+
     // @ts-ignore
-    fetch = hookFunc(fetch, {
-      beforeHook: FetchInstrumentation.beforeFetch,
-      afterHook: FetchInstrumentation.onFetchPromiseReturned,
-    });
+    fetch = async (...args): Promise<Response> => {
+      const context: RequestExtenderContext = {};
+      // TODO: Make all the extra logic fail safe
+      // edit args (add headers for example)
+      const modifiedArgs = FetchInstrumentation.beforeFetch(args, context);
+
+      try {
+        // TODO: Switch to explicit args and not generic array
+        // @ts-ignore
+        const response = await originalFetch(...modifiedArgs);
+        context.response = response;
+        await FetchInstrumentation.createResponseSpan(context);
+        return response;
+      } catch (error) {
+        await FetchInstrumentation.createResponseSpan(context);
+        throw error;
+      }
+    };
   }
 
   /**
    * Runs before the fetch command is executed
-   * @param {any[]} args The arguments passed to the fetch function
-   * @param {RequestExtenderContext} extenderContext A blank object that will be passed to the next hooks for fetch
-   * @private
    */
-  private static beforeFetch(args: any[], extenderContext: RequestExtenderContext): void {
-    logger.debug('Fetch instrumentor - before fetch function call', { args, extenderContext });
+  private static beforeFetch(args: any[], extenderContext: RequestExtenderContext): any[] {
+    logger.debug('Fetch instrumentor - before fetch function call', {
+      args,
+      extenderContext,
+    });
     extenderContext.isTracedDisabled = true;
     const { url, options } = FetchInstrumentation.parseRequestArguments(args);
     const requestTracingData = BaseHttp.onRequestCreated({
@@ -97,52 +112,14 @@ export class FetchInstrumentation {
       extenderContext.currentSpan = httpSpan;
     }
 
+    let modifiedArgs = args;
     if (addedHeaders) {
       options.headers = headers;
-      FetchInstrumentation.addHeadersToFetchArguments(args, options);
+      modifiedArgs = FetchInstrumentation.addHeadersToFetchArguments(args, options);
     }
     extenderContext.isTracedDisabled = false;
-  }
 
-  /**
-   * Runs after the fetch promise is created but before it is returned to the user.
-   * Here we alter the promise to resolve to our own function that will record the response data.
-   * @param {any[]} args The arguments passed to the fetch function call
-   * @param {Promise<any>} originalFnResult The original promise returned by the fetch function
-   * @param {RequestExtenderContext} extenderContext The context object passed to the next hooks for fetch
-   * @private
-   */
-  private static onFetchPromiseReturned(
-    args: any[],
-    originalFnResult: Promise<any>,
-    extenderContext: RequestExtenderContext
-  ): void {
-    logger.debug('onFetchPromiseReturned', { args, originalFnResult, extenderContext });
-    if (extenderContext.isTracedDisabled) {
-      return;
-    }
-    if (!(originalFnResult instanceof Promise)) {
-      logger.debug('Fetch instrumentation after fetch: original function result is not a promise');
-      return;
-    }
-
-    const { transactionId, awsRequestId, requestData, requestRandomId } = extenderContext;
-
-    return hookPromiseAsyncHandlers(originalFnResult, {
-      thenHandler: async (response: Response) => {
-        return FetchInstrumentation.onFetchPromiseResolved({
-          transactionId,
-          awsRequestId,
-          requestData,
-          requestRandomId,
-          response,
-        });
-      },
-      catchHandler: async (args: any) => {
-        // TODO: Figure out what to do here
-        logger.debug(`afterFetch promise catch (args: ${args})`);
-      },
-    });
+    return modifiedArgs;
   }
 
   /**
@@ -155,13 +132,14 @@ export class FetchInstrumentation {
    * @param {Response} response The response object returned by the fetch promise
    * @private
    */
-  private static async onFetchPromiseResolved({
+  private static async createResponseSpan({
     transactionId,
     awsRequestId,
     requestData,
     requestRandomId,
     response,
   }: RequestExtenderContext): Promise<void> {
+    console.log('onFetchPromiseResolved - Start');
     if (!response) {
       logger.debug(`Fetch instrumentation response handler - no response: ${response}`);
       return;
@@ -176,14 +154,16 @@ export class FetchInstrumentation {
       requestRandomId,
       response: responseData,
     });
+
     const bodyStream = clonedResponse.body;
     if (bodyStream) {
       logger.debug('Fetch instrumentation - body found in response');
+      const textDecoder = new TextDecoder();
       // @ts-ignore
       for await (const chunk: Uint8Array of bodyStream) {
         try {
           // TODO: reuse the decoder object
-          const chunkString = new TextDecoder().decode(chunk);
+          const chunkString = textDecoder.decode(chunk);
           const { truncated } = responseDataWriterHandler(['data', chunkString]);
           if (truncated) {
             // No need to consume the rest of the body if it reached the limit
@@ -198,6 +178,7 @@ export class FetchInstrumentation {
 
     logger.debug('Fetch instrumentation - response end');
     responseDataWriterHandler(['end']);
+    console.log('onFetchPromiseResolved - End');
   }
 
   /**
@@ -226,13 +207,15 @@ export class FetchInstrumentation {
    * @param {ParseHttpRequestOptions} options
    * @private
    */
-  private static addHeadersToFetchArguments(args: any[], options: ParseHttpRequestOptions): void {
-    if (args.length === 1) {
-      args.push({ headers: options.headers });
+  private static addHeadersToFetchArguments(args: any[], options: ParseHttpRequestOptions): any[] {
+    const modifiedArgs = [...args];
+    if (modifiedArgs.length === 1) {
+      modifiedArgs.push({ headers: options.headers });
     }
-    if (args.length === 2) {
-      Object.assign(args[1], { headers: options.headers });
+    if (modifiedArgs.length === 2) {
+      modifiedArgs[1] = { ...modifiedArgs[1], headers: options.headers };
     }
+    return modifiedArgs;
   }
 
   /**

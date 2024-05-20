@@ -602,7 +602,7 @@ export function safeExecuteAsync<T>(
   callback: Function,
   message: string = 'Error in Lumigo tracer',
   logLevel: string = logger.LOG_LEVELS.WARNING,
-  defaultReturn: T = undefined
+  defaultReturn = new Promise((resolve, reject) => resolve(undefined))
 ): Function {
   return async function (...args) {
     try {

@@ -49,8 +49,8 @@ export const hookFunc = (func, options = {}) => {
       return function (...args) {
         safeBeforeHook.call(this, args, extenderContext);
         const originalFnResult = originalFn.apply(this, args);
-        safeAfterHook.call(this, args, originalFnResult, extenderContext);
-        return originalFnResult;
+        // TODO: Make sure we always have a result to return
+        return safeAfterHook.call(this, args, originalFnResult, extenderContext);
       };
     };
     return getWrappedFunc(func, wrapper);
@@ -78,12 +78,7 @@ export const hookPromiseAsyncHandlers = (originalPromise, options) => {
   const safeThenHandler = safeExecuteAsync(thenHandler, `thenHandler of fail`);
   const safeCatchHandler = safeExecuteAsync(catchHandler, `catchHandler of fail`);
 
-  const errorHandler = async (err) => {
-    safeCatchHandler(err);
-    throw err;
-  };
-
-  return originalPromise.then(safeThenHandler).catch(errorHandler);
+  return originalPromise.then(safeThenHandler).catch(safeCatchHandler);
 };
 
 function defineProperty(obj, name, value) {
