@@ -70,6 +70,12 @@ export type ParseHttpRequestOptions = {
   uri?: { hostname?: string };
 };
 
+// I would have just added the url to the options object, but kept it as is, so we don't break existing code
+export type UrlAndRequestOptions = {
+  url: string;
+  options: ParseHttpRequestOptions;
+};
+
 export type RequestData = {
   host?: string;
   body?: any;

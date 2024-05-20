@@ -83,7 +83,7 @@ export const hookPromiseAsyncHandlers = (originalPromise, options) => {
     throw err;
   };
 
-  originalPromise.then(safeThenHandler).catch(errorHandler);
+  return originalPromise.then(safeThenHandler).catch(errorHandler);
 };
 
 function defineProperty(obj, name, value) {
