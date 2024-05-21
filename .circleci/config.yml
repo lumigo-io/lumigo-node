@@ -22,6 +22,12 @@ workflows:
           branches:
             ignore: master
 
+    - test-18:
+        context: common
+        filters:
+          branches:
+            ignore: master
+
     - lumigo-orb/is_environment_available:
         context: common
         filters:
@@ -73,6 +79,7 @@ workflows:
         context: common
         requires:
           - test
+          - test-18
           - lumigo-orb/integration-test-parallel
 
     - deploy:
@@ -120,6 +127,46 @@ jobs:
     - store_artifacts:
         path: coverage
         prefix: coverage
+
+  test-18:
+    <<: *defaults
+    environment:
+      - TZ: Asia/Jerusalem
+      - NODE_OPTIONS: --max_old_space_size=1500
+    resource_class: medium+
+    working_directory: ~/lumigo-node
+    steps:
+      - checkout
+      - run:
+          name: install npm dependencies
+          command: npm install
+      - run:
+          name: switch to node 18
+          command: nvm install 18 && nvm use 18
+      - run:
+          name: install-npm-inner
+          command: |
+            pushd auto-instrument-handler
+              npm install
+            popd
+      - run:
+          name: prettier
+          command: npm run prettier:ci
+      - run:
+          name: check types
+          command: npm run check-types
+      - run:
+          name: test
+          command: npm test
+      - run:
+          name: eslint
+          command: npm run lint
+      - run:
+          name: code-coverage
+          command: npm test --coverage && codecov
+      - store_artifacts:
+          path: coverage
+          prefix: coverage
 
   deploy:
     <<: *defaults
