@@ -598,13 +598,18 @@ export function safeExecute<T>(
   };
 }
 
-export function safeExecuteAsync<T>(
-  callback: Function,
-  message: string = 'Error in Lumigo tracer',
-  logLevel: string = logger.LOG_LEVELS.WARNING,
-  defaultReturn = new Promise((resolve, reject) => resolve(undefined))
-): Function {
-  return async function (...args) {
+export function safeExecuteAsync({
+  callback,
+  message = 'Error in Lumigo tracer',
+  logLevel = logger.LOG_LEVELS.WARNING,
+  defaultReturn = undefined,
+}: {
+  callback: Function;
+  message?: string;
+  logLevel?: string;
+  defaultReturn?: any;
+}) {
+  return async function (...args: any[]) {
     try {
       return await callback.apply(this, args);
     } catch (err) {

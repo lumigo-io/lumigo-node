@@ -1,7 +1,7 @@
 import { BaseHttp, ParseHttpRequestOptions, RequestData, UrlAndRequestOptions } from './baseHttp';
 import * as logger from '../logger';
 import { TextDecoder } from 'util';
-import { getEventEntitySize } from '../utils';
+import { getEventEntitySize, safeExecute, safeExecuteAsync } from '../utils';
 
 interface ResponseData {
   headers?: Record<string, string>;
@@ -47,21 +47,34 @@ export class FetchInstrumentation {
     const originalFetch = fetch;
 
     // @ts-ignore
-    fetch = async (...args): Promise<Response> => {
+    fetch = async (...args: any[]): Promise<Response> => {
       const context: RequestExtenderContext = {};
-      // TODO: Make all the extra logic fail safe
-      // edit args (add headers for example)
-      const modifiedArgs = FetchInstrumentation.beforeFetch(args, context);
+      const safeBeforeFetch = safeExecute(
+        FetchInstrumentation.beforeFetch,
+        'Fetch instrumentation - before fetch function call',
+        logger.LOG_LEVELS.WARNING,
+        args
+      );
+      const modifiedArgs = safeBeforeFetch(args, context);
 
       try {
         // TODO: Switch to explicit args and not generic array
         // @ts-ignore
         const response = await originalFetch(...modifiedArgs);
         context.response = response;
-        await FetchInstrumentation.createResponseSpan(context);
+        const safeCreateResponseSpan = safeExecuteAsync({
+          callback: FetchInstrumentation.createResponseSpan,
+          message: 'Fetch instrumentation - create response span',
+          defaultReturn: response,
+        });
+        await safeCreateResponseSpan(context);
         return response;
       } catch (error) {
-        await FetchInstrumentation.createResponseSpan(context);
+        const safeCreateResponseSpan = safeExecuteAsync({
+          callback: FetchInstrumentation.createResponseSpan,
+          message: 'Fetch instrumentation - create response span',
+        });
+        await safeCreateResponseSpan(context);
         throw error;
       }
     };
@@ -139,9 +152,7 @@ export class FetchInstrumentation {
     requestRandomId,
     response,
   }: RequestExtenderContext): Promise<void> {
-    console.log('onFetchPromiseResolved - Start');
     if (!response) {
-      logger.debug(`Fetch instrumentation response handler - no response: ${response}`);
       return;
     }
 
@@ -157,12 +168,10 @@ export class FetchInstrumentation {
 
     const bodyStream = clonedResponse.body;
     if (bodyStream) {
-      logger.debug('Fetch instrumentation - body found in response');
       const textDecoder = new TextDecoder();
       // @ts-ignore
       for await (const chunk: Uint8Array of bodyStream) {
         try {
-          // TODO: reuse the decoder object
           const chunkString = textDecoder.decode(chunk);
           const { truncated } = responseDataWriterHandler(['data', chunkString]);
           if (truncated) {
@@ -170,15 +179,14 @@ export class FetchInstrumentation {
             break;
           }
         } catch (e) {
-          // TODO: Do not log if content isn't text (binary for example)
-          logger.debug('Error decoding response body stream chunk', e);
+          logger.debug(
+            'Lumigo fetch instrumentation - failed decoding response body stream chunk, skipping it',
+            e
+          );
         }
       }
     }
-
-    logger.debug('Fetch instrumentation - response end');
     responseDataWriterHandler(['end']);
-    console.log('onFetchPromiseResolved - End');
   }
 
   /**
@@ -202,9 +210,11 @@ export class FetchInstrumentation {
   }
 
   /**
-   * Adds the headers found in the options object to the fetch arguments. The fetch arguments are modified in place.
+   * Adds the headers found in the options object to the fetch arguments, and return the modified arguments.
+   * The original arguments will not be modified.
    * @param {any[]} args Raw arguments that will be passed to the fetch function call
-   * @param {ParseHttpRequestOptions} options
+   * @param {ParseHttpRequestOptions} options The HTTP request options to get the headers from
+   * @returns {any[]} The modified arguments with the headers added
    * @private
    */
   private static addHeadersToFetchArguments(args: any[], options: ParseHttpRequestOptions): any[] {

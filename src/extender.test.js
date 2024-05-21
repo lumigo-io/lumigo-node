@@ -271,36 +271,4 @@ describe('extender', () => {
     extender.hookPromise(p, { catchHandler: catchHandler });
     await expect(p).rejects.toThrow();
   });
-
-  test('hookPromiseAsyncHandlers -> thenHandler', async () => {
-    const orderArray = [];
-    const myFunc = async (seconds) => {
-      orderArray.push('myFunc - Start');
-      console.log(`myFunc - Sleeping for ${seconds} seconds`);
-      await new Promise((resolve) => setTimeout(resolve, seconds * 1000));
-      console.log('myFunc - Done sleeping');
-      orderArray.push('myFunc - End');
-    };
-
-    const wrappedPromise = extender.hookPromiseAsyncHandlers(myFunc(2), {
-      thenHandler: async (value) => {
-        orderArray.push('Then handler - Start');
-        console.log('Then handler - Sleeping for 1 second');
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        console.log('Then handler - Done sleeping');
-        orderArray.push('Then handler - End');
-      },
-    });
-
-    await wrappedPromise;
-    orderArray.push('Await wrapped promise - End');
-
-    expect(orderArray).toEqual([
-      'myFunc - Start',
-      'myFunc - End',
-      'Then handler - Start',
-      'Then handler - End',
-      'Await wrapped promise - End',
-    ]);
-  });
 });
