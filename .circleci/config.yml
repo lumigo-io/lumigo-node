@@ -136,13 +136,22 @@ jobs:
     resource_class: medium+
     working_directory: ~/lumigo-node
     steps:
+      - run:
+          name: install nvm
+          command: curl https://raw.githubusercontent.com/creationix/nvm/master/install.sh | bash
+      - run:
+          name: configure nvm
+          command: export NVM_DIR="$HOME/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+      - run:
+          name: install node 18
+          command: nvm install 18.20.3 && mvn use 18.20.3
+      - run:
+          name: show current node version
+          command: node --version
       - checkout
       - run:
           name: install npm dependencies
           command: npm install
-      - run:
-          name: switch to node 18
-          command: nvm install 18 && nvm use 18
       - run:
           name: install-npm-inner
           command: |
