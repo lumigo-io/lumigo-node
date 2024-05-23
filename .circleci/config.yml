@@ -140,7 +140,6 @@ jobs:
           name: install nvm
           command: |
             apt-get remove nodejs -y
-            apt-get remove npm -y
             curl https://raw.githubusercontent.com/creationix/nvm/master/install.sh | bash
             echo 'export NVM_DIR="$HOME/.nvm"' >> $BASH_ENV
             echo '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' >> $BASH_ENV
