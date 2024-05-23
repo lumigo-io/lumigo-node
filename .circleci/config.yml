@@ -129,7 +129,8 @@ jobs:
         prefix: coverage
 
   test-18:
-    <<: *defaults
+    docker:
+      - image: node:18.20.3-bookworm-slim
     environment:
       - TZ: Asia/Jerusalem
       - NODE_OPTIONS: --max_old_space_size=1500
@@ -137,24 +138,8 @@ jobs:
     working_directory: ~/lumigo-node
     steps:
       - run:
-          name: install nvm
-          command: |
-            apt-get remove nodejs -y
-            curl https://raw.githubusercontent.com/creationix/nvm/master/install.sh | bash
-            echo 'export NVM_DIR="$HOME/.nvm"' >> $BASH_ENV
-            echo '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' >> $BASH_ENV
-      - run:
-          name: install node 18
-          command: |
-            nvm install 18.20.3
-            nvm use default 18.20.3
-            node --version
-      - run:
           name: show current node version
           command: node --version
-      - run:
-          name: show current node version
-          command: nvm use 18.20.3 && node --version
       - checkout
       - run:
           name: install npm dependencies
