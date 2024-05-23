@@ -147,6 +147,9 @@ jobs:
       - run:
           name: show current node version
           command: node --version
+      - run:
+          name: show current node version
+          command: nvm use 18.20.3 && node --version
       - checkout
       - run:
           name: install npm dependencies
