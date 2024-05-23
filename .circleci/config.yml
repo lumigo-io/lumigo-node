@@ -140,8 +140,8 @@ jobs:
           name: install nvm
           command: |
             curl https://raw.githubusercontent.com/creationix/nvm/master/install.sh | bash
-            export NVM_DIR="$HOME/.nvm"
-            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            echo 'export NVM_DIR="$HOME/.nvm"' >> $BASH_ENV
+            echo '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' >> $BASH_ENV
             nvm install 18.20.3
             nvm use default 18.20.3
       - run:
