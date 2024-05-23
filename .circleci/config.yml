@@ -140,6 +140,9 @@ jobs:
       - run:
           name: show current node version
           command: node --version
+      - run:
+          name: install openssl
+          command: apt-get update -y && apt-get install -y openssl
       - checkout
       - run:
           name: install npm dependencies
