@@ -143,7 +143,7 @@ jobs:
       - checkout
       - run:
           name: install npm dependencies
-          command: npm install
+          command: npm install --legacy-peer-deps
       - run:
           name: install-npm-inner
           command: |
