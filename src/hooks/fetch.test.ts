@@ -1,9 +1,7 @@
-/*
- * @group node18
- */
-const [nodeVersionMajor] = process.versions.node.split('.').map(Number);
+import { NODE_MAJOR_VERSION } from '../../testUtils/nodeVersion';
+
 describe('fetch', () => {
-  if (nodeVersionMajor < 18) {
+  if (NODE_MAJOR_VERSION < 18) {
     test('skip suite', () => {
       expect(true).toBe(true);
     });
