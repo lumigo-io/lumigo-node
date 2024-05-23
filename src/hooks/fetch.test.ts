@@ -1,4 +1,7 @@
-describe('onlynode18 - fetch', () => {
+/*
+ * @group node18
+ */
+describe('fetch', () => {
   test('beforeFetch', async () => {
     // @ts-ignore
     const response = await fetch('https://example.com/');
