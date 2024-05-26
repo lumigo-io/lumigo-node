@@ -134,7 +134,7 @@ describe('http hook', () => {
         body: '',
       },
       responseData: {
-        truncated: false,
+        truncated: true,
         statusCode: 200,
         receivedTime: 895179612345,
         headers: { X: 'Y', z: 'A' },
