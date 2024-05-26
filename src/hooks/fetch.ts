@@ -196,7 +196,11 @@ export class FetchInstrumentation {
   private static parseRequestArguments(args: any[]): FetchUrlAndRequestOptions {
     let url = undefined;
     if (args.length >= 1) {
-      url = args[0];
+      if (typeof args[0] === 'string') {
+        url = args[0];
+      } else if (args[0] instanceof Request) {
+        url = args[0].url;
+      }
     }
     const options = args.length >= 2 ? args[1] : {};
 

@@ -407,4 +407,44 @@ describe('fetch', () => {
     const spans = SpansContainer.getSpans();
     expect(spans.length).toBe(0);
   });
+
+  test('Fetch with different arguments formats', async () => {
+    const responseHeaders = { 'content-type': 'application/json' };
+    const responseStatusCode = 200;
+    const responseBody = JSON.stringify({ data: '12345' });
+    fetchMock.mockResponseOnce(responseBody, {
+      status: responseStatusCode,
+      headers: responseHeaders,
+    });
+
+    SpansContainer.clearSpans();
+    expect(SpansContainer.getSpans().length).toBe(0);
+
+    // @ts-ignore
+    await fetch(new Request('http://example.com/'), {
+      method: 'GET',
+    });
+
+    const spans = SpansContainer.getSpans();
+    expect(spans.length).toBe(1);
+    const actualSpan = spans[0];
+    // @ts-ignore
+    const requestData = actualSpan.info.httpInfo.request;
+    // @ts-ignore
+    const responseData = actualSpan.info.httpInfo.response;
+
+    // Verify span has all the required request data
+    expect(requestData.truncated).toEqual(false);
+    expect(requestData.method).toEqual('GET');
+    expect(requestData.uri).toEqual(`example.com/`);
+    expect(requestData.host).toEqual('example.com');
+    expect(requestData.protocol).toEqual('http:');
+    expect(requestData.headers.traceparent).toBeTruthy();
+
+    // Verify span has all the required response data
+    expect(responseData.truncated).toEqual(false);
+    expect(responseData.statusCode).toEqual(responseStatusCode);
+    expect(responseData.headers).toEqual(responseHeaders);
+    expect(responseData.body).toEqual(responseBody);
+  });
 });
