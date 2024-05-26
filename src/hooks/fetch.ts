@@ -65,7 +65,6 @@ export class FetchInstrumentation {
       const modifiedArgs = safeBeforeFetch(args, context) || args;
 
       try {
-        // TODO: Switch to explicit args and not generic array
         // @ts-ignore
         const response = await originalFetch(...modifiedArgs);
         context.response = response;
@@ -183,7 +182,6 @@ export class FetchInstrumentation {
       response: responseData,
     });
 
-    // TODO: Make sure we handle large bodies without lag or memory issues
     const bodyText = await clonedResponse.text();
     responseDataWriterHandler(['data', bodyText]);
     responseDataWriterHandler(['end']);
