@@ -16,12 +16,12 @@ describe('fetch', () => {
     FetchInstrumentation.stopInstrumentation();
   });
 
-  // if (NODE_MAJOR_VERSION < 18) {
-  //   test('skip suite', () => {
-  //     expect(true).toBe(true);
-  //   });
-  //   return;
-  // }
+  if (NODE_MAJOR_VERSION < 18) {
+    test('skip suite', () => {
+      expect(true).toBe(true);
+    });
+    return;
+  }
 
   const protocols = ['http:', 'https:'];
   const statusCodes = [
@@ -125,4 +125,192 @@ describe('fetch', () => {
       }
     }
   );
+
+  test('Test large response body', async () => {
+    const responseHeaders = { 'content-type': 'application/json' };
+    const responseStatusCode = 200;
+    const responseBody = JSON.stringify({ data: 'x'.repeat(1000000) });
+    fetchMock.mockResponseOnce(responseBody, {
+      status: responseStatusCode,
+      headers: responseHeaders,
+    });
+
+    SpansContainer.clearSpans();
+    expect(SpansContainer.getSpans().length).toBe(0);
+
+    // @ts-ignore
+    const response = await fetch('http://example.com/');
+    expect(response.status).toBe(responseStatusCode);
+
+    const body = await response.text();
+    expect(body).toEqual(responseBody);
+
+    const spans = SpansContainer.getSpans();
+    expect(spans.length).toBe(1);
+    const actualSpan = spans[0];
+    // @ts-ignore
+    const requestData = actualSpan.info.httpInfo.request;
+    // @ts-ignore
+    const responseData = actualSpan.info.httpInfo.response;
+
+    expect(responseData.body.length).toBeLessThan(responseBody.length);
+    expect(responseData.body).toEqual(responseBody.slice(0, responseData.body.length));
+    expect(responseData.truncated).toEqual(true);
+
+    // Verify span has all the required request data
+    expect(requestData.truncated).toEqual(false);
+    expect(requestData.method).toEqual('GET');
+    expect(requestData.uri).toEqual(`example.com/`);
+    expect(requestData.host).toEqual('example.com');
+    expect(requestData.protocol).toEqual('http:');
+    expect(requestData.headers.traceparent).toBeTruthy();
+  });
+
+  test('Test failsafe hooks - before fetch', async () => {
+    const responseHeaders = { 'content-type': 'application/json' };
+    const responseStatusCode = 200;
+    const responseBody = JSON.stringify({ data: '12345' });
+    fetchMock.mockResponseOnce(responseBody, {
+      status: responseStatusCode,
+      headers: responseHeaders,
+    });
+
+    SpansContainer.clearSpans();
+    expect(SpansContainer.getSpans().length).toBe(0);
+
+    // @ts-ignore
+    const originalBeforeFetch = FetchInstrumentation.beforeFetch;
+
+    // @ts-ignore
+    FetchInstrumentation.beforeFetch = () => {
+      throw new Error('beforeFetch error');
+    };
+
+    // @ts-ignore
+    const response = await fetch('http://example.com/');
+    // @ts-ignore
+    FetchInstrumentation.beforeFetch = originalBeforeFetch;
+
+    expect(response.status).toBe(responseStatusCode);
+
+    const body = await response.text();
+    expect(body).toEqual(responseBody);
+
+    const actualResponseHeaders = {};
+    response.headers.forEach((value, key) => {
+      actualResponseHeaders[key] = value;
+    });
+
+    expect(actualResponseHeaders).toEqual(responseHeaders);
+
+    expect(SpansContainer.getSpans().length).toBe(0);
+  });
+
+  test('Test failsafe hooks - create response span', async () => {
+    const responseHeaders = { 'content-type': 'application/json' };
+    const responseStatusCode = 200;
+    const responseBody = JSON.stringify({ data: '12345' });
+    fetchMock.mockResponseOnce(responseBody, {
+      status: responseStatusCode,
+      headers: responseHeaders,
+    });
+
+    SpansContainer.clearSpans();
+    expect(SpansContainer.getSpans().length).toBe(0);
+
+    // @ts-ignore
+    const originalCreateResponseSpan = FetchInstrumentation.createResponseSpan;
+    // @ts-ignore
+    FetchInstrumentation.createResponseSpan = () => {
+      throw new Error('createResponseSpan error');
+    };
+
+    // @ts-ignore
+    const response = await fetch('http://example.com/');
+    // @ts-ignore
+    FetchInstrumentation.createResponseSpan = originalCreateResponseSpan;
+
+    expect(response.status).toBe(responseStatusCode);
+
+    const body = await response.text();
+    expect(body).toEqual(responseBody);
+
+    const actualResponseHeaders = {};
+    response.headers.forEach((value, key) => {
+      actualResponseHeaders[key] = value;
+    });
+
+    expect(actualResponseHeaders).toEqual(responseHeaders);
+
+    const spans = SpansContainer.getSpans();
+    expect(spans.length).toBe(1);
+    const actualSpan = spans[0];
+    // @ts-ignore
+    const requestData = actualSpan.info.httpInfo.request;
+    // @ts-ignore
+    const responseData = actualSpan.info.httpInfo.response;
+
+    expect(responseData).toEqual({});
+
+    // Verify span has all the required request data
+    expect(requestData.truncated).toEqual(false);
+    expect(requestData.method).toEqual('GET');
+    expect(requestData.uri).toEqual(`example.com/`);
+    expect(requestData.host).toEqual('example.com');
+    expect(requestData.protocol).toEqual('http:');
+    expect(requestData.headers.traceparent).toBeTruthy();
+  });
+
+  test('Test request body with binary file', async () => {
+    const responseHeaders = { 'content-type': 'application/json' };
+    const responseStatusCode = 200;
+    const responseBody = JSON.stringify({ data: '12345' });
+    fetchMock.mockResponseOnce(responseBody, {
+      status: responseStatusCode,
+      headers: responseHeaders,
+    });
+
+    SpansContainer.clearSpans();
+    expect(SpansContainer.getSpans().length).toBe(0);
+
+    // Send POST request with binary data
+    // @ts-ignore
+    const response = await fetch('http://example.com/', {
+      method: 'POST',
+      // @ts-ignore
+      body: new Blob(['Blobasdfasdf']),
+    });
+
+    expect(response.status).toBe(responseStatusCode);
+
+    const actualResponseHeaders = {};
+    response.headers.forEach((value, key) => {
+      actualResponseHeaders[key] = value;
+    });
+
+    expect(actualResponseHeaders).toEqual(responseHeaders);
+
+    const spans = SpansContainer.getSpans();
+    expect(spans.length).toBe(1);
+    const actualSpan = spans[0];
+    // @ts-ignore
+    const requestData = actualSpan.info.httpInfo.request;
+    // @ts-ignore
+    const responseData = actualSpan.info.httpInfo.response;
+
+    // Verify span has all the required request data
+    expect(requestData.truncated).toEqual(false);
+    expect(requestData.method).toEqual('POST');
+    expect(requestData.uri).toEqual(`example.com/`);
+    expect(requestData.host).toEqual('example.com');
+    expect(requestData.protocol).toEqual('http:');
+    expect(requestData.headers.traceparent).toBeTruthy();
+    expect(requestData.body).toEqual(''); // Binary data is not captured
+  });
+
+  // TODO: Test exception in the original fetch command, make sure it is thrown to user and span is created
+
+  // TODO: Test resulting span timing is correct (start & end time, for short & long http requests)
+
+  // TODO: Test response body with Binary data / image / file
 });

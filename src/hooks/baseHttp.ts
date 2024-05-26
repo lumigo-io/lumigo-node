@@ -278,10 +278,10 @@ export class BaseHttp {
     let body = '';
     const { headers, statusCode } = response;
     const maxPayloadSize = getEventEntitySize(isErroneousResponse(response));
+    let truncated = false;
     return function (args: any[]): { truncated: boolean } {
       GlobalDurationTimer.start();
       const receivedTime = new Date().getTime();
-      let truncated = false;
       // add to body only if we didn't pass the max size
       if (args[0] === 'data' && body.length < maxPayloadSize) {
         let chunk = httpDataToString(args[1]);
@@ -300,13 +300,10 @@ export class BaseHttp {
           body,
           headers: lowerCaseObjectKeys(headers),
         };
-        const httpSpan = getHttpSpan(
-          transactionId,
-          awsRequestId,
-          requestRandomId,
-          requestData,
-          Object.assign({ truncated }, responseData)
-        );
+        const httpSpan = getHttpSpan(transactionId, awsRequestId, requestRandomId, requestData, {
+          ...responseData,
+          truncated,
+        });
         if (httpSpan.id !== requestRandomId) {
           // In Http case, one of our parser decide to change the spanId for async connection
           SpansContainer.changeSpanId(requestRandomId, httpSpan.id);
@@ -332,7 +329,7 @@ export class BaseHttp {
     maxSize: number = getEventEntitySize(true)
   ): void {
     let serviceData: ServiceData = {};
-    if (body && !requestData.truncated) {
+    if (body && !requestData.truncated && typeof body === 'string') {
       requestData.body += body;
       serviceData = getServiceData(requestData, null);
       const truncated = maxSize < requestData.body.length;
