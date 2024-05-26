@@ -62,7 +62,7 @@ export class FetchInstrumentation {
         logger.LOG_LEVELS.WARNING,
         args
       );
-      const modifiedArgs = safeBeforeFetch(args, context);
+      const modifiedArgs = safeBeforeFetch(args, context) || args;
 
       try {
         // TODO: Switch to explicit args and not generic array

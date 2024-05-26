@@ -17,6 +17,16 @@ describe('fetch', () => {
   });
 
   if (NODE_MAJOR_VERSION < 18) {
+    test('start instrumenting fetch - fetch not available', () => {
+      // make sure no errors are thrown
+      FetchInstrumentation.startInstrumentation();
+    });
+
+    test('stop instrumenting fetch - fetch not available', () => {
+      // make sure no errors are thrown
+      FetchInstrumentation.stopInstrumentation();
+    });
+
     test('skip suite', () => {
       expect(true).toBe(true);
     });
@@ -278,7 +288,7 @@ describe('fetch', () => {
     const response = await fetch('http://example.com/', {
       method: 'POST',
       // @ts-ignore
-      body: new Blob(['Blobasdfasdf']),
+      body: new Blob(['Blob contents']),
     });
 
     expect(response.status).toBe(responseStatusCode);
@@ -295,8 +305,6 @@ describe('fetch', () => {
     const actualSpan = spans[0];
     // @ts-ignore
     const requestData = actualSpan.info.httpInfo.request;
-    // @ts-ignore
-    const responseData = actualSpan.info.httpInfo.response;
 
     // Verify span has all the required request data
     expect(requestData.truncated).toEqual(false);
@@ -308,9 +316,95 @@ describe('fetch', () => {
     expect(requestData.body).toEqual(''); // Binary data is not captured
   });
 
-  // TODO: Test exception in the original fetch command, make sure it is thrown to user and span is created
+  test('Test response body with binary file', async () => {
+    // @ts-ignore
+    const responseBody = new Blob(['Blob contents']);
+    fetchMock.mockResponseOnce(responseBody, {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
 
-  // TODO: Test resulting span timing is correct (start & end time, for short & long http requests)
+    SpansContainer.clearSpans();
+    expect(SpansContainer.getSpans().length).toBe(0);
 
-  // TODO: Test response body with Binary data / image / file
+    // @ts-ignore
+    await fetch('http://example.com/');
+
+    const spans = SpansContainer.getSpans();
+    expect(spans.length).toBe(1);
+    const actualSpan = spans[0];
+    // @ts-ignore
+    const requestData = actualSpan.info.httpInfo.request;
+
+    // Verify span has all the required request data
+    expect(requestData.truncated).toEqual(false);
+    expect(requestData.method).toEqual('GET');
+    expect(requestData.uri).toEqual(`example.com/`);
+    expect(requestData.host).toEqual('example.com');
+    expect(requestData.protocol).toEqual('http:');
+    expect(requestData.headers.traceparent).toBeTruthy();
+    expect(requestData.body).toEqual('');
+  });
+
+  test('Test exception in fetch command', async () => {
+    SpansContainer.clearSpans();
+    expect(SpansContainer.getSpans().length).toBe(0);
+
+    fetchMock.mockRejectOnce(new Error('Fetch error'));
+
+    try {
+      // @ts-ignore
+      await fetch('http://example.com/');
+      expect(true).toBe(false); // Should not reach here
+    } catch (error) {
+      expect(error.message).toEqual('Fetch error');
+    }
+  });
+
+  test('Test fetch command timing', async () => {
+    const expectedRequestDuration = 1000;
+
+    // If the test is flaky due to timing issues, increase the margin
+    const timeMeasureMargin = 20;
+    fetchMock.mockResponseOnce(
+      () =>
+        new Promise((resolve) =>
+          setTimeout(
+            () => resolve(JSON.stringify({ data: 'Your response data' })),
+            expectedRequestDuration
+          )
+        )
+    );
+
+    SpansContainer.clearSpans();
+    expect(SpansContainer.getSpans().length).toBe(0);
+
+    // @ts-ignore
+    await fetch('http://example.com/');
+    const spans = SpansContainer.getSpans();
+    expect(spans.length).toBe(1);
+    const actualSpan = spans[0];
+
+    // @ts-ignore
+    const durationMs = actualSpan.ended - actualSpan.started;
+
+    expect(durationMs).toBeGreaterThanOrEqual(expectedRequestDuration - timeMeasureMargin);
+    expect(durationMs).toBeLessThanOrEqual(expectedRequestDuration + timeMeasureMargin);
+  });
+
+  test('Test blacklisted host not creating span', async () => {
+    fetchMock.mockResponseOnce(JSON.stringify({ data: '12345' }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+
+    SpansContainer.clearSpans();
+    expect(SpansContainer.getSpans().length).toBe(0);
+
+    // @ts-ignore
+    await fetch('http://127.0.0.1/');
+
+    const spans = SpansContainer.getSpans();
+    expect(spans.length).toBe(0);
+  });
 });
