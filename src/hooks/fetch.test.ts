@@ -16,12 +16,12 @@ describe('fetch', () => {
     FetchInstrumentation.stopInstrumentation();
   });
 
-  if (NODE_MAJOR_VERSION < 18) {
-    test('skip suite', () => {
-      expect(true).toBe(true);
-    });
-    return;
-  }
+  // if (NODE_MAJOR_VERSION < 18) {
+  //   test('skip suite', () => {
+  //     expect(true).toBe(true);
+  //   });
+  //   return;
+  // }
 
   const protocols = ['http:', 'https:'];
   const statusCodes = [
@@ -57,7 +57,7 @@ describe('fetch', () => {
   }
 
   test.each([...cases])(
-    'Should create matching span',
+    'Test basic http span creation: %p',
     async ({ method, protocol, host, reqHeaders, reqBody, resStatusCode, resHeaders, resBody }) => {
       fetchMock.mockResponseOnce(resBody, {
         status: resStatusCode,
