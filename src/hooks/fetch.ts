@@ -1,6 +1,5 @@
 import { BaseHttp, ParseHttpRequestOptions, RequestData, UrlAndRequestOptions } from './baseHttp';
 import * as logger from '../logger';
-import { TextDecoder } from 'util';
 import { getEventEntitySize, safeExecute, safeExecuteAsync } from '../utils';
 
 interface ResponseData {
@@ -37,6 +36,14 @@ export class FetchInstrumentation {
     } else {
       logger.debug('Fetch not available, skipping instrumentation');
     }
+  }
+
+  static stopInstrumentation() {
+    if (!FetchInstrumentation.libAvailable()) {
+      logger.debug('Fetch not available, can not stop instrumentation');
+      return;
+    }
+    FetchInstrumentation.removeHooks();
   }
 
   private static libAvailable(): boolean {
@@ -78,6 +85,16 @@ export class FetchInstrumentation {
         throw error;
       }
     };
+    // @ts-ignore
+    fetch.__originalFetch = originalFetch;
+  }
+
+  private static removeHooks(): void {
+    // @ts-ignore
+    if (fetch.__originalFetch) {
+      // @ts-ignore
+      fetch = fetch.__originalFetch;
+    }
   }
 
   /**
@@ -166,26 +183,9 @@ export class FetchInstrumentation {
       response: responseData,
     });
 
-    const bodyStream = clonedResponse.body;
-    if (bodyStream) {
-      const textDecoder = new TextDecoder();
-      // @ts-ignore
-      for await (const chunk: Uint8Array of bodyStream) {
-        try {
-          const chunkString = textDecoder.decode(chunk);
-          const { truncated } = responseDataWriterHandler(['data', chunkString]);
-          if (truncated) {
-            // No need to consume the rest of the body if it reached the limit
-            break;
-          }
-        } catch (e) {
-          logger.debug(
-            'Lumigo fetch instrumentation - failed decoding response body stream chunk, skipping it',
-            e
-          );
-        }
-      }
-    }
+    // TODO: Make sure we handle large bodies without lag or memory issues
+    const bodyText = await clonedResponse.text();
+    responseDataWriterHandler(['data', bodyText]);
     responseDataWriterHandler(['end']);
   }
 
