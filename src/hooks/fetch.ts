@@ -75,7 +75,7 @@ export class FetchInstrumentation {
    */
   private static attachHooks(): void {
     // @ts-ignore
-    if (fetch.__lumigoFetchInstrumentation) {
+    if (fetch.__originalFetch) {
       logger.debug('Fetch instrumentation hooks already attached');
       return;
     }
@@ -286,8 +286,37 @@ export class FetchInstrumentation {
 
     // If we didn't get the body from the request object, get it from the init object
     if (!body && init && init.body) {
-      // TODO: read body from init.body
-      // body = init.body;
+      try {
+        const decoder = new TextDecoder();
+        if (init.body instanceof ReadableStream) {
+          const reader = init.body.getReader();
+          let result = '';
+          // Limiting the number of reads to prevent an infinite read loop
+          for (let i = 0; i < 10000; i++) {
+            const { done, value } = await reader.read();
+            if (done) {
+              break;
+            }
+            result += decoder.decode(value);
+          }
+          body = result;
+        } else if (init.body instanceof Blob) {
+          body = await init.body.text();
+        } else if (init.body instanceof ArrayBuffer) {
+          body = decoder.decode(init.body);
+        } else if (init.body instanceof FormData) {
+          // TODO: Implement FormData support
+        } else if (typeof init.body === 'string') {
+          body = init.body;
+        } else {
+          logger.debug('Unsupported request body type', typeof init.body);
+        }
+      } catch (e) {
+        logger.debug('Failed to read request body from Request object', {
+          error: e,
+          bodyObjectType: typeof init.body,
+        });
+      }
     }
 
     if (body) {
@@ -343,7 +372,8 @@ export class FetchInstrumentation {
     const newInit: RequestInit = init ? { ...init } : {};
 
     if (options.headers) {
-      newInit.headers = options.headers;
+      const currentHeaders = newInit.headers || {};
+      newInit.headers = { ...currentHeaders, ...options.headers };
     }
 
     return { input, init: newInit };
