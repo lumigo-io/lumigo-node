@@ -304,11 +304,10 @@ export class FetchInstrumentation {
           body = await init.body.text();
         } else if (init.body instanceof ArrayBuffer) {
           body = decoder.decode(init.body);
-        } else if (init.body instanceof FormData) {
-          // TODO: Implement FormData support
         } else if (typeof init.body === 'string') {
           body = init.body;
         } else {
+          // TODO: Implement FormData support
           logger.debug('Unsupported request body type', typeof init.body);
         }
       } catch (e) {
