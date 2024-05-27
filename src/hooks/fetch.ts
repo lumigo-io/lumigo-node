@@ -1,6 +1,6 @@
 import { BaseHttp, ParseHttpRequestOptions, RequestData, UrlAndRequestOptions } from './baseHttp';
 import * as logger from '../logger';
-import { getEventEntitySize, safeExecute, safeExecuteAsync } from '../utils';
+import { getEventEntitySize, safeExecuteAsync } from '../utils';
 
 interface ResponseData {
   headers?: Record<string, string>;
@@ -22,6 +22,11 @@ interface RequestExtenderContext {
   response?: Response;
 }
 
+interface FetchArguments {
+  input: RequestInfo | URL;
+  init?: RequestInit;
+}
+
 type FetchUrlAndRequestOptions = UrlAndRequestOptions & {
   options: ParseHttpRequestOptions & {
     body?: string;
@@ -29,6 +34,10 @@ type FetchUrlAndRequestOptions = UrlAndRequestOptions & {
 };
 
 export class FetchInstrumentation {
+  /**
+   * Starts the fetch instrumentation by attaching the hooks to the fetch function.
+   * Note: safe to call even if the fetch instrumentation was already started / fetch is not available.
+   */
   static startInstrumentation() {
     if (FetchInstrumentation.libAvailable()) {
       logger.debug('fetch available, attaching instrumentation hooks');
@@ -38,6 +47,10 @@ export class FetchInstrumentation {
     }
   }
 
+  /**
+   * Stops the fetch instrumentation by removing the hooks from the fetch function.
+   * Note: safe to call even if the fetch instrumentation was not started / fetch is not available.
+   */
   static stopInstrumentation() {
     if (!FetchInstrumentation.libAvailable()) {
       logger.debug('Fetch not available, can not stop instrumentation');
@@ -46,41 +59,63 @@ export class FetchInstrumentation {
     FetchInstrumentation.removeHooks();
   }
 
+  /**
+   * Checks if the fetch command is available in the current environment (Native to node from version 18 and above)
+   * @returns {boolean} True if available, false otherwise
+   * @private
+   */
   private static libAvailable(): boolean {
     return typeof fetch === 'function';
   }
 
+  /**
+   * Attaches the instrumentation hooks to the fetch function.
+   * If the hooks are already attached, this function will do nothing.
+   * @private
+   */
   private static attachHooks(): void {
+    // @ts-ignore
+    if (fetch.__lumigoFetchInstrumentation) {
+      logger.debug('Fetch instrumentation hooks already attached');
+      return;
+    }
+
     const originalFetch = fetch;
 
     // @ts-ignore
-    fetch = async (...args: any[]): Promise<Response> => {
-      const context: RequestExtenderContext = {};
-      const safeBeforeFetch = safeExecute(
-        FetchInstrumentation.beforeFetch,
-        'Fetch instrumentation - before fetch function call',
-        logger.LOG_LEVELS.WARNING,
-        args
-      );
-      const modifiedArgs = safeBeforeFetch(args, context) || args;
+    fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      const extenderContext: RequestExtenderContext = {};
+      const safeBeforeFetch = safeExecuteAsync({
+        callback: FetchInstrumentation.beforeFetch,
+        message: 'Fetch instrumentation - before fetch function call',
+        logLevel: logger.LOG_LEVELS.WARNING,
+        defaultReturn: {
+          input,
+          init,
+        },
+      });
+      const modifiedArgs = (await safeBeforeFetch({ input, init, extenderContext })) || {
+        input,
+        init,
+      };
 
       try {
         // @ts-ignore
-        const response = await originalFetch(...modifiedArgs);
-        context.response = response;
+        const response = await originalFetch(modifiedArgs.input, modifiedArgs.init);
+        extenderContext.response = response;
         const safeCreateResponseSpan = safeExecuteAsync({
           callback: FetchInstrumentation.createResponseSpan,
           message: 'Fetch instrumentation - create response span',
           defaultReturn: response,
         });
-        await safeCreateResponseSpan(context);
+        await safeCreateResponseSpan(extenderContext);
         return response;
       } catch (error) {
         const safeCreateResponseSpan = safeExecuteAsync({
           callback: FetchInstrumentation.createResponseSpan,
           message: 'Fetch instrumentation - create response span',
         });
-        await safeCreateResponseSpan(context);
+        await safeCreateResponseSpan(extenderContext);
         throw error;
       }
     };
@@ -98,14 +133,27 @@ export class FetchInstrumentation {
 
   /**
    * Runs before the fetch command is executed
+   * @param args
+   * @param {RequestInfo | URL} args.input The first argument (called input / resource) that is passed to the fetch command
+   * @param {RequestInit} args.init The second argument (called init / options) that is passed to the fetch command
+   * @param {RequestExtenderContext} args.extenderContext The extender context object that will be used to pass data between the instrumentation functions running before & after the fetch command
+   * @returns {Promise<FetchArguments | undefined>} The modified fetch arguments with the headers added from the args.options object, or undefined if the request should not be traced
    */
-  private static beforeFetch(args: any[], extenderContext: RequestExtenderContext): any[] {
+  private static async beforeFetch({
+    input,
+    init,
+    extenderContext,
+  }: FetchArguments & {
+    extenderContext: RequestExtenderContext;
+  }): Promise<FetchArguments | undefined> {
     logger.debug('Fetch instrumentor - before fetch function call', {
-      args,
+      input,
+      init,
       extenderContext,
     });
+    const originalArgs: FetchArguments = { input, init };
     extenderContext.isTracedDisabled = true;
-    const { url, options } = FetchInstrumentation.parseRequestArguments(args);
+    const { url, options } = await FetchInstrumentation.parseRequestArguments(originalArgs);
     const requestTracingData = BaseHttp.onRequestCreated({
       options,
       url,
@@ -141,10 +189,10 @@ export class FetchInstrumentation {
       extenderContext.currentSpan = httpSpan;
     }
 
-    let modifiedArgs = args;
+    let modifiedArgs: FetchArguments = { ...originalArgs };
     if (addedHeaders) {
       options.headers = headers;
-      modifiedArgs = FetchInstrumentation.addHeadersToFetchArguments(args, options);
+      modifiedArgs = FetchInstrumentation.addHeadersToFetchArguments({ ...modifiedArgs, options });
     }
     extenderContext.isTracedDisabled = false;
 
@@ -154,11 +202,12 @@ export class FetchInstrumentation {
   /**
    * Runs when the fetch response promise is resolved. This function will read the response body and record the data.
    * All the additional parameters are extracted from the extender context object.
-   * @param {string} transactionId The transaction id of the request
-   * @param {string} awsRequestId The AWS request ID of the current lambda invocation
-   * @param {RequestData} requestData The request data object
-   * @param {string} requestRandomId The random ID of the request
-   * @param {Response} response The response object returned by the fetch promise
+   * @param {RequestExtenderContext} args
+   * @param {string} args.transactionId The transaction id of the request
+   * @param {string} args.awsRequestId The AWS request ID of the current lambda invocation
+   * @param {RequestData} args.requestData The request data object
+   * @param {string} args.requestRandomId The random ID of the request
+   * @param {Response} args.response The response object returned by the fetch promise
    * @private
    */
   private static async createResponseSpan({
@@ -189,45 +238,115 @@ export class FetchInstrumentation {
 
   /**
    * Parses the raw arguments passed to the fetch function and returns the URL and options object.
-   * @param {any[]} args
-   * @returns {UrlAndRequestOptions}
+   * @param {FetchArguments} args The raw fetch arguments
+   * @param {RequestInfo | URL} args.input The first argument (called input / resource) that is passed to the fetch command
+   * @param {RequestInit} args.init The second argument (called init / options) that is passed to the fetch command
+   * @returns {UrlAndRequestOptions} Our custom request options object containing the URL and options
    * @private
    */
-  private static parseRequestArguments(args: any[]): FetchUrlAndRequestOptions {
-    let url = undefined;
-    if (args.length >= 1) {
-      if (typeof args[0] === 'string') {
-        url = args[0];
-      } else if (args[0] instanceof Request) {
-        url = args[0].url;
-      }
-    }
-    const options = args.length >= 2 ? args[1] : {};
+  private static async parseRequestArguments({
+    input,
+    init,
+  }: FetchArguments): Promise<FetchUrlAndRequestOptions> {
+    let url: string = undefined;
+    const options: ParseHttpRequestOptions & {
+      body?: string;
+    } = {
+      headers: {},
+      method: 'GET',
+    };
 
-    if (!options.method) {
-      options.method = 'GET';
+    if (input instanceof URL) {
+      url = input.toString();
+    } else if (typeof input === 'string') {
+      url = input;
+    } else if (input instanceof Request) {
+      url = input.url;
+      options.method = input.method || 'GET';
+      options.headers = FetchInstrumentation.convertHeadersToKeyValuePairs(input.headers);
+    }
+
+    if (init) {
+      options.method = init.method || options.method || 'GET';
+      options.headers = {
+        ...options.headers,
+        ...FetchInstrumentation.convertHeadersToKeyValuePairs(init.headers),
+      };
+    }
+
+    // Read the body from the request object, only if we shouldn't look in the init object
+    let body: string = undefined;
+    try {
+      if (input && input instanceof Request && input.body && !init && !init?.body) {
+        body = await input.clone().text();
+      }
+    } catch (e) {
+      logger.debug('Failed to read body from Request object', e);
+    }
+
+    // If we didn't get the body from the request object, get it from the init object
+    if (!body && init && init.body) {
+      // TODO: read body from init.body
+      // body = init.body;
+    }
+
+    if (body) {
+      options.body = body;
     }
 
     return { url, options };
   }
 
   /**
-   * Adds the headers found in the options object to the fetch arguments, and return the modified arguments.
-   * The original arguments will not be modified.
-   * @param {any[]} args Raw arguments that will be passed to the fetch function call
-   * @param {ParseHttpRequestOptions} options The HTTP request options to get the headers from
-   * @returns {any[]} The modified arguments with the headers added
+   * Converts the headers object to a key-value pair object.
+   * Fetch library uses multiple format to represent headers, this function will convert them all to a key-value pair object.
+   * @param {[string, string][] | Record<string, string> | Headers} headers Headers object as used by the fetch library
+   * @returns {Record<string, string>} The headers as a key-value pair object
    * @private
    */
-  private static addHeadersToFetchArguments(args: any[], options: ParseHttpRequestOptions): any[] {
-    const modifiedArgs = [...args];
-    if (modifiedArgs.length === 1) {
-      modifiedArgs.push({ headers: options.headers });
+  private static convertHeadersToKeyValuePairs(
+    headers: [string, string][] | Record<string, string> | Headers
+  ): Record<string, string> {
+    if (headers instanceof Headers) {
+      const headersObject: Record<string, string> = {};
+      headers.forEach((value, key) => {
+        headersObject[key] = value;
+      });
+      return headersObject;
     }
-    if (modifiedArgs.length === 2) {
-      modifiedArgs[1] = { ...modifiedArgs[1], headers: options.headers };
+    if (Array.isArray(headers)) {
+      const headersObject: Record<string, string> = {};
+      headers.forEach(([key, value]) => {
+        headersObject[key] = value;
+      });
+      return headersObject;
     }
-    return modifiedArgs;
+
+    return headers;
+  }
+
+  /**
+   * Adds the headers found in the options object to the fetch arguments, and return the modified arguments.
+   * The original arguments will not be modified.
+   * @param {FetchArguments} args The original fetch arguments
+   * @param {ParseHttpRequestOptions} args.input The first argument (called input / resource) that is passed to the fetch command
+   * @param {RequestInit} args.init The second argument (called init / options) that is passed to the fetch command
+   * @param {ParseHttpRequestOptions} args.options Our custom request options object containing the headers to add to the fetch arguments
+   * @returns {FetchArguments} The modified fetch arguments with the headers added from the args.options object
+   */
+  private static addHeadersToFetchArguments({
+    input,
+    init,
+    options,
+  }: FetchArguments & { options: ParseHttpRequestOptions }): FetchArguments {
+    // The init headers take precedence over the input headers
+    const newInit: RequestInit = init ? { ...init } : {};
+
+    if (options.headers) {
+      newInit.headers = options.headers;
+    }
+
+    return { input, init: newInit };
   }
 
   /**

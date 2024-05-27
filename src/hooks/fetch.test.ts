@@ -26,10 +26,6 @@ describe('fetch', () => {
       // make sure no errors are thrown
       FetchInstrumentation.stopInstrumentation();
     });
-
-    test('skip suite', () => {
-      expect(true).toBe(true);
-    });
     return;
   }
 
@@ -447,4 +443,10 @@ describe('fetch', () => {
     expect(responseData.headers).toEqual(responseHeaders);
     expect(responseData.body).toEqual(responseBody);
   });
+
+  // TODO: Test the parseRequestArguments func
+
+  // TODO: Test convertHeadersToKeyValuePairs func
+
+  // TODO: Test addHeadersToFetchArguments func
 });
