@@ -64,7 +64,6 @@
     "jest-each": "^29.2.1",
     "jest-fetch-mock": "^3.0.3",
     "jest-junit": "^14.0.1",
-    "jest-runner-groups": "^2.2.0",
     "mockdate": "^2.0.5",
     "mongo-mock": "^4.2.0",
     "prettier": "2.7.1",
