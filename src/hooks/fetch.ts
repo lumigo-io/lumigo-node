@@ -274,7 +274,7 @@ export class FetchInstrumentation {
     // Read the body from the request object, only if we shouldn't look in the init object
     let body: string = undefined;
     try {
-      if (input && input instanceof Request && input.body && !init && !init?.body) {
+      if (input instanceof Request && input.body && !init?.body) {
         body = await input.clone().text();
       }
     } catch (e) {
