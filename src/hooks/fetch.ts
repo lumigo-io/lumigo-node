@@ -94,10 +94,7 @@ export class FetchInstrumentation {
           init,
         },
       });
-      const modifiedArgs = (await safeBeforeFetch({ input, init, extenderContext })) || {
-        input,
-        init,
-      };
+      const modifiedArgs = await safeBeforeFetch({ input, init, extenderContext });
 
       try {
         // @ts-ignore
@@ -145,7 +142,7 @@ export class FetchInstrumentation {
     extenderContext,
   }: FetchArguments & {
     extenderContext: RequestExtenderContext;
-  }): Promise<FetchArguments | undefined> {
+  }): Promise<FetchArguments> {
     logger.debug('Fetch instrumentor - before fetch function call', {
       input,
       init,
@@ -160,7 +157,7 @@ export class FetchInstrumentation {
     });
     logger.debug('Fetch instrumentor - parsed request data', { requestTracingData });
     if (!requestTracingData) {
-      return;
+      return originalArgs;
     }
     const {
       addedHeaders,
