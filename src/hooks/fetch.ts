@@ -86,7 +86,7 @@ export class FetchInstrumentation {
     fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
       const extenderContext: RequestExtenderContext = {};
       const safeBeforeFetch = safeExecuteAsync({
-        callback: FetchInstrumentation.beforeFetch,
+        fn: FetchInstrumentation.beforeFetch,
         message: 'Fetch instrumentation - before fetch function call',
         logLevel: logger.LOG_LEVELS.WARNING,
         defaultReturn: {
@@ -104,7 +104,7 @@ export class FetchInstrumentation {
         const response = await originalFetch(modifiedArgs.input, modifiedArgs.init);
         extenderContext.response = response;
         const safeCreateResponseSpan = safeExecuteAsync({
-          callback: FetchInstrumentation.createResponseSpan,
+          fn: FetchInstrumentation.createResponseSpan,
           message: 'Fetch instrumentation - create response span',
           defaultReturn: response,
         });
@@ -112,7 +112,7 @@ export class FetchInstrumentation {
         return response;
       } catch (error) {
         const safeCreateResponseSpan = safeExecuteAsync({
-          callback: FetchInstrumentation.createResponseSpan,
+          fn: FetchInstrumentation.createResponseSpan,
           message: 'Fetch instrumentation - create response span',
         });
         await safeCreateResponseSpan(extenderContext);

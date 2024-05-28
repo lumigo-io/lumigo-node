@@ -1092,7 +1092,7 @@ describe('utils', () => {
 
   test('safeExecuteAsync -> happy flow', async () => {
     const result = await safeExecuteAsync({
-      callback: async () => 5,
+      fn: async () => 5,
       message: 'test',
       defaultReturn: 0,
     })();
@@ -1101,7 +1101,7 @@ describe('utils', () => {
 
   test('safeExecuteAsync -> catch exception', async () => {
     const result = await safeExecuteAsync({
-      callback: async () => {
+      fn: async () => {
         throw new Error('Mocked error');
       },
       message: 'test',
@@ -1112,7 +1112,7 @@ describe('utils', () => {
 
   test('safeExecuteAsync -> multiple parameters', async () => {
     const result = await safeExecuteAsync({
-      callback: async (a, b) => a + b,
+      fn: async (a, b) => a + b,
       message: 'test',
       defaultReturn: 0,
     })(2, 3);
@@ -1121,7 +1121,7 @@ describe('utils', () => {
 
   test('safeExecuteAsync -> multiple parameters in object', async () => {
     const result = await safeExecuteAsync({
-      callback: async ({ a, b }) => a + b,
+      fn: async ({ a, b }) => a + b,
       message: 'test',
       defaultReturn: 0,
     })({ a: 2, b: 3 });

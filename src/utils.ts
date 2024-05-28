@@ -599,19 +599,19 @@ export function safeExecute<T>(
 }
 
 export function safeExecuteAsync({
-  callback,
+  fn,
   message = 'Error in Lumigo tracer',
   logLevel = logger.LOG_LEVELS.WARNING,
   defaultReturn = undefined,
 }: {
-  callback: Function;
+  fn: Function;
   message?: string;
   logLevel?: string;
   defaultReturn?: any;
 }) {
   return async function (...args: any[]) {
     try {
-      return await callback.apply(this, args);
+      return await fn.apply(this, args);
     } catch (err) {
       logger.log(logLevel, message, err);
       return defaultReturn;
