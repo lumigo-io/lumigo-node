@@ -282,7 +282,7 @@ export class FetchInstrumentation {
     }
 
     // If we didn't get the body from the request object, get it from the init object
-    if (!body && init && init.body) {
+    if (!body && init?.body) {
       try {
         const decoder = new TextDecoder();
         if (init.body instanceof ReadableStream) {
