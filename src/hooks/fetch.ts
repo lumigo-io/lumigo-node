@@ -19,11 +19,14 @@ interface RequestExtenderContext {
   requestRandomId?: string;
   currentSpan?: any;
   requestData?: RequestData;
+  // @ts-ignore
   response?: Response;
 }
 
 interface FetchArguments {
+  // @ts-ignore
   input: RequestInfo | URL;
+  // @ts-ignore
   init?: RequestInit;
 }
 
@@ -65,6 +68,7 @@ export class FetchInstrumentation {
    * @private
    */
   private static libAvailable(): boolean {
+    // @ts-ignore
     return typeof fetch === 'function';
   }
 
@@ -80,6 +84,7 @@ export class FetchInstrumentation {
       return;
     }
 
+    // @ts-ignore
     const originalFetch = fetch;
 
     // @ts-ignore
@@ -257,6 +262,7 @@ export class FetchInstrumentation {
       url = input.toString();
     } else if (typeof input === 'string') {
       url = input;
+      // @ts-ignore
     } else if (input instanceof Request) {
       url = input.url;
       options.method = input.method || 'GET';
@@ -274,6 +280,7 @@ export class FetchInstrumentation {
     // Read the body from the request object, only if we shouldn't look in the init object
     let body: string = undefined;
     try {
+      // @ts-ignore
       if (input instanceof Request && input.body && !init?.body) {
         body = await input.clone().text();
       }
@@ -284,7 +291,9 @@ export class FetchInstrumentation {
     // If we didn't get the body from the request object, get it from the init object
     if (!body && init?.body) {
       try {
+        // @ts-ignore
         const decoder = new TextDecoder();
+        // @ts-ignore
         if (init.body instanceof ReadableStream) {
           const reader = init.body.getReader();
           let result = '';
@@ -297,6 +306,7 @@ export class FetchInstrumentation {
             result += decoder.decode(value);
           }
           body = result;
+          // @ts-ignore
         } else if (init.body instanceof Blob) {
           body = await init.body.text();
         } else if (init.body instanceof ArrayBuffer) {
@@ -330,8 +340,10 @@ export class FetchInstrumentation {
    * @private
    */
   private static convertHeadersToKeyValuePairs(
+    // @ts-ignore
     headers: [string, string][] | Record<string, string> | Headers
   ): Record<string, string> {
+    // @ts-ignore
     if (headers instanceof Headers) {
       const headersObject: Record<string, string> = {};
       headers.forEach((value, key) => {
@@ -365,6 +377,7 @@ export class FetchInstrumentation {
     options,
   }: FetchArguments & { options: ParseHttpRequestOptions }): FetchArguments {
     // The init headers take precedence over the input headers
+    // @ts-ignore
     const newInit: RequestInit = init ? { ...init } : {};
 
     if (options.headers) {
@@ -381,6 +394,7 @@ export class FetchInstrumentation {
    * @returns {ResponseData}
    * @private
    */
+  // @ts-ignore
   private static convertResponseToResponseData(response: Response): ResponseData {
     const headers = {};
     response.headers.forEach((value, key) => {
