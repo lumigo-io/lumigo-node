@@ -1,99 +1,23 @@
-import {
-  addHeaders,
-  getAWSEnvironment,
-  getEdgeHost,
-  getEventEntitySize,
-  getPatchedTraceId,
-  getRandomId,
-  isAwsService,
-  isEmptyString,
-  isKeepHeadersOn,
-  isTimeoutTimerEnabled,
-  isValidAlias,
-  lowerCaseObjectKeys,
-  safeExecute,
-  shouldPropagateW3C,
-} from '../utils';
-import {
-  extractBodyFromEmitSocketEvent,
-  extractBodyFromWriteOrEndFunc,
-  httpDataToString,
-} from './httpUtils';
-import {
-  ServiceData,
-  getServiceData,
-  getCurrentTransactionId,
-  getHttpInfo,
-  getHttpSpan,
-} from '../spans/awsSpan';
+import { getCurrentTransactionId, getHttpSpan } from '../spans/awsSpan';
 import { URL } from 'url';
 import { SpansContainer, TracerGlobals } from '../globals';
-import * as logger from '../logger';
 
 import * as extender from '../extender';
 import * as http from 'http';
 import * as https from 'https';
-const { parse: parseQuery } = require('querystring');
 
 import { GlobalDurationTimer } from '../utils/globalDurationTimer';
 import { runOneTimeWrapper } from '../utils/functionUtils';
-import { addW3CTracePropagator } from '../utils/w3cUtils';
-import { shallowMask } from '../utils/payloadStringify';
-
-export const hostBlaclist = new Set(['127.0.0.1']);
+import { BaseHttp } from './baseHttp';
+import { BasicChildSpan } from '../types/spans/basicSpan';
 
 export type Agent = {
   defaultPort: number;
 };
 
-export type ParseHttpRequestOptions = {
-  agent?: Agent;
-  _defaultAgent?: Agent;
-  // eslint-disable-next-line no-undef
-  headers?: Record<string, string>;
-  method?: 'GET' | 'POST';
-  protocol?: string;
-  path?: string;
-  port?: number;
-  defaultPort?: number;
-};
-
 export class Http {
-  static httpRequestEndWrapper(requestData, currentSpan) {
-    return function (args) {
-      GlobalDurationTimer.start();
-      if (isEmptyString(requestData.body)) {
-        const body = extractBodyFromWriteOrEndFunc(args);
-        Http.aggregateRequestBodyToSpan(body, requestData, currentSpan, getEventEntitySize(true));
-      }
-      GlobalDurationTimer.stop();
-    };
-  }
-
-  static aggregateRequestBodyToSpan(
-    body,
-    requestData,
-    currentSpan,
-    maxSize = getEventEntitySize(true)
-  ) {
-    let serviceData: ServiceData = {};
-    if (body && !requestData.truncated) {
-      requestData.body += body;
-      serviceData = getServiceData(requestData, null);
-      const truncated = maxSize < requestData.body.length;
-      if (truncated) requestData.body = requestData.body.substr(0, maxSize);
-      requestData.truncated = truncated;
-    }
-    if (currentSpan) {
-      currentSpan.info.httpInfo = getHttpInfo(requestData, {});
-      Object.assign(currentSpan.info, {
-        ...serviceData.awsServiceData,
-      });
-    }
-  }
-
   @GlobalDurationTimer.timedSync()
-  static httpRequestArguments(args) {
+  static httpRequestArguments(args: any[]): { url?: string; options?: any; callback?: Function } {
     if (args.length === 0) {
       throw new Error('http/s.request(...) was called without any arguments.');
     }
@@ -122,13 +46,6 @@ export class Http {
     }
     return { url, options, callback };
   }
-  @GlobalDurationTimer.timedSync()
-  static getHostFromOptionsOrUrl(options, url) {
-    if (url) {
-      return new URL(url).hostname;
-    }
-    return options.hostname || options.host || (options.uri && options.uri.hostname) || 'localhost';
-  }
 
   static addOptionsToHttpRequestArguments(originalArgs, newOptions) {
     // We're switching on the different signatures of http:
@@ -153,113 +70,42 @@ export class Http {
     }
   }
 
-  static isBlacklisted(host) {
-    return host === getEdgeHost() || hostBlaclist.has(host);
-  }
-
-  static scrubQueryParams(search: string): string {
-    return (
-      safeExecute(() => {
-        const query = parseQuery(search.substring(1));
-        const scrubbedQuery = shallowMask('queryParams', query);
-        return '?' + new URLSearchParams(scrubbedQuery);
-      })() || ''
-    );
-  }
-
-  @GlobalDurationTimer.timedSync()
-  static parseHttpRequestOptions(options: ParseHttpRequestOptions = {}, url) {
-    const host = Http.getHostFromOptionsOrUrl(options, url);
-    const agent = options.agent || options._defaultAgent;
-
-    let path = null;
-    let port = null;
-    let search = null;
-    let protocol = null;
-
-    let { headers, method = 'GET' } = options;
-    const sendTime = new Date().getTime();
-
-    if (url) {
-      const myUrl = new URL(url);
-      ({ pathname: path, port, protocol, search } = myUrl);
-    } else {
-      path = options.path || '/';
-      port = options.port || options.defaultPort || (agent && agent.defaultPort) || 80;
-      protocol = options.protocol || (port === 443 && 'https:') || 'http:';
-    }
-
-    if (headers && !headers.host) {
-      headers = addHeaders(headers, { host });
-    }
-
-    if (!!search) {
-      search = Http.scrubQueryParams(search);
-    } else {
-      search = '';
-    }
-
-    const uri = `${host}${path}${search}`;
-
-    return {
-      truncated: false,
-      path,
-      port,
-      uri,
-      host,
-      body: '', // XXX Filled by the httpRequestEndWrapper or httpRequestEmitBeforeHookWrapper ( / Write)
-      method,
-      headers: lowerCaseObjectKeys(headers),
-      protocol,
-      sendTime,
-    };
-  }
-
   @GlobalDurationTimer.timedSync()
   static httpBeforeRequestWrapper(args, extenderContext) {
     extenderContext.isTracedDisabled = true;
-    // @ts-ignore
-    const { awsRequestId } = TracerGlobals.getHandlerInputs().context;
-    const transactionId = getCurrentTransactionId();
+    const { url, options = {} } = Http.httpRequestArguments(args);
+    const requestTracingData = BaseHttp.onRequestCreated({
+      options,
+      url,
+    });
+    if (!requestTracingData) {
+      return;
+    }
+    const {
+      addedHeaders,
+      headers,
+      requestRandomId,
+      awsRequestId,
+      transactionId,
+      httpSpan = undefined,
+      requestData = undefined,
+    } = requestTracingData;
+
     extenderContext.awsRequestId = awsRequestId;
     extenderContext.transactionId = transactionId;
-    extenderContext.isTracedDisabled = false;
-
-    const { url, options = {} } = Http.httpRequestArguments(args);
-    const headers = options?.headers || {};
-    const host = Http.getHostFromOptionsOrUrl(options, url);
-    extenderContext.isTracedDisabled =
-      Http.isBlacklisted(host) || !isValidAlias() || GlobalDurationTimer.isTimePassed();
-
-    if (!extenderContext.isTracedDisabled) {
-      logger.debug('Starting hook', { host, url, headers });
-
-      const isRequestToAwsService = isAwsService(host);
-      if (isRequestToAwsService && !isKeepHeadersOn()) {
-        const { awsXAmznTraceId } = getAWSEnvironment();
-        const traceId = getPatchedTraceId(awsXAmznTraceId);
-        headers && (headers['X-Amzn-Trace-Id'] = traceId);
-      }
-
-      if (shouldPropagateW3C()) {
-        safeExecute(() => {
-          options.headers = addW3CTracePropagator(headers);
-          Http.addOptionsToHttpRequestArguments(args, options);
-        })();
-      }
-
-      const requestData = Http.parseHttpRequestOptions(options, url);
-      const requestRandomId = getRandomId();
-
-      extenderContext.requestRandomId = requestRandomId;
+    extenderContext.requestRandomId = requestRandomId;
+    if (requestData) {
       extenderContext.requestData = requestData;
-
-      if (isTimeoutTimerEnabled()) {
-        const httpSpan = getHttpSpan(transactionId, awsRequestId, requestRandomId, requestData);
-        SpansContainer.addSpan(httpSpan);
-        extenderContext.currentSpan = httpSpan;
-      }
     }
+    if (httpSpan) {
+      extenderContext.currentSpan = httpSpan;
+    }
+
+    if (addedHeaders) {
+      options.headers = headers;
+      Http.addOptionsToHttpRequestArguments(args, options);
+    }
+    extenderContext.isTracedDisabled = false;
   }
 
   @GlobalDurationTimer.timedSync()
@@ -273,38 +119,47 @@ export class Http {
       transactionId,
       currentSpan,
     } = extenderContext;
-    if (!isTracedDisabled) {
-      const endWrapper = Http.httpRequestEndWrapper(requestData, currentSpan);
-
-      const emitWrapper = Http.httpRequestEmitBeforeHookWrapper(
-        transactionId,
-        awsRequestId,
-        requestData,
-        requestRandomId,
-        currentSpan
-      );
-
-      const writeWrapper = Http.httpRequestWriteBeforeHookWrapper(requestData, currentSpan);
-
-      extender.hook(clientRequest, 'end', { beforeHook: endWrapper });
-      extender.hook(clientRequest, 'emit', { beforeHook: emitWrapper });
-      extender.hook(clientRequest, 'write', { beforeHook: writeWrapper });
+    if (isTracedDisabled) {
+      return;
     }
-  }
 
-  static httpRequestWriteBeforeHookWrapper(requestData, currentSpan) {
-    return function (args) {
-      GlobalDurationTimer.start();
-      if (isEmptyString(requestData.body)) {
-        const body = extractBodyFromWriteOrEndFunc(args);
-        Http.aggregateRequestBodyToSpan(body, requestData, currentSpan, getEventEntitySize(true));
-      }
-      GlobalDurationTimer.stop();
-    };
+    const endWrapper = BaseHttp.createRequestDataWriteHandler({ requestData, currentSpan });
+
+    const emitWrapper = Http.httpRequestEmitBeforeHookWrapper(
+      transactionId,
+      awsRequestId,
+      requestData,
+      requestRandomId,
+      currentSpan
+    );
+
+    const writeWrapper = BaseHttp.createRequestDataWriteHandler({ requestData, currentSpan });
+
+    // Finishes sending the request. If any parts of the body are unsent, it will flush them to the stream.
+    // If the request is chunked, this will send the terminating '0\r\n\r\n'.
+    // Input is:
+    // - data: <string> | <Buffer> | <Uint8Array>
+    // - encoding: <string>
+    // - callback: <Function>
+    // Returns: <this>
+    extender.hook(clientRequest, 'end', { beforeHook: endWrapper });
+
+    extender.hook(clientRequest, 'emit', { beforeHook: emitWrapper });
+
+    // Sends a chunk of the body. This method can be called multiple times. If no Content-Length is set,
+    // data will automatically be encoded in HTTP Chunked transfer encoding, so that server knows when the data ends.
+    // The Transfer-Encoding: chunked header is added.
+    // Calling request.end() is necessary to finish sending the request.
+    // Input is:
+    // - chunk: <string> | <Buffer> | <Uint8Array>
+    // - encoding: <string>
+    // - callback: <Function>
+    // Returns: <boolean>
+    extender.hook(clientRequest, 'write', { beforeHook: writeWrapper });
   }
 
   @GlobalDurationTimer.timedSync()
-  static addStepFunctionEvent(messageId) {
+  static addStepFunctionEvent(messageId: string) {
     // @ts-ignore
     const awsRequestId = TracerGlobals.getHandlerInputs().context.awsRequestId;
     const transactionId = getCurrentTransactionId();
@@ -334,68 +189,20 @@ export class Http {
     Http.wrapHttpLib(https);
   }
 
-  static createEmitResponseOnEmitBeforeHookHandler(
-    transactionId,
-    awsRequestId,
-    requestData,
-    requestRandomId,
-    response
+  static createEmitResponseHandler(
+    transactionId: string,
+    awsRequestId: string,
+    requestData: { body: string },
+    requestRandomId: string
   ) {
-    let body = '';
-    let maxPayloadSize = getEventEntitySize(true);
-    return function (args) {
-      GlobalDurationTimer.start();
-      const receivedTime = new Date().getTime();
-      let truncated = false;
-      const { headers, statusCode } = response;
-      // add to body only if we didnt pass the max size
-      if (args[0] === 'data' && body.length < maxPayloadSize) {
-        let chunk = httpDataToString(args[1]);
-        const allowedLengthToAdd = maxPayloadSize - body.length;
-        //if we reached or close to limit get only substring of the part to reach the limit
-        if (chunk.length > allowedLengthToAdd) {
-          truncated = true;
-          chunk = chunk.substr(0, allowedLengthToAdd);
-        }
-        body += chunk;
-      }
-      if (args[0] === 'end') {
-        let maxSizeNoErrors = getEventEntitySize();
-        const responseData = {
-          statusCode,
-          receivedTime,
-          body:
-            statusCode < 400 && body.length > maxSizeNoErrors // if there are no errors cut the size to max allowed with no errors
-              ? body.substr(0, maxSizeNoErrors)
-              : body,
-          headers: lowerCaseObjectKeys(headers),
-        };
-        const httpSpan = getHttpSpan(
-          transactionId,
-          awsRequestId,
-          requestRandomId,
-          requestData,
-          Object.assign({ truncated }, responseData)
-        );
-        if (httpSpan.id !== requestRandomId) {
-          // In Http case, one of our parser decide to change the spanId for async connection
-          SpansContainer.changeSpanId(requestRandomId, httpSpan.id);
-        }
-        SpansContainer.addSpan(httpSpan);
-      }
-      GlobalDurationTimer.stop();
-    };
-  }
-
-  static createEmitResponseHandler(transactionId, awsRequestId, requestData, requestRandomId) {
-    return (response) => {
-      const onHandler = Http.createEmitResponseOnEmitBeforeHookHandler(
+    return (response: { headers: {}; statusCode: number }) => {
+      const onHandler = BaseHttp.createResponseDataWriterHandler({
         transactionId,
         awsRequestId,
         requestData,
         requestRandomId,
-        response
-      );
+        response,
+      });
       extender.hook(response, 'emit', {
         beforeHook: onHandler,
       });
@@ -403,11 +210,11 @@ export class Http {
   }
 
   static httpRequestEmitBeforeHookWrapper(
-    transactionId,
-    awsRequestId,
-    requestData,
-    requestRandomId,
-    currentSpan
+    transactionId: string,
+    awsRequestId: string,
+    requestData: { body: string },
+    requestRandomId: string,
+    currentSpan: BasicChildSpan
   ) {
     const emitResponseHandler = Http.createEmitResponseHandler(
       transactionId,
@@ -416,16 +223,17 @@ export class Http {
       requestRandomId
     );
     const oneTimerEmitResponseHandler = runOneTimeWrapper(emitResponseHandler, {});
-    return function (args) {
+    const socketWriteRequestHandler = BaseHttp.createRequestSocketDataWriteHandler({
+      requestData,
+      currentSpan,
+    });
+    return function (args: any[]) {
       GlobalDurationTimer.start();
       if (args[0] === 'response') {
         oneTimerEmitResponseHandler(args[1]);
       }
       if (args[0] === 'socket') {
-        if (isEmptyString(requestData.body)) {
-          const body = extractBodyFromEmitSocketEvent(args[1]);
-          Http.aggregateRequestBodyToSpan(body, requestData, currentSpan, getEventEntitySize(true));
-        }
+        socketWriteRequestHandler(args[1]);
       }
       GlobalDurationTimer.stop();
     };

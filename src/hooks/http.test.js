@@ -7,7 +7,6 @@ import {
   HttpsScenarioBuilder,
 } from '../../testUtils/httpsMocker';
 import { HttpSpanBuilder } from '../../testUtils/httpSpanBuilder';
-import { lowerCaseObjectKeys, LUMIGO_SECRET_MASKING_REGEX_HTTP_QUERY_PARAMS } from '../utils';
 
 import { HandlerInputsBuilder } from '../../testUtils/handlerInputsBuilder';
 import {
@@ -34,199 +33,6 @@ describe('http hook', () => {
     shimmer.unwrap(HttpsMocker, 'request');
   });
 
-  test('isBlacklisted', () => {
-    const host = 'asdf';
-    const edgeHost = 'us-east-x.lumigo-tracer-edge.golumigo.com';
-    TracerGlobals.setTracerInputs({ ...TracerGlobals.getTracerInputs(), edgeHost });
-    expect(Http.isBlacklisted(host)).toBe(false);
-    expect(Http.isBlacklisted(edgeHost)).toBe(true);
-  });
-
-  test('httpRequestEmitBeforeHookWrapper -> outputData flow', () => {
-    const requestData = {
-      body: '',
-    };
-    const randomRequstId = 'REQ';
-    const awsRequestId = HttpSpanBuilder.DEFAULT_PARENT_ID;
-    const transactionId = HttpSpanBuilder.DEFAULT_TRANSACTION_ID;
-    const wrapper = Http.httpRequestEmitBeforeHookWrapper(
-      transactionId,
-      awsRequestId,
-      requestData,
-      randomRequstId
-    );
-    const emitEventName = 'socket';
-    const emitArg = {
-      _httpMessage: {
-        _hasBody: true,
-        outputData: [{ data: 'HTTP BODY1\nHTTP BODY2' }],
-      },
-    };
-
-    wrapper([emitEventName, emitArg]);
-
-    expect(requestData).toEqual({
-      body: 'HTTP BODY2',
-      truncated: false,
-    });
-  });
-
-  test('httpRequestEmitBeforeHookWrapper -> output flow', () => {
-    const awsRequestId = HttpSpanBuilder.DEFAULT_PARENT_ID;
-    const transactionId = HttpSpanBuilder.DEFAULT_TRANSACTION_ID;
-    const requestData = {
-      body: '',
-    };
-    const emitEventName = 'socket';
-    const emitArg = {
-      _httpMessage: {
-        _hasBody: true,
-        output: ['HTTP BODY1\nHTTP BODY2'],
-      },
-    };
-    const wrapper = Http.httpRequestEmitBeforeHookWrapper(transactionId, awsRequestId, requestData);
-    wrapper([emitEventName, emitArg]);
-
-    expect(requestData).toEqual({
-      body: 'HTTP BODY2',
-      truncated: false,
-    });
-  });
-
-  test('aggregateRequestBodyToSpan ->  happy flow', () => {
-    const currentSpan = {
-      info: {
-        httpInfo: {},
-      },
-    };
-    Http.aggregateRequestBodyToSpan(
-      'a',
-      {
-        body: 'a',
-        host: 'host',
-      },
-      currentSpan
-    );
-    expect(currentSpan).toEqual({
-      info: {
-        httpInfo: {
-          host: 'host',
-          request: {
-            body: 'aa',
-            host: 'host',
-            truncated: false,
-          },
-          response: {},
-        },
-      },
-    });
-  });
-
-  test('aggregateRequestBodyToSpan ->  missing resource name on span and adding it on end event', () => {
-    const currentSpan = {
-      info: {
-        resourceName: '',
-        httpInfo: {},
-      },
-    };
-    Http.aggregateRequestBodyToSpan(
-      ',"Item":{"id":{"S":"5590.195458064029"},"message":{"S":"DummyMessage"}}}',
-      {
-        truncated: false,
-        uri: 'dynamodb.us-east-1.amazonaws.com/',
-        host: 'dynamodb.us-east-1.amazonaws.com',
-        headers: {
-          'x-amz-target': 'DynamoDB_20120810.PutItem',
-          host: 'dynamodb.us-east-1.amazonaws.com',
-        },
-        body: '{"TableName":"test-table"',
-      },
-      currentSpan
-    );
-    expect(currentSpan).toEqual({
-      info: {
-        resourceName: 'test-table',
-        httpInfo: {
-          host: 'dynamodb.us-east-1.amazonaws.com',
-          request: {
-            truncated: false,
-            uri: 'dynamodb.us-east-1.amazonaws.com/',
-            host: 'dynamodb.us-east-1.amazonaws.com',
-            headers: {
-              'x-amz-target': 'DynamoDB_20120810.PutItem',
-              host: 'dynamodb.us-east-1.amazonaws.com',
-            },
-            body: '{"TableName":"test-table","Item":{"id":{"S":"5590.195458064029"},"message":{"S":"DummyMessage"}}}',
-          },
-          response: {},
-        },
-        dynamodbMethod: 'PutItem',
-        messageId: '546fb5c2a83410ebeba6a7c9b1324a04',
-      },
-    });
-  });
-
-  test('aggregateRequestBodyToSpan ->  should truncate body', () => {
-    const currentSpan = {
-      info: {
-        httpInfo: {},
-      },
-    };
-    Http.aggregateRequestBodyToSpan(
-      'a',
-      {
-        body: 'a',
-        host: 'host',
-      },
-      currentSpan,
-      1
-    );
-    expect(currentSpan).toEqual({
-      info: {
-        httpInfo: {
-          host: 'host',
-          request: {
-            body: 'a',
-            host: 'host',
-            truncated: true,
-          },
-          response: {},
-        },
-      },
-    });
-  });
-
-  test('aggregateRequestBodyToSpan ->  already truncated', () => {
-    const currentSpan = {
-      info: {
-        httpInfo: {},
-      },
-    };
-    Http.aggregateRequestBodyToSpan(
-      'a',
-      {
-        body: 'a',
-        host: 'host',
-        truncated: true,
-      },
-      currentSpan,
-      100
-    );
-    expect(currentSpan).toEqual({
-      info: {
-        httpInfo: {
-          host: 'host',
-          request: {
-            body: 'a',
-            host: 'host',
-            truncated: true,
-          },
-          response: {},
-        },
-      },
-    });
-  });
-
   test('httpRequestEmitBeforeHookWrapper -> not crashed on bad data', () => {
     const requestData = {
       body: '',
@@ -244,211 +50,6 @@ describe('http hook', () => {
     wrapper(emitEventName, emitArg);
 
     expect(requestData).toEqual({ body: '' });
-  });
-
-  test('httpRequestWriteBeforeHookWrapper -> simple flow -> write(str)', () => {
-    const requestData = {
-      body: '',
-    };
-
-    const firstArg = 'BODY';
-
-    const wrapper = Http.httpRequestWriteBeforeHookWrapper(requestData);
-    wrapper([firstArg]);
-
-    expect(requestData).toEqual({ body: 'BODY', truncated: false });
-  });
-
-  test('httpRequestWriteBeforeHookWrapper -> simple flow -> write(Buffer)', () => {
-    const requestData = {
-      body: '',
-    };
-    const wrapper = Http.httpRequestWriteBeforeHookWrapper(requestData);
-    const firstArg = Buffer.from('BODY');
-
-    wrapper([firstArg]);
-
-    expect(requestData).toEqual({ body: 'BODY', truncated: false });
-  });
-
-  test('httpRequestWriteBeforeHookWrapper -> simple flow -> write(Buffer, encoding)', () => {
-    const requestData = {
-      body: '',
-    };
-
-    const firstArg = 'BODY';
-    const secArg = 'base64';
-
-    const wrapper = Http.httpRequestWriteBeforeHookWrapper(requestData);
-    wrapper([firstArg, secArg]);
-
-    expect(requestData).toEqual({ body: 'Qk9EWQ==', truncated: false });
-  });
-
-  test('httpRequestWriteBeforeHookWrapper -> simple flow -> write(Buffer, encoding, callback)', () => {
-    const requestData = {
-      body: '',
-    };
-
-    const firstArg = Buffer.from('BODY');
-    const secArg = 'utf8';
-    const thirdArg = () => {};
-
-    const wrapper = Http.httpRequestWriteBeforeHookWrapper(requestData);
-    wrapper([firstArg, secArg, thirdArg]);
-
-    expect(requestData).toEqual({ body: 'BODY', truncated: false });
-  });
-
-  test('httpRequestWriteBeforeHookWrapper -> simple flow -> write(Buffer, callback)', () => {
-    const requestData = {
-      body: '',
-    };
-
-    const firstArg = Buffer.from('BODY');
-    const secArg = () => {};
-
-    const wrapper = Http.httpRequestWriteBeforeHookWrapper(requestData);
-    wrapper([firstArg, secArg]);
-
-    expect(requestData).toEqual({ body: 'BODY', truncated: false });
-  });
-
-  test('httpRequestWriteBeforeHookWrapper -> simple flow -> write(str, callback)', () => {
-    const requestData = {
-      body: '',
-    };
-
-    const firstArg = 'BODY';
-    const secArg = () => {};
-
-    const wrapper = Http.httpRequestWriteBeforeHookWrapper(requestData);
-    wrapper([firstArg, secArg]);
-
-    expect(requestData).toEqual({ body: 'BODY', truncated: false });
-  });
-
-  test('httpRequestWriteBeforeHookWrapper -> not override body', () => {
-    const requestData = {
-      body: 'BODY1',
-    };
-
-    const firstArg = Buffer.from('BODY2');
-
-    const wrapper = Http.httpRequestWriteBeforeHookWrapper(requestData);
-    wrapper([firstArg]);
-
-    expect(requestData).toEqual({ body: 'BODY1' });
-  });
-
-  test('httpRequestWriteBeforeHookWrapper -> not crashed on bad data', () => {
-    const requestData = {
-      body: '',
-    };
-
-    const firstArg = {};
-    const secArg = {};
-
-    const wrapper = Http.httpRequestWriteBeforeHookWrapper(requestData);
-    wrapper(firstArg, secArg);
-
-    expect(requestData).toEqual({ body: '' });
-  });
-
-  test('getHostFromOptionsOrUrl', () => {
-    const options1 = { host: 'asdf1.com' };
-    const options2 = { hostname: 'asdf2.com' };
-    const options3 = { uri: { hostname: 'asdf3.com' } };
-    const options4 = {};
-    expect(Http.getHostFromOptionsOrUrl(options1)).toEqual('asdf1.com');
-    expect(Http.getHostFromOptionsOrUrl(options2)).toEqual('asdf2.com');
-    expect(Http.getHostFromOptionsOrUrl(options3)).toEqual('asdf3.com');
-    expect(Http.getHostFromOptionsOrUrl(options4)).toEqual('localhost');
-
-    const url1 = 'https://asdf.io:1234/yo?ref=baba';
-    expect(Http.getHostFromOptionsOrUrl({}, url1)).toEqual('asdf.io');
-  });
-
-  test('parseHttpRequestOptions', () => {
-    const headers = { X: 'Y', Z: 'A' };
-    const options1 = {
-      host: 'asdf1.com',
-      port: 443,
-      protocol: 'https:',
-      path: '/api/where/is/satoshi',
-      method: 'POST',
-      headers,
-    };
-    const sendTime = 895179612345;
-    MockDate.set(sendTime);
-
-    const expectedHeaders = lowerCaseObjectKeys({
-      ...headers,
-      ...{ host: 'asdf1.com' },
-    });
-
-    const expected1 = {
-      host: 'asdf1.com',
-      port: 443,
-      protocol: 'https:',
-      path: '/api/where/is/satoshi',
-      uri: 'asdf1.com/api/where/is/satoshi',
-      method: 'POST',
-      truncated: false,
-      headers: expectedHeaders,
-      sendTime,
-      body: '',
-    };
-    expect(Http.parseHttpRequestOptions(options1)).toEqual(expected1);
-
-    const url2 = 'https://asdf.io:1234/yo.php?ref=baba';
-    const options2 = { headers, method: 'POST' };
-    const expected2 = {
-      body: '',
-      headers: {
-        x: 'Y',
-        z: 'A',
-        host: 'asdf.io',
-      },
-      host: 'asdf.io',
-      method: 'POST',
-      path: '/yo.php',
-      truncated: false,
-      uri: 'asdf.io/yo.php?ref=baba',
-      port: '1234',
-      protocol: 'https:',
-      sendTime: 895179612345,
-    };
-
-    expect(Http.parseHttpRequestOptions(options2, url2)).toEqual(expected2);
-  });
-
-  test('parseHttpRequestOptions - scrub query params', () => {
-    const sendTime = 895179612345;
-    MockDate.set(sendTime);
-
-    const headers = { X: 'Y', Z: 'A' };
-
-    const url2 = 'https://asdf.io:1234/yo.php?ref=baba&password=1234';
-    const options2 = { headers, method: 'POST' };
-    const expected2 = {
-      body: '',
-      headers: {
-        x: 'Y',
-        z: 'A',
-        host: 'asdf.io',
-      },
-      host: 'asdf.io',
-      method: 'POST',
-      path: '/yo.php',
-      truncated: false,
-      uri: 'asdf.io/yo.php?ref=baba&password=****',
-      port: '1234',
-      protocol: 'https:',
-      sendTime: 895179612345,
-    };
-
-    expect(Http.parseHttpRequestOptions(options2, url2)).toEqual(expected2);
   });
 
   [
@@ -519,6 +120,7 @@ describe('http hook', () => {
       expect(actual).toEqual([expectedHttpSpan]);
     })
   );
+
   test('createEmitResponseHandler - add big span simple flow', () => {
     const transactionId = HttpSpanBuilder.DEFAULT_TRANSACTION_ID;
     const testData = {
@@ -575,6 +177,7 @@ describe('http hook', () => {
       .build();
     expect(SpansContainer.getSpans()).toEqual([expectedHttpSpan]);
   });
+
   test('createEmitResponseHandler - change request id from headers', () => {
     const testData = {
       randomId: 'DummyRandomId',
@@ -708,18 +311,6 @@ describe('http hook', () => {
     // Calling without params raising Exception
     Http.createEmitResponseHandler()({});
     // Assert No exception.
-  });
-
-  test('httpRequestEndWrapper', () => {
-    const body = 'abcdefg';
-    const requestData = { body: '' };
-
-    const data = body;
-    const encoding = 'utf8';
-    const callback = jest.fn();
-    Http.httpRequestEndWrapper(requestData)([data, encoding, callback]);
-
-    expect(requestData).toEqual({ body: body, truncated: false });
   });
 
   test('httpRequestArguments -> no arguments', () => {
@@ -1265,18 +856,5 @@ describe('http hook', () => {
     HttpsMocker.request(requestData, () => {});
 
     expect(HttpsRequestsForTesting.getStartedRequests()).toEqual(1);
-  });
-
-  test('scrubQueryParams', () => {
-    expect(Http.scrubQueryParams('?password=123')).toEqual('?password=****');
-    expect(Http.scrubQueryParams('?plain=123')).toEqual('?plain=123');
-    expect(Http.scrubQueryParams('?password=123&plain=123')).toEqual('?password=****&plain=123');
-    expect(Http.scrubQueryParams('?password=123&plain=123&secret=123')).toEqual(
-      '?password=****&plain=123&secret=****'
-    );
-    process.env[LUMIGO_SECRET_MASKING_REGEX_HTTP_QUERY_PARAMS] = '["plain"]';
-    expect(Http.scrubQueryParams('?plain=123&bla=123')).toEqual('?plain=****&bla=123');
-
-    expect(Http.scrubQueryParams(1234)).toEqual('');
   });
 });

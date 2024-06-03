@@ -34,6 +34,14 @@ export const httpDataToString = (data) => {
 };
 
 export const extractBodyFromWriteOrEndFunc = (writeEventArgs) => {
+  /**
+   * Extract the body from the given arguments list, where the arguments are:
+   * 0 - The request body, as a string, Buffer or any other type that can be converted to a string using toString().
+   * 1 - The encoding of the request body (example values: 'ascii', 'utf8', 'utf16le', 'ucs2', 'base64', 'binary', 'hex').
+   *     If the value is missing / unknown the default value is 'utf8'.
+   *
+   * The input is a list of arguments for legacy reasons
+   */
   return safeExecute(() => {
     if (isValidHttpRequestBody(writeEventArgs[0])) {
       const encoding = isEncodingType(writeEventArgs[1]) ? writeEventArgs[1] : 'utf8';

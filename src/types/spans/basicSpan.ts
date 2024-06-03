@@ -1,3 +1,5 @@
+import { HttpInfo } from './httpSpan';
+
 export type Vendor = 'AWS';
 
 export interface SpanInfo {
@@ -12,7 +14,7 @@ export interface SpanInfo {
 
 export interface BasicSpan {
   id: string;
-  info: SpanInfo;
+  info: SpanInfo | { httpInfo: HttpInfo };
   vendor: Vendor;
   transactionId: string;
   account: string;

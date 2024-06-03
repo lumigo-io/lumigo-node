@@ -58,6 +58,18 @@ describe('Utf8Utils', () => {
     expect(headers[TRACESTATE_HEADER_NAME]).toEqual(`lumigo=${parts[2]}`);
   });
 
+  [
+    { 'x-amz-content-sha256': '123' },
+    { 'x-amz-content-sha256': '123', 'Content-Type': 'application/json' },
+  ].map((headers) => {
+    test(`aaddW3CTracePropagator -> no new headers added when sha256 header present`, () => {
+      const originalHeaders = { ...headers };
+      const returnedHeaders = addW3CTracePropagator(headers);
+      expect(headers).toEqual(originalHeaders);
+      expect(returnedHeaders).toEqual(originalHeaders);
+    });
+  });
+
   test('getW3CMessageId -> happy flow', () => {
     const headers = {
       [TRACEPARENT_HEADER_NAME]: '00-11111111111111111111111100000000-aaaaaaaaaaaaaaaa-01',

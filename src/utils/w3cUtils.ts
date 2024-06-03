@@ -17,15 +17,23 @@ export const shouldSkipTracePropagation = (headers: Record<string, string>): boo
   return Object.keys(headers).some((key) => SKIP_INJECT_HEADERS.includes(key.toLowerCase()));
 };
 
-export const addW3CTracePropagator = (headers: Record<string, string>): Record<string, string> => {
+export const getW3CTracerPropagatorAdditionalHeaders = (
+  headers: Record<string, string>
+): Record<string, string> => {
   if (shouldSkipTracePropagation(headers)) {
     logger.debug('Skipping trace propagation');
-    return headers;
+    return {};
   }
   const messageId = generateMessageId();
-  headers[TRACEPARENT_HEADER_NAME] = getTraceId(headers, getCurrentTransactionId(), messageId);
-  headers[TRACESTATE_HEADER_NAME] = getTraceState(headers, messageId);
-  return headers;
+  return {
+    [TRACEPARENT_HEADER_NAME]: getTraceId(headers, getCurrentTransactionId(), messageId),
+    [TRACESTATE_HEADER_NAME]: getTraceState(headers, messageId),
+  };
+};
+
+export const addW3CTracePropagator = (headers: Record<string, string>): Record<string, string> => {
+  const additionalHeaders = getW3CTracerPropagatorAdditionalHeaders(headers);
+  return Object.assign(headers, additionalHeaders);
 };
 
 const parseW3CHeader = (headers: Record<string, string>) => {
@@ -49,6 +57,7 @@ const getTraceId = (
 ): string => {
   // Create the TraceId: either by continuing the transaction that we already see from the headers,
   //   or by creating a new transaction. The spanId is this span (the next component's parent).
+  // eslint-disable-next-line prefer-const
   let { version, traceId, spanId, traceFlags } = parseW3CHeader(headers);
   if (
     !version ||
