@@ -167,7 +167,7 @@ jobs:
           command: npm run lint
       - run:
           name: code-coverage
-          command: npm test --coverage -- —group= node18 && codecov
+          command: npm test --coverage && codecov
       - store_artifacts:
           path: coverage
           prefix: coverage
