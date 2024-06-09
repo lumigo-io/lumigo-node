@@ -300,10 +300,13 @@ export class BaseHttp {
           body,
           headers: lowerCaseObjectKeys(headers),
         };
-        const httpSpan = getHttpSpan(transactionId, awsRequestId, requestRandomId, requestData, {
-          ...responseData,
-          truncated,
-        });
+        const httpSpan = getHttpSpan(
+          transactionId,
+          awsRequestId,
+          requestRandomId,
+          requestData,
+          Object.assign({ truncated }, responseData)
+        );
         if (httpSpan.id !== requestRandomId) {
           // In Http case, one of our parser decide to change the spanId for async connection
           SpansContainer.changeSpanId(requestRandomId, httpSpan.id);
