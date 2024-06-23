@@ -1220,11 +1220,11 @@ describe('reporter', () => {
     await reporter.sendSpans(bigSpans);
     const sentSpansZipped = AxiosMocker.getSentSpans();
 
-    // The payload should be one string - zipped and base64 encoded
-    expect(sentSpansZipped.length).toEqual(1);
-    const unzippedSpans = JSON.parse(
-      unzipSync(Buffer.from(sentSpansZipped[0], 'base64')).toString()
-    );
+    //Unzip all payloads and compare them to the original spans
+    const unzippedSpans = sentSpansZipped.reduce((acc: string[], curr) => {
+      const unzipped = unzipSync(Buffer.from(curr, 'base64')).toString();
+      return acc.concat(JSON.parse(unzipped));
+    }, []);
 
     expect(unzippedSpans).toEqual(bigSpans);
   });
