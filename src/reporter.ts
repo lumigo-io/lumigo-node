@@ -19,6 +19,7 @@ import untruncateJson from './tools/untrancateJson';
 import { gzipSync } from 'zlib';
 
 export const NUMBER_OF_SPANS_IN_REPORT_OPTIMIZATION = 200;
+const MAX_SPANS_BULK_SIZE = 110;
 
 export const sendSingleSpan = async (span) => sendSpans([span]);
 
@@ -46,7 +47,9 @@ export const sendSpans = async (spans: any[]): Promise<void> => {
   );
 
   const roundTripStart = Date.now();
-  if (reqBody) {
+  if (Array.isArray(reqBody)) {
+    await Promise.all(reqBody.map((bulk) => HttpSpansAgent.postSpans(bulk)));
+  } else if (reqBody) {
     await HttpSpansAgent.postSpans(reqBody);
   }
   const roundTripEnd = Date.now();
@@ -153,13 +156,25 @@ export function getPrioritizedSpans(spans: any[], maxSendBytes: number): any[] {
   return Object.values(spansToSend);
 }
 
+function splitAndZipSpans(spans: any[]): string[] {
+  logger.debug(`Splitting the spans to bulks of ${MAX_SPANS_BULK_SIZE} spans`);
+  // Split the spans to bulks and zip each one
+  const spansBulks: string[] = [];
+  for (let i = 0; i < spans.length; i += MAX_SPANS_BULK_SIZE) {
+    const bulk = spans.slice(i, i + MAX_SPANS_BULK_SIZE);
+    const zippedSpans = gzipSync(JSON.stringify(bulk)).toString('base64');
+    spansBulks.push(zippedSpans);
+  }
+  return spansBulks;
+}
+
 // We muted the spans itself to keep the memory footprint of the tracer to a minimum
 export const forgeAndScrubRequestBody = (
   spans,
   maxSendBytes,
   maxSendBytesOnError,
   shouldTryZip: boolean = false
-): string | undefined => {
+): string | string[] | undefined => {
   const maxRequestSize = spans.some(spanHasErrors) ? maxSendBytesOnError : maxSendBytes;
   const start = new Date().getTime();
   const beforeLength = spans.length;
@@ -174,14 +189,18 @@ export const forgeAndScrubRequestBody = (
     size > maxSendBytes
   ) {
     if (shouldTryZip) {
-      logger.debug(`Trying to zip spans, size [${size}], bigger than: [${maxRequestSize}]`);
-      const zippedSpans = gzipSync(JSON.stringify(spans)).toString('base64');
-      const zippedSize = getJSONBase64Size(zippedSpans);
-      logger.debug(`Zipped spans size [${zippedSize}]`);
-      // If the zipped size is small enough, we send the zipped spans
-      // Otherwise, we trim the spans
-      if (zippedSize <= maxRequestSize) {
-        return JSON.stringify(zippedSpans);
+      logger.debug(
+        `Spans are too big, size [${size}], bigger than: [${maxRequestSize}], trying to split and zip`
+      );
+      const zippedSpansBulks = splitAndZipSpans(spans);
+      const areAllSpansSmallEnough = zippedSpansBulks.every(
+        (zippedSpan) => getJSONBase64Size(zippedSpan) <= maxRequestSize
+      );
+      // If all the spans are small enough, return the bulks
+      // Otherwise, continue to trim the spans
+      if (areAllSpansSmallEnough) {
+        logger.debug(`Created ${zippedSpansBulks.length} bulks of zipped spans`);
+        return zippedSpansBulks;
       }
     }
     logger.debug(
