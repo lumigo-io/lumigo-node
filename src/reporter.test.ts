@@ -1221,10 +1221,12 @@ describe('reporter', () => {
     const sentSpansZipped = AxiosMocker.getSentSpans();
 
     //Unzip all payloads and compare them to the original spans
-    const unzippedSpans = sentSpansZipped.reduce((acc: string[], curr) => {
-      const unzipped = unzipSync(Buffer.from(curr, 'base64')).toString();
-      return acc.concat(JSON.parse(unzipped));
-    }, []);
+    const unzippedSpans = sentSpansZipped
+      .map((span) => {
+        const unzipped = unzipSync(Buffer.from(span, 'base64')).toString();
+        return JSON.parse(unzipped);
+      })
+      .flat();
 
     expect(unzippedSpans).toEqual(bigSpans);
   });

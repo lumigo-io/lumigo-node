@@ -19,7 +19,7 @@ import untruncateJson from './tools/untrancateJson';
 import { gzipSync } from 'zlib';
 
 export const NUMBER_OF_SPANS_IN_REPORT_OPTIMIZATION = 200;
-const MAX_SPANS_BULK_SIZE = 110;
+const MAX_SPANS_BULK_SIZE = 500;
 
 export const sendSingleSpan = async (span) => sendSpans([span]);
 
