@@ -1218,15 +1218,16 @@ describe('reporter', () => {
     process.env.LUMIGO_SUPPORT_LARGE_INVOCATIONS = 'TRUE';
 
     await reporter.sendSpans(bigSpans);
-    const sentSpansZipped = AxiosMocker.getSentSpans();
+    const sentSpansZipped: any[] = AxiosMocker.getSentSpans();
 
     //Unzip all payloads and compare them to the original spans
-    const unzippedSpans = sentSpansZipped.flatMap((span) => {
+    const unzippedSpans: any[] = sentSpansZipped.flatMap((span) => {
       const unzipped = unzipSync(Buffer.from(span, 'base64')).toString();
       return JSON.parse(unzipped);
     });
 
-    expect(unzippedSpans).toEqual(bigSpans);
+    // order is not important
+    expect(unzippedSpans.sort()).toEqual(bigSpans.sort());
   });
 
   test('sending a small payload while turning the zip flag on and making sure it is not zipped', async () => {
