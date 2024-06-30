@@ -201,6 +201,8 @@ export const forgeAndScrubRequestBody = (
       if (areAllSpansSmallEnough) {
         logger.debug(`Created ${zippedSpansBulks.length} bulks of zipped spans`);
         return zippedSpansBulks;
+      } else {
+        logger.info(`Some of the zipped bulks are still too big, continuing to trim the spans`);
       }
     }
     logger.debug(
