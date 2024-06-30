@@ -59,7 +59,6 @@ workflows:
         context: common
         requires:
           - lumigo-orb/integration-test-parallel
-          - lumigo-orb/e2e-test
 
     - lumigo-orb/workflow-completed-successfully:
         context: common
