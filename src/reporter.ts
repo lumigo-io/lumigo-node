@@ -19,7 +19,7 @@ import untruncateJson from './tools/untrancateJson';
 import { gzipSync } from 'zlib';
 
 export const NUMBER_OF_SPANS_IN_REPORT_OPTIMIZATION = 200;
-const MAX_SPANS_BULK_SIZE = 200;
+export const MAX_SPANS_BULK_SIZE = 200;
 
 export const sendSingleSpan = async (span) => sendSpans([span]);
 
@@ -156,7 +156,7 @@ export function getPrioritizedSpans(spans: any[], maxSendBytes: number): any[] {
   return Object.values(spansToSend);
 }
 
-function splitAndZipSpans(spans: any[]): string[] {
+export function splitAndZipSpans(spans: any[]): string[] {
   logger.debug(`Splitting the spans to bulks of ${MAX_SPANS_BULK_SIZE} spans`);
   // Split the spans to bulks and zip each one
   const spansBulks: string[] = [];
