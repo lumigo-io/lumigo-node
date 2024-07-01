@@ -114,7 +114,7 @@ jobs:
         command: npm run lint
     - run:
         name: code-coverage
-        command: npm test --coverage --coveragePathIgnorePatterns "fetch.ts" && codecov
+        command: npm test && codecov
     - store_artifacts:
         path: coverage
         prefix: coverage
