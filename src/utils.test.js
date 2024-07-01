@@ -28,6 +28,7 @@ import {
   shouldPropagateW3C,
   shouldScrubDomain,
   getTraceId,
+  safeExecuteAsync,
 } from './utils';
 
 describe('utils', () => {
@@ -1087,5 +1088,43 @@ describe('utils', () => {
       aa: 1,
       bb: 2,
     });
+  });
+
+  test('safeExecuteAsync -> happy flow', async () => {
+    const result = await safeExecuteAsync({
+      fn: async () => 5,
+      message: 'test',
+      defaultReturn: 0,
+    })();
+    expect(result).toEqual(5);
+  });
+
+  test('safeExecuteAsync -> catch exception', async () => {
+    const result = await safeExecuteAsync({
+      fn: async () => {
+        throw new Error('Mocked error');
+      },
+      message: 'test',
+      defaultReturn: 0,
+    })();
+    expect(result).toEqual(0);
+  });
+
+  test('safeExecuteAsync -> multiple parameters', async () => {
+    const result = await safeExecuteAsync({
+      fn: async (a, b) => a + b,
+      message: 'test',
+      defaultReturn: 0,
+    })(2, 3);
+    expect(result).toEqual(5);
+  });
+
+  test('safeExecuteAsync -> multiple parameters in object', async () => {
+    const result = await safeExecuteAsync({
+      fn: async ({ a, b }) => a + b,
+      message: 'test',
+      defaultReturn: 0,
+    })({ a: 2, b: 3 });
+    expect(result).toEqual(5);
   });
 });

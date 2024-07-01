@@ -38,7 +38,7 @@ import { Agent } from './http';
 
 export const hostBlacklist = new Set(['127.0.0.1']);
 
-type HttpRequestTracingConfig = {
+export type HttpRequestTracingConfig = {
   // Headers of the request, including user defined headers & added headers
   headers: {};
 
@@ -60,7 +60,7 @@ export type ParseHttpRequestOptions = {
   agent?: Agent;
   _defaultAgent?: Agent;
   headers?: Record<string, string>;
-  method?: 'GET' | 'POST';
+  method?: string;
   protocol?: string;
   path?: string;
   port?: number;
@@ -68,6 +68,12 @@ export type ParseHttpRequestOptions = {
   hostname?: string;
   host?: string;
   uri?: { hostname?: string };
+};
+
+// I would have just added the url to the options object, but kept it as is, so we don't break existing code
+export type UrlAndRequestOptions = {
+  url: string;
+  options: ParseHttpRequestOptions;
 };
 
 export type RequestData = {
@@ -81,6 +87,16 @@ export type RequestData = {
   method?: string;
   protocol?: string;
   sendTime?: number;
+};
+
+export type ResponseData = {
+  headers?: Record<string, string>;
+  statusCode?: number;
+  body?: string;
+  // The time when all the response data was received, including all the body chunks
+  receivedTime?: number;
+  truncated?: boolean;
+  isNetworkError?: boolean;
 };
 
 export type httpRequestCreatedParams = {
@@ -102,6 +118,7 @@ export class BaseHttp {
     // Gather basic info for creating the HTTP span
     const host = BaseHttp._getHostFromOptionsOrUrl({ options, url });
     const headers = options.headers || {};
+    options.headers = headers;
     const addedHeaders = {};
     const { awsRequestId } = TracerGlobals.getHandlerInputs().context;
     const transactionId = getCurrentTransactionId();
@@ -256,15 +273,15 @@ export class BaseHttp {
     awsRequestId: string;
     requestData: RequestData;
     requestRandomId: string;
-    response: { headers: {}; statusCode: number };
-  }): (args: any[]) => void {
+    response: ResponseData;
+  }): (args: any[]) => { truncated: boolean } {
     let body = '';
     const { headers, statusCode } = response;
-    const maxPayloadSize = getEventEntitySize(statusCode >= 400);
-    return function (args: any[]) {
+    const maxPayloadSize = getEventEntitySize(isErroneousResponse(response));
+    let truncated = false;
+    return function (args: any[]): { truncated: boolean } {
       GlobalDurationTimer.start();
       const receivedTime = new Date().getTime();
-      let truncated = false;
       // add to body only if we didn't pass the max size
       if (args[0] === 'data' && body.length < maxPayloadSize) {
         let chunk = httpDataToString(args[1]);
@@ -277,7 +294,7 @@ export class BaseHttp {
         body += chunk;
       }
       if (args[0] === 'end') {
-        const responseData = {
+        const responseData: ResponseData = {
           statusCode,
           receivedTime,
           body,
@@ -297,6 +314,10 @@ export class BaseHttp {
         SpansContainer.addSpan(httpSpan);
       }
       GlobalDurationTimer.stop();
+
+      return {
+        truncated,
+      };
     };
   }
 
@@ -311,7 +332,7 @@ export class BaseHttp {
     maxSize: number = getEventEntitySize(true)
   ): void {
     let serviceData: ServiceData = {};
-    if (body && !requestData.truncated) {
+    if (body && !requestData.truncated && typeof body === 'string') {
       requestData.body += body;
       serviceData = getServiceData(requestData, null);
       const truncated = maxSize < requestData.body.length;
@@ -382,4 +403,8 @@ export class BaseHttp {
       })() || ''
     );
   }
+}
+
+function isErroneousResponse(responseData: ResponseData): boolean {
+  return responseData.isNetworkError || responseData.statusCode >= 400;
 }

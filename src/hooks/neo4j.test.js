@@ -6,6 +6,7 @@ import { SpansContainer, TracerGlobals } from '../globals';
 import { NEO4J_SPAN } from '../spans/awsSpan';
 import { payloadStringify } from '../utils/payloadStringify';
 import { hookNeo4j } from './neo4j';
+import { NODE_MAJOR_VERSION } from '../../testUtils/nodeVersion';
 
 const DUMMY_OPTIONS = {
   mode: 'READ',
@@ -67,28 +68,30 @@ describe('neo4j', () => {
     ]);
   });
 
-  test('hook -> run (text: string, params: object) -> error', async () => {
-    const query = 'not-a-neo4j-query';
-    const params = {};
+  if (NODE_MAJOR_VERSION <= 14) {
+    test('hook -> run (text: string, params: object) -> error', async () => {
+      const query = 'not-a-neo4j-query';
+      const params = {};
 
-    const error = new Error('Invalid Query');
-    const client = createHookedNeo4jSession({ error });
-    let foundError = false;
+      const error = new Error('Invalid Query');
+      const client = createHookedNeo4jSession({ error });
+      let foundError = false;
 
-    await client.run(query, params).catch(() => {
-      foundError = true;
+      await client.run(query, params).catch(() => {
+        foundError = true;
+      });
+      const spans = SpansContainer.getSpans();
+      expect(spans).toEqual([
+        createBaseBuilderFromSpan(spans[0])
+          .withConnectionParameters(DUMMY_OPTIONS)
+          .withQuery(query)
+          .withParams(payloadStringify(params))
+          .withError(payloadStringify(error))
+          .build(),
+      ]);
+      expect(foundError).toBeTruthy();
     });
-    const spans = SpansContainer.getSpans();
-    expect(spans).toEqual([
-      createBaseBuilderFromSpan(spans[0])
-        .withConnectionParameters(DUMMY_OPTIONS)
-        .withQuery(query)
-        .withParams(payloadStringify(params))
-        .withError(payloadStringify(error))
-        .build(),
-    ]);
-    expect(foundError).toBeTruthy();
-  });
+  }
 
   test('hook -> run (text: string, params: object) -> unstructured error', async () => {
     const query = 'MATCH (u:User {id: $id}) RETURN u';

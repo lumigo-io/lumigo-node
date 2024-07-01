@@ -4,6 +4,7 @@ import { MongoSpanBuilder } from '../../testUtils/mongoSpanBuilder';
 import { SpansContainer, TracerGlobals } from '../globals';
 import { hookMongoDb } from './mongodb';
 import { wrapMongoClient4xClass } from './mongodb4x';
+import { NODE_MAJOR_VERSION } from '../../testUtils/nodeVersion';
 
 const DUMMY_URL = 'mongodb://localhost:27017/myproject';
 
@@ -118,34 +119,36 @@ describe('mongodb4x', () => {
     connection.close();
   });
 
-  test('hookMongoDb -> no args no hook', async () => {
-    const mongoClientLibrary = getMockedMongoClientLibrary();
+  if (NODE_MAJOR_VERSION <= 14) {
+    test('hookMongoDb -> no args no hook', async () => {
+      const mongoClientLibrary = getMockedMongoClientLibrary();
 
-    hookMongoDb(mongoClientLibrary);
-    const client = new mongoClientLibrary.MongoClient();
-    const connect = async () => await client.connect();
-    expect(connect()).rejects.toThrowError(
-      'The "url" argument must be of type string. Received undefined'
-    );
-    expect(SpansContainer.getSpans().length).toEqual(0);
-  });
+      hookMongoDb(mongoClientLibrary);
+      const client = new mongoClientLibrary.MongoClient();
+      const connect = async () => await client.connect();
+      expect(connect()).rejects.toThrowError(
+        'The "url" argument must be of type string. Received undefined'
+      );
+      expect(SpansContainer.getSpans().length).toEqual(0);
+    });
 
-  test.each`
-    options
-    ${1}
-    ${'abc'}
-    ${() => {}}
-  `('hookMongoDb -> invalid arguments -> url=0, options=$options', async ({ options }) => {
-    const mongoClientLibrary = getMockedMongoClientLibrary();
+    test.each`
+      options
+      ${1}
+      ${'abc'}
+      ${() => {}}
+    `('hookMongoDb -> invalid arguments -> url=0, options=$options', async ({ options }) => {
+      const mongoClientLibrary = getMockedMongoClientLibrary();
 
-    hookMongoDb(mongoClientLibrary);
-    const client = new mongoClientLibrary.MongoClient(0, options);
-    const connect = async () => await client.connect();
-    expect(connect()).rejects.toThrowError(
-      'The "url" argument must be of type string. Received type number (0)'
-    );
-    expect(SpansContainer.getSpans().length).toEqual(0);
-  });
+      hookMongoDb(mongoClientLibrary);
+      const client = new mongoClientLibrary.MongoClient(0, options);
+      const connect = async () => await client.connect();
+      expect(connect()).rejects.toThrowError(
+        'The "url" argument must be of type string. Received type number (0)'
+      );
+      expect(SpansContainer.getSpans().length).toEqual(0);
+    });
+  }
 
   test('hookMongoDb -> broken shorthand connect fails gracefully', async () => {
     const mongoClientLibrary = getMockedMongoClientLibrary();

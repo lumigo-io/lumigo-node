@@ -126,10 +126,7 @@ export const getTraceId = (awsXAmznTraceId) => {
     }
 
     // @ts-ignore
-    const transactionId = traceId.Root.split('-')[2];
-
-    // @ts-ignore
-    traceId.transactionId = transactionId;
+    traceId.transactionId = traceId.Root.split('-')[2];
 
     return traceId;
   } catch (err) {
@@ -466,7 +463,7 @@ export function isObject(a: any): a is object {
   return !!a && a.constructor === Object;
 }
 
-export const lowerCaseObjectKeys = (o) =>
+export const lowerCaseObjectKeys = (o?: {}) =>
   o ? Object.keys(o).reduce((c, k) => ((c[k.toLowerCase()] = o[k]), c), {}) : {};
 
 export const isAwsService = (host, responseData = undefined): boolean => {
@@ -594,6 +591,27 @@ export function safeExecute<T>(
   return function (...args) {
     try {
       return callback.apply(this, args);
+    } catch (err) {
+      logger.log(logLevel, message, err);
+      return defaultReturn;
+    }
+  };
+}
+
+export function safeExecuteAsync({
+  fn,
+  message = 'Error in Lumigo tracer',
+  logLevel = logger.LOG_LEVELS.WARNING,
+  defaultReturn = undefined,
+}: {
+  fn: Function;
+  message?: string;
+  logLevel?: string;
+  defaultReturn?: any;
+}) {
+  return async function (...args: any[]) {
+    try {
+      return await fn.apply(this, args);
     } catch (err) {
       logger.log(logLevel, message, err);
       return defaultReturn;
