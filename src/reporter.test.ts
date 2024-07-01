@@ -1246,4 +1246,20 @@ describe('reporter', () => {
 
     expect(sentSpans).toEqual([spans]);
   });
+
+  test('splitAndZipSpans -> verify it splits to bulks successfully', () => {
+    const spans = new Array(reporter.NUMBER_OF_SPANS_IN_REPORT_OPTIMIZATION * 2).fill({});
+
+    const splitSpans = reporter.splitAndZipSpans(spans);
+    expect(splitSpans.length).toEqual(
+      (reporter.NUMBER_OF_SPANS_IN_REPORT_OPTIMIZATION * 2) / reporter.MAX_SPANS_BULK_SIZE
+    );
+
+    // test unzipping
+    const unzippedSpans = splitSpans.flatMap((span) => {
+      const unzipped = unzipSync(Buffer.from(span, 'base64')).toString();
+      return JSON.parse(unzipped);
+    });
+    expect(unzippedSpans).toEqual(spans);
+  });
 });
