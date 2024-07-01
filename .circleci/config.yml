@@ -40,25 +40,16 @@ workflows:
         requires:
           - lumigo-orb/is_environment_available
 
-    - lumigo-orb/pre_build_artifacts:
+    - lumigo-orb/prep-it-resources:
         context: common
-        save_project_folder: true
         requires:
           - lumigo-orb/is_environment_available
 
-    - lumigo-orb/integration-test-prep:
-        context: common
-        pre_builds_available: true
-        run_test_cleanup: false
-        requires:
-          - lumigo-orb/pre_build_artifacts
-
-    - lumigo-orb/integration-test-cleanup:
-        name: pre-test-cleanup
+    - lumigo-orb/prep-k8s-and-operator:
         context: common
         requires:
-          - lumigo-orb/pre_build_artifacts
-
+          - lumigo-orb/is_environment_available
+    
     - lumigo-orb/integration-test-parallel:
         context: common
         tests_spec: testNode
@@ -66,8 +57,8 @@ workflows:
         tests_max_parallel: 20
         requires:
           - lumigo-orb/be-deploy
-          - lumigo-orb/integration-test-prep
-          - pre-test-cleanup
+          - lumigo-orb/prep-it-resources
+          - lumigo-orb/prep-k8s-and-operator
 
     - lumigo-orb/integration-test-cleanup:
         name: post-test-cleanup
