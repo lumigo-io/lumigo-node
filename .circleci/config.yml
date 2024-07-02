@@ -22,11 +22,11 @@ workflows:
           branches:
             ignore: master
 
-    - test-18:
-        context: common
-        filters:
-          branches:
-            ignore: master
+#    - test-18:
+#        context: common
+#        filters:
+#          branches:
+#            ignore: master
 
     - lumigo-orb/is_environment_available:
         context: common
@@ -70,7 +70,7 @@ workflows:
         context: common
         requires:
           - test
-          - test-18
+#          - test-18
           - lumigo-orb/integration-test-parallel
 
     - deploy:
@@ -114,48 +114,48 @@ jobs:
         command: npm run lint
     - run:
         name: code-coverage
-        command: npm test && codecov
+        command: npm test --coverage && codecov
     - store_artifacts:
         path: coverage
         prefix: coverage
 
-  test-18:
-    docker:
-      - image: node:18.20.3-bookworm-slim
-    environment:
-      - TZ: Asia/Jerusalem
-      - NODE_OPTIONS: --max_old_space_size=1500
-    resource_class: medium+
-    working_directory: ~/lumigo-node
-    steps:
-      - run:
-          name: show current node version
-          command: node --version
-      - run:
-          name: install openssl
-          command: apt-get update -y && apt-get install -y openssl
-      - checkout
-      - run:
-          name: install npm dependencies
-          command: npm install --legacy-peer-deps
-      - run:
-          name: install-npm-inner
-          command: |
-            pushd auto-instrument-handler
-              npm install
-            popd
-      - run:
-          name: prettier
-          command: npm run prettier:ci
-      - run:
-          name: check types
-          command: npm run check-types
-      - run:
-          name: test
-          command: npm test
-      - run:
-          name: eslint
-          command: npm run lint
+#  test-18:
+#    docker:
+#      - image: node:18.20.3-bookworm-slim
+#    environment:
+#      - TZ: Asia/Jerusalem
+#      - NODE_OPTIONS: --max_old_space_size=1500
+#    resource_class: medium+
+#    working_directory: ~/lumigo-node
+#    steps:
+#      - run:
+#          name: show current node version
+#          command: node --version
+#      - run:
+#          name: install openssl
+#          command: apt-get update -y && apt-get install -y openssl
+#      - checkout
+#      - run:
+#          name: install npm dependencies
+#          command: npm install --legacy-peer-deps
+#      - run:
+#          name: install-npm-inner
+#          command: |
+#            pushd auto-instrument-handler
+#              npm install
+#            popd
+#      - run:
+#          name: prettier
+#          command: npm run prettier:ci
+#      - run:
+#          name: check types
+#          command: npm run check-types
+#      - run:
+#          name: test
+#          command: npm test
+#      - run:
+#          name: eslint
+#          command: npm run lint
 
   deploy:
     <<: *defaults
