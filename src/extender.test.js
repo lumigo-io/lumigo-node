@@ -1,5 +1,6 @@
 import * as shimmer from 'shimmer';
 import * as extender from './extender';
+import { NODE_MAJOR_VERSION } from '../testUtils/nodeVersion';
 
 export const DummyCounterService = (() => {
   let dummyCounter = 0;
@@ -262,13 +263,19 @@ describe('extender', () => {
     await p;
   });
 
-  test('hookPromise -> catchHandler', async () => {
-    const p = Promise.reject(new Error('octopus'));
+  // This test creates an unhandled rejected promise, and starting from Node.js 15,
+  // it will throw an error and crash the process.
+  // Because of how hookPromise works, it only creates another promise and does not alter the original one so this will
+  // always create an unhandled promise.
+  if (NODE_MAJOR_VERSION <= 14) {
+    test('hookPromise -> catchHandler', async () => {
+      const p = Promise.reject(new Error('octopus'));
 
-    const catchHandler = (value) => {
-      expect(value).toEqual('octopus');
-    };
-    extender.hookPromise(p, { catchHandler: catchHandler });
-    await expect(p).rejects.toThrow();
-  });
+      const catchHandler = (value) => {
+        expect(value).toEqual('octopus');
+      };
+      extender.hookPromise(p, { catchHandler: catchHandler });
+      await expect(p).rejects.toThrow();
+    });
+  }
 });

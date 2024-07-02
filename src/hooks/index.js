@@ -13,6 +13,7 @@ import { hookNeo4j } from './neo4j';
 import { hookPg } from './pg';
 import { hookPrisma } from './prisma';
 import { hookRedis } from './redis';
+import { FetchInstrumentation } from './fetch';
 
 export default () => {
   if (!isSwitchedOff() && isAwsEnvironment()) {
@@ -26,6 +27,7 @@ export default () => {
       safeExecute(hookNeo4j)();
       safeExecute(setLambdaWrapped)();
       safeExecute(hookPrisma)();
+      safeExecute(FetchInstrumentation.startInstrumentation)();
     }
   }
 };

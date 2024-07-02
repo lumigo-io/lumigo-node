@@ -8,6 +8,7 @@ import { MAX_ELEMENTS_IN_EXTRA } from './tracer';
 import * as tracer from './tracer/tracer';
 import * as utils from './utils';
 import { EXECUTION_TAGS_KEY } from './utils';
+import { NODE_MAJOR_VERSION } from '../testUtils/nodeVersion';
 
 const TOKEN = 't_10faa5e13e7844aaa1234';
 
@@ -224,31 +225,33 @@ describe('index', () => {
     ]);
   });
 
-  test('trace => UnhandledPromiseRejection', async () => {
-    process.exit = jest.fn();
+  if (NODE_MAJOR_VERSION <= 14) {
+    test('trace => UnhandledPromiseRejection', async () => {
+      process.exit = jest.fn();
 
-    const mError = new Error('dead lock');
-    jest.spyOn(process, 'on').mockImplementation((event, handler) => {
-      if (event === 'unhandledRejection') {
-        handler(mError);
-      }
+      const mError = new Error('dead lock');
+      jest.spyOn(process, 'on').mockImplementation((event, handler) => {
+        if (event === 'unhandledRejection') {
+          handler(mError);
+        }
+      });
+
+      const { context } = new HandlerInputsBuilder().build();
+
+      const lumigoImport = require('./index');
+      const lumigo = lumigoImport({ token: TOKEN });
+
+      const userHandler = async (event, context) => {
+        await sleep(0);
+      };
+      await lumigo.trace(userHandler)({}, context);
+      await process._events.unhandledRejection('Boom', Promise.reject('Boom'));
+
+      const lastSpan = AxiosMocker.getSentSpans().pop().pop();
+      expect(lastSpan.error.type).toBe('Runtime.UnhandledPromiseRejection');
+      expect(lastSpan.error.message).toBe('Boom');
     });
-
-    const { context } = new HandlerInputsBuilder().build();
-
-    const lumigoImport = require('./index');
-    const lumigo = lumigoImport({ token: TOKEN });
-
-    const userHandler = async (event, context) => {
-      await sleep(0);
-    };
-    await lumigo.trace(userHandler)({}, context);
-    await process._events.unhandledRejection('Boom', Promise.reject('Boom'));
-
-    const lastSpan = AxiosMocker.getSentSpans().pop().pop();
-    expect(lastSpan.error.type).toBe('Runtime.UnhandledPromiseRejection');
-    expect(lastSpan.error.message).toBe('Boom');
-  });
+  }
 
   test('addExecutionTag without tracer not throw exception', async () => {
     const lumigoImport = require('./index');

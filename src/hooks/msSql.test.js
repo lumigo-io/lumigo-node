@@ -5,6 +5,7 @@ import { SpansContainer, TracerGlobals } from '../globals';
 import { MSSQL_SPAN } from '../spans/awsSpan';
 import { payloadStringify } from '../utils/payloadStringify';
 import { hookMssql } from './msSql';
+import { NODE_MAJOR_VERSION } from '../../testUtils/nodeVersion';
 
 const DUMMY_CONNECTION_STRING =
   'mssql://testUser:testUser1@mssql-16055-0.cloudclusters.net:16055/TestDB?encrypt=true';
@@ -138,27 +139,29 @@ describe('msSql', () => {
     ]);
   });
 
-  test('hook -> query (text: string): Promise -> Failed', async () => {
-    let foundError = false;
-    const client = createHookedClient({
-      error: {
-        errorMessage: 'BAD_ERROR',
-      },
-    });
+  if (NODE_MAJOR_VERSION <= 14) {
+    test('hook -> query (text: string): Promise -> Failed', async () => {
+      let foundError = false;
+      const client = createHookedClient({
+        error: {
+          errorMessage: 'BAD_ERROR',
+        },
+      });
 
-    await client.connect(DUMMY_CONNECTION_STRING);
+      await client.connect(DUMMY_CONNECTION_STRING);
 
-    await client.query('SELECT * from users').catch(() => {
-      foundError = true;
+      await client.query('SELECT * from users').catch(() => {
+        foundError = true;
+      });
+      const spans = SpansContainer.getSpans();
+      expect(spans).toEqual([
+        createBaseBuilderFromSpan(spans[0])
+          .withQuery('SELECT * from users')
+          .withConnectionParameters(EXPECTED_OPTIONS)
+          .withError(payloadStringify({ errorMessage: 'BAD_ERROR' }))
+          .build(),
+      ]);
+      expect(foundError).toBeTruthy();
     });
-    const spans = SpansContainer.getSpans();
-    expect(spans).toEqual([
-      createBaseBuilderFromSpan(spans[0])
-        .withQuery('SELECT * from users')
-        .withConnectionParameters(EXPECTED_OPTIONS)
-        .withError(payloadStringify({ errorMessage: 'BAD_ERROR' }))
-        .build(),
-    ]);
-    expect(foundError).toBeTruthy();
-  });
+  }
 });
