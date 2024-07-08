@@ -131,8 +131,8 @@ const sqsParserJsonProtocol = (requestData, responseData) => {
   const { body: resBody } = responseData || {};
   let awsServiceData = {};
 
-  const parsedReqBody = safeJsonParse(reqBody, {});
-  const parsedResBody = safeJsonParse(resBody, {});
+  const parsedReqBody = reqBody ? safeJsonParse(reqBody, {}) : undefined;
+  const parsedResBody = resBody ? safeJsonParse(resBody, {}) : undefined;
   const resourceName = parsedReqBody ? parsedReqBody['QueueUrl'] : undefined;
   const messageId =
     safeGet(parsedResBody, ['MessageId'], undefined) ||

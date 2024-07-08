@@ -469,6 +469,30 @@ describe('aws parser', () => {
         '     }' +
         ']}',
     },
+    // Single message without response body data
+    {
+      requestDataBody:
+        '{' +
+        '   "QueueUrl": "https://sqs.us-west-2.amazonaws.com/33/random-queue-test", ' +
+        '   "MessageBody": "This is a test message"' +
+        '}',
+      responseDataBody: undefined,
+    },
+    // Single message without request body data
+    {
+      requestDataBody: undefined,
+      responseDataBody:
+        '{' +
+        '   "MD5OfMessageAttributes":"6e6aba56e93b3ddfdfe3fa28895feece",' +
+        '   "MD5OfMessageBody":"0d40eb1479f7e61b1a1c7a425c3949e4",' +
+        '   "MessageId":"c5aca29a-ff2f-4db5-94c3-90523d1ed4ca"' +
+        '}',
+    },
+    // Single message with no request or response body data
+    {
+      requestDataBody: undefined,
+      responseDataBody: undefined,
+    },
   ].map(({ requestDataBody, responseDataBody }) =>
     // Check different header values still work with JSON parsing
     [
@@ -499,8 +523,8 @@ describe('aws parser', () => {
 
         expect(result).toEqual({
           awsServiceData: {
-            resourceName: queueUrl,
-            messageId: 'c5aca29a-ff2f-4db5-94c3-90523d1ed4ca',
+            resourceName: requestDataBody ? queueUrl : undefined,
+            messageId: responseDataBody ? 'c5aca29a-ff2f-4db5-94c3-90523d1ed4ca' : null,
           },
         });
       });
