@@ -5,7 +5,6 @@ import { BasicSpan } from './types/spans/basicSpan';
 import {
   getAutoTagKeys,
   getJSONBase64Size,
-  getMaxRequestSize,
   getMaxRequestSizeOnError,
   isLambdaTraced,
   spanHasErrors,
@@ -39,6 +38,10 @@ export class SpansContainer {
       logger.debug('Span created', span);
       return true;
     }
+
+    logger.debug('Span was not added due to size limitations', {
+      currentSpansSize: this.currentSpansSize,
+    });
     return false;
   }
 
