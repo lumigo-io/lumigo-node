@@ -11,6 +11,7 @@ import {
 } from './utils';
 import { GlobalDurationTimer } from './utils/globalDurationTimer';
 import { isString } from '@lumigo/node-core/lib/common';
+import { runOneTimeWrapper } from './utils/functionUtils';
 
 const MAX_TAGS = 50;
 const MAX_TAG_KEY_LEN = 50;
@@ -20,6 +21,13 @@ export const DEFAULT_MAX_SIZE_FOR_REQUEST = 1024 * 500;
 export const DEFAULT_MAX_SIZE_FOR_REQUEST_ON_ERROR = 1024 * 990;
 export const MAX_TRACER_ADDED_DURATION_ALLOWED = 750;
 export const MIN_TRACER_ADDED_DURATION_ALLOWED = 200;
+
+const warnSpansSizeOnce = runOneTimeWrapper((threshold: number, currentSize: number) => {
+  logger.info(
+    `Lumigo tracer is no longer collecting data on the invocation, because it reached the maximum 
+    size of calls collected of ${threshold} bytes (current size is ${currentSize} bytes)`
+  );
+}, {});
 
 export class SpansContainer {
   private static spans: { [id: string]: BasicSpan } = {};
@@ -39,6 +47,7 @@ export class SpansContainer {
       return true;
     }
 
+    warnSpansSizeOnce(getMaxRequestSizeOnError() * 10, this.currentSpansSize);
     logger.debug('Span was not added due to size limitations', {
       currentSpansSize: this.currentSpansSize,
     });
