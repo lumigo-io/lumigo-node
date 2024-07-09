@@ -159,7 +159,7 @@ export const sendEndTraceSpans = async (functionSpan, handlerReturnValue) => {
   logLeakedSpans(spans);
 
   const { transactionId } = endFunctionSpan;
-  logger.debug('Tracer ended', { transactionId });
+  logger.debug('Tracer ended', { transactionId, totalSpans: spans.length });
   clearGlobals();
 };
 
