@@ -190,7 +190,7 @@ export const forgeAndScrubRequestBody = (
   ) {
     if (shouldTryZip) {
       logger.debug(
-        `Spans are too big, size [${size}], bigger than: [${maxRequestSize}], trying to split and zip`
+        `Spans are too big, size [${size}], [${spans.length}] spans, bigger than: [${maxRequestSize}], trying to split and zip`
       );
       const zippedSpansBulks = splitAndZipSpans(spans);
       const areAllSpansSmallEnough = zippedSpansBulks.every(
