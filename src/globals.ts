@@ -5,7 +5,7 @@ import { BasicSpan } from './types/spans/basicSpan';
 import {
   getAutoTagKeys,
   getJSONBase64Size,
-  getMaxRequestSizeOnError,
+  getStoredSpansMaxSize,
   isLambdaTraced,
   spanHasErrors,
 } from './utils';
@@ -40,17 +40,18 @@ export class SpansContainer {
       this.totalSpans += 1;
     }
     // Memory optimization, take up to 10x maxSize because of smart span selection logic
-    if (spanHasErrors(span) || getMaxRequestSizeOnError() * 10 > this.currentSpansSize) {
+    const maxSpansSize = getStoredSpansMaxSize();
+    if (spanHasErrors(span) || maxSpansSize > this.currentSpansSize) {
       this.spans[span.id] = span;
       this.currentSpansSize += getJSONBase64Size(span);
       logger.debug('Span created', span);
       return true;
     }
 
-    warnSpansSizeOnce(getMaxRequestSizeOnError() * 10, this.currentSpansSize);
     logger.debug('Span was not added due to size limitations', {
       currentSpansSize: this.currentSpansSize,
     });
+    warnSpansSizeOnce(maxSpansSize, this.currentSpansSize);
     return false;
   }
 

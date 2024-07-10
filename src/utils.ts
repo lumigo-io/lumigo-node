@@ -36,6 +36,7 @@ export const LUMIGO_SECRET_MASKING_ALL_MAGIC = 'all';
 export const LUMIGO_SECRET_MASKING_EXACT_PATH = 'LUMIGO_SECRET_MASKING_EXACT_PATH';
 export const LUMIGO_WHITELIST_KEYS_REGEXES = 'LUMIGO_WHITELIST_KEYS_REGEXES';
 export const LUMIGO_SUPPORT_LARGE_INVOCATIONS = 'LUMIGO_SUPPORT_LARGE_INVOCATIONS';
+export const LUMIGO_STORED_SPANS_MAX_SIZE_BYTES_ENV_VAR = 'LUMIGO_STORED_SPANS_MAX_SIZE_BYTES';
 export const OMITTING_KEYS_REGEXES = [
   '.*pass.*',
   '.*key.*',
@@ -377,6 +378,20 @@ export const getValidAliases = () =>
 export const getMaxRequestSize = () => TracerGlobals.getTracerInputs().maxSizeForRequest;
 export const getMaxRequestSizeOnError = () =>
   TracerGlobals.getTracerInputs().maxSizeForRequestOnError;
+
+/**
+ * The maximum size of all spans stored in memory before sending them to lumigo.
+ * This limit is in place to prevent storing too many spans in memory and causing OOM errors.
+ * Note: when the invocation ends and the spans are processed before sending to Lumigo, more processing and truncating
+ * might take place
+ * @returns {number} The maximum size of all spans stored in memory in bytes
+ */
+export const getStoredSpansMaxSize = (): number => {
+  return (
+    parseInt(process.env[LUMIGO_STORED_SPANS_MAX_SIZE_BYTES_ENV_VAR]) ||
+    getMaxRequestSizeOnError() * 10
+  );
+};
 
 export const getInvokedArn = () => {
   // @ts-ignore
