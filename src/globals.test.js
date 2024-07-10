@@ -64,7 +64,7 @@ describe('globals', () => {
     expect(spans).toEqual([span1]);
   });
 
-  test('SpansContainer - cleanning the request size limiter', () => {
+  test('SpansContainer - cleaning the request size limiter', () => {
     const span1 = { a: 'b', c: 'd', id: '1' };
     for (let i = 0; i < getMaxRequestSize(); i++) {
       globals.SpansContainer.addSpan(span1);
