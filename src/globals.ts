@@ -24,8 +24,8 @@ export const MIN_TRACER_ADDED_DURATION_ALLOWED = 200;
 
 const warnSpansSizeOnce = runOneTimeWrapper((threshold: number, currentSize: number) => {
   logger.info(
-    `Lumigo tracer is no longer collecting data on the invocation, because it reached the maximum 
-    size of calls collected of ${threshold} bytes (current size is ${currentSize} bytes)`
+    `Lumigo tracer is no longer collecting data on the invocation, because it reached the maximum ` +
+      `size of calls collected of ${threshold} bytes (current size is ${currentSize} bytes)`
   );
 }, {});
 

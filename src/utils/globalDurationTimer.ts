@@ -4,9 +4,9 @@ import { runOneTimeWrapper } from './functionUtils';
 
 const warnTimeoutOnce = runOneTimeWrapper((threshold: number, currentDuration: number) => {
   logger.info(
-    `Stopped collecting data for this invocation because it reached the maximum 
-    of ${threshold} ms added (added ${currentDuration} ms so far) to the duration of the Lambda. 
-    This limit can be modified by setting the ${TRACER_TIMEOUT_FLAG} environment variable`
+    `Stopped collecting data for this invocation because it reached the maximum ` +
+      `of ${threshold} ms added (added ${currentDuration} ms so far) to the duration of the Lambda. ` +
+      `This limit can be modified by setting the ${TRACER_TIMEOUT_FLAG} environment variable`
   );
 }, {});
 
