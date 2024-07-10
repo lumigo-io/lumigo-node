@@ -29,8 +29,9 @@ import {
   shouldScrubDomain,
   getTraceId,
   safeExecuteAsync,
-  getStoredSpansMaxSize,
+  getMaxSizeForStoredSpansInMemory,
   LUMIGO_STORED_SPANS_MAX_SIZE_BYTES_ENV_VAR,
+  LUMIGO_SUPPORT_LARGE_INVOCATIONS,
 } from './utils';
 
 describe('utils', () => {
@@ -314,9 +315,12 @@ describe('utils', () => {
   });
 
   test('getStoredSpansMaxSize using env var value', () => {
-    const valueBefore = getStoredSpansMaxSize();
+    const valueBefore = getMaxSizeForStoredSpansInMemory();
     process.env[LUMIGO_STORED_SPANS_MAX_SIZE_BYTES_ENV_VAR] = `${valueBefore + 100}`;
-    expect(getStoredSpansMaxSize()).toBe(valueBefore + 100);
+    expect(getMaxSizeForStoredSpansInMemory()).toBe(valueBefore);
+
+    process.env[LUMIGO_SUPPORT_LARGE_INVOCATIONS] = 'true';
+    expect(getMaxSizeForStoredSpansInMemory()).toBe(valueBefore + 100);
   });
 
   test('getConnectionTimeout => simple flow', () => {

@@ -5,7 +5,7 @@ import { BasicSpan } from './types/spans/basicSpan';
 import {
   getAutoTagKeys,
   getJSONBase64Size,
-  getStoredSpansMaxSize,
+  getMaxSizeForStoredSpansInMemory,
   isLambdaTraced,
   spanHasErrors,
 } from './utils';
@@ -19,6 +19,8 @@ const MAX_TAG_VALUE_LEN = 70;
 const ADD_TAG_ERROR_MSG_PREFIX = 'Skipping addExecutionTag: Unable to add tag';
 export const DEFAULT_MAX_SIZE_FOR_REQUEST = 1024 * 500;
 export const DEFAULT_MAX_SIZE_FOR_REQUEST_ON_ERROR = 1024 * 990;
+export const DEFAULT_MAX_SIZE_FOR_SPANS_SIZE_STORED_IN_MEMORY =
+  DEFAULT_MAX_SIZE_FOR_REQUEST_ON_ERROR * 10;
 export const MAX_TRACER_ADDED_DURATION_ALLOWED = 750;
 export const MIN_TRACER_ADDED_DURATION_ALLOWED = 200;
 
@@ -40,7 +42,7 @@ export class SpansContainer {
       this.totalSpans += 1;
     }
     // Memory optimization, take up to 10x maxSize because of smart span selection logic
-    const maxSpansSize = getStoredSpansMaxSize();
+    const maxSpansSize = getMaxSizeForStoredSpansInMemory();
     if (spanHasErrors(span) || maxSpansSize > this.currentSpansSize) {
       this.spans[span.id] = span;
       this.currentSpansSize += getJSONBase64Size(span);
@@ -226,6 +228,7 @@ export const TracerGlobals = (() => {
     isStepFunction: false,
     maxSizeForRequest: DEFAULT_MAX_SIZE_FOR_REQUEST,
     maxSizeForRequestOnError: DEFAULT_MAX_SIZE_FOR_REQUEST_ON_ERROR,
+    maxSizeForStoredSpansInMemory: DEFAULT_MAX_SIZE_FOR_SPANS_SIZE_STORED_IN_MEMORY,
     lambdaTimeout: MAX_TRACER_ADDED_DURATION_ALLOWED,
   };
 
@@ -254,7 +257,15 @@ export const TracerGlobals = (() => {
     maxSizeForRequest = null,
     maxSizeForRequestOnError = null,
     lambdaTimeout = MAX_TRACER_ADDED_DURATION_ALLOWED,
-  }: TracerOptions) =>
+    maxSizeForStoredSpansInMemory = DEFAULT_MAX_SIZE_FOR_SPANS_SIZE_STORED_IN_MEMORY,
+  }: TracerOptions) => {
+    const parsedMaxSizeForRequestOnError =
+      maxSizeForRequestOnError ||
+      (process.env['LUMIGO_MAX_SIZE_FOR_REQUEST_ON_ERROR']
+        ? parseInt(process.env.LUMIGO_MAX_SIZE_FOR_REQUEST_ON_ERROR)
+        : DEFAULT_MAX_SIZE_FOR_REQUEST_ON_ERROR);
+    const parsedMaxSizeForStoredSpansInMemory =
+      maxSizeForStoredSpansInMemory || parsedMaxSizeForRequestOnError * 10;
     Object.assign(tracerInputs, {
       token: token || process.env.LUMIGO_TRACER_TOKEN,
       debug: debug,
@@ -272,12 +283,10 @@ export const TracerGlobals = (() => {
         (process.env['LUMIGO_MAX_SIZE_FOR_REQUEST']
           ? parseInt(process.env.LUMIGO_MAX_SIZE_FOR_REQUEST)
           : DEFAULT_MAX_SIZE_FOR_REQUEST),
-      maxSizeForRequestOnError:
-        maxSizeForRequestOnError ||
-        (process.env['LUMIGO_MAX_SIZE_FOR_REQUEST_ON_ERROR']
-          ? parseInt(process.env.LUMIGO_MAX_SIZE_FOR_REQUEST_ON_ERROR)
-          : DEFAULT_MAX_SIZE_FOR_REQUEST_ON_ERROR),
+      maxSizeForRequestOnError: parsedMaxSizeForRequestOnError,
+      maxSizeForStoredSpansInMemory: parsedMaxSizeForStoredSpansInMemory,
     });
+  };
 
   const getTracerInputs = () => tracerInputs;
 
@@ -290,6 +299,7 @@ export const TracerGlobals = (() => {
       isStepFunction: false,
       maxSizeForRequest: DEFAULT_MAX_SIZE_FOR_REQUEST,
       maxSizeForRequestOnError: DEFAULT_MAX_SIZE_FOR_REQUEST_ON_ERROR,
+      maxSizeForStoredSpansInMemory: DEFAULT_MAX_SIZE_FOR_SPANS_SIZE_STORED_IN_MEMORY,
     });
 
   return {

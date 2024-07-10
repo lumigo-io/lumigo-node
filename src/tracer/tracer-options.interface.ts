@@ -8,4 +8,5 @@ export interface TracerOptions {
   maxSizeForRequestOnError?: number | null;
   lambdaTimeout?: number;
   verbose?: boolean;
+  maxSizeForStoredSpansInMemory?: number;
 }

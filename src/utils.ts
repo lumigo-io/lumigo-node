@@ -343,8 +343,6 @@ export const isLambdaWrapped = (): boolean => validateEnvVar(WRAPPED_FLAG);
 
 export const shouldPropagateW3C = (): boolean => !validateEnvVar(LUMIGO_PROPAGATE_W3C, 'FALSE');
 
-export const shouldTryZip = (): boolean => validateEnvVar(LUMIGO_SUPPORT_LARGE_INVOCATIONS);
-
 export const setLambdaWrapped = (): void => {
   process.env[WRAPPED_FLAG] = 'TRUE';
 };
@@ -378,20 +376,6 @@ export const getValidAliases = () =>
 export const getMaxRequestSize = () => TracerGlobals.getTracerInputs().maxSizeForRequest;
 export const getMaxRequestSizeOnError = () =>
   TracerGlobals.getTracerInputs().maxSizeForRequestOnError;
-
-/**
- * The maximum size of all spans stored in memory before sending them to lumigo.
- * This limit is in place to prevent storing too many spans in memory and causing OOM errors.
- * Note: when the invocation ends and the spans are processed before sending to Lumigo, more processing and truncating
- * might take place
- * @returns {number} The maximum size of all spans stored in memory in bytes
- */
-export const getStoredSpansMaxSize = (): number => {
-  return (
-    parseInt(process.env[LUMIGO_STORED_SPANS_MAX_SIZE_BYTES_ENV_VAR]) ||
-    getMaxRequestSizeOnError() * 10
-  );
-};
 
 export const getInvokedArn = () => {
   // @ts-ignore
@@ -688,6 +672,31 @@ export const filterObjectKeys = (
     .reduce((cur, key) => {
       return Object.assign(cur, { [key]: obj[key] });
     }, {});
+
+export const shouldTryZip = () => validateEnvVar(LUMIGO_SUPPORT_LARGE_INVOCATIONS);
+
+const getLumigoStoredSpansMaxSizeBytesOverrideValue = () => {
+  const value = process.env[LUMIGO_STORED_SPANS_MAX_SIZE_BYTES_ENV_VAR];
+  if (value && shouldTryZip()) {
+    const parsedValue = parseInt(value);
+    if (!isNaN(parsedValue)) {
+      return parsedValue;
+    }
+  }
+  return undefined;
+};
+
+/**
+ * The maximum size of all spans stored in memory before sending them to lumigo.
+ * This limit is in place to prevent storing too many spans in memory and causing OOM errors.
+ * Note: when the invocation ends and the spans are processed before sending to Lumigo, more processing and truncating
+ * might take place
+ * @returns number maximum size in bytes
+ */
+export const getMaxSizeForStoredSpansInMemory = (): number => {
+  const overrideValue = getLumigoStoredSpansMaxSizeBytesOverrideValue();
+  return overrideValue || TracerGlobals.getTracerInputs().maxSizeForStoredSpansInMemory;
+};
 
 export const isLambdaTraced = () => isAwsEnvironment() && !isSwitchedOff();
 export const getRequestBodyMaskingRegex = (): string | undefined =>
