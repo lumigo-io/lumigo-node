@@ -51,6 +51,7 @@ export class SpansContainer {
 
     logger.debug('Span was not added due to size limitations', {
       currentSpansSize: this.currentSpansSize,
+      maxSpansSize,
     });
     warnSpansSizeOnce(maxSpansSize, this.currentSpansSize);
     return false;
