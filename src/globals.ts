@@ -42,7 +42,7 @@ export class SpansContainer {
     }
     // Memory optimization, take up to 10x maxSize because of smart span selection logic
     const maxSpansSize = getMaxSizeForStoredSpansInMemory();
-    if (spanHasErrors(span) || maxSpansSize > this.currentSpansSize) {
+    if (spanHasErrors(span) || this.currentSpansSize <= maxSpansSize) {
       this.spans[span.id] = span;
       this.currentSpansSize += getJSONBase64Size(span);
       logger.debug('Span created', span);
