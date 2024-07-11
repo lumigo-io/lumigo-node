@@ -3,7 +3,7 @@ import * as globals from './globals';
 import {
   DEFAULT_MAX_SIZE_FOR_REQUEST,
   DEFAULT_MAX_SIZE_FOR_REQUEST_ON_ERROR,
-  DEFAULT_MAX_SIZE_FOR_SPANS_SIZE_STORED_IN_MEMORY,
+  DEFAULT_MAX_SIZE_FOR_SPANS_STORED_IN_MEMORY,
   MAX_TRACER_ADDED_DURATION_ALLOWED,
 } from './globals';
 import { getMaxRequestSize } from './utils';
@@ -271,7 +271,7 @@ describe('globals', () => {
       isStepFunction: false,
       maxSizeForRequest: DEFAULT_MAX_SIZE_FOR_REQUEST,
       maxSizeForRequestOnError: DEFAULT_MAX_SIZE_FOR_REQUEST_ON_ERROR,
-      maxSizeForStoredSpansInMemory: DEFAULT_MAX_SIZE_FOR_SPANS_SIZE_STORED_IN_MEMORY,
+      maxSizeForStoredSpansInMemory: DEFAULT_MAX_SIZE_FOR_SPANS_STORED_IN_MEMORY,
     });
   });
 
@@ -315,7 +315,7 @@ describe('globals', () => {
       lambdaTimeout: MAX_TRACER_ADDED_DURATION_ALLOWED,
       maxSizeForRequest: DEFAULT_MAX_SIZE_FOR_REQUEST,
       maxSizeForRequestOnError: DEFAULT_MAX_SIZE_FOR_REQUEST_ON_ERROR,
-      maxSizeForStoredSpansInMemory: DEFAULT_MAX_SIZE_FOR_SPANS_SIZE_STORED_IN_MEMORY,
+      maxSizeForStoredSpansInMemory: DEFAULT_MAX_SIZE_FOR_SPANS_STORED_IN_MEMORY,
     });
   });
 
