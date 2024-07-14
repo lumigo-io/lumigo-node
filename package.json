@@ -1,6 +1,6 @@
 {
   "name": "@lumigo/tracer",
-  "version": "1.95.2",
+  "version": "1.95.3",
   "description": "Lumigo Tracer for Node.js v8.x / v10.x / v12.x Runtimes",
   "main": "dist/index.js",
   "repository": "git@github.com:lumigo-io/lumigo-node.git",
