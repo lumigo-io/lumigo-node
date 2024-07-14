@@ -36,6 +36,7 @@ export const LUMIGO_SECRET_MASKING_ALL_MAGIC = 'all';
 export const LUMIGO_SECRET_MASKING_EXACT_PATH = 'LUMIGO_SECRET_MASKING_EXACT_PATH';
 export const LUMIGO_WHITELIST_KEYS_REGEXES = 'LUMIGO_WHITELIST_KEYS_REGEXES';
 export const LUMIGO_SUPPORT_LARGE_INVOCATIONS = 'LUMIGO_SUPPORT_LARGE_INVOCATIONS';
+export const LUMIGO_STORED_SPANS_MAX_SIZE_BYTES_ENV_VAR = 'LUMIGO_STORED_SPANS_MAX_SIZE_BYTES';
 export const OMITTING_KEYS_REGEXES = [
   '.*pass.*',
   '.*key.*',
@@ -225,7 +226,6 @@ const STORE_LOGS_FLAG = 'LUMIGO_STORE_LOGS';
 const TIMEOUT_BUFFER_FLAG = 'LUMIGO_TIMEOUT_BUFFER';
 const TIMEOUT_MIN_DURATION = 'LUMIGO_TIMEOUT_MIN_DURATION';
 const TIMEOUT_BUFFER_FLAG_MS = 'LUMIGO_TIMEOUT_BUFFER_MS';
-const TRACER_TIMEOUT_FLAG = 'LUMIGO_TRACER_TIMEOUT';
 const AGENT_KEEPALIVE = 'LUMIGO_AGENT_KEEPALIVE_MS';
 const REUSE_CONNECTION = 'LUMIGO_REUSE_HTTP_CONNECTION';
 const KEEP_HEADERS = 'LUMIGO_KEEP_HTTP_HEADERS';
@@ -240,6 +240,7 @@ const LUMIGO_STACK_PATTERNS = [
   new RegExp('/node_modules/@lumigo/tracer/', 'i'),
 ];
 
+export const TRACER_TIMEOUT_FLAG = 'LUMIGO_TRACER_TIMEOUT';
 export const SWITCH_OFF_FLAG = 'LUMIGO_SWITCH_OFF';
 
 const validateEnvVar = (envVar: string, value: string = 'TRUE'): boolean =>
@@ -341,8 +342,6 @@ export const isDebug = (): boolean =>
 export const isLambdaWrapped = (): boolean => validateEnvVar(WRAPPED_FLAG);
 
 export const shouldPropagateW3C = (): boolean => !validateEnvVar(LUMIGO_PROPAGATE_W3C, 'FALSE');
-
-export const shouldTryZip = (): boolean => validateEnvVar(LUMIGO_SUPPORT_LARGE_INVOCATIONS);
 
 export const setLambdaWrapped = (): void => {
   process.env[WRAPPED_FLAG] = 'TRUE';
@@ -673,6 +672,31 @@ export const filterObjectKeys = (
     .reduce((cur, key) => {
       return Object.assign(cur, { [key]: obj[key] });
     }, {});
+
+export const shouldTryZip = () => validateEnvVar(LUMIGO_SUPPORT_LARGE_INVOCATIONS);
+
+const getLumigoStoredSpansMaxSizeBytesOverrideValue = () => {
+  const value = process.env[LUMIGO_STORED_SPANS_MAX_SIZE_BYTES_ENV_VAR];
+  if (value && shouldTryZip()) {
+    const parsedValue = parseInt(value);
+    if (!isNaN(parsedValue)) {
+      return parsedValue;
+    }
+  }
+  return undefined;
+};
+
+/**
+ * The maximum size of all spans stored in memory before sending them to lumigo.
+ * This limit is in place to prevent storing too many spans in memory and causing OOM errors.
+ * Note: when the invocation ends and the spans are processed before sending to Lumigo, more processing and truncating
+ * might take place
+ * @returns number maximum size in bytes
+ */
+export const getMaxSizeForStoredSpansInMemory = (): number => {
+  const overrideValue = getLumigoStoredSpansMaxSizeBytesOverrideValue();
+  return overrideValue || TracerGlobals.getTracerInputs().maxSizeForStoredSpansInMemory;
+};
 
 export const isLambdaTraced = () => isAwsEnvironment() && !isSwitchedOff();
 export const getRequestBodyMaskingRegex = (): string | undefined =>

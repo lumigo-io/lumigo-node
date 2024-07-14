@@ -1,9 +1,13 @@
 import * as logger from '../logger';
-import { getTracerMaxDurationTimeout } from '../utils';
+import { getTracerMaxDurationTimeout, TRACER_TIMEOUT_FLAG } from '../utils';
 import { runOneTimeWrapper } from './functionUtils';
 
-const warnTimeoutOnce = runOneTimeWrapper(() => {
-  logger.warn('Lumigo tracer is no longer collecting data on the invocation.');
+const warnTimeoutOnce = runOneTimeWrapper((threshold: number, currentDuration: number) => {
+  logger.info(
+    `Stopped collecting data for this invocation because it reached the maximum ` +
+      `of ${threshold} ms added (added ${currentDuration} ms so far) to the duration of the Lambda. ` +
+      `This limit can be modified by setting the ${TRACER_TIMEOUT_FLAG} environment variable`
+  );
 }, {});
 
 export const GlobalDurationTimer = (() => {
@@ -32,7 +36,7 @@ export const GlobalDurationTimer = (() => {
     appendTime();
     threshold = threshold || getTracerMaxDurationTimeout();
     if (currentDuration >= threshold) {
-      warnTimeoutOnce();
+      warnTimeoutOnce(threshold, currentDuration);
       return true;
     }
     return false;

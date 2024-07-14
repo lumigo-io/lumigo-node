@@ -1148,7 +1148,7 @@ describe('reporter', () => {
     expect(JSON.parse(logs[1].obj).stack).toBeTruthy();
   });
 
-  test('sending a huge payload, bigger than the regular limit, zipping and geeting is back completely', async () => {
+  test('sending a huge payload, bigger than the regular limit, zipping and getting is back completely', async () => {
     const token = 'DEADBEEF';
     TracerGlobals.setTracerInputs({ token });
     const span = {

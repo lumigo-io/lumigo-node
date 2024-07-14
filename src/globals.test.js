@@ -3,6 +3,7 @@ import * as globals from './globals';
 import {
   DEFAULT_MAX_SIZE_FOR_REQUEST,
   DEFAULT_MAX_SIZE_FOR_REQUEST_ON_ERROR,
+  DEFAULT_MAX_SIZE_FOR_SPANS_STORED_IN_MEMORY,
   MAX_TRACER_ADDED_DURATION_ALLOWED,
 } from './globals';
 import { getMaxRequestSize } from './utils';
@@ -64,7 +65,7 @@ describe('globals', () => {
     expect(spans).toEqual([span1]);
   });
 
-  test('SpansContainer - cleanning the request size limiter', () => {
+  test('SpansContainer - cleaning the request size limiter', () => {
     const span1 = { a: 'b', c: 'd', id: '1' };
     for (let i = 0; i < getMaxRequestSize(); i++) {
       globals.SpansContainer.addSpan(span1);
@@ -238,6 +239,7 @@ describe('globals', () => {
     const isStepFunction = false;
     const maxSizeForRequest = 1234;
     const maxSizeForRequestOnError = 12345;
+    const maxSizeForStoredSpansInMemory = 1234567;
     globals.TracerGlobals.setTracerInputs({
       token,
       debug,
@@ -246,6 +248,7 @@ describe('globals', () => {
       isStepFunction,
       maxSizeForRequest,
       maxSizeForRequestOnError,
+      maxSizeForStoredSpansInMemory,
     });
     expect(globals.TracerGlobals.getTracerInputs()).toEqual({
       token,
@@ -256,6 +259,7 @@ describe('globals', () => {
       lambdaTimeout: MAX_TRACER_ADDED_DURATION_ALLOWED,
       maxSizeForRequest,
       maxSizeForRequestOnError,
+      maxSizeForStoredSpansInMemory,
     });
     globals.TracerGlobals.clearTracerInputs();
     expect(globals.TracerGlobals.getTracerInputs()).toEqual({
@@ -267,6 +271,7 @@ describe('globals', () => {
       isStepFunction: false,
       maxSizeForRequest: DEFAULT_MAX_SIZE_FOR_REQUEST,
       maxSizeForRequestOnError: DEFAULT_MAX_SIZE_FOR_REQUEST_ON_ERROR,
+      maxSizeForStoredSpansInMemory: DEFAULT_MAX_SIZE_FOR_SPANS_STORED_IN_MEMORY,
     });
   });
 
@@ -310,6 +315,7 @@ describe('globals', () => {
       lambdaTimeout: MAX_TRACER_ADDED_DURATION_ALLOWED,
       maxSizeForRequest: DEFAULT_MAX_SIZE_FOR_REQUEST,
       maxSizeForRequestOnError: DEFAULT_MAX_SIZE_FOR_REQUEST_ON_ERROR,
+      maxSizeForStoredSpansInMemory: DEFAULT_MAX_SIZE_FOR_SPANS_STORED_IN_MEMORY,
     });
   });
 
