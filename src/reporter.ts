@@ -8,8 +8,8 @@ import {
   isString,
   safeExecute,
   shouldScrubDomain,
-  spanHasErrors,
   shouldTryZip,
+  spanHasErrors,
 } from './utils';
 import * as logger from './logger';
 import { HttpSpansAgent } from './httpSpansAgent';
@@ -17,6 +17,7 @@ import { payloadStringify } from './utils/payloadStringify';
 import { decodeHttpBody, getSpanMetadata, spansPrioritySorter } from './spans/awsSpan';
 import untruncateJson from './tools/untrancateJson';
 import { gzipSync } from 'zlib';
+import { droppedSpanReasons, SpansContainer } from './globals';
 
 export const NUMBER_OF_SPANS_IN_REPORT_OPTIMIZATION = 200;
 export const MAX_SPANS_BULK_SIZE = 200;
@@ -153,6 +154,15 @@ export function getPrioritizedSpans(spans: any[], maxSendBytes: number): any[] {
     }
   }
 
+  const spansDropped = spans.length - Object.keys(spansToSend).length;
+  if (spansDropped > 0) {
+    SpansContainer.recordDroppedSpan(
+      droppedSpanReasons.SPANS_STORED_IN_MEMORY_SIZE_LIMIT,
+      false,
+      spansDropped
+    );
+  }
+
   return Object.values(spansToSend);
 }
 
@@ -212,6 +222,8 @@ export const forgeAndScrubRequestBody = (
   if (originalSize - spans.length > 0) {
     logger.debug(`Trimmed spans due to size`);
   }
+
+  // TODO: Add dropped spans details to the lambda end span (find it from the spans array)
 
   logger.debug(`Filtered [${beforeLength - spans.length}] spans out`);
   logger.debug(`Filtering and scrubbing, Took: [${new Date().getTime() - start}ms]`);
