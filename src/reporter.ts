@@ -161,6 +161,8 @@ export function getPrioritizedSpans(spans: any[], maxSendBytes: number): any[] {
       false,
       spansDropped
     );
+
+    // TODO: update the end span with the new recorded drops
   }
 
   return Object.values(spansToSend);
@@ -222,8 +224,6 @@ export const forgeAndScrubRequestBody = (
   if (originalSize - spans.length > 0) {
     logger.debug(`Trimmed spans due to size`);
   }
-
-  // TODO: Add dropped spans details to the lambda end span (find it from the spans array)
 
   logger.debug(`Filtered [${beforeLength - spans.length}] spans out`);
   logger.debug(`Filtering and scrubbing, Took: [${new Date().getTime() - start}ms]`);

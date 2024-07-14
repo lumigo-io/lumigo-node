@@ -83,6 +83,10 @@ export class SpansContainer {
     }
   }
 
+  static getDroppedSpansReasons(): { [reason: string]: number } {
+    return this.droppedSpansReasons;
+  }
+
   static getSpans(): BasicSpan[] {
     return Object.values(this.spans);
   }
