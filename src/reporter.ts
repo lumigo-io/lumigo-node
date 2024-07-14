@@ -8,8 +8,8 @@ import {
   isString,
   safeExecute,
   shouldScrubDomain,
-  spanHasErrors,
   shouldTryZip,
+  spanHasErrors,
 } from './utils';
 import * as logger from './logger';
 import { HttpSpansAgent } from './httpSpansAgent';
@@ -17,6 +17,7 @@ import { payloadStringify } from './utils/payloadStringify';
 import { decodeHttpBody, getSpanMetadata, spansPrioritySorter } from './spans/awsSpan';
 import untruncateJson from './tools/untrancateJson';
 import { gzipSync } from 'zlib';
+import { droppedSpanReasons, SpansContainer } from './globals';
 
 export const NUMBER_OF_SPANS_IN_REPORT_OPTIMIZATION = 200;
 export const MAX_SPANS_BULK_SIZE = 200;
@@ -151,6 +152,17 @@ export function getPrioritizedSpans(spans: any[], maxSendBytes: number): any[] {
       spansToSend[index] = spans[index];
       currentSize += spanSize - spanMetadataSize;
     }
+  }
+
+  const spansDropped = spans.length - Object.keys(spansToSend).length;
+  if (spansDropped > 0) {
+    SpansContainer.recordDroppedSpan(
+      droppedSpanReasons.SPANS_STORED_IN_MEMORY_SIZE_LIMIT,
+      false,
+      spansDropped
+    );
+
+    // TODO: update the end span with the new recorded drops
   }
 
   return Object.values(spansToSend);

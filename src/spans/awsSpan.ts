@@ -288,6 +288,7 @@ export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
     event,
     envs,
     totalSpans,
+    droppedSpansReasons: SpansContainer.getDroppedSpansReasons(),
   });
   logger.debug('End span created', newSpan);
   return newSpan;
