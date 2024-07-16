@@ -22,7 +22,7 @@ import {
 } from './spans/awsSpan';
 import untruncateJson from './tools/untrancateJson';
 import { gzipSync } from 'zlib';
-import { droppedSpanReasons, SpansContainer } from './globals';
+import { DroppedSpanReasons, SpansContainer } from './globals';
 
 export const NUMBER_OF_SPANS_IN_REPORT_OPTIMIZATION = 200;
 export const MAX_SPANS_BULK_SIZE = 200;
@@ -161,7 +161,7 @@ export function getPrioritizedSpans(spans: any[], maxSendBytes: number): any[] {
 
   const spansDropped = spans.length - Object.keys(spansToSend).length;
   if (spansDropped > 0) {
-    SpansContainer.recordDroppedSpan(droppedSpanReasons.SPANS_SENT_SIZE_LIMIT, false, spansDropped);
+    SpansContainer.recordDroppedSpan(DroppedSpanReasons.SPANS_SENT_SIZE_LIMIT, false, spansDropped);
     logger.info(`Dropped ${spansDropped} spans due to size limit of total spans sent to lumigo`);
 
     // Update the end span with the new recorded drops

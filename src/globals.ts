@@ -29,7 +29,7 @@ const warnSpansSizeOnce = runOneTimeWrapper((threshold: number, currentSize: num
     `Lumigo tracer is no longer collecting data on the invocation - maximum size of total spans collected (${threshold} bytes allowed, current size is ${currentSize} bytes)`
   );
 }, {});
-export enum droppedSpanReasons {
+export enum DroppedSpanReasons {
   // If we reached the limit for the size of spans stored in memory while the lambda is running then we will stop collecting spans
   SPANS_STORED_IN_MEMORY_SIZE_LIMIT = 'SPANS_STORED_IN_MEMORY_SIZE_LIMIT',
 
@@ -71,7 +71,7 @@ export class SpansContainer {
     warnSpansSizeOnce(maxSpansSize, this.currentSpansSize);
 
     if (newSpan) {
-      SpansContainer.recordDroppedSpan(droppedSpanReasons.SPANS_STORED_IN_MEMORY_SIZE_LIMIT, false);
+      SpansContainer.recordDroppedSpan(DroppedSpanReasons.SPANS_STORED_IN_MEMORY_SIZE_LIMIT, false);
     }
     // TODO: If the span isn't new we need to mark the existing span as partially dropped / truncated somehow
 
@@ -79,7 +79,7 @@ export class SpansContainer {
   }
 
   static recordDroppedSpan(
-    reason: droppedSpanReasons,
+    reason: DroppedSpanReasons,
     incrementTotalSpansCounter: boolean = true,
     numOfDroppedSpans: number = 1
   ): void {

@@ -1,4 +1,4 @@
-import { droppedSpanReasons, SpansContainer, TracerGlobals } from '../globals';
+import { DroppedSpanReasons, SpansContainer, TracerGlobals } from '../globals';
 import {
   getCurrentTransactionId,
   getHttpInfo,
@@ -123,7 +123,7 @@ export class BaseHttp {
     }
 
     if (GlobalDurationTimer.isTimePassed()) {
-      SpansContainer.recordDroppedSpan(droppedSpanReasons.INVOCATION_MAX_LATENCY_LIMIT);
+      SpansContainer.recordDroppedSpan(DroppedSpanReasons.INVOCATION_MAX_LATENCY_LIMIT);
       return undefined;
     }
 
