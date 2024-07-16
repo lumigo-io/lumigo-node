@@ -116,6 +116,7 @@ export class SpansContainer {
     this.currentSpansSize = 0;
     this.totalSpans = 0;
     this.spans = {};
+    this.droppedSpansReasons = {};
   }
 
   static getTotalSpans(): number {

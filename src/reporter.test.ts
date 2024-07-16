@@ -47,7 +47,16 @@ describe('reporter', () => {
 
   test('sendSpans - use tracerInputs', async () => {
     const endSpan = { e: 'f', g: 'h', type: FUNCTION_SPAN };
-    const expectedSpans = [JSON.parse(JSON.stringify(endSpan))];
+    const expectedSpans = [
+      JSON.parse(
+        JSON.stringify({
+          ...endSpan,
+          droppedSpansReasons: {
+            SPANS_SENT_SIZE_LIMIT: 1,
+          },
+        })
+      ),
+    ];
     TracerGlobals.setTracerInputs({ maxSizeForRequest: 80 });
     const spans = [
       { keyWithData: 'valueWithData', anotherKeyWithData: 'anotherValueWithData' },
@@ -332,8 +341,14 @@ describe('reporter', () => {
       JSON.parse(JSON.stringify(dummyEnd)),
     ];
 
-    const expectedResult = [dummyEnd, dummy];
-    const expectedResultSize = getJSONBase64Size(expectedResult);
+    const expectedResult = [
+      {
+        ...dummyEnd,
+        droppedSpansReasons: { SPANS_SENT_SIZE_LIMIT: 1 },
+      },
+      dummy,
+    ];
+    const expectedResultSize = getJSONBase64Size([dummyEnd, dummy]);
 
     expect(
       reporter.forgeAndScrubRequestBody(spans, expectedResultSize, expectedResultSize)
@@ -962,15 +977,27 @@ describe('reporter', () => {
   test('forgeRequestBody - cut spans', async () => {
     const dummy = { dummy: 'dummy', type: HTTP_SPAN };
     const end = { end: 'dummyEnd', type: FUNCTION_SPAN };
+    const expectedFinalEndSpan = {
+      ...end,
+      droppedSpansReasons: {
+        SPANS_SENT_SIZE_LIMIT: 1,
+      },
+    };
     const error = { dummy: 'dummy', type: HTTP_SPAN, error: 'error' };
 
     const spans = [dummy, error, end];
-    const expectedResult = [JSON.parse(JSON.stringify(end)), JSON.parse(JSON.stringify(error))];
-    const expectedResultSize = getJSONBase64Size(expectedResult);
+    const expectedResult = [
+      JSON.parse(JSON.stringify(expectedFinalEndSpan)),
+      JSON.parse(JSON.stringify(error)),
+    ];
+    const maxSendBytes = getJSONBase64Size([
+      JSON.parse(JSON.stringify(end)),
+      JSON.parse(JSON.stringify(error)),
+    ]);
 
-    expect(
-      reporter.forgeAndScrubRequestBody(spans, expectedResultSize, expectedResultSize)
-    ).toEqual(JSON.stringify(expectedResult));
+    expect(reporter.forgeAndScrubRequestBody(spans, maxSendBytes, maxSendBytes)).toEqual(
+      JSON.stringify(expectedResult)
+    );
   });
 
   test('forgeRequestBody - cut spans - skip initiate stringify (performance boost)', async () => {
