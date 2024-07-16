@@ -14,7 +14,12 @@ import {
 import * as logger from './logger';
 import { HttpSpansAgent } from './httpSpansAgent';
 import { payloadStringify } from './utils/payloadStringify';
-import { decodeHttpBody, getSpanMetadata, spansPrioritySorter } from './spans/awsSpan';
+import {
+  decodeHttpBody,
+  FUNCTION_SPAN,
+  getSpanMetadata,
+  spansPrioritySorter,
+} from './spans/awsSpan';
 import untruncateJson from './tools/untrancateJson';
 import { gzipSync } from 'zlib';
 import { droppedSpanReasons, SpansContainer } from './globals';
@@ -156,13 +161,21 @@ export function getPrioritizedSpans(spans: any[], maxSendBytes: number): any[] {
 
   const spansDropped = spans.length - Object.keys(spansToSend).length;
   if (spansDropped > 0) {
-    SpansContainer.recordDroppedSpan(
-      droppedSpanReasons.SPANS_STORED_IN_MEMORY_SIZE_LIMIT,
-      false,
-      spansDropped
-    );
+    SpansContainer.recordDroppedSpan(droppedSpanReasons.SPANS_SENT_SIZE_LIMIT, false, spansDropped);
+    logger.info(`Dropped ${spansDropped} spans due to size limit of total spans sent to lumigo`);
 
-    // TODO: update the end span with the new recorded drops
+    // Update the end span with the new recorded drops
+    let endSpanFound = false;
+    for (let index = 0; index < Object.values(spansToSend).length; index++) {
+      if (spansToSend[index].type === FUNCTION_SPAN) {
+        spansToSend[index].droppedSpansReasons = SpansContainer.getDroppedSpansReasons();
+        endSpanFound = true;
+        break;
+      }
+    }
+    if (!endSpanFound) {
+      logger.warn('End span not found, could not update the dropped spans reasons');
+    }
   }
 
   return Object.values(spansToSend);

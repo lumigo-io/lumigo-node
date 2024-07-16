@@ -30,7 +30,14 @@ const warnSpansSizeOnce = runOneTimeWrapper((threshold: number, currentSize: num
   );
 }, {});
 export enum droppedSpanReasons {
+  // If we reached the limit for the size of spans stored in memory while the lambda is running then we will stop collecting spans
   SPANS_STORED_IN_MEMORY_SIZE_LIMIT = 'SPANS_STORED_IN_MEMORY_SIZE_LIMIT',
+
+  // If the size of spans we are trying to send to lumigo at the lambda end is bigger than the maximum allowed size
+  // then we will not send some of the spans
+  SPANS_SENT_SIZE_LIMIT = 'SPANS_SENT_SIZE_LIMIT',
+
+  // If the tracer added latency reached the maximum configured, we will stop collecting spans
   INVOCATION_MAX_LATENCY_LIMIT = 'INVOCATION_MAX_LATENCY_LIMIT',
 }
 
