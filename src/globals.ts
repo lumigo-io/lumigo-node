@@ -29,14 +29,27 @@ const warnSpansSizeOnce = runOneTimeWrapper((threshold: number, currentSize: num
     `Lumigo tracer is no longer collecting data on the invocation - maximum size of total spans collected (${threshold} bytes allowed, current size is ${currentSize} bytes)`
   );
 }, {});
+export enum DroppedSpanReasons {
+  // If we reached the limit for the size of spans stored in memory while the lambda is running then we will stop collecting spans
+  SPANS_STORED_IN_MEMORY_SIZE_LIMIT = 'SPANS_STORED_IN_MEMORY_SIZE_LIMIT',
+
+  // If the size of spans we are trying to send to lumigo at the lambda end is bigger than the maximum allowed size
+  // then we will not send some of the spans
+  SPANS_SENT_SIZE_LIMIT = 'SPANS_SENT_SIZE_LIMIT',
+
+  // If the tracer added latency reached the maximum configured, we will stop collecting spans
+  INVOCATION_MAX_LATENCY_LIMIT = 'INVOCATION_MAX_LATENCY_LIMIT',
+}
 
 export class SpansContainer {
   private static spans: { [id: string]: BasicSpan } = {};
   private static currentSpansSize: number = 0;
   private static totalSpans: number = 0;
+  private static droppedSpansReasons: { [reason: string]: number } = {};
 
   static addSpan(span: BasicSpan): boolean {
-    if (!(span.id in this.spans)) {
+    const newSpan = span.id in this.spans;
+    if (!newSpan) {
       // We call add span also for updating spans with their end part
       this.totalSpans += 1;
     }
@@ -44,6 +57,8 @@ export class SpansContainer {
     const maxSpansSize = getMaxSizeForStoredSpansInMemory();
     if (spanHasErrors(span) || this.currentSpansSize <= maxSpansSize) {
       this.spans[span.id] = span;
+
+      // TODO: If the span isn't new we need to subtract the old span size before adding the new size
       this.currentSpansSize += getJSONBase64Size(span);
       logger.debug('Span created', span);
       return true;
@@ -54,7 +69,29 @@ export class SpansContainer {
       maxSpansSize,
     });
     warnSpansSizeOnce(maxSpansSize, this.currentSpansSize);
+
+    if (newSpan) {
+      SpansContainer.recordDroppedSpan(DroppedSpanReasons.SPANS_STORED_IN_MEMORY_SIZE_LIMIT, false);
+    }
+    // TODO: If the span isn't new we need to mark the existing span as partially dropped / truncated somehow
+
     return false;
+  }
+
+  static recordDroppedSpan(
+    reason: DroppedSpanReasons,
+    incrementTotalSpansCounter: boolean = true,
+    numOfDroppedSpans: number = 1
+  ): void {
+    this.droppedSpansReasons[reason] =
+      (this.droppedSpansReasons[reason.valueOf()] || 0) + numOfDroppedSpans;
+    if (incrementTotalSpansCounter) {
+      this.totalSpans += numOfDroppedSpans;
+    }
+  }
+
+  static getDroppedSpansReasons(): { [reason: string]: number } {
+    return this.droppedSpansReasons;
   }
 
   static getSpans(): BasicSpan[] {
@@ -79,6 +116,7 @@ export class SpansContainer {
     this.currentSpansSize = 0;
     this.totalSpans = 0;
     this.spans = {};
+    this.droppedSpansReasons = {};
   }
 
   static getTotalSpans(): number {

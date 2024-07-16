@@ -1,4 +1,4 @@
-import { SpansContainer, TracerGlobals } from '../globals';
+import { DroppedSpanReasons, SpansContainer, TracerGlobals } from '../globals';
 import {
   getCurrentTransactionId,
   getHttpInfo,
@@ -117,18 +117,22 @@ export class BaseHttp {
   }: httpRequestCreatedParams): HttpRequestTracingConfig | undefined {
     // Gather basic info for creating the HTTP span
     const host = BaseHttp._getHostFromOptionsOrUrl({ options, url });
+
+    if (BaseHttp.isBlacklisted(host) || !isValidAlias()) {
+      return undefined;
+    }
+
+    if (GlobalDurationTimer.isTimePassed()) {
+      SpansContainer.recordDroppedSpan(DroppedSpanReasons.INVOCATION_MAX_LATENCY_LIMIT);
+      return undefined;
+    }
+
     const headers = options.headers || {};
     options.headers = headers;
     const addedHeaders = {};
     const { awsRequestId } = TracerGlobals.getHandlerInputs().context;
     const transactionId = getCurrentTransactionId();
     const requestRandomId = getRandomId();
-
-    const shouldIgnoreReq =
-      BaseHttp.isBlacklisted(host) || !isValidAlias() || GlobalDurationTimer.isTimePassed();
-    if (shouldIgnoreReq) {
-      return undefined;
-    }
 
     logger.debug('Starting hook', { host, url, headers });
 

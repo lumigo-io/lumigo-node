@@ -30,7 +30,6 @@ import {
   spansPrioritySorter,
 } from './awsSpan';
 import { addW3CTracePropagator } from '../utils/w3cUtils';
-import * as globals from '../globals';
 import { SqlSpanBuilder } from '../../testUtils/sqlSpanBuilder';
 import { MongoSpanBuilder } from '../../testUtils/mongoSpanBuilder';
 import { RedisSpanBuilder } from '../../testUtils/redisSpanBuilder';
@@ -358,6 +357,7 @@ describe('awsSpan', () => {
       // eslint-disable-next-line camelcase
       return_value: '"data man"',
       [EXECUTION_TAGS_KEY]: [],
+      droppedSpansReasons: {},
     };
     const handlerReturnValue1 = {
       err: null,
@@ -418,6 +418,7 @@ describe('awsSpan', () => {
       // eslint-disable-next-line camelcase
       return_value: '',
       [EXECUTION_TAGS_KEY]: [],
+      droppedSpansReasons: {},
     };
     MockDate.set(895179612345);
     expect(awsSpan.getEndFunctionSpan(functionSpan1, handlerReturnValue2)).toEqual(
