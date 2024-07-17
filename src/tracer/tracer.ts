@@ -153,13 +153,13 @@ export const endTrace = async (functionSpan, handlerReturnValue) => {
 
 export const sendEndTraceSpans = async (functionSpan, handlerReturnValue) => {
   const endFunctionSpan = getEndFunctionSpan(functionSpan, handlerReturnValue);
-  const spans = [...SpansContainer.getSpans(), endFunctionSpan];
+  SpansContainer.addSpan(endFunctionSpan, true);
 
-  await sendSpans(spans);
-  logLeakedSpans(spans);
+  await sendSpans(SpansContainer.getSpans());
+  logLeakedSpans(SpansContainer.getSpans());
 
   const { transactionId } = endFunctionSpan;
-  logger.debug('Tracer ended', { transactionId, totalSpans: spans.length });
+  logger.debug('Tracer ended', { transactionId, totalSpans: SpansContainer.getTotalSpans() });
   clearGlobals();
 };
 
@@ -247,7 +247,6 @@ const setupTimeoutTimer = () => {
     if (timeoutBuffer < remainingTimeInMillis && remainingTimeInMillis >= minDuration) {
       GlobalTimer.setGlobalTimeout(async () => {
         logger.debug('Invocation is about to timeout, sending trace data.');
-        const spans = SpansContainer.getSpans();
         const { token } = TracerGlobals.getTracerInputs();
         const transactionId = getCurrentTransactionId();
         const awsRequestId: string = context.awsRequestId;
@@ -259,11 +258,10 @@ const setupTimeoutTimer = () => {
           awsRequestId
         );
         if (enrichmentSpan) {
-          // @ts-ignore
-          spans.push(enrichmentSpan);
+          SpansContainer.addSpan(enrichmentSpan, true);
         }
+        await sendSpans(SpansContainer.getSpans());
         SpansContainer.clearSpans();
-        await sendSpans(spans);
       }, remainingTimeInMillis - timeoutBuffer);
     }
   }

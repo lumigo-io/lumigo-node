@@ -1,6 +1,6 @@
 import { Context } from 'aws-lambda';
 import { getEventInfo } from '../events';
-import { ExecutionTags, SpansContainer, TracerGlobals } from '../globals';
+import { ExecutionTags, TracerGlobals } from '../globals';
 import * as logger from '../logger';
 import {
   apigwParser,
@@ -13,7 +13,7 @@ import {
   sqsParser,
 } from '../parsers/aws';
 import { getSkipScrubPath, parseEvent } from '../parsers/eventParser';
-import { BasicChildSpan, BasicSpan, SpanInfo } from '../types/spans/basicSpan';
+import { BasicChildSpan, BasicSpan, GenericSpan, SpanInfo } from '../types/spans/basicSpan';
 import { FunctionSpan } from '../types/spans/functionSpan';
 import { HttpInfo } from '../types/spans/httpSpan';
 import {
@@ -85,7 +85,7 @@ export const spansPrioritySorter = (span1: any, span2: any): number => {
   return Math.sign(getSpanPriority(span1) - getSpanPriority(span2));
 };
 
-export const getSpanMetadata = (span: any): any => {
+export const getSpanMetadata = (span: GenericSpan): GenericSpan => {
   const spanCopy = JSON.parse(JSON.stringify(span));
   spanCopy['isMetadata'] = true;
 
@@ -93,7 +93,8 @@ export const getSpanMetadata = (span: any): any => {
     delete spanCopy?.envs;
     return spanCopy;
   } else if (spanCopy.type === ENRICHMENT_SPAN) {
-    return {};
+    delete spanCopy?.[EXECUTION_TAGS_KEY];
+    return spanCopy;
   } else if (spanCopy.type === HTTP_SPAN) {
     delete spanCopy?.info?.httpInfo?.request?.headers;
     delete spanCopy?.info?.httpInfo?.request?.body;
@@ -194,11 +195,12 @@ export const generateEnrichmentSpan = (
   token: string,
   transactionId: string,
   invocationId: string
-) => {
+): null | GenericSpan => {
   if (executionTags.length === 0) {
     return null;
   }
   const enrichmentSpan = {
+    id: `${invocationId}_enrichment`,
     type: ENRICHMENT_SPAN,
     token: token,
     [TRANSACTION_ID_KEY]: transactionId,
@@ -258,12 +260,12 @@ export const getFunctionSpan = (lambdaEvent: {}, lambdaContext: Context): Functi
 
 export const removeStartedFromId = (id) => id.split('_')[0];
 
-export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
+export const getEndFunctionSpan = (functionSpan: GenericSpan, handlerReturnValue): GenericSpan => {
   const { err, data } = handlerReturnValue;
   const id = removeStartedFromId(functionSpan.id);
   let error = err ? parseErrorObject(err) : undefined;
   const ended = new Date().getTime();
-  let returnValue;
+  let returnValue: any;
   try {
     returnValue = payloadStringify(data);
   } catch (e) {
@@ -277,7 +279,6 @@ export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
   }
   const event = error ? getEventForSpan(true) : functionSpan.event;
   const envs = error ? getEnvsForSpan(true) : functionSpan.envs;
-  const totalSpans = SpansContainer.getTotalSpans();
   const newSpan = Object.assign({}, functionSpan, {
     id,
     ended,
@@ -287,8 +288,6 @@ export const getEndFunctionSpan = (functionSpan, handlerReturnValue) => {
     [EXECUTION_TAGS_KEY]: ExecutionTags.getTags(),
     event,
     envs,
-    totalSpans,
-    droppedSpansReasons: SpansContainer.getDroppedSpansReasons(),
   });
   logger.debug('End span created', newSpan);
   return newSpan;

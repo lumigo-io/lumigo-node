@@ -16,16 +16,19 @@ import { HttpSpansAgent } from './httpSpansAgent';
 import { payloadStringify } from './utils/payloadStringify';
 import {
   decodeHttpBody,
-  FUNCTION_SPAN,
+  ENRICHMENT_SPAN,
   getSpanMetadata,
   spansPrioritySorter,
 } from './spans/awsSpan';
 import untruncateJson from './tools/untrancateJson';
 import { gzipSync } from 'zlib';
 import { DroppedSpanReasons, SpansContainer } from './globals';
+import { GenericSpan } from './types/spans/basicSpan';
 
 export const NUMBER_OF_SPANS_IN_REPORT_OPTIMIZATION = 200;
 export const MAX_SPANS_BULK_SIZE = 200;
+
+const MAX_SEND_ENRICHMENT_SPAN_BUFFER = 200;
 
 export const sendSingleSpan = async (span) => sendSpans([span]);
 
@@ -132,7 +135,7 @@ export function getPrioritizedSpans(spans: any[], maxSendBytes: number): any[] {
   spans.sort(spansPrioritySorter);
   let currentSize = 0;
   const spansToSendSizes = {};
-  const spansToSend = {};
+  const spansToSend: { [id: string]: GenericSpan } = {};
 
   // First we try to take only the spans metadata
   for (let index = 0; index < spans.length; index++) {
@@ -141,7 +144,7 @@ export function getPrioritizedSpans(spans: any[], maxSendBytes: number): any[] {
     if (spanMetadata === undefined) continue;
     const spanMetadataSize = getJSONBase64Size(spanMetadata);
 
-    if (currentSize + spanMetadataSize < maxSendBytes) {
+    if (currentSize + spanMetadataSize < maxSendBytes - MAX_SEND_ENRICHMENT_SPAN_BUFFER) {
       spansToSendSizes[index] = spanMetadataSize;
       spansToSend[index] = spanMetadata;
       currentSize += spanMetadataSize;
@@ -153,32 +156,25 @@ export function getPrioritizedSpans(spans: any[], maxSendBytes: number): any[] {
     const spanSize = getJSONBase64Size(spans[index]);
     const spanMetadataSize = spansToSendSizes[index];
 
-    if (currentSize + spanSize - spanMetadataSize < maxSendBytes) {
+    if (
+      currentSize + spanSize - spanMetadataSize <
+      maxSendBytes - MAX_SEND_ENRICHMENT_SPAN_BUFFER
+    ) {
       spansToSend[index] = spans[index];
       currentSize += spanSize - spanMetadataSize;
     }
   }
 
-  const spansDropped = spans.length - Object.keys(spansToSend).length;
+  let finalSpansToSend = Object.values(spansToSend);
+  const spansDropped = spans.length - finalSpansToSend.length;
   if (spansDropped > 0) {
     SpansContainer.recordDroppedSpan(DroppedSpanReasons.SPANS_SENT_SIZE_LIMIT, false, spansDropped);
     logger.info(`Dropped ${spansDropped} spans due to size limit of total spans sent to lumigo`);
 
-    // Update the end span with the new recorded drops
-    let endSpanFound = false;
-    for (let index = 0; index < Object.values(spansToSend).length; index++) {
-      if (spansToSend[index].type === FUNCTION_SPAN) {
-        spansToSend[index].droppedSpansReasons = SpansContainer.getDroppedSpansReasons();
-        endSpanFound = true;
-        break;
-      }
-    }
-    if (!endSpanFound) {
-      logger.warn('End span not found, could not update the dropped spans reasons');
-    }
+    finalSpansToSend = addOrUpdateSpanCountsEnrichmentSpan(finalSpansToSend);
   }
 
-  return Object.values(spansToSend);
+  return finalSpansToSend;
 }
 
 export function splitAndZipSpans(spans: any[]): string[] {
@@ -193,15 +189,52 @@ export function splitAndZipSpans(spans: any[]): string[] {
   return spansBulks;
 }
 
+/**
+ * Add or create an enrichment span to the given list of spans, with overall span count information.
+ * @param {GenericSpan[]} spans List of spans to add to
+ * @returns {GenericSpan[]} The given list, with an enrichment span added / modified with the span counts
+ */
+export const addOrUpdateSpanCountsEnrichmentSpan = (spans: GenericSpan[]): GenericSpan[] => {
+  let enrichmentSpan = spans.find((span) => span.type === ENRICHMENT_SPAN);
+
+  const spansEnrichmentData = {
+    id: enrichmentSpan ? enrichmentSpan.id : 'enrichment-span',
+    droppedSpansReasons: SpansContainer.getDroppedSpansReasons(),
+    totalSpans: SpansContainer.getTotalSpans(),
+  };
+
+  if (enrichmentSpan) {
+    Object.assign(enrichmentSpan, spansEnrichmentData);
+    SpansContainer.addSpan(enrichmentSpan, true);
+  } else {
+    enrichmentSpan = {
+      type: ENRICHMENT_SPAN,
+      ...spansEnrichmentData,
+      totalSpans: SpansContainer.getTotalSpans() + 1,
+    };
+    SpansContainer.addSpan(enrichmentSpan, true);
+    spans.push({
+      type: ENRICHMENT_SPAN,
+      ...enrichmentSpan,
+    });
+  }
+
+  return spans;
+};
+
 // We muted the spans itself to keep the memory footprint of the tracer to a minimum
 export const forgeAndScrubRequestBody = (
-  spans,
-  maxSendBytes,
-  maxSendBytesOnError,
+  spans: any[],
+  maxSendBytes: number,
+  maxSendBytesOnError: number,
   shouldTryZip: boolean = false
 ): string | string[] | undefined => {
   const maxRequestSize = spans.some(spanHasErrors) ? maxSendBytesOnError : maxSendBytes;
   const start = new Date().getTime();
+
+  // If there were span drops, find an enrichment span or create one and add the dropped spans info to the enrichment span
+  spans = addOrUpdateSpanCountsEnrichmentSpan(spans);
+
   const beforeLength = spans.length;
   const originalSize = spans.length;
   const size = getJSONBase64Size(spans);
