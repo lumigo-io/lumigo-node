@@ -138,10 +138,10 @@ describe('tracer', () => {
         expect(requests.length).toEqual(2);
         const sentSpans = AxiosMocker.getSentSpans();
         expect(sentSpans.length).toEqual(2);
-        expect(sentSpans[1][1]['type']).toEqual(ENRICHMENT_SPAN);
-        expect(sentSpans[1][1][EXECUTION_TAGS_KEY]).toEqual([{ key: 'key1', value: 'value1' }]);
-        expect(sentSpans[1][1][TRANSACTION_ID_KEY]).toEqual(getCurrentTransactionId());
-        expect(sentSpans[1][1][INVOCATION_ID_KEY]).toEqual(context.awsRequestId);
+        expect(sentSpans[1][0]['type']).toEqual(ENRICHMENT_SPAN);
+        expect(sentSpans[1][0][EXECUTION_TAGS_KEY]).toEqual([{ key: 'key1', value: 'value1' }]);
+        expect(sentSpans[1][0][TRANSACTION_ID_KEY]).toEqual(getCurrentTransactionId());
+        expect(sentSpans[1][0][INVOCATION_ID_KEY]).toEqual(context.awsRequestId);
         expect(spies.getTags).toHaveBeenCalled();
         done();
       }, timeout + testBuffer);
@@ -169,7 +169,7 @@ describe('tracer', () => {
         expect(requests.length).toEqual(2);
         const sentSpans = AxiosMocker.getSentSpans();
         expect(sentSpans.length).toEqual(2);
-        expect(sentSpans[1].length).toEqual(1);
+        expect(sentSpans[1].length).toEqual(2);
         expect(spies.getTags).toHaveBeenCalled();
         done();
       }, timeout + testBuffer);
@@ -272,10 +272,10 @@ describe('tracer', () => {
     spies.sendSpans.mockImplementationOnce(() => {});
     spies.getCurrentTransactionId.mockReturnValueOnce('x');
 
-    const dummySpan = { x: 'y', transactionId: 'x' };
-    const functionSpan = { a: 'b', c: 'd', transactionId: 'x' };
+    const dummySpan = { id: 'dummy-span', x: 'y', transactionId: 'x' };
+    const functionSpan = { id: 'func-span_started', a: 'b', c: 'd', transactionId: 'x' };
     const handlerReturnValue = 'Satoshi was here1';
-    const endFunctionSpan = { a: 'b', c: 'd', rtt, transactionId: 'x' };
+    const endFunctionSpan = { id: 'func-span', a: 'b', c: 'd', rtt, transactionId: 'x' };
     SpansContainer.addSpan(dummySpan);
     spies.getEndFunctionSpan.mockReturnValueOnce(endFunctionSpan);
 
@@ -621,7 +621,7 @@ describe('tracer', () => {
     await lumigoTracer.trace(userHandler)({}, context, jest.fn());
 
     const spans = AxiosMocker.getSentSpans();
-    expect(spans[1][0].return_value).toEqual('"json magic"');
+    expect(spans[1][1].return_value).toEqual('"json magic"');
   });
 
   test('trace; follow AWS stringify on the return value - bad flow', async () => {
@@ -647,8 +647,8 @@ describe('tracer', () => {
     await lumigoTracer.trace(userHandler)({}, context, jest.fn());
 
     const spans = AxiosMocker.getSentSpans();
-    expect(spans[1][0].return_value).toEqual('str');
-    expect(spans[1][0].error.message).toEqual(
+    expect(spans[1][1].return_value).toEqual('str');
+    expect(spans[1][1].error.message).toEqual(
       'Could not JSON.stringify the return value. This will probably fail the lambda. Original error: FAIL'
     );
   });
@@ -670,9 +670,9 @@ describe('tracer', () => {
     await lumigoTracer.trace(userHandler)({}, context, jest.fn());
 
     const spans = AxiosMocker.getSentSpans();
-    expect(spans[1][0].error.type).toEqual('Error');
-    expect(spans[1][0].error.message).toEqual('ERROR');
-    expect(spans[1][0].error.stacktrace.length).toBeGreaterThan(0);
+    expect(spans[1][1].error.type).toEqual('Error');
+    expect(spans[1][1].error.message).toEqual('ERROR');
+    expect(spans[1][1].error.stacktrace.length).toBeGreaterThan(0);
   });
 
   test('sendEndTraceSpans; dont clear globals in case of a leak', async () => {

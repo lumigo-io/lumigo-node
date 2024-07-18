@@ -247,7 +247,8 @@ describe('index', () => {
       await lumigo.trace(userHandler)({}, context);
       await process._events.unhandledRejection('Boom', Promise.reject('Boom'));
 
-      const lastSpan = AxiosMocker.getSentSpans().pop().pop();
+      const sentSpans = AxiosMocker.getSentSpans();
+      const lastSpan = sentSpans[2][0];
       expect(lastSpan.error.type).toBe('Runtime.UnhandledPromiseRejection');
       expect(lastSpan.error.message).toBe('Boom');
     });

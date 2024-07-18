@@ -11,10 +11,8 @@ import { isAwsContext } from '../guards/awsGuards';
 import { Http } from '../hooks/http';
 import * as logger from '../logger';
 import { info, warnClient } from '../logger';
-import { sendSingleSpan, sendSpans } from '../reporter';
+import { addOrUpdateEnrichmentSpan, sendSingleSpan, sendSpans } from '../reporter';
 import {
-  generateEnrichmentSpan,
-  getCurrentTransactionId,
   getEndFunctionSpan,
   getFunctionSpan,
   isSpanIsFromAnotherInvocation,
@@ -38,6 +36,7 @@ import {
 } from '../utils';
 import { runOneTimeWrapper } from '../utils/functionUtils';
 import { TraceOptions } from './trace-options.type';
+import { GenericSpan } from '../types/spans/basicSpan';
 
 export const HANDLER_CALLBACKED = 'handler_callbacked';
 export const ASYNC_HANDLER_RESOLVED = 'async_handler_resolved';
@@ -115,7 +114,7 @@ export const trace =
     return performPromisifyType(err, data, type, callback);
   };
 
-export const startTrace = async (functionSpan) => {
+export const startTrace = async (functionSpan: GenericSpan) => {
   try {
     const handlerInputs = TracerGlobals.getHandlerInputs();
 
@@ -140,7 +139,7 @@ export const startTrace = async (functionSpan) => {
   }
 };
 
-export const endTrace = async (functionSpan, handlerReturnValue) => {
+export const endTrace = async (functionSpan: GenericSpan, handlerReturnValue: any) => {
   try {
     if (functionSpan && !isSwitchedOff() && isAwsEnvironment()) {
       await sendEndTraceSpans(functionSpan, handlerReturnValue);
@@ -151,7 +150,7 @@ export const endTrace = async (functionSpan, handlerReturnValue) => {
   }
 };
 
-export const sendEndTraceSpans = async (functionSpan, handlerReturnValue) => {
+export const sendEndTraceSpans = async (functionSpan: GenericSpan, handlerReturnValue: any) => {
   const endFunctionSpan = getEndFunctionSpan(functionSpan, handlerReturnValue);
   SpansContainer.addSpan(endFunctionSpan, true);
 
@@ -247,19 +246,7 @@ const setupTimeoutTimer = () => {
     if (timeoutBuffer < remainingTimeInMillis && remainingTimeInMillis >= minDuration) {
       GlobalTimer.setGlobalTimeout(async () => {
         logger.debug('Invocation is about to timeout, sending trace data.');
-        const { token } = TracerGlobals.getTracerInputs();
-        const transactionId = getCurrentTransactionId();
-        const awsRequestId: string = context.awsRequestId;
-
-        const enrichmentSpan = generateEnrichmentSpan(
-          ExecutionTags.getTags(),
-          token,
-          transactionId,
-          awsRequestId
-        );
-        if (enrichmentSpan) {
-          SpansContainer.addSpan(enrichmentSpan, true);
-        }
+        addOrUpdateEnrichmentSpan(SpansContainer.getSpans());
         await sendSpans(SpansContainer.getSpans());
         SpansContainer.clearSpans();
       }, remainingTimeInMillis - timeoutBuffer);

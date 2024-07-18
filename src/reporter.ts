@@ -1,15 +1,19 @@
 import {
+  EXECUTION_TAGS_KEY,
   getEventEntitySize,
   getJSONBase64Size,
   getMaxRequestSize,
   getMaxRequestSizeOnError,
+  INVOCATION_ID_KEY,
   isPruneTraceOff,
   isSendOnlyIfErrors,
   isString,
   safeExecute,
+  SENDING_TIME_ID_KEY,
   shouldScrubDomain,
   shouldTryZip,
   spanHasErrors,
+  TRANSACTION_ID_KEY,
 } from './utils';
 import * as logger from './logger';
 import { HttpSpansAgent } from './httpSpansAgent';
@@ -17,12 +21,13 @@ import { payloadStringify } from './utils/payloadStringify';
 import {
   decodeHttpBody,
   ENRICHMENT_SPAN,
+  getCurrentTransactionId,
   getSpanMetadata,
   spansPrioritySorter,
 } from './spans/awsSpan';
 import untruncateJson from './tools/untrancateJson';
 import { gzipSync } from 'zlib';
-import { DroppedSpanReasons, SpansContainer } from './globals';
+import { DroppedSpanReasons, ExecutionTags, SpansContainer, TracerGlobals } from './globals';
 import { GenericSpan } from './types/spans/basicSpan';
 
 export const NUMBER_OF_SPANS_IN_REPORT_OPTIMIZATION = 200;
@@ -137,6 +142,12 @@ export function getPrioritizedSpans(spans: any[], maxSendBytes: number): any[] {
   const spansToSendSizes = {};
   const spansToSend: { [id: string]: GenericSpan } = {};
 
+  const sendEnrichmentSpanSizeBuffer = spans.find((span) => span.type === ENRICHMENT_SPAN)
+    ? 0
+    : MAX_SEND_ENRICHMENT_SPAN_BUFFER;
+
+  let enrichmentSpansDropped = false;
+
   // First we try to take only the spans metadata
   for (let index = 0; index < spans.length; index++) {
     const spanMetadata = getSpanMetadata(spans[index]);
@@ -144,10 +155,12 @@ export function getPrioritizedSpans(spans: any[], maxSendBytes: number): any[] {
     if (spanMetadata === undefined) continue;
     const spanMetadataSize = getJSONBase64Size(spanMetadata);
 
-    if (currentSize + spanMetadataSize < maxSendBytes - MAX_SEND_ENRICHMENT_SPAN_BUFFER) {
+    if (currentSize + spanMetadataSize < maxSendBytes - sendEnrichmentSpanSizeBuffer) {
       spansToSendSizes[index] = spanMetadataSize;
       spansToSend[index] = spanMetadata;
       currentSize += spanMetadataSize;
+    } else if (spans[index].type === ENRICHMENT_SPAN) {
+      enrichmentSpansDropped = true;
     }
   }
 
@@ -156,10 +169,7 @@ export function getPrioritizedSpans(spans: any[], maxSendBytes: number): any[] {
     const spanSize = getJSONBase64Size(spans[index]);
     const spanMetadataSize = spansToSendSizes[index];
 
-    if (
-      currentSize + spanSize - spanMetadataSize <
-      maxSendBytes - MAX_SEND_ENRICHMENT_SPAN_BUFFER
-    ) {
+    if (currentSize + spanSize - spanMetadataSize < maxSendBytes - sendEnrichmentSpanSizeBuffer) {
       spansToSend[index] = spans[index];
       currentSize += spanSize - spanMetadataSize;
     }
@@ -171,7 +181,13 @@ export function getPrioritizedSpans(spans: any[], maxSendBytes: number): any[] {
     SpansContainer.recordDroppedSpan(DroppedSpanReasons.SPANS_SENT_SIZE_LIMIT, false, spansDropped);
     logger.info(`Dropped ${spansDropped} spans due to size limit of total spans sent to lumigo`);
 
-    finalSpansToSend = addOrUpdateSpanCountsEnrichmentSpan(finalSpansToSend);
+    if (!enrichmentSpansDropped) {
+      finalSpansToSend = addOrUpdateEnrichmentSpan(finalSpansToSend);
+    } else {
+      logger.warn(
+        'Enrichment span was dropped due to size limit of total spans sent to lumigo, so dropped spans counts might be missing'
+      );
+    }
   }
 
   return finalSpansToSend;
@@ -194,13 +210,18 @@ export function splitAndZipSpans(spans: any[]): string[] {
  * @param {GenericSpan[]} spans List of spans to add to
  * @returns {GenericSpan[]} The given list, with an enrichment span added / modified with the span counts
  */
-export const addOrUpdateSpanCountsEnrichmentSpan = (spans: GenericSpan[]): GenericSpan[] => {
+export const addOrUpdateEnrichmentSpan = (spans: GenericSpan[]): GenericSpan[] => {
   let enrichmentSpan = spans.find((span) => span.type === ENRICHMENT_SPAN);
 
   const spansEnrichmentData = {
     id: enrichmentSpan ? enrichmentSpan.id : 'enrichment-span',
     droppedSpansReasons: SpansContainer.getDroppedSpansReasons(),
     totalSpans: SpansContainer.getTotalSpans(),
+    token: TracerGlobals.getTracerInputs().token,
+    [TRANSACTION_ID_KEY]: getCurrentTransactionId(),
+    [INVOCATION_ID_KEY]: TracerGlobals.getHandlerInputs()?.context?.awsRequestId,
+    [EXECUTION_TAGS_KEY]: ExecutionTags.getTags(),
+    [SENDING_TIME_ID_KEY]: new Date().getTime(),
   };
 
   if (enrichmentSpan) {
@@ -210,9 +231,9 @@ export const addOrUpdateSpanCountsEnrichmentSpan = (spans: GenericSpan[]): Gener
     enrichmentSpan = {
       type: ENRICHMENT_SPAN,
       ...spansEnrichmentData,
-      totalSpans: SpansContainer.getTotalSpans() + 1,
     };
     SpansContainer.addSpan(enrichmentSpan, true);
+    enrichmentSpan.totalSpans = SpansContainer.getTotalSpans();
     spans.push({
       type: ENRICHMENT_SPAN,
       ...enrichmentSpan,
@@ -233,7 +254,7 @@ export const forgeAndScrubRequestBody = (
   const start = new Date().getTime();
 
   // If there were span drops, find an enrichment span or create one and add the dropped spans info to the enrichment span
-  spans = addOrUpdateSpanCountsEnrichmentSpan(spans);
+  spans = addOrUpdateEnrichmentSpan(spans);
 
   const beforeLength = spans.length;
   const originalSize = spans.length;

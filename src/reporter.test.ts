@@ -2,13 +2,14 @@
 import { encode } from 'utf8';
 import { AxiosMocker } from '../testUtils/axiosMocker';
 import { ConsoleWritesForTesting } from '../testUtils/consoleMocker';
-import { TracerGlobals } from './globals';
+import { SpansContainer, TracerGlobals } from './globals';
 import * as reporter from './reporter';
 import { scrubSpans, sendSpans } from './reporter';
 import * as utils from './utils';
 import { getEventEntitySize, getJSONBase64Size, setDebug } from './utils';
 import { FUNCTION_SPAN, getSpanMetadata, HTTP_SPAN } from './spans/awsSpan';
 import { unzipSync } from 'zlib';
+import { splitSpansByType } from '../testUtils/spansUtils';
 
 describe('reporter', () => {
   test('sendSingleSpan', async () => {
@@ -20,7 +21,14 @@ describe('reporter', () => {
     await reporter.sendSingleSpan(span);
 
     const spans = AxiosMocker.getSentSpans();
-    expect(spans).toEqual([[span]]);
+    expect(spans.length).toEqual(1);
+    expect(spans[0].length).toEqual(2);
+    expect(spans[0][0]).toEqual(span);
+
+    const actualEnrichmentSpan = spans[0][1];
+    expect(actualEnrichmentSpan.type).toEqual('enrichment');
+    expect(actualEnrichmentSpan.droppedSpansReasons).toEqual({});
+    expect(actualEnrichmentSpan.lumigo_execution_tags_no_scrub).toEqual([]);
   });
 
   test('isSpansContainsErrors', async () => {
@@ -46,27 +54,44 @@ describe('reporter', () => {
   });
 
   test('sendSpans - use tracerInputs', async () => {
-    const endSpan = { e: 'f', g: 'h', type: FUNCTION_SPAN };
-    const expectedSpans = [
-      JSON.parse(
-        JSON.stringify({
-          ...endSpan,
-          droppedSpansReasons: {
-            SPANS_SENT_SIZE_LIMIT: 1,
-          },
-        })
-      ),
-    ];
-    TracerGlobals.setTracerInputs({ maxSizeForRequest: 80 });
-    const spans = [
-      { keyWithData: 'valueWithData', anotherKeyWithData: 'anotherValueWithData' },
-      { e: 'f', g: 'h', type: FUNCTION_SPAN },
+    const endSpan = { id: 'func-span', e: 'f', g: 'h', type: FUNCTION_SPAN };
+    TracerGlobals.setTracerInputs({
+      maxSizeForRequest: 500,
+    });
+    const span1 = {
+      id: 'span1',
+      keyWithData: 'valueWithData',
+      anotherKeyWithData: 'anotherValueWithData',
+    };
+    const span2 = { id: 'span2', e: 'f', g: 'h', type: FUNCTION_SPAN };
+
+    const expectedFunctionSpans = [
+      JSON.parse(JSON.stringify(endSpan)),
+      JSON.parse(JSON.stringify(span2)),
     ];
 
+    SpansContainer.addSpan(endSpan, true);
+    SpansContainer.addSpan(span1);
+    SpansContainer.addSpan(span2);
+
+    const spans = [endSpan, span1, span2];
     await reporter.sendSpans(spans);
 
     const sentSpans = AxiosMocker.getSentSpans();
-    expect(sentSpans).toEqual([expectedSpans]);
+    expect(sentSpans.length).toEqual(1);
+    const spansByType = splitSpansByType(sentSpans[0]);
+    expect(Object.keys(spansByType)).toEqual(['function', 'enrichment']);
+    expect(spansByType.function).toEqual(expectedFunctionSpans);
+    expect(spansByType.enrichment.length).toEqual(1);
+    const enrichmentSpan = spansByType.enrichment[0];
+    expect(enrichmentSpan).toMatchObject({
+      type: 'enrichment',
+      // 3 spans specified in the test + the enrichment span
+      totalSpans: 4,
+      droppedSpansReasons: { SPANS_SENT_SIZE_LIMIT: 1 },
+      lumigo_execution_tags_no_scrub: [],
+    });
+    // expect(sentSpans).toEqual([expectedSpans]);
   });
 
   test('sendSpans - simple flow', async () => {
