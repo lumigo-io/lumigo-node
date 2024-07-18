@@ -11,7 +11,7 @@ import { isAwsContext } from '../guards/awsGuards';
 import { Http } from '../hooks/http';
 import * as logger from '../logger';
 import { info, warnClient } from '../logger';
-import { addOrUpdateEnrichmentSpan, sendSingleSpan, sendSpans } from '../reporter';
+import { sendSingleSpan, sendSpans } from '../reporter';
 import {
   getEndFunctionSpan,
   getFunctionSpan,
@@ -246,7 +246,6 @@ const setupTimeoutTimer = () => {
     if (timeoutBuffer < remainingTimeInMillis && remainingTimeInMillis >= minDuration) {
       GlobalTimer.setGlobalTimeout(async () => {
         logger.debug('Invocation is about to timeout, sending trace data.');
-        addOrUpdateEnrichmentSpan(SpansContainer.getSpans());
         await sendSpans(SpansContainer.getSpans());
         SpansContainer.clearSpans();
       }, remainingTimeInMillis - timeoutBuffer);

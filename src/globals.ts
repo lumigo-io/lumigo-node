@@ -41,11 +41,15 @@ export enum DroppedSpanReasons {
   INVOCATION_MAX_LATENCY_LIMIT = 'INVOCATION_MAX_LATENCY_LIMIT',
 }
 
+export type DroppedSpansData = {
+  drops: number;
+};
+
 export class SpansContainer {
   private static spans: { [id: string]: GenericSpan } = {};
   private static currentSpansSize: number = 0;
   private static totalSpans: number = 0;
-  private static droppedSpansReasons: { [reason: string]: number } = {};
+  private static droppedSpansReasons: { [reason: string]: DroppedSpansData } = {};
 
   static addSpan(span: GenericSpan, ignoreSizeLimits: boolean = false): boolean {
     const newSpan = span.id in this.spans;
@@ -83,14 +87,19 @@ export class SpansContainer {
     incrementTotalSpansCounter: boolean = true,
     numOfDroppedSpans: number = 1
   ): void {
-    this.droppedSpansReasons[reason] =
-      (this.droppedSpansReasons[reason.valueOf()] || 0) + numOfDroppedSpans;
+    // Check if the reason exists in the droppedSpansReasons object
+    // If it doesn't exist, initialize
+    if (!this.droppedSpansReasons[reason.valueOf()]) {
+      this.droppedSpansReasons[reason.valueOf()] = { drops: 0 };
+    }
+    this.droppedSpansReasons[reason.valueOf()].drops += numOfDroppedSpans;
+
     if (incrementTotalSpansCounter) {
       this.totalSpans += numOfDroppedSpans;
     }
   }
 
-  static getDroppedSpansReasons(): { [reason: string]: number } {
+  static getDroppedSpansReasons(): { [reason: string]: DroppedSpansData } {
     return this.droppedSpansReasons;
   }
 

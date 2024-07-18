@@ -4,6 +4,7 @@ import {
   getJSONBase64Size,
   getMaxRequestSize,
   getMaxRequestSizeOnError,
+  getRandomId,
   INVOCATION_ID_KEY,
   isPruneTraceOff,
   isSendOnlyIfErrors,
@@ -35,11 +36,12 @@ export const MAX_SPANS_BULK_SIZE = 200;
 
 const MAX_SEND_ENRICHMENT_SPAN_BUFFER = 200;
 
-export const sendSingleSpan = async (span) => sendSpans([span]);
+export const sendSingleSpan = async (span: GenericSpan, addEnrichmentSpan: boolean = false) =>
+  sendSpans([span], addEnrichmentSpan);
 
 export const logSpans = (rtt: number, spans): void => {
   const spanIds = spans.map((span) => span.id);
-  logger.debug(`Spans sent [${rtt}ms]`, spanIds);
+  logger.debug(`Spans sent [${rtt}ms, ${spanIds.length} spans]`, spanIds);
 };
 
 export const isSpansContainsErrors = (spans): boolean => {
@@ -48,7 +50,7 @@ export const isSpansContainsErrors = (spans): boolean => {
   return spans.filter(spanHasError).length > 0;
 };
 
-export const sendSpans = async (spans: any[]): Promise<void> => {
+export const sendSpans = async (spans: any[], addEnrichmentSpan: boolean = true): Promise<void> => {
   if (isSendOnlyIfErrors() && !isSpansContainsErrors(spans)) {
     logger.debug('No Spans was sent, `SEND_ONLY_IF_ERROR` is on and no span has error');
     return;
@@ -57,7 +59,8 @@ export const sendSpans = async (spans: any[]): Promise<void> => {
     spans,
     getMaxRequestSize(),
     getMaxRequestSizeOnError(),
-    shouldTryZip()
+    shouldTryZip(),
+    addEnrichmentSpan
   );
 
   const roundTripStart = Date.now();
@@ -135,7 +138,11 @@ export function scrubSpans(resultSpans: any[]) {
   return resultSpans.filter((span) => safeExecute(scrubSpan, 'Failed to scrub span')(span));
 }
 
-export function getPrioritizedSpans(spans: any[], maxSendBytes: number): any[] {
+export function getPrioritizedSpans(
+  spans: any[],
+  maxSendBytes: number,
+  addEnrichmentSpan: boolean = true
+): any[] {
   logger.debug('Using smart spans prioritization');
   spans.sort(spansPrioritySorter);
   let currentSize = 0;
@@ -178,15 +185,22 @@ export function getPrioritizedSpans(spans: any[], maxSendBytes: number): any[] {
   let finalSpansToSend = Object.values(spansToSend);
   const spansDropped = spans.length - finalSpansToSend.length;
   if (spansDropped > 0) {
-    SpansContainer.recordDroppedSpan(DroppedSpanReasons.SPANS_SENT_SIZE_LIMIT, false, spansDropped);
     logger.info(`Dropped ${spansDropped} spans due to size limit of total spans sent to lumigo`);
 
-    if (!enrichmentSpansDropped) {
-      finalSpansToSend = addOrUpdateEnrichmentSpan(finalSpansToSend);
-    } else {
-      logger.warn(
-        'Enrichment span was dropped due to size limit of total spans sent to lumigo, so dropped spans counts might be missing'
+    if (addEnrichmentSpan) {
+      // If we are not adding an enrichment span then no need to record these dropped spans, they might be re-sent in a later stage in the invocation
+      SpansContainer.recordDroppedSpan(
+        DroppedSpanReasons.SPANS_SENT_SIZE_LIMIT,
+        false,
+        spansDropped
       );
+      if (!enrichmentSpansDropped) {
+        finalSpansToSend = addOrUpdateEnrichmentSpan(finalSpansToSend);
+      } else {
+        logger.warn(
+          'Enrichment span was dropped due to size limit of total spans sent to lumigo, so dropped spans counts might be missing'
+        );
+      }
     }
   }
 
@@ -214,7 +228,7 @@ export const addOrUpdateEnrichmentSpan = (spans: GenericSpan[]): GenericSpan[] =
   let enrichmentSpan = spans.find((span) => span.type === ENRICHMENT_SPAN);
 
   const spansEnrichmentData = {
-    id: enrichmentSpan ? enrichmentSpan.id : 'enrichment-span',
+    id: enrichmentSpan ? enrichmentSpan.id : getRandomId(),
     droppedSpansReasons: SpansContainer.getDroppedSpansReasons(),
     totalSpans: SpansContainer.getTotalSpans(),
     token: TracerGlobals.getTracerInputs().token,
@@ -227,6 +241,7 @@ export const addOrUpdateEnrichmentSpan = (spans: GenericSpan[]): GenericSpan[] =
   if (enrichmentSpan) {
     Object.assign(enrichmentSpan, spansEnrichmentData);
     SpansContainer.addSpan(enrichmentSpan, true);
+    logger.debug('Enrichment span updated with the latest data', enrichmentSpan);
   } else {
     enrichmentSpan = {
       type: ENRICHMENT_SPAN,
@@ -238,6 +253,7 @@ export const addOrUpdateEnrichmentSpan = (spans: GenericSpan[]): GenericSpan[] =
       type: ENRICHMENT_SPAN,
       ...enrichmentSpan,
     });
+    logger.debug('Enrichment span created', enrichmentSpan);
   }
 
   return spans;
@@ -248,13 +264,16 @@ export const forgeAndScrubRequestBody = (
   spans: any[],
   maxSendBytes: number,
   maxSendBytesOnError: number,
-  shouldTryZip: boolean = false
+  shouldTryZip: boolean = false,
+  addEnrichmentSpan: boolean = true
 ): string | string[] | undefined => {
   const maxRequestSize = spans.some(spanHasErrors) ? maxSendBytesOnError : maxSendBytes;
   const start = new Date().getTime();
 
-  // If there were span drops, find an enrichment span or create one and add the dropped spans info to the enrichment span
-  spans = addOrUpdateEnrichmentSpan(spans);
+  if (addEnrichmentSpan) {
+    // If there were span drops, find an enrichment span or create one and add the dropped spans info to the enrichment span
+    spans = addOrUpdateEnrichmentSpan(spans);
+  }
 
   const beforeLength = spans.length;
   const originalSize = spans.length;
