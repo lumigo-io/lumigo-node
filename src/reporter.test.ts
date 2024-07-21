@@ -7,7 +7,7 @@ import * as reporter from './reporter';
 import { scrubSpans, sendSpans } from './reporter';
 import * as utils from './utils';
 import { getEventEntitySize, getJSONBase64Size, setDebug } from './utils';
-import { FUNCTION_SPAN, getSpanMetadata, HTTP_SPAN } from './spans/awsSpan';
+import { ENRICHMENT_SPAN, FUNCTION_SPAN, getSpanMetadata, HTTP_SPAN } from './spans/awsSpan';
 import { unzipSync } from 'zlib';
 import { splitSpansByType } from '../testUtils/spansUtils';
 
@@ -22,13 +22,8 @@ describe('reporter', () => {
 
     const spans = AxiosMocker.getSentSpans();
     expect(spans.length).toEqual(1);
-    expect(spans[0].length).toEqual(2);
+    expect(spans[0].length).toEqual(1);
     expect(spans[0][0]).toEqual(span);
-
-    const actualEnrichmentSpan = spans[0][1];
-    expect(actualEnrichmentSpan.type).toEqual('enrichment');
-    expect(actualEnrichmentSpan.droppedSpansReasons).toEqual({});
-    expect(actualEnrichmentSpan.lumigo_execution_tags_no_scrub).toEqual([]);
   });
 
   test('isSpansContainsErrors', async () => {
@@ -88,7 +83,11 @@ describe('reporter', () => {
       type: 'enrichment',
       // 3 spans specified in the test + the enrichment span
       totalSpans: 4,
-      droppedSpansReasons: { SPANS_SENT_SIZE_LIMIT: 1 },
+      droppedSpansReasons: {
+        SPANS_SENT_SIZE_LIMIT: {
+          drops: 1,
+        },
+      },
       lumigo_execution_tags_no_scrub: [],
     });
     // expect(sentSpans).toEqual([expectedSpans]);
@@ -155,12 +154,27 @@ describe('reporter', () => {
   });
 
   test(`forgeAndScrubRequestBody - use requestSizeOnError when having error span`, async () => {
+    const exampleEnrichmentSpan = {
+      droppedSpansReasons: {
+        SPANS_SENT_SIZE_LIMIT: {
+          drops: 1,
+        },
+      },
+      id: 'a613dc29-4880-2ed4-a481-e3fc191a895d',
+      lumigo_execution_tags_no_scrub: [],
+      sending_time: 1721553810449,
+      totalSpans: 1,
+      transaction_id: '64a1b06067c2100c52e51ef4',
+      type: 'enrichment',
+    };
     const end = {
+      id: 'idend',
       end: 'dummyEnd',
       type: FUNCTION_SPAN,
       envs: { firstEnvKey: 'First environment variable value' },
     };
     const error = {
+      id: 'iderror',
       dummy: 'dummy',
       type: HTTP_SPAN,
       error: 'error',
@@ -182,13 +196,29 @@ describe('reporter', () => {
 
     const spans = [end, error];
     const expectedSpans = [end, error];
-    const size = getJSONBase64Size(expectedSpans);
-    TracerGlobals.setTracerInputs({ maxSizeForRequest: size - 30, maxSizeForRequestOnError: size });
+    const size = getJSONBase64Size([end, error, exampleEnrichmentSpan]);
+    TracerGlobals.setTracerInputs({
+      maxSizeForRequest: size - 30,
+      maxSizeForRequestOnError: size,
+    });
 
+    SpansContainer.addSpan(end);
+    SpansContainer.addSpan(error);
     await reporter.sendSpans(spans);
 
     const sentSpans = AxiosMocker.getSentSpans();
-    expect(sentSpans).toEqual([expectedSpans]);
+    expect(sentSpans.length).toEqual(1);
+    const spansByType = splitSpansByType(sentSpans[0]);
+    expect(Object.keys(spansByType)).toEqual([FUNCTION_SPAN, HTTP_SPAN, ENRICHMENT_SPAN]);
+    expect(spansByType[FUNCTION_SPAN]).toEqual([end]);
+    expect(spansByType[HTTP_SPAN]).toEqual([error]);
+    expect(spansByType[ENRICHMENT_SPAN].length).toEqual(1);
+    expect(spansByType[ENRICHMENT_SPAN][0]).toMatchObject({
+      droppedSpansReasons: {},
+      lumigo_execution_tags_no_scrub: [],
+      totalSpans: 3,
+      type: ENRICHMENT_SPAN,
+    });
   });
 
   test(`forgeAndScrubRequestBody - don't use requestSizeOnError when all spans succeed`, async () => {
