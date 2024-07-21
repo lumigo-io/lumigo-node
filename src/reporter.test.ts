@@ -11,6 +11,20 @@ import { ENRICHMENT_SPAN, FUNCTION_SPAN, getSpanMetadata, HTTP_SPAN } from './sp
 import { unzipSync } from 'zlib';
 import { splitSpansByType } from '../testUtils/spansUtils';
 
+const exampleEnrichmentSpan = {
+  droppedSpansReasons: {
+    SPANS_SENT_SIZE_LIMIT: {
+      drops: 1,
+    },
+  },
+  id: 'a613dc29-4880-2ed4-a481-e3fc191a895d',
+  lumigo_execution_tags_no_scrub: [],
+  sending_time: 1721553810449,
+  totalSpans: 1,
+  transaction_id: '64a1b06067c2100c52e51ef4',
+  type: 'enrichment',
+};
+
 describe('reporter', () => {
   test('sendSingleSpan', async () => {
     const token = 'DEADBEEF';
@@ -154,19 +168,6 @@ describe('reporter', () => {
   });
 
   test(`forgeAndScrubRequestBody - use requestSizeOnError when having error span`, async () => {
-    const exampleEnrichmentSpan = {
-      droppedSpansReasons: {
-        SPANS_SENT_SIZE_LIMIT: {
-          drops: 1,
-        },
-      },
-      id: 'a613dc29-4880-2ed4-a481-e3fc191a895d',
-      lumigo_execution_tags_no_scrub: [],
-      sending_time: 1721553810449,
-      totalSpans: 1,
-      transaction_id: '64a1b06067c2100c52e51ef4',
-      type: 'enrichment',
-    };
     const end = {
       id: 'idend',
       end: 'dummyEnd',
@@ -195,7 +196,6 @@ describe('reporter', () => {
     };
 
     const spans = [end, error];
-    const expectedSpans = [end, error];
     const size = getJSONBase64Size([end, error, exampleEnrichmentSpan]);
     TracerGlobals.setTracerInputs({
       maxSizeForRequest: size - 30,
@@ -223,6 +223,7 @@ describe('reporter', () => {
 
   test(`forgeAndScrubRequestBody - don't use requestSizeOnError when all spans succeed`, async () => {
     const end = {
+      id: 'idend',
       end: 'dummyEnd',
       type: FUNCTION_SPAN,
       envs: { firstEnvKey: 'First environment variable value' },
@@ -245,16 +246,33 @@ describe('reporter', () => {
         },
       },
     };
+    const dummy1 = {
+      id: 'id1',
+      ...dummy,
+    };
+    const dummy2 = {
+      id: 'id2',
+      ...dummy,
+    };
+    const spans = [dummy1, dummy2, end];
+    const size = getJSONBase64Size([end, dummy1, { ...exampleEnrichmentSpan, isMetadata: true }]);
+    TracerGlobals.setTracerInputs({
+      maxSizeForRequest: size,
+      maxSizeForRequestOnError: size * 2,
+    });
 
-    const spans = [dummy, dummy, end];
-    const expectedSpans = [end, dummy];
-    const size = getJSONBase64Size(expectedSpans);
-    TracerGlobals.setTracerInputs({ maxSizeForRequest: size, maxSizeForRequestOnError: size * 2 });
-
+    SpansContainer.addSpan(end);
+    SpansContainer.addSpan(dummy1);
+    SpansContainer.addSpan(dummy2);
     await reporter.sendSpans(spans);
 
     const sentSpans = AxiosMocker.getSentSpans();
-    expect(sentSpans).toEqual([expectedSpans]);
+    expect(sentSpans.length).toEqual(1);
+    const spansByType = splitSpansByType(sentSpans[0]);
+    expect(Object.keys(spansByType)).toEqual([FUNCTION_SPAN, ENRICHMENT_SPAN, HTTP_SPAN]);
+    expect(spansByType[FUNCTION_SPAN]).toEqual([end]);
+    expect(spansByType[HTTP_SPAN]).toEqual([getSpanMetadata(dummy1), getSpanMetadata(dummy2)]);
+    expect(spansByType[ENRICHMENT_SPAN].length).toEqual(1);
   });
 
   test(`forgeAndScrubRequestBody - with smart prioritization only metadata`, async () => {
@@ -287,7 +305,11 @@ describe('reporter', () => {
     const end = {
       end: 'dummyEnd',
       type: FUNCTION_SPAN,
-      envs: { firstEnvKey: 'First environment variable value' },
+      envs: {
+        firstEnvKey: 'First environment variable value',
+        secondEnvKey: 'Second environment variable value',
+        thirdEnvKey: 'Third environment variable value',
+      },
     };
     const error = {
       dummy: 'dummy',
@@ -314,13 +336,21 @@ describe('reporter', () => {
 
     const spans = [dummy, error, end];
     const expectedSpans = [endMetadata, errorMetadata, dummyMetadata];
-    const size = getJSONBase64Size(expectedSpans);
-    TracerGlobals.setTracerInputs({ maxSizeForRequest: size, maxSizeForRequestOnError: size });
+    const size = getJSONBase64Size(expectedSpans.concat([exampleEnrichmentSpan])) + 10;
+    TracerGlobals.setTracerInputs({
+      maxSizeForRequest: size,
+      maxSizeForRequestOnError: size,
+    });
 
     await reporter.sendSpans(spans);
 
     const sentSpans = AxiosMocker.getSentSpans();
-    expect(sentSpans).toEqual([expectedSpans]);
+    expect(sentSpans.length).toEqual(1);
+    const spansByType = splitSpansByType(sentSpans[0]);
+    expect(Object.keys(spansByType)).toEqual([FUNCTION_SPAN, ENRICHMENT_SPAN, HTTP_SPAN]);
+    expect(spansByType[FUNCTION_SPAN]).toEqual([endMetadata]);
+    expect(spansByType[HTTP_SPAN]).toEqual([errorMetadata, dummyMetadata]);
+    expect(spansByType[ENRICHMENT_SPAN].length).toEqual(1);
   });
 
   test(`sendSpans - with smart prioritization with partial full spans`, async () => {
@@ -378,13 +408,18 @@ describe('reporter', () => {
 
     const spans = [dummy, error, end];
     const expectedSpans = [end, error, dummyMetadata];
-    const size = getJSONBase64Size(expectedSpans);
+    const size = getJSONBase64Size(expectedSpans.concat([exampleEnrichmentSpan]));
     TracerGlobals.setTracerInputs({ maxSizeForRequest: size, maxSizeForRequestOnError: size });
 
     await reporter.sendSpans(spans);
 
     const sentSpans = AxiosMocker.getSentSpans();
-    expect(sentSpans).toEqual([expectedSpans]);
+    expect(sentSpans.length).toEqual(1);
+    const spansByType = splitSpansByType(sentSpans[0]);
+    expect(Object.keys(spansByType)).toEqual([FUNCTION_SPAN, ENRICHMENT_SPAN, HTTP_SPAN]);
+    expect(spansByType[FUNCTION_SPAN]).toEqual([end]);
+    expect(spansByType[HTTP_SPAN]).toEqual([error, dummyMetadata]);
+    expect(spansByType[ENRICHMENT_SPAN].length).toEqual(1);
   });
 
   test('forgeRequestBody - simple flow', async () => {
@@ -396,13 +431,7 @@ describe('reporter', () => {
       JSON.parse(JSON.stringify(dummyEnd)),
     ];
 
-    const expectedResult = [
-      {
-        ...dummyEnd,
-        droppedSpansReasons: { SPANS_SENT_SIZE_LIMIT: 1 },
-      },
-      dummy,
-    ];
+    const expectedResult = [dummyEnd, dummy];
     const expectedResultSize = getJSONBase64Size([dummyEnd, dummy]);
 
     expect(
@@ -463,14 +492,16 @@ describe('reporter', () => {
         },
         { dummyEnd },
       ];
-      const expectedResultSize = getJSONBase64Size(spans);
+      const expectedResultSize = getJSONBase64Size(spans.concat([exampleEnrichmentSpan]));
 
-      const actual = reporter.forgeAndScrubRequestBody(
-        spans,
-        expectedResultSize,
-        expectedResultSize
+      const actual = JSON.parse(
+        // @ts-ignore
+        reporter.forgeAndScrubRequestBody(spans, expectedResultSize, expectedResultSize)
       );
-      expect(actual).toEqual(JSON.stringify(expectedResult));
+      const actualNonEnrichment = actual.filter((span) => span.type !== ENRICHMENT_SPAN);
+      const actualEnrichment = actual.filter((span) => span.type === ENRICHMENT_SPAN);
+      expect(actualNonEnrichment).toEqual(expectedResult);
+      expect(actualEnrichment.length).toEqual(1);
     });
 
     test('forgeAndScrubRequestBody scrub domain', () => {
@@ -511,12 +542,16 @@ describe('reporter', () => {
         },
         { dummyEnd },
       ];
-      const expectedResultSize = getJSONBase64Size(spans);
+      const expectedResultSize = getJSONBase64Size(spans.concat([exampleEnrichmentSpan]));
       process.env.LUMIGO_DOMAINS_SCRUBBER = '["mind"]';
       const actual = JSON.parse(
+        // @ts-ignore
         reporter.forgeAndScrubRequestBody(spans, expectedResultSize, expectedResultSize)!
       );
-      expect(actual).toEqual(expected);
+      const actualNonEnrichment = actual.filter((span) => span.type !== ENRICHMENT_SPAN);
+      const actualEnrichment = actual.filter((span) => span.type === ENRICHMENT_SPAN);
+      expect(actualNonEnrichment).toEqual(expected);
+      expect(actualEnrichment.length).toEqual(1);
     });
     test('forgeAndScrubRequestBody', () => {
       const dummyEnd = 'dummyEnd';
@@ -558,12 +593,15 @@ describe('reporter', () => {
         },
         { dummyEnd },
       ];
-      const expectedResultSize = getJSONBase64Size(spans);
+      const expectedResultSize = getJSONBase64Size(spans.concat([exampleEnrichmentSpan]));
 
       const actual = JSON.parse(
         reporter.forgeAndScrubRequestBody(spans, expectedResultSize, expectedResultSize)!
       );
-      expect(actual).toEqual(expected);
+      const actualNonEnrichment = actual.filter((span) => span.type !== ENRICHMENT_SPAN);
+      const actualEnrichment = actual.filter((span) => span.type === ENRICHMENT_SPAN);
+      expect(actualNonEnrichment).toEqual(expected);
+      expect(actualEnrichment.length).toEqual(1);
     });
 
     test('forgeAndScrubRequestBody truncated response', () => {
@@ -615,12 +653,15 @@ describe('reporter', () => {
         },
         { dummyEnd },
       ];
-      const expectedResultSize = getJSONBase64Size(spans);
+      const expectedResultSize = getJSONBase64Size(spans.concat([exampleEnrichmentSpan]));
 
       const actual = JSON.parse(
         reporter.forgeAndScrubRequestBody(spans, expectedResultSize, expectedResultSize)!
       );
-      expect(actual).toEqual(expected);
+      const actualNonEnrichment = actual.filter((span) => span.type !== ENRICHMENT_SPAN);
+      const actualEnrichment = actual.filter((span) => span.type === ENRICHMENT_SPAN);
+      expect(actualNonEnrichment).toEqual(expected);
+      expect(actualEnrichment.length).toEqual(1);
     });
 
     test('forgeAndScrubRequestBody long response', () => {
@@ -674,12 +715,15 @@ describe('reporter', () => {
         },
         { dummyEnd },
       ];
-      const expectedResultSize = getJSONBase64Size(spans);
+      const expectedResultSize = getJSONBase64Size(spans.concat([exampleEnrichmentSpan]));
 
       const actual = JSON.parse(
         reporter.forgeAndScrubRequestBody(spans, expectedResultSize, expectedResultSize)!
       );
-      expect(actual).toEqual(expected);
+      const actualNonEnrichment = actual.filter((span) => span.type !== ENRICHMENT_SPAN);
+      const actualEnrichment = actual.filter((span) => span.type === ENRICHMENT_SPAN);
+      expect(actualNonEnrichment).toEqual(expected);
+      expect(actualEnrichment.length).toEqual(1);
     });
 
     test('forgeAndScrubRequestBody truncated request', () => {
@@ -731,12 +775,15 @@ describe('reporter', () => {
         },
         { dummyEnd },
       ];
-      const expectedResultSize = getJSONBase64Size(spans);
+      const expectedResultSize = getJSONBase64Size(spans.concat([exampleEnrichmentSpan]));
 
       const actual = JSON.parse(
         reporter.forgeAndScrubRequestBody(spans, expectedResultSize, expectedResultSize)!
       );
-      expect(actual).toEqual(expected);
+      const actualNonEnrichment = actual.filter((span) => span.type !== ENRICHMENT_SPAN);
+      const actualEnrichment = actual.filter((span) => span.type === ENRICHMENT_SPAN);
+      expect(actualNonEnrichment).toEqual(expected);
+      expect(actualEnrichment.length).toEqual(1);
     });
 
     test('forgeAndScrubRequestBody long request', () => {
@@ -790,12 +837,15 @@ describe('reporter', () => {
         },
         { dummyEnd },
       ];
-      const expectedResultSize = getJSONBase64Size(spans);
+      const expectedResultSize = getJSONBase64Size(spans.concat([exampleEnrichmentSpan]));
 
       const actual = JSON.parse(
         reporter.forgeAndScrubRequestBody(spans, expectedResultSize, expectedResultSize)!
       );
-      expect(actual).toEqual(expected);
+      const actualNonEnrichment = actual.filter((span) => span.type !== ENRICHMENT_SPAN);
+      const actualEnrichment = actual.filter((span) => span.type === ENRICHMENT_SPAN);
+      expect(actualNonEnrichment).toEqual(expected);
+      expect(actualEnrichment.length).toEqual(1);
     });
     test('forgeAndScrubRequestBody short response', () => {
       const dummyEnd = 'dummyEnd';
@@ -837,12 +887,15 @@ describe('reporter', () => {
         },
         { dummyEnd },
       ];
-      const expectedResultSize = getJSONBase64Size(spans);
+      const expectedResultSize = getJSONBase64Size(spans.concat([exampleEnrichmentSpan]));
 
       const actual = JSON.parse(
         reporter.forgeAndScrubRequestBody(spans, expectedResultSize, expectedResultSize)!
       );
-      expect(actual).toEqual(expected);
+      const actualNonEnrichment = actual.filter((span) => span.type !== ENRICHMENT_SPAN);
+      const actualEnrichment = actual.filter((span) => span.type === ENRICHMENT_SPAN);
+      expect(actualNonEnrichment).toEqual(expected);
+      expect(actualEnrichment.length).toEqual(1);
     });
 
     test('forgeAndScrubRequestBody => decode utf-8', () => {
@@ -885,12 +938,15 @@ describe('reporter', () => {
         },
         { dummyEnd },
       ];
-      const expectedResultSize = getJSONBase64Size(spans);
+      const expectedResultSize = getJSONBase64Size(spans.concat([exampleEnrichmentSpan]));
 
       const actual = JSON.parse(
         reporter.forgeAndScrubRequestBody(spans, expectedResultSize, expectedResultSize)!
       );
-      expect(actual).toEqual(expected);
+      const actualNonEnrichment = actual.filter((span) => span.type !== ENRICHMENT_SPAN);
+      const actualEnrichment = actual.filter((span) => span.type === ENRICHMENT_SPAN);
+      expect(actualNonEnrichment).toEqual(expected);
+      expect(actualEnrichment.length).toEqual(1);
     });
 
     test('forgeAndScrubRequestBody contain json header but not json body', () => {
@@ -937,12 +993,15 @@ describe('reporter', () => {
         },
         { dummyEnd },
       ];
-      const expectedResultSize = getJSONBase64Size(spans);
+      const expectedResultSize = getJSONBase64Size(spans.concat([exampleEnrichmentSpan]));
 
       const actual = JSON.parse(
         reporter.forgeAndScrubRequestBody(spans, expectedResultSize, expectedResultSize)!
       );
-      expect(actual).toEqual(expected);
+      const actualNonEnrichment = actual.filter((span) => span.type !== ENRICHMENT_SPAN);
+      const actualEnrichment = actual.filter((span) => span.type === ENRICHMENT_SPAN);
+      expect(actualNonEnrichment).toEqual(expected);
+      expect(actualEnrichment.length).toEqual(1);
     });
 
     test('forgeAndScrubRequestBody - response with error should double payload size', () => {
@@ -997,8 +1056,10 @@ describe('reporter', () => {
         { dummyEnd },
       ];
 
-      const expectedResultSizeSuccess = getJSONBase64Size(spansSuccess);
-      const expectedResultSizeFail = getJSONBase64Size(spansFail);
+      const expectedResultSizeSuccess = getJSONBase64Size(
+        spansSuccess.concat([exampleEnrichmentSpan])
+      );
+      const expectedResultSizeFail = getJSONBase64Size(spansFail.concat([exampleEnrichmentSpan]));
 
       const spanSuccess = JSON.parse(
         reporter.forgeAndScrubRequestBody(
@@ -1032,19 +1093,10 @@ describe('reporter', () => {
   test('forgeRequestBody - cut spans', async () => {
     const dummy = { dummy: 'dummy', type: HTTP_SPAN };
     const end = { end: 'dummyEnd', type: FUNCTION_SPAN };
-    const expectedFinalEndSpan = {
-      ...end,
-      droppedSpansReasons: {
-        SPANS_SENT_SIZE_LIMIT: 1,
-      },
-    };
     const error = { dummy: 'dummy', type: HTTP_SPAN, error: 'error' };
 
     const spans = [dummy, error, end];
-    const expectedResult = [
-      JSON.parse(JSON.stringify(expectedFinalEndSpan)),
-      JSON.parse(JSON.stringify(error)),
-    ];
+    const expectedResult = [JSON.parse(JSON.stringify(end)), JSON.parse(JSON.stringify(error))];
     const maxSendBytes = getJSONBase64Size([
       JSON.parse(JSON.stringify(end)),
       JSON.parse(JSON.stringify(error)),
@@ -1069,9 +1121,34 @@ describe('reporter', () => {
     const dummy = 'dummy';
     const dummyEnd = 'dummyEnd';
     const error = 'error';
-    const spans = [{ dummy }, { dummy, error }, { dummyEnd }];
 
-    expect(reporter.forgeAndScrubRequestBody(spans, 100, 100)).toEqual(JSON.stringify(spans));
+    const dummySpan = {
+      id: 'id1',
+      type: HTTP_SPAN,
+      dummy,
+    };
+    const errorSpan = {
+      id: 'id2',
+      type: HTTP_SPAN,
+      dummy,
+      error,
+    };
+    const endSpan = {
+      id: 'id3',
+      type: FUNCTION_SPAN,
+      dummyEnd,
+    };
+    const spans = [dummySpan, errorSpan, endSpan];
+
+    // @ts-ignore
+    const sentSpans = JSON.parse(reporter.forgeAndScrubRequestBody(spans, 600, 600));
+    const spansByType = splitSpansByType(sentSpans);
+    expect(Object.keys(spansByType)).toEqual([HTTP_SPAN, FUNCTION_SPAN, ENRICHMENT_SPAN]);
+    expect(spansByType[FUNCTION_SPAN]).toEqual([endSpan]);
+    expect(spansByType[HTTP_SPAN]).toEqual([dummySpan, errorSpan]);
+    expect(spansByType[ENRICHMENT_SPAN].length).toEqual(1);
+
+    // .toEqual(JSON.stringify(spans));
     expect(reporter.forgeAndScrubRequestBody([], 100, 100)).toEqual(undefined);
   });
 

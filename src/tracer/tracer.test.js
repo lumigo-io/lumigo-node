@@ -679,7 +679,7 @@ describe('tracer', () => {
     spies.sendSpans.mockImplementationOnce(() => {});
     spies.getEndFunctionSpan.mockReturnValueOnce({
       x: 'y',
-      id: '1',
+      id: '1_end',
       transactionId: '123',
     });
     spies.getCurrentTransactionId.mockReturnValueOnce('123');
@@ -688,7 +688,7 @@ describe('tracer', () => {
       event: { a: 1 },
       context: { getRemainingTimeInMillis: () => MAX_TRACER_ADDED_DURATION_ALLOWED },
     });
-    SpansContainer.addSpan({ transactionId: '123', id: '1' });
+    SpansContainer.addSpan({ transactionId: '123', id: '3' });
     SpansContainer.addSpan({ transactionId: '123', id: '2' });
     await tracer.sendEndTraceSpans({ id: '1_started' }, { err: null, data: null });
     expect(spies.warnClient).not.toHaveBeenCalled();
@@ -701,7 +701,7 @@ describe('tracer', () => {
     SpansContainer.clearSpans();
     SpansContainer.addSpan({
       transactionId: '123',
-      id: '1',
+      id: '3',
       reporterAwsRequestId: '2',
       parentId: '2',
     });
@@ -715,7 +715,7 @@ describe('tracer', () => {
       context: { getRemainingTimeInMillis: () => MAX_TRACER_ADDED_DURATION_ALLOWED },
     });
     SpansContainer.clearSpans();
-    SpansContainer.addSpan({ transactionId: '123', id: '1', reporterAwsRequestId: '2' });
+    SpansContainer.addSpan({ transactionId: '123', id: '3', reporterAwsRequestId: '2' });
     SpansContainer.addSpan({ transactionId: '456', id: '2' });
     expect(TracerGlobals.getHandlerInputs().event).toEqual({ a: 1 });
     await tracer.sendEndTraceSpans({ id: '1_started' }, { err: null, data: null });
