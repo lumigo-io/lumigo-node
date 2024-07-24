@@ -89,10 +89,10 @@ export class SpansContainer {
   ): void {
     // Check if the reason exists in the droppedSpansReasons object
     // If it doesn't exist, initialize
-    if (!this.droppedSpansReasons[reason.valueOf()]) {
-      this.droppedSpansReasons[reason.valueOf()] = { drops: 0 };
+    if (!this.droppedSpansReasons[reason]) {
+      this.droppedSpansReasons[reason] = { drops: 0 };
     }
-    this.droppedSpansReasons[reason.valueOf()].drops += numOfDroppedSpans;
+    this.droppedSpansReasons[reason].drops += numOfDroppedSpans;
 
     if (incrementTotalSpansCounter) {
       this.totalSpans += numOfDroppedSpans;
