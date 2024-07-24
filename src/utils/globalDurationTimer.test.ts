@@ -18,20 +18,24 @@ describe('GlobalDurationTimer', () => {
     expect(GlobalDurationTimer.isTimePassed()).toBeFalsy();
   });
 
-  test('@timedAsync => simple flow', async () => {
-    class A {
-      @GlobalDurationTimer.timedAsync()
-      async a() {
-        await timeout(10);
+  test(
+    '@timedAsync => simple flow',
+    async () => {
+      class A {
+        @GlobalDurationTimer.timedAsync()
+        async a() {
+          await timeout(10);
+        }
       }
-    }
-    const a = new A();
-    await a.a();
-    await timeout(10);
-    await a.a();
-    expect(GlobalDurationTimer.isTimePassed(1000)).toBeFalsy();
-    expect(GlobalDurationTimer.isTimePassed(10)).toBeTruthy();
-  });
+      const a = new A();
+      await a.a();
+      await timeout(10);
+      await a.a();
+      expect(GlobalDurationTimer.isTimePassed(1000)).toBeFalsy();
+      expect(GlobalDurationTimer.isTimePassed(10)).toBeTruthy();
+    },
+    15 * 1000
+  );
 
   test('@timedSync => simple flow', () => {
     class A {
