@@ -273,7 +273,6 @@ export class FetchInstrumentation {
       options.method = init.method || options.method || 'GET';
       options.headers = {
         ...options.headers,
-        // @ts-ignore
         ...FetchInstrumentation.convertHeadersToKeyValuePairs(init.headers),
       };
     }
@@ -294,9 +293,8 @@ export class FetchInstrumentation {
       try {
         // @ts-ignore
         const decoder = new TextDecoder();
-        // @ts-ignore - ReadableStream is not defined in Node < 16
+        // @ts-ignore
         if (init.body instanceof ReadableStream) {
-          // @ts-ignore - ReadableStream is not defined in Node < 16
           const reader = init.body.getReader();
           let result = '';
           // Limiting the number of reads to prevent an infinite read loop
@@ -342,6 +340,7 @@ export class FetchInstrumentation {
    * @private
    */
   private static convertHeadersToKeyValuePairs(
+    // @ts-ignore
     headers: [string, string][] | Record<string, string> | Headers
   ): Record<string, string> {
     // @ts-ignore
