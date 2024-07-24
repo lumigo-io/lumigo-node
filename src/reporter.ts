@@ -138,11 +138,7 @@ export function scrubSpans(resultSpans: any[]) {
   return resultSpans.filter((span) => safeExecute(scrubSpan, 'Failed to scrub span')(span));
 }
 
-export function getPrioritizedSpans(
-  spans: any[],
-  maxSendBytes: number,
-  addEnrichmentSpan: boolean = true
-): any[] {
+export function getPrioritizedSpans(spans: any[], maxSendBytes: number): any[] {
   logger.debug('Using smart spans prioritization');
   spans.sort(spansPrioritySorter);
   let currentSize = 0;
@@ -187,20 +183,14 @@ export function getPrioritizedSpans(
   if (spansDropped > 0) {
     logger.info(`Dropped ${spansDropped} spans due to size limit of total spans sent to lumigo`);
 
-    if (addEnrichmentSpan) {
-      // If we are not adding an enrichment span then no need to record these dropped spans, they might be re-sent in a later stage in the invocation
-      SpansContainer.recordDroppedSpan(
-        DroppedSpanReasons.SPANS_SENT_SIZE_LIMIT,
-        false,
-        spansDropped
+    // If we are not adding an enrichment span then no need to record these dropped spans, they might be re-sent in a later stage in the invocation
+    SpansContainer.recordDroppedSpan(DroppedSpanReasons.SPANS_SENT_SIZE_LIMIT, false, spansDropped);
+    if (!enrichmentSpansDropped) {
+      finalSpansToSend = addOrUpdateEnrichmentSpan(finalSpansToSend);
+    } else {
+      logger.warn(
+        'Enrichment span was dropped due to size limit of total spans sent to lumigo, so dropped spans counts might be missing'
       );
-      if (!enrichmentSpansDropped) {
-        finalSpansToSend = addOrUpdateEnrichmentSpan(finalSpansToSend);
-      } else {
-        logger.warn(
-          'Enrichment span was dropped due to size limit of total spans sent to lumigo, so dropped spans counts might be missing'
-        );
-      }
     }
   }
 
