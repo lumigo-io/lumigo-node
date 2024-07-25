@@ -37,6 +37,6 @@ module.exports = () => {
     silent: true,
     watchPathIgnorePatterns: ['globalConfig'],
     forceExit: NODE_MAJOR_VERSION > 14,
-    runInBand: NODE_MAJOR_VERSION > 14,
+    maxWorkers: NODE_MAJOR_VERSION > 14 ? 1 : "100%",
   };
 };
