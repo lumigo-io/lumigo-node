@@ -36,5 +36,6 @@ module.exports = () => {
     globalSetup: './testUtils/prismaSetup.js',
     silent: true,
     watchPathIgnorePatterns: ['globalConfig'],
+    forceExit: NODE_MAJOR_VERSION > 14,
   };
 };
