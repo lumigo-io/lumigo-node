@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  lumigo-orb: &lumigo_orb_version lumigo/lumigo-orb@volatile
+  lumigo-orb: &lumigo_orb_version lumigo/lumigo-orb@dev:224eb4e
 
 defaults: &defaults
   docker:
@@ -131,9 +131,6 @@ jobs:
     resource_class: medium+
     working_directory: ~/lumigo-node
     steps:
-      - run:
-          name: install yarn
-          command: npm install yarn -g
       - run:
           name: show current node version
           command: node --version
