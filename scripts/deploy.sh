@@ -5,10 +5,10 @@ echo "Deleting old node_modules"
 rm -rf node_modules
 
 echo "Installing dependencies"
-npm i
+yarn install
 
 echo "Build tracer"
-npm run build
+yarn build
 
 echo "Setting production ad NODE_ENV"
 export NODE_ENV=production

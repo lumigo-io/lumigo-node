@@ -8,20 +8,23 @@ setup_git() {
 }
 
 echo "Install a project with a clean state"
-npm ci
+yarn install --frozen-lockfile
 
 echo "Build tracer"
-npm run build
+yarn build
 setup_git
 
 echo "Pushing beta version to npm"
-echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
-BETA_VERSION="$(npm view @lumigo/tracer dist-tags.beta)"
+cat <<EOL > .yarnrc.yml
+npmRegistryServer: "https://registry.npmjs.org"
+npmAuthToken: "${NPM_TOKEN}"
+EOL
+BETA_VERSION="$(yarn info @lumigo/tracer dist-tags.beta)"
 BETA_VERSION=${BETA_VERSION:-0.0.0}
-npm version --no-git-tag-version $BETA_VERSION
-npm version --no-git-tag-version prepatch --preid beta
-npm publish --tag beta
-rm .npmrc
+yarn version --no-git-tag-version $BETA_VERSION
+yarn version --no-git-tag-version prepatch --preid beta
+yarn publish --tag beta
+rm .yarnrc.yml
 
 echo "Deploy to staging"
 curl -u "$CIRCLECI_TOKEN": \

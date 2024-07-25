@@ -49,7 +49,6 @@ workflows:
         context: common
         requires:
           - lumigo-orb/is_environment_available
-    
     - lumigo-orb/integration-test-parallel:
         context: common
         tests_spec: testNode
@@ -92,29 +91,29 @@ jobs:
     steps:
     - checkout
     - run:
-        name: install npm dependencies
-        command: npm install
+        name: install dependencies
+        command: yarn install
     - run:
-        name: install-npm-inner
+        name: install-inner
         command: |
           pushd auto-instrument-handler
-            npm install
+            yarn install
           popd
     - run:
         name: prettier
-        command: npm run prettier:ci
+        command: yarn prettier:ci
     - run:
         name: check types
-        command: npm run check-types
+        command: yarn check-types
     - run:
         name: test
-        command: npm test
+        command: yarn test
     - run:
         name: eslint
-        command: npm run lint
+        command: yarn lint
     - run:
         name: code-coverage
-        command: npm test --coverage && codecov
+        command: yarn test --coverage && codecov
     - store_artifacts:
         path: coverage
         prefix: coverage
@@ -136,26 +135,26 @@ jobs:
           command: apt-get update -y && apt-get install -y openssl
       - checkout
       - run:
-          name: install npm dependencies
-          command: npm install --legacy-peer-deps
+          name: install dependencies
+          command: yarn install
       - run:
-          name: install-npm-inner
+          name: install-inner
           command: |
             pushd auto-instrument-handler
-              npm install
+              yarn install
             popd
       - run:
           name: prettier
-          command: npm run prettier:ci
+          command: yarn prettier:ci
       - run:
           name: check types
-          command: npm run check-types
+          command: yarn check-types
       - run:
           name: test
-          command: npm test
+          command: yarn test
       - run:
           name: eslint
-          command: npm run lint
+          command: yarn lint
 
   deploy:
     <<: *defaults

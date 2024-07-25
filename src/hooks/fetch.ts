@@ -273,6 +273,7 @@ export class FetchInstrumentation {
       options.method = init.method || options.method || 'GET';
       options.headers = {
         ...options.headers,
+        // @ts-ignore
         ...FetchInstrumentation.convertHeadersToKeyValuePairs(init.headers),
       };
     }
@@ -295,7 +296,8 @@ export class FetchInstrumentation {
         const decoder = new TextDecoder();
         // @ts-ignore
         if (init.body instanceof ReadableStream) {
-          const reader = init.body.getReader();
+          // @ts-ignore - ReadableStream is not available in all node versions
+          const reader = (init.body as ReadableStream).getReader();
           let result = '';
           // Limiting the number of reads to prevent an infinite read loop
           for (let i = 0; i < 10000; i++) {

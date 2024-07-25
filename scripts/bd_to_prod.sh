@@ -8,10 +8,10 @@ setup_git() {
 }
 
 echo "Install a project with a clean state"
-npm ci
+yarn install --frozen-lockfile
 
 echo "Build tracer"
-npm run build
+yarn build
 setup_git
 
 echo "Setting production ad NODE_ENV"
@@ -32,14 +32,17 @@ echo "Creating layer file"
 ./scripts/prepare_layer_files.sh
 
 echo "Push to NPM"
-echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
-npm run semantic-release
+cat <<EOL > .yarnrc.yml
+npmRegistryServer: "https://registry.npmjs.org"
+npmAuthToken: "${NPM_TOKEN}"
+EOL
+yarn semantic-release
 
 echo "Creating lumigo-node layer"
 ../utils/common_bash/create_layer.sh --layer-name lumigo-node-tracer --region ALL --package-folder "nodejs lumigo_wrapper" --version $(git describe --abbrev=0 --tags) --runtimes "nodejs10.x nodejs12.x nodejs14.x nodejs16.x nodejs18.x nodejs20.x"
 
 echo "Creating layer latest version arn table md file (LAYERS.md)"
-cd ../larn && npm i -g
+cd ../larn && yarn i -g
 larn -r nodejs12.x -n layers/LAYERS12x --filter lumigo-node-tracer -p ~/lumigo-node
 larn -r nodejs14.x -n layers/LAYERS14x --filter lumigo-node-tracer -p ~/lumigo-node
 larn -r nodejs16.x -n layers/LAYERS16x --filter lumigo-node-tracer -p ~/lumigo-node
@@ -57,4 +60,3 @@ source ../utils/common_bash/functions.sh
 send_metric_to_logz_io type=\"Release\"
 
 git push origin master
-
