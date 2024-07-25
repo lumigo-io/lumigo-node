@@ -49,6 +49,7 @@ workflows:
         context: common
         requires:
           - lumigo-orb/is_environment_available
+
     - lumigo-orb/integration-test-parallel:
         context: common
         tests_spec: testNode
@@ -91,6 +92,9 @@ jobs:
     steps:
     - checkout
     - run:
+        name: install yarn
+        command: npm install yarn -g
+    - run:
         name: install dependencies
         command: yarn install
     - run:
@@ -128,6 +132,9 @@ jobs:
     working_directory: ~/lumigo-node
     steps:
       - run:
+          name: install yarn
+          command: npm install yarn -g
+      - run:
           name: show current node version
           command: node --version
       - run:
@@ -163,6 +170,9 @@ jobs:
     resource_class: medium+
     working_directory: ~/lumigo-node
     steps:
+    - run:
+        name: install yarn
+        command: npm install yarn -g
     - run:
         command: |
           mkdir ~/.ssh/ && echo -e "Host github.com\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
