@@ -169,7 +169,7 @@ describe('tracer', () => {
         expect(requests.length).toEqual(2);
         const sentSpans = AxiosMocker.getSentSpans();
         expect(sentSpans.length).toEqual(2);
-        expect(sentSpans[1].length).toEqual(1);
+        expect(sentSpans[1].length).toEqual(2);
         expect(spies.getTags).toHaveBeenCalled();
         done();
       }, timeout + testBuffer);
@@ -272,10 +272,10 @@ describe('tracer', () => {
     spies.sendSpans.mockImplementationOnce(() => {});
     spies.getCurrentTransactionId.mockReturnValueOnce('x');
 
-    const dummySpan = { x: 'y', transactionId: 'x' };
-    const functionSpan = { a: 'b', c: 'd', transactionId: 'x' };
+    const dummySpan = { id: 'dummy-span', x: 'y', transactionId: 'x' };
+    const functionSpan = { id: 'func-span_started', a: 'b', c: 'd', transactionId: 'x' };
     const handlerReturnValue = 'Satoshi was here1';
-    const endFunctionSpan = { a: 'b', c: 'd', rtt, transactionId: 'x' };
+    const endFunctionSpan = { id: 'func-span', a: 'b', c: 'd', rtt, transactionId: 'x' };
     SpansContainer.addSpan(dummySpan);
     spies.getEndFunctionSpan.mockReturnValueOnce(endFunctionSpan);
 
@@ -679,7 +679,7 @@ describe('tracer', () => {
     spies.sendSpans.mockImplementationOnce(() => {});
     spies.getEndFunctionSpan.mockReturnValueOnce({
       x: 'y',
-      id: '1',
+      id: '1_end',
       transactionId: '123',
     });
     spies.getCurrentTransactionId.mockReturnValueOnce('123');
@@ -688,7 +688,7 @@ describe('tracer', () => {
       event: { a: 1 },
       context: { getRemainingTimeInMillis: () => MAX_TRACER_ADDED_DURATION_ALLOWED },
     });
-    SpansContainer.addSpan({ transactionId: '123', id: '1' });
+    SpansContainer.addSpan({ transactionId: '123', id: '3' });
     SpansContainer.addSpan({ transactionId: '123', id: '2' });
     await tracer.sendEndTraceSpans({ id: '1_started' }, { err: null, data: null });
     expect(spies.warnClient).not.toHaveBeenCalled();
@@ -701,7 +701,7 @@ describe('tracer', () => {
     SpansContainer.clearSpans();
     SpansContainer.addSpan({
       transactionId: '123',
-      id: '1',
+      id: '3',
       reporterAwsRequestId: '2',
       parentId: '2',
     });
@@ -715,7 +715,7 @@ describe('tracer', () => {
       context: { getRemainingTimeInMillis: () => MAX_TRACER_ADDED_DURATION_ALLOWED },
     });
     SpansContainer.clearSpans();
-    SpansContainer.addSpan({ transactionId: '123', id: '1', reporterAwsRequestId: '2' });
+    SpansContainer.addSpan({ transactionId: '123', id: '3', reporterAwsRequestId: '2' });
     SpansContainer.addSpan({ transactionId: '456', id: '2' });
     expect(TracerGlobals.getHandlerInputs().event).toEqual({ a: 1 });
     await tracer.sendEndTraceSpans({ id: '1_started' }, { err: null, data: null });

@@ -1,7 +1,7 @@
 import * as logger from './logger';
 import type { TracerOptions } from './tracer';
 import type { LambdaContext } from './types/aws/awsEnvironment';
-import { BasicSpan } from './types/spans/basicSpan';
+import { GenericSpan } from './types/spans/basicSpan';
 import {
   getAutoTagKeys,
   getJSONBase64Size,
@@ -41,13 +41,17 @@ export enum DroppedSpanReasons {
   INVOCATION_MAX_LATENCY_LIMIT = 'INVOCATION_MAX_LATENCY_LIMIT',
 }
 
+export type DroppedSpansData = {
+  drops: number;
+};
+
 export class SpansContainer {
-  private static spans: { [id: string]: BasicSpan } = {};
+  private static spans: { [id: string]: GenericSpan } = {};
   private static currentSpansSize: number = 0;
   private static totalSpans: number = 0;
-  private static droppedSpansReasons: { [reason: string]: number } = {};
+  private static droppedSpansReasons: { [reason: string]: DroppedSpansData } = {};
 
-  static addSpan(span: BasicSpan): boolean {
+  static addSpan(span: GenericSpan, ignoreSizeLimits: boolean = false): boolean {
     const newSpan = span.id in this.spans;
     if (!newSpan) {
       // We call add span also for updating spans with their end part
@@ -55,7 +59,7 @@ export class SpansContainer {
     }
     // Memory optimization, take up to 10x maxSize because of smart span selection logic
     const maxSpansSize = getMaxSizeForStoredSpansInMemory();
-    if (spanHasErrors(span) || this.currentSpansSize <= maxSpansSize) {
+    if (ignoreSizeLimits || spanHasErrors(span) || this.currentSpansSize <= maxSpansSize) {
       this.spans[span.id] = span;
 
       // TODO: If the span isn't new we need to subtract the old span size before adding the new size
@@ -83,22 +87,27 @@ export class SpansContainer {
     incrementTotalSpansCounter: boolean = true,
     numOfDroppedSpans: number = 1
   ): void {
-    this.droppedSpansReasons[reason] =
-      (this.droppedSpansReasons[reason.valueOf()] || 0) + numOfDroppedSpans;
+    // Check if the reason exists in the droppedSpansReasons object
+    // If it doesn't exist, initialize
+    if (!this.droppedSpansReasons[reason]) {
+      this.droppedSpansReasons[reason] = { drops: 0 };
+    }
+    this.droppedSpansReasons[reason].drops += numOfDroppedSpans;
+
     if (incrementTotalSpansCounter) {
       this.totalSpans += numOfDroppedSpans;
     }
   }
 
-  static getDroppedSpansReasons(): { [reason: string]: number } {
+  static getDroppedSpansReasons(): { [reason: string]: DroppedSpansData } {
     return this.droppedSpansReasons;
   }
 
-  static getSpans(): BasicSpan[] {
+  static getSpans(): GenericSpan[] {
     return Object.values(this.spans);
   }
 
-  static getSpanById(spanId: string): BasicSpan | null {
+  static getSpanById(spanId: string): GenericSpan | null {
     return this.spans[spanId];
   }
 

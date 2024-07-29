@@ -345,7 +345,6 @@ describe('awsSpan', () => {
       started: 895093200000,
       ended: 895179612345,
       token: 'DEADBEEF',
-      totalSpans: 0,
       transactionId: '64a1b06067c2100c52e51ef4',
       type: 'function',
       vendor: 'AWS',
@@ -357,7 +356,6 @@ describe('awsSpan', () => {
       // eslint-disable-next-line camelcase
       return_value: '"data man"',
       [EXECUTION_TAGS_KEY]: [],
-      droppedSpansReasons: {},
     };
     const handlerReturnValue1 = {
       err: null,
@@ -406,7 +404,6 @@ describe('awsSpan', () => {
       started: 895093200000,
       ended: 895179612345,
       token: 'DEADBEEF',
-      totalSpans: 0,
       transactionId: '64a1b06067c2100c52e51ef4',
       type: 'function',
       vendor: 'AWS',
@@ -418,7 +415,6 @@ describe('awsSpan', () => {
       // eslint-disable-next-line camelcase
       return_value: '',
       [EXECUTION_TAGS_KEY]: [],
-      droppedSpansReasons: {},
     };
     MockDate.set(895179612345);
     expect(awsSpan.getEndFunctionSpan(functionSpan1, handlerReturnValue2)).toEqual(
@@ -1102,7 +1098,8 @@ describe('awsSpan', () => {
   test.each`
     input                                                                                                  | expectedOutput
     ${{ end: 'dummyEnd', type: FUNCTION_SPAN, envs: { firstEnvKey: 'First environment variable value' } }} | ${{ end: 'dummyEnd', type: FUNCTION_SPAN, isMetadata: true }}
-    ${{ end: 'dummyEnd', type: ENRICHMENT_SPAN }}                                                          | ${{}}
+    ${{ end: 'dummyEnd', type: ENRICHMENT_SPAN }}                                                          | ${{ end: 'dummyEnd', type: ENRICHMENT_SPAN, isMetadata: true }}
+    ${{ end: 'dummyEnd', type: ENRICHMENT_SPAN, [EXECUTION_TAGS_KEY]: ['tag1', 'tag2'] }}                  | ${{ end: 'dummyEnd', type: ENRICHMENT_SPAN, isMetadata: true }}
   `('test getSpanMetadata', ({ input, expectedOutput }) => {
     const result = getSpanMetadata(input);
 
