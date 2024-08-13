@@ -1162,8 +1162,8 @@ describe('utils', () => {
       'at process.emit (node:events:519:28)\n    ' +
       'at emitUnhandledRejection (node:internal/process/promises:250:13)\n    ' +
       'at throwUnhandledRejectionsMode (node:internal/process/promises:385:19)';
-    const result = removeLumigoFromError(err);
+    const result = removeLumigoFromError(err.stack);
 
-    expect(result.stack).toEqual(expectedStack);
+    expect(result).toEqual(expectedStack);
   });
 });
