@@ -1,5 +1,9 @@
 import { Buffer } from 'buffer';
-import { MAX_TRACER_ADDED_DURATION_ALLOWED, MIN_TRACER_ADDED_DURATION_ALLOWED, TracerGlobals } from './globals';
+import {
+  MAX_TRACER_ADDED_DURATION_ALLOWED,
+  MIN_TRACER_ADDED_DURATION_ALLOWED,
+  TracerGlobals,
+} from './globals';
 import { isAwsContext } from './guards/awsGuards';
 import * as logger from './logger';
 import { AwsEnvironment, ContextInfo, LambdaContext } from './types/aws/awsEnvironment';
@@ -476,12 +480,12 @@ const isLumigoStackTrace = (input) => {
   return LUMIGO_STACK_PATTERNS.some((word) => word.test(input));
 };
 
-  export const removeLumigoFromError = (stacktrace: string) => {
-    const stackArr = stacktrace.split('\n');
+export const removeLumigoFromError = (stacktrace: string) => {
+  const stackArr = stacktrace.split('\n');
 
-    const cleanedStackArr = stackArr.filter((v) => !isLumigoStackTrace(v));
+  const cleanedStackArr = stackArr.filter((v) => !isLumigoStackTrace(v));
 
-    return cleanedStackArr.join('\n');
+  return cleanedStackArr.join('\n');
 };
 export const removeLumigoFromStacktrace = (handleReturnValue) => {
   // Note: this function was copied to the auto-instrument-handler. Keep them both up to date.
