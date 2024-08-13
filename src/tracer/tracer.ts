@@ -32,7 +32,8 @@ import {
   removeLumigoFromStacktrace,
   safeExecute,
   STEP_FUNCTION_UID_KEY,
-  SWITCH_OFF_FLAG, removeLumigoFromError,
+  SWITCH_OFF_FLAG,
+  removeLumigoFromError,
 } from '../utils';
 import { runOneTimeWrapper } from '../utils/functionUtils';
 import { TraceOptions } from './trace-options.type';
@@ -226,8 +227,7 @@ export const hookUnhandledRejection = async (functionSpan) => {
     err.name = 'Runtime.UnhandledPromiseRejection';
     try {
       err = removeLumigoFromError(err);
-    }
-    catch (errFromRemoveLumigo) {
+    } catch (errFromRemoveLumigo) {
       logger.warn('Failed to remove Lumigo from stacktrace', errFromRemoveLumigo);
     }
     await endTrace(functionSpan, {

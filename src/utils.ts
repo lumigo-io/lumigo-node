@@ -482,14 +482,14 @@ const isLumigoStackTrace = (input) => {
 
 export const removeLumigoFromError = (err) => {
   const { stack } = err;
-    const stackArr = stack.split('\n');
+  const stackArr = stack.split('\n');
 
-    const cleanedStack = stackArr.filter((v) => !isLumigoStackTrace(v));
+  const cleanedStack = stackArr.filter((v) => !isLumigoStackTrace(v));
 
-    err.stack = cleanedStack.join('\n');
+  err.stack = cleanedStack.join('\n');
 
-    return err;
-}
+  return err;
+};
 export const removeLumigoFromStacktrace = (handleReturnValue) => {
   // Note: this function was copied to the auto-instrument-handler. Keep them both up to date.
   try {
