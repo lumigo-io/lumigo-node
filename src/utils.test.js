@@ -31,7 +31,7 @@ import {
   safeExecuteAsync,
   getMaxSizeForStoredSpansInMemory,
   LUMIGO_STORED_SPANS_MAX_SIZE_BYTES_ENV_VAR,
-  LUMIGO_SUPPORT_LARGE_INVOCATIONS,
+  LUMIGO_SUPPORT_LARGE_INVOCATIONS, removeLumigoFromError,
 } from './utils';
 
 describe('utils', () => {
@@ -1138,5 +1138,29 @@ describe('utils', () => {
       defaultReturn: 0,
     })({ a: 2, b: 3 });
     expect(result).toEqual(5);
+  });
+
+    test('removelumigoFromError', () => {
+    const err = Error("Error: I am an error");
+    err.stack = 'Error: Error: I am an error\n    ' +
+      'at /opt/nodejs/node_modules/@lumigo/tracer/dist/tracer/tracer.js:269:31\n    ' +
+      'at step (/opt/nodejs/node_modules/@lumigo/tracer/dist/tracer/tracer.js:33:23)\n    ' +
+      'at Object.next (/opt/nodejs/node_modules/@lumigo/tracer/dist/tracer/tracer.js:14:53)\n    ' +
+      'at /opt/nodejs/node_modules/@lumigo/tracer/dist/tracer/tracer.js:8:71\n    ' +
+      'at new Promise (<anonymous>)\n    ' +
+      'at __awaiter (/opt/nodejs/node_modules/@lumigo/tracer/dist/tracer/tracer.js:4:12)\n    ' +
+      'at events.unhandledRejection (/opt/nodejs/node_modules/@lumigo/tracer/dist/tracer/tracer.js:264:73)\n    ' +
+      'at process.emit (node:events:519:28)\n    ' +
+      'at emitUnhandledRejection (node:internal/process/promises:250:13)\n    ' +
+      'at throwUnhandledRejectionsMode (node:internal/process/promises:385:19)';
+
+    const expectedStack = 'Error: Error: I am an error\n    ' +
+      'at new Promise (<anonymous>)\n    ' +
+      'at process.emit (node:events:519:28)\n    ' +
+      'at emitUnhandledRejection (node:internal/process/promises:250:13)\n    ' +
+      'at throwUnhandledRejectionsMode (node:internal/process/promises:385:19)';
+    const result = removeLumigoFromError(err);
+
+    expect(result.stack).toEqual(expectedStack);
   });
 });

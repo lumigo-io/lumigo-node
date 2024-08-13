@@ -480,6 +480,16 @@ const isLumigoStackTrace = (input) => {
   return LUMIGO_STACK_PATTERNS.some((word) => word.test(input));
 };
 
+export const removeLumigoFromError = (err) => {
+  const { stack } = err;
+    const stackArr = stack.split('\n');
+
+    const cleanedStack = stackArr.filter((v) => !isLumigoStackTrace(v));
+
+    err.stack = cleanedStack.join('\n');
+
+    return err;
+}
 export const removeLumigoFromStacktrace = (handleReturnValue) => {
   // Note: this function was copied to the auto-instrument-handler. Keep them both up to date.
   try {
@@ -487,14 +497,10 @@ export const removeLumigoFromStacktrace = (handleReturnValue) => {
     if (!err || !err.stack) {
       return handleReturnValue;
     }
-    const { stack } = err;
-    const stackArr = stack.split('\n');
 
-    const cleanedStack = stackArr.filter((v) => !isLumigoStackTrace(v));
+    const sanitizedErr = removeLumigoFromError(err);
 
-    err.stack = cleanedStack.join('\n');
-
-    return { err, data, type };
+    return { sanitizedErr, data, type };
   } catch (err) {
     logger.warn('Failed to remove Lumigo from stacktrace', err);
     return handleReturnValue;
