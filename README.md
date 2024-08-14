@@ -36,11 +36,11 @@ $ npm i @lumigo/tracer
 $ yarn add @lumigo/tracer
 ```
 
-* Next, wrap your `handler` in Lumigo's `trace` function (note: replace `YOUR-TOKEN-HERE` with your Lumigo API token):
+* Next, wrap your `handler` in Lumigo's `trace` function:
 
 ```javascript
 // javascript
-const lumigo = require('@lumigo/tracer')({ token: 'YOUR-TOKEN-HERE' })
+const lumigo = require('@lumigo/tracer')()
 
 const myHandler = async (event, context, callback) => { ... }
 
@@ -51,7 +51,7 @@ exports.handler = lumigo.trace(myHandler)
 // typescript
 import lumigo from '@lumigo/tracer';
 
-const tracer = lumigo({ token: 'YOUR-TOKEN-HERE' });
+const tracer = lumigo();
 
 export const handler = tracer.trace(async (event, context) => {
   ...
@@ -72,6 +72,11 @@ For Typescript users, you must add the following to your `tsconfig.json` file:
 You can read more about it [here](https://www.typescriptlang.org/tsconfig#esModuleInterop)
 
 * Your function is now fully instrumented
+
+## Connect Your Lumigo Account
+Set your Lumigo token as the `LUMIGO_TRACER_TOKEN` environment variable of your Lambda function; refer to the [Using AWS Lambda environment variables](https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html) documentation for more information. Your Lumigo token is available in `Settings -> Tracing -> Manual tracing`, see the [Lumigo Tokens](https://docs.lumigo.io/docs/lumigo-tokens) documentation.
+
+We advise you to use the most secure available to you to store secrets such as your `LUMIGO_TRACER_TOKEN`; refer to AWS Lambda's [Securing environment variables](https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html#configuration-envvars-encryption) documentation for guidance on keeping the values of your Lambda environment variables secure.
 
 ## Configuration
 
