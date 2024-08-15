@@ -21,7 +21,7 @@ const getHandlerAsync = async () => {
   );
 };
 
-export const removeLumigoFromError = (stacktrace) => {
+const removeLumigoFromError = (stacktrace) => {
   const stackArr = stacktrace.split('\n');
 
   const patterns = ['/dist/lumigo.js:', 'auto-instrument'];
