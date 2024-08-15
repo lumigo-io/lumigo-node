@@ -21,22 +21,19 @@ const getHandlerAsync = async () => {
   );
 };
 
-export const removeLumigoFromError = (stacktrace) => {
-  const stackArr = stacktrace.split('\n');
-
-  const patterns = ['/dist/lumigo.js:', 'auto-instrument'];
-  const cleanedStack = stackArr.filter(v => !patterns.some(p => v.includes(p)));
-
-  return cleanedStack.join('\n');
-}
-
 const removeLumigoFromStacktrace = err => {
   // Note: this function was copied from utils.js. Keep them both up to date.
   try {
     if (!err || !err.stack) {
       return err;
     }
-    err.stack = removeLumigoFromError(err.stack);
+    const { stack } = err;
+    const stackArr = stack.split('\n');
+
+    const patterns = ['/dist/lumigo.js:', 'auto-instrument'];
+    const cleanedStack = stackArr.filter(v => !patterns.some(p => v.includes(p)));
+
+    err.stack = cleanedStack.join('\n');
 
     return err;
   } catch (e) {
