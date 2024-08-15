@@ -480,6 +480,13 @@ const isLumigoStackTrace = (input) => {
   return LUMIGO_STACK_PATTERNS.some((word) => word.test(input));
 };
 
+export const removeLumigoFromError = (stacktrace: string) => {
+  const stackArr = stacktrace.split('\n');
+
+  const cleanedStackArr = stackArr.filter((v) => !isLumigoStackTrace(v));
+
+  return cleanedStackArr.join('\n');
+};
 export const removeLumigoFromStacktrace = (handleReturnValue) => {
   // Note: this function was copied to the auto-instrument-handler. Keep them both up to date.
   try {
@@ -487,12 +494,8 @@ export const removeLumigoFromStacktrace = (handleReturnValue) => {
     if (!err || !err.stack) {
       return handleReturnValue;
     }
-    const { stack } = err;
-    const stackArr = stack.split('\n');
 
-    const cleanedStack = stackArr.filter((v) => !isLumigoStackTrace(v));
-
-    err.stack = cleanedStack.join('\n');
+    err.stack = removeLumigoFromError(err.stack);
 
     return { err, data, type };
   } catch (err) {
