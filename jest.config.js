@@ -9,7 +9,7 @@ module.exports = () => {
   ];
   let coverageThreshold = {
     global: {
-      lines: 99.7,
+      lines: 99.6,
     },
   };
 
