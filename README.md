@@ -76,8 +76,7 @@ You can read more about it [here](https://www.typescriptlang.org/tsconfig#esModu
 ## Connect Your Lumigo Account
 Set your Lumigo token as the `LUMIGO_TRACER_TOKEN` environment variable of your Lambda function; refer to the [Using AWS Lambda environment variables](https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html) documentation for more information. Your Lumigo token is available in `Settings -> Tracing -> Manual tracing`, see the [Lumigo Tokens](https://docs.lumigo.io/docs/lumigo-tokens) documentation.
 
-We advise you to use the most secure available to you to store secrets such as your `LUMIGO_TRACER_TOKEN`; refer to AWS Lambda's [Securing environment variables](https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html#configuration-envvars-encryption) documentation for guidance on keeping the values of your Lambda environment variables secure.
-
+We advise you to store secrets such as your LUMIGO_TRACER_TOKEN securely; refer to AWS Lambda's [Securing environment variables](https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html#configuration-envvars-encryption) documentation for guidance on keeping the values of your Lambda environment variables secure.
 ## Configuration
 
 `@lumigo/tracer` offers several different configuration options. Pass these to the Lambda function as environment variables:
