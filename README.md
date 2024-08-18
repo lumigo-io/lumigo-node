@@ -95,7 +95,7 @@ We advise you to use the most secure available to you to store secrets such as y
 * `LUMIGO_PROPAGATE_W3C=TRUE` - Add W3C TraceContext headers to outgoing HTTP requests. This enables uninterrupted transactions with applications traced with OpenTelemetry.
 * `LUMIGO_SWITCH_OFF=TRUE` - In the event a critical issue arises, this turns off all actions that Lumigo takes in response to your code. This happens without a deployment, and is picked up on the next function run once the environment variable is present.
 * `LUMIGO_AUTO_TAG=key1.key2,key3` - Configure execution tags that will be driven directly from the event for the supplied key (we support nested fields).
-* `LUMIGO_STEP_FUNCTION` - Set to `True` for Lambda functions that are triggered by your step function’s state machine.
+* `LUMIGO_STEP_FUNCTION=TRUE` - for Lambda functions that are triggered by your step function’s state machine.
 
 ### Step Functions
 
