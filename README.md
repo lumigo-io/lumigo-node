@@ -87,7 +87,7 @@ We advise you to use the most secure available to you to store secrets such as y
   ```javascript
   const lumigo = require('@lumigo/tracer')({ token: 'YOUR-TOKEN-HERE' });
   ```
-* `LUMIGO_DEBUG=TRUE` - Enables debug logging
+* `LUMIGO_DEBUG=TRUE` - Enables debug logging.
 * `LUMIGO_SECRET_MASKING_REGEX='["regex1", "regex2"]'` - Prevents Lumigo from sending keys that match the supplied regular expressions. All regular expressions are case-insensitive. By default, Lumigo applies the following regular expressions: `[".*pass.*", ".*key.*", ".*secret.*", ".*credential.*", ".*passphrase.*"]`.
   * We support more granular masking using the following parameters. If not given, the above configuration is the fallback: `LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_BODIES`, `LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_HEADERS`, `LUMIGO_SECRET_MASKING_REGEX_HTTP_RESPONSE_BODIES`, `LUMIGO_SECRET_MASKING_REGEX_HTTP_RESPONSE_HEADERS`, `LUMIGO_SECRET_MASKING_REGEX_HTTP_QUERY_PARAMS`.
 * `LUMIGO_SECRET_MASKING_EXACT_PATH='["key1.key2", "key3.key4"]'` - Prevents Lumigo from sending keys that match the supplied path (we support nested fields). All paths are case-insensitive.
@@ -95,18 +95,22 @@ We advise you to use the most secure available to you to store secrets such as y
 * `LUMIGO_PROPAGATE_W3C=TRUE` - Add W3C TraceContext headers to outgoing HTTP requests. This enables uninterrupted transactions with applications traced with OpenTelemetry.
 * `LUMIGO_SWITCH_OFF=TRUE` - In the event a critical issue arises, this turns off all actions that Lumigo takes in response to your code. This happens without a deployment, and is picked up on the next function run once the environment variable is present.
 * `LUMIGO_AUTO_TAG=key1.key2,key3` - Configure execution tags that will be driven directly from the event for the supplied key (we support nested fields).
+* `LUMIGO_STEP_FUNCTION` - Set to `True` for Lambda functions that are triggered by your step function’s state machine.
 
 ### Step Functions
 
 If your function is part of a set of step functions, you can add the flag `step_function: true` to the Lumigo tracer import. Alternatively, you can configure the step function using an environment variable `LUMIGO_STEP_FUNCTION=True`. When this is active, Lumigo tracks all states in the step function in a single transaction, easing debugging and observability.
 
 ```javascript
-const lumigo = require('@lumigo/tracer')({ token: 'DEADBEEF', step_function: true })
+const lumigo = require('@lumigo/tracer')({ step_function: true })
 ```
 
 Note: the tracer adds the key `"_lumigo"` to the return value of the function.
 
-If you override the `"Parameters"` configuration, add `"_lumigo.$": "$._lumigo"` to ensure this value is still present.
+If you are using custom Parameters, update the function's input to include the following line:
+```json
+"_lumigo.$": "$.['_lumigo', 'null']"
+```
 
 Below is an example configuration for a Lambda function that is part of a step function that has overridden its parameters:
 
@@ -116,8 +120,9 @@ Below is an example configuration for a Lambda function that is part of a step f
       "Type": "Task",
       "Resource": "arn:aws:lambda:us-west-2:ACCOUNT:function:FUNCTION_NAME",
       "Parameters": {
-          "Changed": "parameters",
-          "_lumigo.$": "$._lumigo"
+          "size.$": "$.product.details.size",
+          "exists.$": "$.product.availability",
+          "_lumigo.$": "$.['_lumigo', 'null']"
         },
       "Next": "state2"
     },
@@ -128,6 +133,24 @@ Below is an example configuration for a Lambda function that is part of a step f
 }
 ```
 
+Using the lambda:invoke API:
+```
+"States":{
+  "state1":{
+     "Type":"Task",
+     "Resource":"arn:aws:states:::lambda:invoke.waitForTaskToken",
+     "Parameters":{
+        "FunctionName":"arn:aws:lambda:us-west-2:ACCOUNT:function:FUNCTION_NAME",
+        "Payload":{
+           "size.$": "$.product.details.size",
+           "_lumigo.$": "$.['_lumigo', 'null']"
+        },
+        "Qualifier":"prod-v1"
+     },
+     "End":true
+  }
+}
+```
 ## Logging Programmatic Errors
 
 With the tracer configured, simply call
