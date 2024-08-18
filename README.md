@@ -82,6 +82,11 @@ We advise you to use the most secure available to you to store secrets such as y
 
 `@lumigo/tracer` offers several different configuration options. Pass these to the Lambda function as environment variables:
 
+* `LUMIGO_TRACER_TOKEN` - Your Lumigo token, used for authentication. 
+  It can also be passed to the tracer as a parameter:
+  ```javascript
+  const lumigo = require('@lumigo/tracer')({ token: 'YOUR-TOKEN-HERE' });
+  ```
 * `LUMIGO_DEBUG=TRUE` - Enables debug logging
 * `LUMIGO_SECRET_MASKING_REGEX='["regex1", "regex2"]'` - Prevents Lumigo from sending keys that match the supplied regular expressions. All regular expressions are case-insensitive. By default, Lumigo applies the following regular expressions: `[".*pass.*", ".*key.*", ".*secret.*", ".*credential.*", ".*passphrase.*"]`.
   * We support more granular masking using the following parameters. If not given, the above configuration is the fallback: `LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_BODIES`, `LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_HEADERS`, `LUMIGO_SECRET_MASKING_REGEX_HTTP_RESPONSE_BODIES`, `LUMIGO_SECRET_MASKING_REGEX_HTTP_RESPONSE_HEADERS`, `LUMIGO_SECRET_MASKING_REGEX_HTTP_QUERY_PARAMS`.
