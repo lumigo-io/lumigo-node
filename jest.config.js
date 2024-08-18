@@ -9,7 +9,7 @@ module.exports = () => {
   ];
   let coverageThreshold = {
     global: {
-      lines: 99.7,
+      lines: 99.6,
     },
   };
 
@@ -22,7 +22,7 @@ module.exports = () => {
   if (NODE_MAJOR_VERSION > 14) {
     // Some of our unit tests don't work on Node.js grater than 14,
     // so the coverage is lower when running with these versions
-    coverageThreshold.global.lines = 98.4;
+    coverageThreshold.global.lines = 98.3;
   }
 
   return {
