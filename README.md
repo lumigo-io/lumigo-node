@@ -101,15 +101,12 @@ We advise you to store secrets such as your LUMIGO_TRACER_TOKEN securely; refer 
 If your function is part of a set of step functions, you can add the flag `step_function: true` to the Lumigo tracer import. Alternatively, you can configure the step function using an environment variable `LUMIGO_STEP_FUNCTION=True`. When this is active, Lumigo tracks all states in the step function in a single transaction, easing debugging and observability.
 
 ```javascript
-const lumigo = require('@lumigo/tracer')({ step_function: true })
+const lumigo = require('@lumigo/tracer')({ token: 'DEADBEEF', step_function: true })
 ```
 
 Note: the tracer adds the key `"_lumigo"` to the return value of the function.
 
-If you are using custom Parameters, update the function's input to include the following line:
-```json
-"_lumigo.$": "$.['_lumigo', 'null']"
-```
+If you override the `"Parameters"` configuration, add `"_lumigo.$": "$._lumigo"` to ensure this value is still present.
 
 Below is an example configuration for a Lambda function that is part of a step function that has overridden its parameters:
 
@@ -119,9 +116,8 @@ Below is an example configuration for a Lambda function that is part of a step f
       "Type": "Task",
       "Resource": "arn:aws:lambda:us-west-2:ACCOUNT:function:FUNCTION_NAME",
       "Parameters": {
-          "size.$": "$.product.details.size",
-          "exists.$": "$.product.availability",
-          "_lumigo.$": "$.['_lumigo', 'null']"
+          "Changed": "parameters",
+          "_lumigo.$": "$._lumigo"
         },
       "Next": "state2"
     },
@@ -132,24 +128,6 @@ Below is an example configuration for a Lambda function that is part of a step f
 }
 ```
 
-Using the lambda:invoke API:
-```
-"States":{
-  "state1":{
-     "Type":"Task",
-     "Resource":"arn:aws:states:::lambda:invoke.waitForTaskToken",
-     "Parameters":{
-        "FunctionName":"arn:aws:lambda:us-west-2:ACCOUNT:function:FUNCTION_NAME",
-        "Payload":{
-           "size.$": "$.product.details.size",
-           "_lumigo.$": "$.['_lumigo', 'null']"
-        },
-        "Qualifier":"prod-v1"
-     },
-     "End":true
-  }
-}
-```
 ## Logging Programmatic Errors
 
 With the tracer configured, simply call
