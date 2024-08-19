@@ -153,6 +153,7 @@ jobs:
       - run:
           name: test
           command: npm test
+          timeout: 11m
       - run:
           name: eslint
           command: npm run lint
