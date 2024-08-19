@@ -36,11 +36,11 @@ $ npm i @lumigo/tracer
 $ yarn add @lumigo/tracer
 ```
 
-* Next, wrap your `handler` in Lumigo's `trace` function (note: replace `YOUR-TOKEN-HERE` with your Lumigo API token):
+* Next, wrap your `handler` in Lumigo's `trace` function:
 
 ```javascript
 // javascript
-const lumigo = require('@lumigo/tracer')({ token: 'YOUR-TOKEN-HERE' })
+const lumigo = require('@lumigo/tracer')()
 
 const myHandler = async (event, context, callback) => { ... }
 
@@ -51,7 +51,7 @@ exports.handler = lumigo.trace(myHandler)
 // typescript
 import lumigo from '@lumigo/tracer';
 
-const tracer = lumigo({ token: 'YOUR-TOKEN-HERE' });
+const tracer = lumigo();
 
 export const handler = tracer.trace(async (event, context) => {
   ...
@@ -73,11 +73,20 @@ You can read more about it [here](https://www.typescriptlang.org/tsconfig#esModu
 
 * Your function is now fully instrumented
 
+## Connect Your Lumigo Account
+Set your Lumigo token as the `LUMIGO_TRACER_TOKEN` environment variable of your Lambda function; refer to the [Using AWS Lambda environment variables](https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html) documentation for more information. Your Lumigo token is available in `Settings -> Tracing -> Lumigo Token for Tracing`, see the [Lumigo Tokens](https://docs.lumigo.io/docs/lumigo-tokens) documentation.
+
+We advise you to store secrets such as your LUMIGO_TRACER_TOKEN securely; refer to AWS Lambda's [Securing environment variables](https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html#configuration-envvars-encryption) documentation for guidance on keeping the values of your Lambda environment variables secure.
 ## Configuration
 
 `@lumigo/tracer` offers several different configuration options. Pass these to the Lambda function as environment variables:
 
-* `LUMIGO_DEBUG=TRUE` - Enables debug logging
+* `LUMIGO_TRACER_TOKEN` - Your Lumigo token, used for authentication. 
+  It can also be passed to the tracer as a parameter:
+  ```javascript
+  const lumigo = require('@lumigo/tracer')({ token: 'YOUR-TOKEN-HERE' });
+  ```
+* `LUMIGO_DEBUG=TRUE` - Enables debug logging.
 * `LUMIGO_SECRET_MASKING_REGEX='["regex1", "regex2"]'` - Prevents Lumigo from sending keys that match the supplied regular expressions. All regular expressions are case-insensitive. By default, Lumigo applies the following regular expressions: `[".*pass.*", ".*key.*", ".*secret.*", ".*credential.*", ".*passphrase.*"]`.
   * We support more granular masking using the following parameters. If not given, the above configuration is the fallback: `LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_BODIES`, `LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_HEADERS`, `LUMIGO_SECRET_MASKING_REGEX_HTTP_RESPONSE_BODIES`, `LUMIGO_SECRET_MASKING_REGEX_HTTP_RESPONSE_HEADERS`, `LUMIGO_SECRET_MASKING_REGEX_HTTP_QUERY_PARAMS`.
 * `LUMIGO_SECRET_MASKING_EXACT_PATH='["key1.key2", "key3.key4"]'` - Prevents Lumigo from sending keys that match the supplied path (we support nested fields). All paths are case-insensitive.
@@ -85,13 +94,14 @@ You can read more about it [here](https://www.typescriptlang.org/tsconfig#esModu
 * `LUMIGO_PROPAGATE_W3C=TRUE` - Add W3C TraceContext headers to outgoing HTTP requests. This enables uninterrupted transactions with applications traced with OpenTelemetry.
 * `LUMIGO_SWITCH_OFF=TRUE` - In the event a critical issue arises, this turns off all actions that Lumigo takes in response to your code. This happens without a deployment, and is picked up on the next function run once the environment variable is present.
 * `LUMIGO_AUTO_TAG=key1.key2,key3` - Configure execution tags that will be driven directly from the event for the supplied key (we support nested fields).
+* `LUMIGO_STEP_FUNCTION=TRUE` - for Lambda functions that are triggered by your step function’s state machine.
 
 ### Step Functions
 
 If your function is part of a set of step functions, you can add the flag `step_function: true` to the Lumigo tracer import. Alternatively, you can configure the step function using an environment variable `LUMIGO_STEP_FUNCTION=True`. When this is active, Lumigo tracks all states in the step function in a single transaction, easing debugging and observability.
 
 ```javascript
-const lumigo = require('@lumigo/tracer')({ token: 'DEADBEEF', step_function: true })
+const lumigo = require('@lumigo/tracer')({ step_function: true })
 ```
 
 Note: the tracer adds the key `"_lumigo"` to the return value of the function.
