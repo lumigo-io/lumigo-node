@@ -101,7 +101,7 @@ We advise you to store secrets such as your LUMIGO_TRACER_TOKEN securely; refer 
 If your function is part of a set of step functions, you can add the flag `step_function: true` to the Lumigo tracer import. Alternatively, you can configure the step function using an environment variable `LUMIGO_STEP_FUNCTION=True`. When this is active, Lumigo tracks all states in the step function in a single transaction, easing debugging and observability.
 
 ```javascript
-const lumigo = require('@lumigo/tracer')({ token: 'DEADBEEF', step_function: true })
+const lumigo = require('@lumigo/tracer')({ step_function: true })
 ```
 
 Note: the tracer adds the key `"_lumigo"` to the return value of the function.
