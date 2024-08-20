@@ -29,7 +29,6 @@ describe.skip('end-to-end lumigo-node', () => {
   });
 
   test('real: async rejected', done => {
-    jest.setTimeout(30000);
     const edgeHost = 'kzc0w7k50d.execute-api.eu-west-1.amazonaws.com';
     const switchOff = false;
     const lumigo = require('./')({ token, edgeHost, switchOff });
@@ -65,10 +64,9 @@ describe.skip('end-to-end lumigo-node', () => {
       clientContext,
       callback,
     });
-  });
+  }, 30000);
 
   test('real: async resolved', done => {
-    jest.setTimeout(30000);
     const edgeHost = 'kzc0w7k50d.execute-api.eu-west-1.amazonaws.com';
     const switchOff = false;
     const lumigo = require('./')({ token, edgeHost, switchOff });
@@ -104,10 +102,9 @@ describe.skip('end-to-end lumigo-node', () => {
       environment,
       callback,
     });
-  });
+  }, 30000);
 
   test('real: async callback', done => {
-    jest.setTimeout(30000);
     const edgeHost = 'kzc0w7k50d.execute-api.eu-west-1.amazonaws.com';
     const switchOff = false;
     const lumigo = require('./')({ token, edgeHost, switchOff });
@@ -143,10 +140,9 @@ describe.skip('end-to-end lumigo-node', () => {
       environment,
       callback,
     });
-  });
+  }, 30000);
 
   test('real: non async callback', done => {
-    jest.setTimeout(30000);
     const edgeHost = 'kzc0w7k50d.execute-api.eu-west-1.amazonaws.com';
     const switchOff = false;
     const lumigo = require('./')({ token, edgeHost, switchOff });
@@ -183,10 +179,9 @@ describe.skip('end-to-end lumigo-node', () => {
       environment,
       callback,
     });
-  });
+  }, 30000);
 
   test('real: non async error thrown', done => {
-    jest.setTimeout(30000);
     const edgeHost = 'kzc0w7k50d.execute-api.eu-west-1.amazonaws.com';
     const switchOff = false;
     // XXX Trying out the old way of instantiating the tracer.
@@ -212,10 +207,9 @@ describe.skip('end-to-end lumigo-node', () => {
       environment,
       callback,
     });
-  });
+  }, 30000);
 
   test('real: Node.js 10.x https.request(url...)', done => {
-    jest.setTimeout(30000);
     const edgeHost = 'kzc0w7k50d.execute-api.eu-west-1.amazonaws.com';
     const switchOff = false;
     const lumigo = require('./')({ token, edgeHost });
@@ -245,10 +239,9 @@ describe.skip('end-to-end lumigo-node', () => {
       environment,
       callback,
     });
-  });
+  }, 30000);
 
   test('real: Node.js 10.x https.get(url, cb)', done => {
-    jest.setTimeout(30000);
     const edgeHost = 'kzc0w7k50d.execute-api.eu-west-1.amazonaws.com';
     const switchOff = false;
     const lumigo = require('./')({ token, edgeHost });
@@ -278,10 +271,9 @@ describe.skip('end-to-end lumigo-node', () => {
       environment,
       callback,
     });
-  });
+  }, 30000);
 
   test('real: Node.js 10.x https.get(url)', done => {
-    jest.setTimeout(30000);
     const edgeHost = 'kzc0w7k50d.execute-api.eu-west-1.amazonaws.com';
     const switchOff = false;
     const lumigo = require('./')({ token, edgeHost, debug: false });
@@ -313,10 +305,9 @@ describe.skip('end-to-end lumigo-node', () => {
       environment,
       callback,
     });
-  });
+  }, 30000);
 
   test('real: node-fetch', done => {
-    jest.setTimeout(30000);
     const edgeHost = 'kzc0w7k50d.execute-api.eu-west-1.amazonaws.com';
     const switchOff = false;
     const lumigo = require('./')({ token, edgeHost });
@@ -343,7 +334,7 @@ describe.skip('end-to-end lumigo-node', () => {
       environment,
       callback,
     });
-  });
+  }, 30000);
 });
 
 const getRandomString = evenNrChars =>
