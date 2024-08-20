@@ -23,6 +23,7 @@ describe('index', () => {
   });
 
   test('execution tags - 2 versions of tracer - layer and manual', async () => {
+    jest.setTimeout(15000);
     const originDirPath = __dirname;
     const dupDirPath = `${originDirPath}Dup`;
     const layerPath = `${dupDirPath}/index.ts`;
@@ -51,7 +52,7 @@ describe('index', () => {
     } finally {
       await fsExtra.remove(dupDirPath);
     }
-  }, 20000);
+  });
 
   test('execution tags - async handler', async () => {
     const { context } = new HandlerInputsBuilder().build();
