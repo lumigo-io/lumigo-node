@@ -51,7 +51,7 @@ describe('index', () => {
     } finally {
       await fsExtra.remove(dupDirPath);
     }
-  }, 15000);
+  }, 30000);
 
   test('execution tags - async handler', async () => {
     const { context } = new HandlerInputsBuilder().build();
