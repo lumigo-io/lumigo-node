@@ -28,11 +28,14 @@ fi
 mkdir -p ~/.aws
 echo ${KEY} | gpg --batch -d --passphrase-fd 0 ${enc_location} > ~/.aws/credentials
 
+echo "Creating layer file to be included in the semantic-release"
+./scripts/prepare_layer_files.sh
+
 echo "Push to NPM"
 echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
 npm run semantic-release
 
-echo "Creating layer file"
+echo "Creating layer file again so the tarball will have the right version number"
 ./scripts/prepare_layer_files.sh
 
 echo "Creating lumigo-node layer"
