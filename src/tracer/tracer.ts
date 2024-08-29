@@ -128,7 +128,7 @@ export const trace =
     };
 
     if (isResponseStreamFunction) {
-      (decoratedUserHandler)[HANDLER_STREAMING] = STREAM_RESPONSE;
+      decoratedUserHandler[HANDLER_STREAMING] = STREAM_RESPONSE;
     }
     return decoratedUserHandler;
   };
