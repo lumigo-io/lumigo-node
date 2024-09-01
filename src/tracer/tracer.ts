@@ -52,9 +52,7 @@ export const LEAK_MESSAGE =
 export const trace =
   ({ token, debug, edgeHost, switchOff, stepFunction }: TraceOptions) =>
   (userHandler: Handler) => {
-    const isResponseStreamFunction =
-      userHandler[HANDLER_STREAMING] !== undefined &&
-      userHandler[HANDLER_STREAMING] === STREAM_RESPONSE;
+    const isResponseStreamFunction = userHandler[HANDLER_STREAMING] === STREAM_RESPONSE;
     const decoratedUserHandler = async <Event = any>(
       event: Event,
       context?: Context,
