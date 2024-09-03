@@ -79,9 +79,8 @@ describe('payloadStringify', () => {
   test('handles BigInt', () => {
     const result = payloadStringify({ some: BigInt(345) });
 
-    expect(result).toEqual("{\"some\":\"345\"}");
+    expect(result).toEqual('{"some":"345"}');
   });
-
 
   test('payloadStringify -> truncate all', () => {
     const payload = { a: 2, b: 3 };
