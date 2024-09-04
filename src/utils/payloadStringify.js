@@ -194,6 +194,12 @@ export const payloadStringify = (
     const type = typeof value;
     const isObj = type === 'object';
     const isStr = type === 'string';
+    const isBigInt = type === 'bigint';
+
+    if (isBigInt) {
+      return value.toString();
+    }
+
     const shouldSkipSecretScrub =
       skipScrubPath &&
       skipScrubPath[skipScrubPath.length - 1] === key &&
