@@ -624,6 +624,22 @@ describe('fetch', () => {
         },
       },
     ],
+    [
+      {
+        input: 'https://example.com',
+        init: {
+          method: 'POST',
+          headers: null,
+          // Unsupported body type
+          body: 123,
+        },
+        expectedUrl: 'https://example.com',
+        expectedOptions: {
+          method: 'POST',
+          headers: {},
+        },
+      },
+    ],
     // TODO: Test FormData body
     // TODO: Test ReadableStream body
   ])(

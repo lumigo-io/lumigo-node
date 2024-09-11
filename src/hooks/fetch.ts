@@ -359,7 +359,7 @@ export class FetchInstrumentation {
       });
     }
     // Handle Record<string, string | ReadonlyArray<string>>
-    else if (typeof headers === 'object') {
+    else if (headers && typeof headers === 'object' && !Array.isArray(headers)) {
       Object.entries(headers).forEach(([key, value]) => {
         if (Array.isArray(value)) {
           // Join array elements into a single string
