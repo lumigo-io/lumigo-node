@@ -4,16 +4,6 @@ describe('GlobalDurationTimer', () => {
   function timeout(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
-
-  // Ensure the timer is reset before and after each test to prevent state leakage.
-  beforeEach(() => {
-    GlobalDurationTimer.reset(); // Reset before each test
-  });
-
-  afterEach(() => {
-    GlobalDurationTimer.reset(); // Reset after each test to clean up
-  });
-
   test('GlobalDurationTimer => simple flow', async () => {
     GlobalDurationTimer.start();
     await timeout(10);
