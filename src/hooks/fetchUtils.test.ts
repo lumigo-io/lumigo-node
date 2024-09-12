@@ -1,7 +1,14 @@
 import { NODE_MAJOR_VERSION } from '../../testUtils/nodeVersion';
 import { FetchInstrumentation } from './fetch';
 
-if (NODE_MAJOR_VERSION >= 18)
+// Conditionally skip the test suite
+if (NODE_MAJOR_VERSION < 18) {
+  describe.skip('fetchUtils.skip', () => {
+    it('should not run on Node.js versions less than 18', () => {
+      // test cases here
+    });
+  });
+} else {
   describe('fetchUtils', () => {
     test('Test convertHeadersToKeyValuePairs - Headers input', () => {
       // @ts-ignore
@@ -219,3 +226,4 @@ if (NODE_MAJOR_VERSION >= 18)
       }
     );
   });
+}
