@@ -65,10 +65,7 @@ describe('fetch', () => {
   test.each([...cases])(
     'Test basic http span creation: %p',
     async ({ method, protocol, host, reqHeaders, reqBody, resStatusCode, resHeaders, resBody }) => {
-      // Handle 304 or other status codes that shouldn't have a body
-      const bodyForMock = resStatusCode === 304 ? null : resBody;
-
-      fetchMock.mockResponseOnce(bodyForMock, {
+      fetchMock.mockResponseOnce(resBody, {
         status: resStatusCode,
         headers: resHeaders,
       });
@@ -83,8 +80,7 @@ describe('fetch', () => {
         body: reqBody,
       });
       const body = await response.text();
-      // Ensure that a 304 or similar response has no body
-      if (resBody === undefined || resStatusCode === 304) {
+      if (resBody === undefined) {
         expect(body).toEqual('');
       } else {
         expect(body).toEqual(resBody);
@@ -128,12 +124,10 @@ describe('fetch', () => {
       expect(responseData.statusCode).toEqual(resStatusCode);
       expect(responseData.headers).toEqual(responseHeaders);
       expect(responseData.headers).toEqual(resHeaders);
-
-      // Ensure that a 304 or similar response has no body
-      if (resBody === undefined || resStatusCode === 304) {
-        expect(body).toEqual('');
+      if (resBody === undefined) {
+        expect(responseData.body).toEqual('');
       } else {
-        expect(body).toEqual(resBody);
+        expect(responseData.body).toEqual(resBody);
       }
     }
   );
@@ -611,38 +605,6 @@ describe('fetch', () => {
         expectedOptions: {
           method: 'PUT',
           headers: { 'content-type': 'application/xml' },
-        },
-      },
-    ],
-    [
-      {
-        input: 'https://example.com',
-        init: {
-          method: 'POST',
-          headers: { 'Set-Cookie': ['sessionId=abc123; Path=/', 'theme=light; Path=/'] },
-          // Unsupported body type
-          body: 123,
-        },
-        expectedUrl: 'https://example.com',
-        expectedOptions: {
-          method: 'POST',
-          headers: { 'Set-Cookie': 'sessionId=abc123; Path=/, theme=light; Path=/' },
-        },
-      },
-    ],
-    [
-      {
-        input: 'https://example.com',
-        init: {
-          method: 'POST',
-          headers: null,
-          // Unsupported body type
-          body: 123,
-        },
-        expectedUrl: 'https://example.com',
-        expectedOptions: {
-          method: 'POST',
-          headers: {},
         },
       },
     ],

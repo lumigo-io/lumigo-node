@@ -335,43 +335,31 @@ export class FetchInstrumentation {
   /**
    * Converts the headers object to a key-value pair object.
    * Fetch library uses multiple format to represent headers, this function will convert them all to a key-value pair object.
-   * @param {string[][] | Record<string, string | ReadonlyArray<string>> | Headers} headers Headers object as used by the fetch library
+   * @param {[string, string][] | Record<string, string> | Headers} headers Headers object as used by the fetch library
    * @returns {Record<string, string>} The headers as a key-value pair object
    * @private
    */
   private static convertHeadersToKeyValuePairs(
     // @ts-ignore
-    headers: string[][] | Record<string, string | ReadonlyArray<string>> | Headers
+    headers: [string, string][] | Record<string, string> | Headers
   ): Record<string, string> {
-    const headersObject: Record<string, string> = {};
-
-    // Handle Headers object
     // @ts-ignore
     if (headers instanceof Headers) {
+      const headersObject: Record<string, string> = {};
       headers.forEach((value, key) => {
         headersObject[key] = value;
       });
+      return headersObject;
     }
-    // Handle string[][] (array of key-value pairs)
-    else if (Array.isArray(headers)) {
+    if (Array.isArray(headers)) {
+      const headersObject: Record<string, string> = {};
       headers.forEach(([key, value]) => {
         headersObject[key] = value;
       });
-    }
-    // Handle Record<string, string | ReadonlyArray<string>>
-    else if (headers && typeof headers === 'object') {
-      Object.entries(headers).forEach(([key, value]) => {
-        if (Array.isArray(value)) {
-          // Join array elements into a single string
-          headersObject[key] = value.join(', ');
-        } else {
-          // @ts-ignore
-          headersObject[key] = value;
-        }
-      });
+      return headersObject;
     }
 
-    return headersObject; // Ensure the function always returns headersObject
+    return headers;
   }
 
   /**
