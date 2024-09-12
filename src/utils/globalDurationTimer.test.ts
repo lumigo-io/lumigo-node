@@ -2,6 +2,8 @@ import { GlobalDurationTimer } from './globalDurationTimer';
 
 describe('GlobalDurationTimer', () => {
   function timeout(ms) {
+    const timer = setTimeout(() => {}, ms);
+    timer.unref(); // Ensures this timeout won't block the event loop from exiting
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
