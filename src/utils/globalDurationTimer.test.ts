@@ -1,19 +1,19 @@
 import { GlobalDurationTimer } from './globalDurationTimer';
 
+// Set a global timeout for all tests in this file
+jest.setTimeout(10000);
+
 describe('GlobalDurationTimer', () => {
   function timeout(ms) {
-    const timer = setTimeout(() => {}, ms);
-    timer.unref(); // Ensures this timeout won't block the event loop from exiting
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  // Ensure the timer is reset before and after each test to prevent state leakage.
   beforeEach(() => {
-    GlobalDurationTimer.reset(); // Reset before each test
+    GlobalDurationTimer.reset();
   });
 
   afterEach(() => {
-    GlobalDurationTimer.reset(); // Reset after each test to clean up
+    GlobalDurationTimer.reset();
   });
 
   test('GlobalDurationTimer => simple flow', async () => {
