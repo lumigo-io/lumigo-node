@@ -1,6 +1,71 @@
 import { FetchInstrumentation } from './fetch';
+import { convertHeadersToKeyValuePairs } from './fetchUtils';
 
-describe('fetch', () => {
+describe('fetchUtils', () => {
+  test('Test convertHeadersToKeyValuePairs - Headers input', () => {
+    // @ts-ignore
+    const headers = new Headers({
+      'content-type': 'application/json',
+      'content-length': '12345',
+    });
+    // @ts-ignore
+    const parsedHeaders = convertHeadersToKeyValuePairs(headers);
+    expect(parsedHeaders).toEqual({
+      'content-type': 'application/json',
+      'content-length': '12345',
+    });
+  });
+
+  test('Test convertHeadersToKeyValuePairs - Record<string, string> input', () => {
+    const headers = {
+      'content-type': 'application/json',
+      'content-length': '12345',
+    };
+    // @ts-ignore
+    const parsedHeaders = convertHeadersToKeyValuePairs(headers);
+    expect(parsedHeaders).toEqual({
+      'content-type': 'application/json',
+      'content-length': '12345',
+    });
+  });
+
+  test('Test convertHeadersToKeyValuePairs - string[][] input', () => {
+    const headers = [
+      ['content-type', 'application/json'],
+      ['content-length', '12345'],
+    ];
+    // @ts-ignore
+    const parsedHeaders = convertHeadersToKeyValuePairs(headers);
+    expect(parsedHeaders).toEqual({
+      'content-type': 'application/json',
+      'content-length': '12345',
+    });
+  });
+
+  test('Test addHeadersToFetchArguments - only input given', () => {
+    const expectedHeaders = {
+      'content-type': 'application/json',
+      'content-length': '12345',
+    };
+    const options = {
+      method: 'GET',
+      headers: expectedHeaders,
+    };
+    // @ts-ignore
+    const input = 'https://example.com';
+    const init = undefined;
+    // @ts-ignore
+    const { input: newInput, init: newInit } = FetchInstrumentation.addHeadersToFetchArguments({
+      input,
+      init,
+      options,
+    });
+    expect(newInput).toEqual(input);
+    expect(newInit).toEqual({
+      headers: expectedHeaders,
+    });
+  });
+
   test.each([
     [
       {

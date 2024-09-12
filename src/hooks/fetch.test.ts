@@ -321,6 +321,7 @@ describe('fetch', () => {
   test('Test response body with binary file', async () => {
     // @ts-ignore
     const responseBody = new Blob(['Blob contents']);
+    // @ts-ignore
     fetchMock.mockResponseOnce(responseBody, {
       status: 200,
       headers: { 'content-type': 'application/json' },
@@ -448,46 +449,6 @@ describe('fetch', () => {
     expect(responseData.statusCode).toEqual(responseStatusCode);
     expect(responseData.headers).toEqual(responseHeaders);
     expect(responseData.body).toEqual(responseBody);
-  });
-
-  test('Test convertHeadersToKeyValuePairs - Headers input', () => {
-    // @ts-ignore
-    const headers = new Headers({
-      'content-type': 'application/json',
-      'content-length': '12345',
-    });
-    // @ts-ignore
-    const parsedHeaders = FetchInstrumentation.convertHeadersToKeyValuePairs(headers);
-    expect(parsedHeaders).toEqual({
-      'content-type': 'application/json',
-      'content-length': '12345',
-    });
-  });
-
-  test('Test convertHeadersToKeyValuePairs - Record<string, string> input', () => {
-    const headers = {
-      'content-type': 'application/json',
-      'content-length': '12345',
-    };
-    // @ts-ignore
-    const parsedHeaders = FetchInstrumentation.convertHeadersToKeyValuePairs(headers);
-    expect(parsedHeaders).toEqual({
-      'content-type': 'application/json',
-      'content-length': '12345',
-    });
-  });
-
-  test('Test convertHeadersToKeyValuePairs - string[][] input', () => {
-    const headers = [
-      ['content-type', 'application/json'],
-      ['content-length', '12345'],
-    ];
-    // @ts-ignore
-    const parsedHeaders = FetchInstrumentation.convertHeadersToKeyValuePairs(headers);
-    expect(parsedHeaders).toEqual({
-      'content-type': 'application/json',
-      'content-length': '12345',
-    });
   });
 
   test('Test addHeadersToFetchArguments - only input given', () => {
