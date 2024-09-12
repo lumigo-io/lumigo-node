@@ -608,6 +608,38 @@ describe('fetch', () => {
         },
       },
     ],
+    [
+      {
+        input: 'https://example.com',
+        init: {
+          method: 'POST',
+          headers: { 'Set-Cookie': ['sessionId=abc123; Path=/', 'theme=light; Path=/'] },
+          // Unsupported body type
+          body: 123,
+        },
+        expectedUrl: 'https://example.com',
+        expectedOptions: {
+          method: 'POST',
+          headers: { 'Set-Cookie': 'sessionId=abc123; Path=/, theme=light; Path=/' },
+        },
+      },
+    ],
+    [
+      {
+        input: 'https://example.com',
+        init: {
+          method: 'POST',
+          headers: null,
+          // Unsupported body type
+          body: 123,
+        },
+        expectedUrl: 'https://example.com',
+        expectedOptions: {
+          method: 'POST',
+          headers: {},
+        },
+      },
+    ],
     // TODO: Test FormData body
     // TODO: Test ReadableStream body
   ])(
