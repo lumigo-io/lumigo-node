@@ -1,7 +1,6 @@
 import { BaseHttp, ParseHttpRequestOptions, RequestData, UrlAndRequestOptions } from './baseHttp';
 import * as logger from '../logger';
 import { getEventEntitySize, safeExecuteAsync } from '../utils';
-import { convertHeadersToKeyValuePairs } from './fetchUtils';
 
 interface ResponseData {
   headers?: Record<string, string>;
@@ -267,14 +266,14 @@ export class FetchInstrumentation {
     } else if (input instanceof Request) {
       url = input.url;
       options.method = input.method || 'GET';
-      options.headers = convertHeadersToKeyValuePairs(input.headers);
+      options.headers = FetchInstrumentation.convertHeadersToKeyValuePairs(input.headers);
     }
 
     if (init) {
       options.method = init.method || options.method || 'GET';
       options.headers = {
         ...options.headers,
-        ...convertHeadersToKeyValuePairs(init.headers),
+        ...FetchInstrumentation.convertHeadersToKeyValuePairs(init.headers),
       };
     }
 
@@ -331,6 +330,36 @@ export class FetchInstrumentation {
     }
 
     return { url, options };
+  }
+
+  /**
+   * Converts the headers object to a key-value pair object.
+   * Fetch library uses multiple format to represent headers, this function will convert them all to a key-value pair object.
+   * @param {[string, string][] | Record<string, string> | Headers} headers Headers object as used by the fetch library
+   * @returns {Record<string, string>} The headers as a key-value pair object
+   * @private
+   */
+  private static convertHeadersToKeyValuePairs(
+    // @ts-ignore
+    headers: [string, string][] | Record<string, string> | Headers
+  ): Record<string, string> {
+    // @ts-ignore
+    if (headers instanceof Headers) {
+      const headersObject: Record<string, string> = {};
+      headers.forEach((value, key) => {
+        headersObject[key] = value;
+      });
+      return headersObject;
+    }
+    if (Array.isArray(headers)) {
+      const headersObject: Record<string, string> = {};
+      headers.forEach(([key, value]) => {
+        headersObject[key] = value;
+      });
+      return headersObject;
+    }
+
+    return headers;
   }
 
   /**
