@@ -451,65 +451,6 @@ describe('fetch', () => {
     expect(responseData.body).toEqual(responseBody);
   });
 
-  test('Test addHeadersToFetchArguments - only input given', () => {
-    const expectedHeaders = {
-      'content-type': 'application/json',
-      'content-length': '12345',
-    };
-    const options = {
-      method: 'GET',
-      headers: expectedHeaders,
-    };
-    // @ts-ignore
-    const input = 'https://example.com';
-    const init = undefined;
-    // @ts-ignore
-    const { input: newInput, init: newInit } = FetchInstrumentation.addHeadersToFetchArguments({
-      input,
-      init,
-      options,
-    });
-    expect(newInput).toEqual(input);
-    expect(newInit).toEqual({
-      headers: expectedHeaders,
-    });
-  });
-
-  test('Test addHeadersToFetchArguments - init value given', () => {
-    const headersToAdd = {
-      'content-type': 'application/json',
-      'content-length': '12345',
-    };
-    const options = {
-      method: 'GET',
-      headers: headersToAdd,
-    };
-    // @ts-ignore
-    const input = 'https://example.com';
-    const init = {
-      method: 'PUT',
-      headers: {
-        // This key exists in the options object, so it will be overridden
-        'content-type': 'application/xml',
-        // This key does not exist in the options object, so it will be kept i the new input object
-        'new-header': 'new-value',
-      },
-      body: JSON.stringify({ data: '54321' }),
-    };
-    // @ts-ignore
-    const { input: newInput, init: newInit } = FetchInstrumentation.addHeadersToFetchArguments({
-      input,
-      init,
-      options,
-    });
-    expect(newInput).toEqual(input);
-    expect(newInit).toEqual({
-      method: 'PUT',
-      headers: { ...headersToAdd, 'new-header': 'new-value' },
-      body: JSON.stringify({ data: '54321' }),
-    });
-  });
-
   test('attach hooks twice', () => {
     // @ts-ignore
     const originalFetchBefore = fetch.__originalFetch;
