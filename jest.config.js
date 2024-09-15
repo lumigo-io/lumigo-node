@@ -17,7 +17,6 @@ module.exports = () => {
     // fetch is not supported in Node.js versions lower than 18,
     // so no need to check coverage for that version
     collectCoverageFrom.push('!./src/hooks/fetch.ts');
-    collectCoverageFrom.push('!./src/hooks/fetchUtils.ts');
   }
 
   if (NODE_MAJOR_VERSION > 14) {
