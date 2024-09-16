@@ -9,8 +9,7 @@ module.exports = () => {
   ];
   let coverageThreshold = {
     global: {
-      // lines: 99.6,
-      lines: 1,
+      lines: 50,
     },
   };
 
@@ -23,8 +22,7 @@ module.exports = () => {
   if (NODE_MAJOR_VERSION > 14) {
     // Some of our unit tests don't work on Node.js grater than 14,
     // so the coverage is lower when running with these versions
-    // coverageThreshold.global.lines = 98.3;
-    coverageThreshold.global.lines = 1;
+    coverageThreshold.global.lines = 50;
   }
 
   return {
@@ -33,23 +31,7 @@ module.exports = () => {
     coverageDirectory: './coverage/',
     coverageThreshold: coverageThreshold,
     modulePaths: ['<rootDir>/dist'],
-    roots: [
-      // '<rootDir>/src/events',
-      // '<rootDir>/src/guards',
-      // '<rootDir>/src/parsers',
-      // '<rootDir>/src/spans',
-      // '<rootDir>/src/tools',
-      // '<rootDir>/src/tracer',
-      // '<rootDir>/src/types',
-      // '<rootDir>/src/utils',
-      '<rootDir>/src',
-    ],
-    // testMatch: [
-    //   '**/?(baseHttp|http|httpUtils).test.js',
-    // ],
-    // testMatch: [
-    //   '**/?(extender|globals|httpSpansAgent|index|logger|reporter|typescript|utils).test.[jt]s',
-    // ],
+    roots: ['<rootDir>/src'],
     setupFilesAfterEnv: ['./testUtils/jest.setup.js'],
     globalSetup: './testUtils/prismaSetup.js',
     silent: true,
