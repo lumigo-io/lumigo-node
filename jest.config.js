@@ -42,11 +42,14 @@ module.exports = () => {
       // '<rootDir>/src/tracer',
       // '<rootDir>/src/types',
       // '<rootDir>/src/utils',
-      '<rootDir>/src/hooks',
+      '<rootDir>/src',
     ],
     // testMatch: [
     //   '**/?(baseHttp|http|httpUtils).test.js',
     // ],
+    testMatch: [
+      '**/?(extender|globals|httpSpansAgent|index|logger|reporter|typescript|utils).test.[jt]s',
+    ],
     setupFilesAfterEnv: ['./testUtils/jest.setup.js'],
     globalSetup: './testUtils/prismaSetup.js',
     silent: true,
