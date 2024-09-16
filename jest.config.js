@@ -44,9 +44,9 @@ module.exports = () => {
       // '<rootDir>/src/utils',
       '<rootDir>/src/hooks',
     ],
-    testMatch: [
-      '**/?(baseHttp|http|httpUtils).test.js',
-    ],
+    // testMatch: [
+    //   '**/?(baseHttp|http|httpUtils).test.js',
+    // ],
     setupFilesAfterEnv: ['./testUtils/jest.setup.js'],
     globalSetup: './testUtils/prismaSetup.js',
     silent: true,
