@@ -44,6 +44,9 @@ module.exports = () => {
       // '<rootDir>/src/utils',
       '<rootDir>/src/hooks',
     ],
+    testMatch: [
+      '**/?(index|mongodb|mongodb3x|mongodb4x|msSql|mySql|neo4j|pg|prisma|redis).test.js',
+    ],
     setupFilesAfterEnv: ['./testUtils/jest.setup.js'],
     globalSetup: './testUtils/prismaSetup.js',
     silent: true,
