@@ -4,6 +4,7 @@ import { FetchInstrumentation } from './fetch';
 import { SpansContainer } from '../globals';
 
 // Note: With the latest version of axios, using jest-fetch-mock can cause some tests to fail.
+// Specifically, the parsing of the fetch Headers class is affected.
 // To work around this issue, we've moved those specific tests to a separate file (fetchUtils.test.ts).
 // This ensures that fetchMock.enableMocks() does not interfere with other tests.
 
