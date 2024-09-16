@@ -1,5 +1,9 @@
 import { NODE_MAJOR_VERSION } from '../../testUtils/nodeVersion';
 import { FetchInstrumentation } from './fetch';
+// Note: These tests should ideally be in fetch.test.ts.
+// However, they're not compatible with our fetch mock library (jest-fetch-mock),
+// so we've placed them here in fetchUtils.test.ts instead.
+// This ensures the tests run correctly without interference from the mock library.
 
 // Conditionally skip the test suite
 if (NODE_MAJOR_VERSION < 18) {
