@@ -47,9 +47,9 @@ module.exports = () => {
     // testMatch: [
     //   '**/?(baseHttp|http|httpUtils).test.js',
     // ],
-    testMatch: [
-      '**/?(extender|globals|httpSpansAgent|index|logger|reporter|typescript|utils).test.[jt]s',
-    ],
+    // testMatch: [
+    //   '**/?(extender|globals|httpSpansAgent|index|logger|reporter|typescript|utils).test.[jt]s',
+    // ],
     setupFilesAfterEnv: ['./testUtils/jest.setup.js'],
     globalSetup: './testUtils/prismaSetup.js',
     silent: true,
