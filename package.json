@@ -13,7 +13,7 @@
   "scripts": {
     "build": "rm -rf dist && tsc --build --force",
     "check-types": "tsc --noEmit",
-    "jest": "jest --runInBand --debug --detectOpenHandles --logHeapUsage",
+    "jest": "jest --debug --detectOpenHandles --logHeapUsage",
     "jest-detectOpenHandles": "jest --detectOpenHandles",
     "jest-traces": "node --trace-deprecation --trace-warnings node_modules/.bin/jest",
     "lint": "eslint ./src",
@@ -26,7 +26,7 @@
   "dependencies": {
     "@lumigo/node-core": "1.16.0",
     "agentkeepalive": "^4.1.4",
-    "axios": "1.7.5",
+    "axios": "1.7.7",
     "shimmer": "1.2.1",
     "utf8": "^3.0.0"
   },

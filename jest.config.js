@@ -33,7 +33,7 @@ module.exports = () => {
     coverageDirectory: './coverage/',
     coverageThreshold: coverageThreshold,
     modulePaths: ['<rootDir>/dist'],
-    roots: ['<rootDir>/src'],
+    roots: ['<rootDir>/src/events', '<rootDir>/src/utils'],
     setupFilesAfterEnv: ['./testUtils/jest.setup.js'],
     globalSetup: './testUtils/prismaSetup.js',
     silent: true,
