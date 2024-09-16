@@ -42,8 +42,8 @@ module.exports = () => {
       // '<rootDir>/src/tracer',
       // '<rootDir>/src/types',
       // '<rootDir>/src/utils',
-      '<rootDir>/src/hooks',
-      // '<rootDir>/src',
+      // '<rootDir>/src/hooks',
+      '<rootDir>/src',
     ],
     // testMatch: [
     //   '**/?(baseHttp|http|httpUtils).test.js',
