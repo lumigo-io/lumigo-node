@@ -13,7 +13,7 @@
   "scripts": {
     "build": "rm -rf dist && tsc --build --force",
     "check-types": "tsc --noEmit",
-    "jest": "jest --runInBand --verbose --debug --detectOpenHandles --logHeapUsage --showStackTrace",
+    "jest": "jest --runInBand --verbose --debug --detectOpenHandles --logHeapUsage",
     "jest-detectOpenHandles": "jest --detectOpenHandles",
     "jest-traces": "node --trace-deprecation --trace-warnings node_modules/.bin/jest",
     "lint": "eslint ./src",
