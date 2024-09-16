@@ -4,9 +4,7 @@ import { FetchInstrumentation } from './fetch';
 // Conditionally skip the test suite
 if (NODE_MAJOR_VERSION < 18) {
   describe.skip('fetchUtils.skip', () => {
-    it('should not run on Node.js versions less than 18', () => {
-      // test cases here
-    });
+    it('should not run on Node.js versions less than 18', () => {});
   });
 } else {
   describe('fetchUtils', () => {
