@@ -469,7 +469,7 @@ describe('fetch', () => {
     const input = 'https://example.com';
     const init = undefined;
     // @ts-ignore
-    const { input: newInput, init: newInit } = FetchInstrumentation.addHeadersToFetchArguments({
+    const { input: newInput, init: newInit } = FetchInstrumentation._addHeadersToFetchArguments({
       input,
       init,
       options,
@@ -502,7 +502,7 @@ describe('fetch', () => {
       body: JSON.stringify({ data: '54321' }),
     };
     // @ts-ignore
-    const { input: newInput, init: newInit } = FetchInstrumentation.addHeadersToFetchArguments({
+    const { input: newInput, init: newInit } = FetchInstrumentation._addHeadersToFetchArguments({
       input,
       init,
       options,

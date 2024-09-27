@@ -1,42 +1,9 @@
 import { BaseHttp, ParseHttpRequestOptions, RequestData, UrlAndRequestOptions } from './baseHttp';
 import * as logger from '../logger';
 import { getEventEntitySize, safeExecuteAsync } from '../utils';
+import { BaseFetch, FetchArguments, RequestExtenderContext } from './baseFetch';
 
-interface ResponseData {
-  headers?: Record<string, string>;
-  statusCode?: number;
-  body?: string;
-  // The time when all the response data was received, including all the body chunks
-  receivedTime?: number;
-  truncated?: boolean;
-  isNetworkError?: boolean;
-}
-
-interface RequestExtenderContext {
-  isTracedDisabled?: boolean;
-  awsRequestId?: string;
-  transactionId?: string;
-  requestRandomId?: string;
-  currentSpan?: any;
-  requestData?: RequestData;
-  // @ts-ignore
-  response?: Response;
-}
-
-interface FetchArguments {
-  // @ts-ignore
-  input: RequestInfo | URL;
-  // @ts-ignore
-  init?: RequestInit;
-}
-
-type FetchUrlAndRequestOptions = UrlAndRequestOptions & {
-  options: ParseHttpRequestOptions & {
-    body?: string;
-  };
-};
-
-export class FetchInstrumentation {
+export class FetchInstrumentation extends BaseFetch {
   /**
    * Starts the fetch instrumentation by attaching the hooks to the fetch function.
    * Note: safe to call even if the fetch instrumentation was already started / fetch is not available.
@@ -155,7 +122,7 @@ export class FetchInstrumentation {
     });
     const originalArgs: FetchArguments = { input, init };
     extenderContext.isTracedDisabled = true;
-    const { url, options } = await FetchInstrumentation.parseRequestArguments(originalArgs);
+    const { url, options } = await FetchInstrumentation._parseRequestArguments(originalArgs);
     const requestTracingData = BaseHttp.onRequestCreated({
       options,
       url,
@@ -194,7 +161,7 @@ export class FetchInstrumentation {
     let modifiedArgs: FetchArguments = { ...originalArgs };
     if (addedHeaders) {
       options.headers = headers;
-      modifiedArgs = FetchInstrumentation.addHeadersToFetchArguments({ ...modifiedArgs, options });
+      modifiedArgs = FetchInstrumentation._addHeadersToFetchArguments({ ...modifiedArgs, options });
     }
     extenderContext.isTracedDisabled = false;
 
@@ -224,7 +191,7 @@ export class FetchInstrumentation {
     }
 
     const clonedResponse = response.clone();
-    const responseData = FetchInstrumentation.convertResponseToResponseData(clonedResponse);
+    const responseData = FetchInstrumentation._convertResponseToResponseData(clonedResponse);
     const responseDataWriterHandler = BaseHttp.createResponseDataWriterHandler({
       transactionId,
       awsRequestId,
@@ -236,173 +203,5 @@ export class FetchInstrumentation {
     const bodyText = await clonedResponse.text();
     responseDataWriterHandler(['data', bodyText]);
     responseDataWriterHandler(['end']);
-  }
-
-  /**
-   * Parses the raw arguments passed to the fetch function and returns the URL and options object.
-   * @param {FetchArguments} args The raw fetch arguments
-   * @param {RequestInfo | URL} args.input The first argument (called input / resource) that is passed to the fetch command
-   * @param {RequestInit} args.init The second argument (called init / options) that is passed to the fetch command
-   * @returns {UrlAndRequestOptions} Our custom request options object containing the URL and options
-   * @private
-   */
-  private static async parseRequestArguments({
-    input,
-    init,
-  }: FetchArguments): Promise<FetchUrlAndRequestOptions> {
-    let url: string = undefined;
-    const options: ParseHttpRequestOptions & {
-      body?: string;
-    } = {
-      headers: {},
-      method: 'GET',
-    };
-
-    if (input instanceof URL) {
-      url = input.toString();
-    } else if (typeof input === 'string') {
-      url = input;
-      // @ts-ignore
-    } else if (input instanceof Request) {
-      url = input.url;
-      options.method = input.method || 'GET';
-      options.headers = FetchInstrumentation.convertHeadersToKeyValuePairs(input.headers);
-    }
-
-    if (init) {
-      options.method = init.method || options.method || 'GET';
-      options.headers = {
-        ...options.headers,
-        ...FetchInstrumentation.convertHeadersToKeyValuePairs(init.headers),
-      };
-    }
-
-    // Read the body from the request object, only if we shouldn't look in the init object
-    let body: string = undefined;
-    try {
-      // @ts-ignore
-      if (input instanceof Request && input.body && !init?.body) {
-        body = await input.clone().text();
-      }
-    } catch (e) {
-      logger.debug('Failed to read body from Request object', e);
-    }
-
-    // If we didn't get the body from the request object, get it from the init object
-    if (!body && init?.body) {
-      try {
-        // @ts-ignore
-        const decoder = new TextDecoder();
-        // @ts-ignore
-        if (init.body instanceof ReadableStream) {
-          const reader = init.body.getReader();
-          let result = '';
-          // Limiting the number of reads to prevent an infinite read loop
-          for (let i = 0; i < 10000; i++) {
-            const { done, value } = await reader.read();
-            if (done) {
-              break;
-            }
-            result += decoder.decode(value);
-          }
-          body = result;
-          // @ts-ignore
-        } else if (init.body instanceof Blob) {
-          body = await init.body.text();
-        } else if (init.body instanceof ArrayBuffer) {
-          body = decoder.decode(init.body);
-        } else if (typeof init.body === 'string') {
-          body = init.body;
-        } else {
-          // TODO: Implement FormData support
-          logger.debug('Unsupported request body type', typeof init.body);
-        }
-      } catch (e) {
-        logger.debug('Failed to read request body from Request object', {
-          error: e,
-          bodyObjectType: typeof init.body,
-        });
-      }
-    }
-
-    if (body) {
-      options.body = body;
-    }
-
-    return { url, options };
-  }
-
-  /**
-   * Converts the headers object to a key-value pair object.
-   * Fetch library uses multiple format to represent headers, this function will convert them all to a key-value pair object.
-   * @param {[string, string][] | Record<string, string> | Headers} headers Headers object as used by the fetch library
-   * @returns {Record<string, string>} The headers as a key-value pair object
-   * @private
-   */
-  private static convertHeadersToKeyValuePairs(
-    // @ts-ignore
-    headers: [string, string][] | Record<string, string> | Headers
-  ): Record<string, string> {
-    // @ts-ignore
-    if (headers instanceof Headers) {
-      const headersObject: Record<string, string> = {};
-      headers.forEach((value, key) => {
-        headersObject[key] = value;
-      });
-      return headersObject;
-    }
-    if (Array.isArray(headers)) {
-      const headersObject: Record<string, string> = {};
-      headers.forEach(([key, value]) => {
-        headersObject[key] = value;
-      });
-      return headersObject;
-    }
-
-    return headers;
-  }
-
-  /**
-   * Adds the headers found in the options object to the fetch arguments, and return the modified arguments.
-   * The original arguments will not be modified.
-   * @param {FetchArguments} args The original fetch arguments
-   * @param {ParseHttpRequestOptions} args.input The first argument (called input / resource) that is passed to the fetch command
-   * @param {RequestInit} args.init The second argument (called init / options) that is passed to the fetch command
-   * @param {ParseHttpRequestOptions} args.options Our custom request options object containing the headers to add to the fetch arguments
-   * @returns {FetchArguments} The modified fetch arguments with the headers added from the args.options object
-   */
-  private static addHeadersToFetchArguments({
-    input,
-    init,
-    options,
-  }: FetchArguments & { options: ParseHttpRequestOptions }): FetchArguments {
-    // The init headers take precedence over the input headers
-    // @ts-ignore
-    const newInit: RequestInit = init ? { ...init } : {};
-
-    if (options.headers) {
-      const currentHeaders = newInit.headers || {};
-      newInit.headers = { ...currentHeaders, ...options.headers };
-    }
-
-    return { input, init: newInit };
-  }
-
-  /**
-   * Converts the fetch response object instance to a custom response data object used by the rest of the lumigo tracer codebase.
-   * @param {Response} response
-   * @returns {ResponseData}
-   * @private
-   */
-  // @ts-ignore
-  private static convertResponseToResponseData(response: Response): ResponseData {
-    const headers = {};
-    response.headers.forEach((value, key) => {
-      headers[key] = value;
-    });
-    return {
-      headers,
-      statusCode: response.status,
-    };
   }
 }
