@@ -333,6 +333,17 @@ describe('payloadStringify', () => {
     ]);
   });
 
+  test('shallowMask -> requestBody -> LUMIGO_SECRET_MASKING_REGEX -> bad regex', () => {
+    utils.setDebug();
+    process.env[LUMIGO_SECRET_MASKING_REGEX] = '["a(a"]';
+    expect(shallowMask('requestBody', { a: 'b', aa: 'bla' })).toEqual({ a: 'b', aa: 'bla' });
+    expect(ConsoleWritesForTesting.getLogs()).toEqual([
+      expect.objectContaining({
+        msg: '#LUMIGO# - WARNING - "Failed to parse the given masking regex"',
+      }),
+    ]);
+  });
+
   test.each`
     envVarValue                                                                | event                                                                                                                                                                                                                                                                                                                                                                                                                          | expectedResults
     ${['["object.foo"]']}                                                      | ${[{ secret: { key: 'value' } }, { object: { foo: 'value' } }]}                                                                                                                                                                                                                                                                                                                                                                | ${JSON.stringify([{ secret: '****' }, { object: { foo: '****' } }])}

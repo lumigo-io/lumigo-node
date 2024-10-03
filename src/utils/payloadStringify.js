@@ -32,18 +32,27 @@ const keyToRegexes = (
   backwardCompRegexEnvVarName = LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP,
   regexesEnvVarName = LUMIGO_SECRET_MASKING_REGEX
 ) => {
-  if (process.env[backwardCompRegexEnvVarName]) {
-    const parseResponse = parseJsonFromEnvVar(backwardCompRegexEnvVarName, true);
-    if (parseResponse) {
-      regexesList = parseResponse;
+  const fallbackRegexesList = regexesList;
+
+  const tryParseEnvVar = (envVarName) => {
+    if (process.env[envVarName]) {
+      return parseJsonFromEnvVar(envVarName, true);
     }
-  } else if (process.env[regexesEnvVarName]) {
-    const parseResponse = parseJsonFromEnvVar(regexesEnvVarName, true);
-    if (parseResponse) {
-      regexesList = parseResponse;
-    }
+    return null;
+  };
+
+  // Try parsing backward compatibility or main environment variables
+  const regexes =
+    tryParseEnvVar(backwardCompRegexEnvVarName) || tryParseEnvVar(regexesEnvVarName) || regexesList;
+
+  try {
+    return regexes.map((x) => new RegExp(x, 'i'));
+  } catch (e) {
+    regexes.forEach((x) =>
+      invalidMaskingRegexWarning(`Error processing regex: ${x} - ${e.message}`)
+    );
+    return fallbackRegexesList.map((x) => new RegExp(x, 'i'));
   }
-  return regexesList.map((x) => new RegExp(x, 'i'));
 };
 
 export const keyToOmitRegexes = () => {
