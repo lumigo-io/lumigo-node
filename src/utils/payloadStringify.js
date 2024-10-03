@@ -48,9 +48,8 @@ const keyToRegexes = (
   try {
     return regexes.map((x) => new RegExp(x, 'i'));
   } catch (e) {
-    regexes.forEach((x) =>
-      invalidMaskingRegexWarning(`Error processing regex: ${x} - ${e.message}`)
-    );
+    invalidMaskingRegexWarning(e);
+    logger.warn('Fallback to default regexes list', { fallbackRegexesList });
     return fallbackRegexesList.map((x) => new RegExp(x, 'i'));
   }
 };
