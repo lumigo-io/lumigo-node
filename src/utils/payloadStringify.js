@@ -32,12 +32,19 @@ const keyToRegexes = (
   backwardCompRegexEnvVarName = LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP,
   regexesEnvVarName = LUMIGO_SECRET_MASKING_REGEX
 ) => {
+  logger.debug('Getting key to omit regexes', {
+    regexesList,
+    backwardCompRegexEnvVarName,
+    regexesEnvVarName,
+  });
   const fallbackRegexesList = regexesList;
 
   const tryParseEnvVar = (envVarName) => {
     if (process.env[envVarName]) {
+      logger.debug('Parsing regexes from environment variable', { envVarName });
       return parseJsonFromEnvVar(envVarName, true);
     }
+    logger.debug('Environment variable not found', { envVarName });
     return null;
   };
 
@@ -46,7 +53,10 @@ const keyToRegexes = (
     tryParseEnvVar(backwardCompRegexEnvVarName) || tryParseEnvVar(regexesEnvVarName) || regexesList;
 
   try {
-    return regexes.map((x) => new RegExp(x, 'i'));
+    logger.debug('Parsed regexes', { regexes });
+    const regexesExp = regexes.map((x) => new RegExp(x, 'i'));
+    logger.debug('Parsed regexes expressions', { regexesExp });
+    return regexesExp;
   } catch (e) {
     invalidMaskingRegexWarning(e);
     logger.warn('Fallback to default regexes list', { fallbackRegexesList });
@@ -258,8 +268,11 @@ const invalidMaskingRegexWarning = runOneTimeWrapper((e) => {
 });
 
 const shallowMaskByRegex = (payload, regexes) => {
+  logger.debug('Shallow masking payload by regexes', { payload, regexes });
   regexes = regexes || keyToOmitRegexes();
+
   if (isString(payload)) {
+    logger.debug('Shallow masking string payload');
     return payload;
   }
   if (typeof payload !== 'object') {
@@ -268,6 +281,7 @@ const shallowMaskByRegex = (payload, regexes) => {
   }
   return Object.keys(payload).reduce((acc, key) => {
     if (keyContainsRegex(regexes, key)) {
+      logger.debug('Shallow masking key', key);
       acc[key] = SCRUBBED_TEXT;
     } else {
       acc[key] = payload[key];
@@ -277,6 +291,7 @@ const shallowMaskByRegex = (payload, regexes) => {
 };
 
 export const shallowMask = (context, payload) => {
+  logger.debug('Shallow masking payload', { context, payload });
   let givenSecretRegexes = null;
   if (context === 'environment') {
     givenSecretRegexes = getEnvVarsMaskingRegex();
@@ -295,10 +310,13 @@ export const shallowMask = (context, payload) => {
   }
 
   if (givenSecretRegexes === LUMIGO_SECRET_MASKING_ALL_MAGIC) {
+    logger.debug('Shallow masking payload with LUMIGO_SECRET_MASKING_ALL_MAGIC');
     return SCRUBBED_TEXT;
   } else if (givenSecretRegexes) {
+    logger.debug('Shallow masking payload with given regexes', { givenSecretRegexes });
     try {
       givenSecretRegexes = JSON.parse(givenSecretRegexes);
+      logger.debug('Parsed given regexes', { givenSecretRegexes });
       givenSecretRegexes = givenSecretRegexes.map((x) => new RegExp(x, 'i'));
     } catch (e) {
       invalidMaskingRegexWarning(e);
