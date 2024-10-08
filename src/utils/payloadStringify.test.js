@@ -3,6 +3,7 @@ import {
   LUMIGO_SECRET_MASKING_ALL_MAGIC,
   LUMIGO_SECRET_MASKING_EXACT_PATH,
   LUMIGO_SECRET_MASKING_REGEX,
+  OMITTING_KEYS_REGEXES,
   LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP,
   LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_BODIES,
   LUMIGO_WHITELIST_KEYS_REGEXES,
@@ -296,6 +297,24 @@ describe('payloadStringify', () => {
   test('shallowMask -> requestBody -> regex', () => {
     process.env[LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_BODIES] = '[".*X.*"]';
     expect(shallowMask('requestBody', { a: 'b', aXy: 'bla' })).toEqual({ a: 'b', aXy: '****' });
+  });
+
+  test('shallowMask -> requestBody -> regex -> bypass', () => {
+    process.env[LUMIGO_SECRET_MASKING_REGEX] = OMITTING_KEYS_REGEXES;
+
+    expect(
+      shallowMask('environment', {
+        LUMIGO_SECRET_MASKING_REGEX: OMITTING_KEYS_REGEXES,
+        a: 'b',
+        secret: 'some secret',
+        password: 'some password',
+      })
+    ).toEqual({
+      LUMIGO_SECRET_MASKING_REGEX: OMITTING_KEYS_REGEXES,
+      a: 'b',
+      secret: '****',
+      password: '****',
+    });
   });
 
   test('shallowMask -> requestBody -> fallback', () => {

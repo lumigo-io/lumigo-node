@@ -268,6 +268,17 @@ const invalidMaskingRegexWarning = runOneTimeWrapper((e) => {
 });
 
 const shallowMaskByRegex = (payload, regexes) => {
+  const byPassMaskingKeys = [
+    'LUMIGO_SECRET_MASKING_REGEX',
+    'LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP',
+    'LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_BODIES',
+    'LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_HEADERS',
+    'LUMIGO_SECRET_MASKING_REGEX_HTTP_RESPONSE_BODIES',
+    'LUMIGO_SECRET_MASKING_REGEX_HTTP_RESPONSE_HEADERS',
+    'LUMIGO_SECRET_MASKING_REGEX_ENVIRONMENT_VARIABLES',
+    'LUMIGO_SECRET_MASKING_REGEX_HTTP_QUERY_PARAMS',
+    'LUMIGO_SECRET_MASKING_EXACT_PATH',
+  ];
   logger.debug('Shallow masking payload by regexes', { payload, regexes });
   regexes = regexes || keyToOmitRegexes();
 
@@ -280,7 +291,10 @@ const shallowMaskByRegex = (payload, regexes) => {
     return payload;
   }
   return Object.keys(payload).reduce((acc, key) => {
-    if (keyContainsRegex(regexes, key)) {
+    if (byPassMaskingKeys.includes(key)) {
+      logger.debug('Bypass masking key', key);
+      acc[key] = payload[key];
+    } else if (keyContainsRegex(regexes, key)) {
       logger.debug('Shallow masking key', key);
       acc[key] = SCRUBBED_TEXT;
     } else {
