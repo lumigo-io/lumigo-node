@@ -295,7 +295,7 @@ const shallowMaskByRegex = (payload, regexes) => {
 };
 
 export const shallowMask = (context, payload) => {
-  logger.debug('Shallow masking payload', { context, payload });
+  logger.debug('Shallow masking payload', { context, payloadKeys: Object.keys(payload) });
   let givenSecretRegexes = null;
   if (context === 'environment') {
     givenSecretRegexes = getEnvVarsMaskingRegex();
