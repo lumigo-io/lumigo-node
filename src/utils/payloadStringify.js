@@ -17,6 +17,7 @@ import {
   OMITTING_KEYS_REGEXES,
   parseJsonFromEnvVar,
   safeExecute,
+  BYPASS_MASKING_KEYS,
 } from '../utils';
 import { runOneTimeWrapper } from './functionUtils';
 
@@ -268,17 +269,6 @@ const invalidMaskingRegexWarning = runOneTimeWrapper((e) => {
 });
 
 const shallowMaskByRegex = (payload, regexes) => {
-  const byPassMaskingKeys = [
-    'LUMIGO_SECRET_MASKING_REGEX',
-    'LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP',
-    'LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_BODIES',
-    'LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_HEADERS',
-    'LUMIGO_SECRET_MASKING_REGEX_HTTP_RESPONSE_BODIES',
-    'LUMIGO_SECRET_MASKING_REGEX_HTTP_RESPONSE_HEADERS',
-    'LUMIGO_SECRET_MASKING_REGEX_ENVIRONMENT_VARIABLES',
-    'LUMIGO_SECRET_MASKING_REGEX_HTTP_QUERY_PARAMS',
-    'LUMIGO_SECRET_MASKING_EXACT_PATH',
-  ];
   logger.debug('Shallow masking payload by regexes', { payload, regexes });
   regexes = regexes || keyToOmitRegexes();
 
@@ -291,8 +281,8 @@ const shallowMaskByRegex = (payload, regexes) => {
     return payload;
   }
   return Object.keys(payload).reduce((acc, key) => {
-    if (byPassMaskingKeys.includes(key)) {
-      logger.debug('Bypass masking key', key);
+    if (BYPASS_MASKING_KEYS.includes(key)) {
+      logger.debug('Skipping masking of a Lumigo env-var', key);
       acc[key] = payload[key];
     } else if (keyContainsRegex(regexes, key)) {
       logger.debug('Shallow masking key', key);

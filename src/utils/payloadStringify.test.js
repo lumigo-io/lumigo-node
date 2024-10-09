@@ -300,20 +300,19 @@ describe('payloadStringify', () => {
   });
 
   test('shallowMask -> requestBody -> regex -> bypass', () => {
-    process.env[LUMIGO_SECRET_MASKING_REGEX] = OMITTING_KEYS_REGEXES;
+    const regex = '[".*X.*"]';
+    process.env[LUMIGO_SECRET_MASKING_REGEX] = regex;
 
     expect(
       shallowMask('environment', {
-        LUMIGO_SECRET_MASKING_REGEX: OMITTING_KEYS_REGEXES,
+        LUMIGO_SECRET_MASKING_REGEX: regex,
         a: 'b',
-        secret: 'some secret',
-        password: 'some password',
+        aXy: 'some secret',
       })
     ).toEqual({
-      LUMIGO_SECRET_MASKING_REGEX: OMITTING_KEYS_REGEXES,
+      LUMIGO_SECRET_MASKING_REGEX: regex,
       a: 'b',
-      secret: '****',
-      password: '****',
+      aXy: '****',
     });
   });
 
