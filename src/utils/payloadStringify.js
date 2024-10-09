@@ -54,10 +54,7 @@ const keyToRegexes = (
     tryParseEnvVar(backwardCompRegexEnvVarName) || tryParseEnvVar(regexesEnvVarName) || regexesList;
 
   try {
-    logger.debug('Parsed regexes', { regexes });
-    const regexesExp = regexes.map((x) => new RegExp(x, 'i'));
-    logger.debug('Parsed regexes expressions', { regexesExp });
-    return regexesExp;
+    return regexes.map((x) => new RegExp(x, 'i'));
   } catch (e) {
     invalidMaskingRegexWarning(e);
     logger.warn('Fallback to default regexes list', { fallbackRegexesList });
@@ -269,9 +266,11 @@ const invalidMaskingRegexWarning = runOneTimeWrapper((e) => {
 });
 
 const shallowMaskByRegex = (payload, regexes) => {
-  logger.debug('Shallow masking payload by regexes', { payload, regexes });
+  logger.debug('Shallow masking payload by regexes', {
+    payloadKeys: Object.keys(payload),
+    regexes,
+  });
   regexes = regexes || keyToOmitRegexes();
-
   if (isString(payload)) {
     logger.debug('Shallow masking string payload');
     return payload;
