@@ -125,7 +125,7 @@ jobs:
     environment:
       - TZ: Asia/Jerusalem
       - NODE_OPTIONS: --max_old_space_size=1500
-    resource_class: medium+
+    resource_class: large
     working_directory: ~/lumigo-node
     steps:
       - run:
@@ -151,12 +151,12 @@ jobs:
           name: check types
           command: npm run check-types
       - run:
+          name: eslint
+          command: npm run lint
+      - run:
           name: test
           command: npm test
           no_output_timeout: 15m
-      - run:
-          name: eslint
-          command: npm run lint
 
   deploy:
     <<: *defaults
