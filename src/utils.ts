@@ -11,6 +11,14 @@ import { EdgeUrl } from './types/common/edgeTypes';
 import { CommonUtils } from '@lumigo/node-core';
 import { runOneTimeWrapper } from './utils/functionUtils';
 
+type xRayTraceIdFields = {
+  Root: String;
+  transactionId: String;
+  Parent: String;
+  Sampled?: String;
+  Lineage?: String;
+};
+
 export const getRandomId = CommonUtils.getRandomId;
 export const getRandomString = CommonUtils.getRandomString;
 export const md5Hash = CommonUtils.md5Hash;
@@ -97,7 +105,92 @@ export const getTracerInfo = (): { name: string; version: string } => {
   return { name, version };
 };
 
+const xRayFieldKeyValuePattern = /([^=;]+)=([^;]*)/g;
+
+const splitXrayTraceIdToFields = (
+  awsXAmznTraceId: string,
+  maxFields: number = 100
+): { [key: string]: string } => {
+  const result: { [key: string]: string | null } = {};
+  let match: RegExpExecArray | null;
+  let iterations = 0;
+
+  // Resetting the regex lastIndex to ensure it works correctly for different inputs
+  xRayFieldKeyValuePattern.lastIndex = 0;
+
+  // Iterate over each match of the pattern in the string with a limit to avoid infinite loop
+  while (
+    (match = xRayFieldKeyValuePattern.exec(awsXAmznTraceId)) !== null &&
+    iterations < maxFields
+  ) {
+    const key = match[1].trim();
+    const value = match[2].trim();
+
+    // Ensure key is valid and not empty, assign null if value is not present
+    if (key) {
+      result[key] = value ? value : null;
+    }
+
+    // Increment iteration counter
+    iterations++;
+  }
+
+  // Add default handling for known keys in case they're missing
+  const expectedKeys = ['Root', 'Parent', 'Sampled'];
+  expectedKeys.forEach((key) => {
+    if (!(key in result)) {
+      result[key] = null;
+    }
+  });
+
+  // If maxIterations is reached, we can log a warning or handle it as needed
+  if (iterations >= maxFields) {
+    console.warn(`Reached maximum iteration limit of ${maxFields} while parsing X-Ray trace ID`);
+  }
+
+  return result;
+};
+
+export const getNewFormatTraceId = (awsXAmznTraceId: string): xRayTraceIdFields => {
+  const fields = splitXrayTraceIdToFields(awsXAmznTraceId);
+  const root = fields.Root;
+  if (!root) {
+    throw new Error('Root field is missing in the X-Ray trace ID');
+  }
+  // TODO: Make this fail safe, what if the split doesn't have 3 parts?
+  const transactionId = fields.Root.split('-')[2];
+  const parent = fields.Parent || getRandomString(16);
+  const sampled = fields.Sampled;
+  const lineage = fields.Lineage;
+
+  const parsedTraceId: xRayTraceIdFields = {
+    Root: root,
+    transactionId,
+    Parent: parent,
+  };
+  if (sampled) {
+    parsedTraceId.Sampled = sampled;
+  }
+  if (lineage) {
+    parsedTraceId.Lineage = lineage;
+  }
+
+  return parsedTraceId;
+};
+
 export const getTraceId = (awsXAmznTraceId) => {
+  try {
+    logger.debug(
+      `Parsing the _X_AMZN_TRACE_ID environment variable (_X_AMZN_TRACE_ID = ${awsXAmznTraceId})`
+    );
+    return getNewFormatTraceId(awsXAmznTraceId);
+  } catch (e) {
+    logger.warn(
+      `Failed parsing the _X_AMZN_TRACE_ID environment variable using the format, falling back to legacy parsing implementation (_X_AMZN_TRACE_ID = ${awsXAmznTraceId})`,
+      e
+    );
+  }
+
   try {
     if (!awsXAmznTraceId) {
       throw new Error('Missing _X_AMZN_TRACE_ID environment variable.');
@@ -180,10 +273,17 @@ export const getTraceId = (awsXAmznTraceId) => {
 
 export const getPatchedTraceId = (awsXAmznTraceId): string => {
   // @ts-ignore
-  const { Root, Parent, Sampled, transactionId } = getTraceId(awsXAmznTraceId);
+  const { Root, Parent, Sampled, transactionId, Lineage } = getTraceId(awsXAmznTraceId);
   const rootArr = Root.split('-');
   const currentTime = Math.floor(Date.now() / 1000).toString(16);
-  return `Root=${rootArr[0]}-${currentTime}-${transactionId};Parent=${Parent};Sampled=${Sampled}`;
+  let patchedTraceId = `Root=${rootArr[0]}-${currentTime}-${transactionId};Parent=${Parent}`;
+  if (Sampled) {
+    patchedTraceId += `;Sampled=${Sampled}`;
+  }
+  if (Lineage) {
+    patchedTraceId += `;Lineage=${Lineage}`;
+  }
+  return patchedTraceId;
 };
 
 export const isPromise = (obj: any): boolean => typeof obj?.then === 'function';

@@ -132,6 +132,14 @@ describe('utils', () => {
       Sampled: '1',
       transactionId: '613d623b633d643b653d6661',
     });
+
+    const fields = utils.getTraceId(
+      'Root=1-670d0060-1b85fdcd75ed1c2557382245;Lineage=1:aba0be3a:0'
+    );
+    expect(fields.Root).toEqual('1-670d0060-1b85fdcd75ed1c2557382245');
+    expect(fields.transactionId).toEqual('1b85fdcd75ed1c2557382245');
+    expect(fields.Lineage).toEqual('1:aba0be3a:0');
+    expect(fields.Parent).toBeTruthy();
   });
 
   test('isObject', () => {
@@ -144,17 +152,17 @@ describe('utils', () => {
     expect(isObject({})).toEqual(true);
   });
 
-  test('getPatchedTraceId', () => {
-    const awsXAmznTraceId =
-      'Root=1-5b1d2450-6ac46730d346cad0e53f89d0;Parent=59fa1aeb03c2ec1f;Sampled=1';
-    const expectedRoot = 'Root=1';
-    const expectedSuffix = '6ac46730d346cad0e53f89d0;Parent=59fa1aeb03c2ec1f;Sampled=1';
-
+  test.each`
+    awsXAmznTraceId                                                                                      | patchedTraceIdPrefix | patchedTraceIdSuffix
+    ${'Root=1-5b1d2450-6ac46730d346cad0e53f89d0;Parent=59fa1aeb03c2ec1f;Sampled=1'}                      | ${'Root=1'}          | ${'6ac46730d346cad0e53f89d0;Parent=59fa1aeb03c2ec1f;Sampled=1'}
+    ${'Root=1-5b1d2450-6ac46730d346cad0e53f89d0;Parent=59fa1aeb03c2ec1f'}                                | ${'Root=1'}          | ${'6ac46730d346cad0e53f89d0;Parent=59fa1aeb03c2ec1f'}
+    ${'Root=1-5b1d2450-6ac46730d346cad0e53f89d0;Parent=59fa1aeb03c2ec1f;Sampled=1;Lineage=1:c01ac717:0'} | ${'Root=1'}          | ${'6ac46730d346cad0e53f89d0;Parent=59fa1aeb03c2ec1f;Sampled=1;Lineage=1:c01ac717:0'}
+  `('getPatchedTraceId', ({ awsXAmznTraceId, patchedTraceIdPrefix, patchedTraceIdSuffix }) => {
     const result = utils.getPatchedTraceId(awsXAmznTraceId);
 
     const [resultRoot, resultTime, resultSuffix] = result.split('-');
-    expect(resultRoot).toEqual(expectedRoot);
-    expect(resultSuffix).toEqual(expectedSuffix);
+    expect(resultRoot).toEqual(patchedTraceIdPrefix);
+    expect(resultSuffix).toEqual(patchedTraceIdSuffix);
 
     const timeDiff = Date.now() - 1000 * parseInt(resultTime, 16);
     expect(timeDiff).toBeGreaterThan(0);
