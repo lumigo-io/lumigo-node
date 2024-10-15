@@ -162,7 +162,12 @@ describe('utils', () => {
     });
 
     // The x-ray value is too long, too many fields. We should parse it as usual
-const longXrayId = ['Root=1-5b1d2450-6ac46730d346cad0e53f89d0;Parent=59fa1aeb03c2ec1f;Sampled=1', ...Array(1000).fill(0).map((_, i) => `${i}=${i}`)].join(';')
+    const longXrayId = [
+      'Root=1-5b1d2450-6ac46730d346cad0e53f89d0;Parent=59fa1aeb03c2ec1f;Sampled=1',
+      ...Array(1000)
+        .fill(0)
+        .map((_, i) => `${i}=${i}`),
+    ].join(';');
     expect(utils.getTraceId(longXrayId)).toEqual({
       Parent: '59fa1aeb03c2ec1f',
       Root: '1-5b1d2450-6ac46730d346cad0e53f89d0',
@@ -188,10 +193,10 @@ const longXrayId = ['Root=1-5b1d2450-6ac46730d346cad0e53f89d0;Parent=59fa1aeb03c
   });
 
   test('splitXrayTraceIdToFields - too many fields', () => {
-    let longXrayId = '0=0';
-    for (let i = 1; i < 1000; i++) {
-      longXrayId += `;${i}=${i}`;
-    }
+    let longXrayId = Array(1000)
+      .fill(0)
+      .map((_, i) => `${i}=${i}`)
+      .join(';');
 
     const expectedFields = {};
     for (let i = 0; i < 100; i++) {
