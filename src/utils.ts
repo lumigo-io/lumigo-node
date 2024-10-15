@@ -135,7 +135,7 @@ export const getNewFormatTraceId = (awsXAmznTraceId: string): xRayTraceIdFields 
   const transactionId = fields.Root.split('-')[2];
   // Note: we might not need to generate a Parent field if it's not present,
   // but for now we'll keep it as is to minimize changes. The python tracer doesn't generate it FYI.
-  const { Parent: parent = getRandomString(16), Sampled: sampled,  Lineage: lineage } = fields;
+  const { Parent: parent = getRandomString(16), Sampled: sampled, Lineage: lineage } = fields;
 
   const parsedTraceId: xRayTraceIdFields = {
     Root: root,
@@ -250,7 +250,7 @@ export const getPatchedTraceId = (awsXAmznTraceId): string => {
   const { Root, Parent, Sampled, transactionId, Lineage } = getTraceId(awsXAmznTraceId);
   const rootArr = Root.split('-');
   const currentTime = Math.floor(Date.now() / 1000).toString(16);
-  const patchedTraceId = [`Root=${rootArr[0]}-${currentTime}-${transactionId}`, `Parent=${Parent}`]
+  const patchedTraceId = [`Root=${rootArr[0]}-${currentTime}-${transactionId}`, `Parent=${Parent}`];
   if (Sampled) {
     patchedTraceId.push(`Sampled=${Sampled}`);
   }

@@ -181,6 +181,11 @@ describe('utils', () => {
     ${'Root=1-5b1d2450-6ac46730d346cad0e53f89d0'}                                                        | ${{ Root: '1-5b1d2450-6ac46730d346cad0e53f89d0' }}
     ${'Root=1-670d0060-1b85fdcd75ed1c2557382245;Lineage=1:aba0be3a:0'}                                   | ${{ Root: '1-670d0060-1b85fdcd75ed1c2557382245', Lineage: '1:aba0be3a:0' }}
     ${'Root=1-5b1d2450-6ac46730d346cad0e53f89d0;Parent=59fa1aeb03c2ec1f;Sampled=1;Lineage=1:aba0be3a:0'} | ${{ Root: '1-5b1d2450-6ac46730d346cad0e53f89d0', Parent: '59fa1aeb03c2ec1f', Sampled: '1', Lineage: '1:aba0be3a:0' }}
+    ${';;;;;;;;;'}                                                                                       | ${{}}
+    ${''}                                                                                                | ${{}}
+    ${'========='}                                                                                       | ${{}}
+    ${'=;=;=;=;'}                                                                                        | ${{}}
+    ${';;;;;===='}                                                                                       | ${{}}
   `('splitXrayTraceIdToFields', ({ xrayTraceId, expected }) => {
     expect(utils.splitXrayTraceIdToFields(xrayTraceId)).toEqual(expected);
   });
