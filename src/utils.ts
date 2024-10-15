@@ -105,42 +105,17 @@ export const getTracerInfo = (): { name: string; version: string } => {
   return { name, version };
 };
 
-const xRayFieldKeyValuePattern = /([^=;]+)=([^;]*)/g;
+const xRayFieldKeyValuePattern = /([^;=]+)=([^;=]+)/g;
 
 export const splitXrayTraceIdToFields = (
   awsXAmznTraceId: string,
   maxFields: number = 100
 ): { [key: string]: string } => {
-  const result: { [key: string]: string | null } = {};
-  let match: RegExpExecArray | null;
-  let iterations = 0;
-
-  // Resetting the regex lastIndex to ensure it works correctly for different inputs
-  xRayFieldKeyValuePattern.lastIndex = 0;
-
-  // Iterate over each match of the pattern in the string with a limit to avoid infinite loop
-  while (
-    (match = xRayFieldKeyValuePattern.exec(awsXAmznTraceId)) !== null &&
-    iterations < maxFields
-  ) {
-    const key = match[1].trim();
-    const value = match[2].trim();
-
-    // Ensure key is valid and not empty, assign null if value is not present
-    if (key) {
-      result[key] = value ? value : null;
-    }
-
-    // Increment iteration counter
-    iterations++;
-  }
-
-  // If maxIterations is reached, we can log a warning or handle it as needed
-  if (iterations >= maxFields) {
-    console.warn(`Reached maximum iteration limit of ${maxFields} while parsing X-Ray trace ID`);
-  }
-
-  return result;
+  const matches = Array.from(awsXAmznTraceId.matchAll(xRayFieldKeyValuePattern)).slice(
+    0,
+    maxFields
+  );
+  return Object.fromEntries(matches.map((match) => [match[1], match[2]]));
 };
 
 export const getNewFormatTraceId = (awsXAmznTraceId: string): xRayTraceIdFields => {
