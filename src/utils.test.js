@@ -84,62 +84,62 @@ describe('utils', () => {
   });
 
   test('getTraceId', () => {
-    // const awsXAmznTraceId =
-    //   'Root=1-5b1d2450-6ac46730d346cad0e53f89d0;Parent=59fa1aeb03c2ec1f;Sampled=1';
-    // const expected = {
-    //   Parent: '59fa1aeb03c2ec1f',
-    //   Root: '1-5b1d2450-6ac46730d346cad0e53f89d0',
-    //   Sampled: '1',
-    //   transactionId: '6ac46730d346cad0e53f89d0',
-    // };
-    // expect(utils.getTraceId(awsXAmznTraceId)).toEqual(expected);
-    //
-    // const awsXAmznLineageParentTraceId =
-    //   'Root=1-5b1d2450-6ac46730d346cad0e53f89d0;Sampled=1;Parent=59fa1aeb03c2ec1f;Lineage=a87bd80c:1|68fd508a:5|c512fbe3:2';
-    // const LineageParentExpected = {
-    //   Parent: '59fa1aeb03c2ec1f',
-    //   Root: '1-5b1d2450-6ac46730d346cad0e53f89d0',
-    //   Sampled: '1',
-    //   transactionId: '6ac46730d346cad0e53f89d0',
-    //   Lineage: 'a87bd80c:1|68fd508a:5|c512fbe3:2',
-    // };
-    // expect(utils.getTraceId(awsXAmznLineageParentTraceId)).toEqual(LineageParentExpected);
-    //
-    // const awsXAmznLineageNoParentTraceId =
-    //   'Root=1-5b1d2450-6ac46730d346cad0e53f89d0;Sampled=1;Lineage=a87bd80c:1|68fd508a:5|c512fbe3:2\n';
-    // const lineageNoParentActual = utils.getTraceId(awsXAmznLineageNoParentTraceId);
-    // expect(lineageNoParentActual.Root).toEqual('1-5b1d2450-6ac46730d346cad0e53f89d0');
-    // expect(lineageNoParentActual.transactionId).toEqual('6ac46730d346cad0e53f89d0');
-    // expect(lineageNoParentActual.Parent).toBeTruthy();
-    //
-    // expect(utils.getTraceId(null)).toEqual({
-    //   Root: 'f585f41',
-    //   Parent: '5f585f414d5a4e5f54524143',
-    //   Sampled: '1',
-    //   transactionId: '5f585f414d5a4e5f54524143',
-    // });
-    //
-    // expect(utils.getTraceId('x;y')).toEqual({
-    //   Root: '83b7978',
-    //   Parent: '783b79783b79783b79783b79',
-    //   Sampled: '1',
-    //   transactionId: '783b79783b79783b79783b79',
-    // });
-    //
-    // expect(utils.getTraceId('a=b;c=d;e=f')).toEqual({
-    //   Root: '13d623b',
-    //   Parent: '613d623b633d643b653d6661',
-    //   Sampled: '1',
-    //   transactionId: '613d623b633d643b653d6661',
-    // });
-    //
-    // const fields = utils.getTraceId(
-    //   'Root=1-670d0060-1b85fdcd75ed1c2557382245;Lineage=1:aba0be3a:0'
-    // );
-    // expect(fields.Root).toEqual('1-670d0060-1b85fdcd75ed1c2557382245');
-    // expect(fields.transactionId).toEqual('1b85fdcd75ed1c2557382245');
-    // expect(fields.Lineage).toEqual('1:aba0be3a:0');
-    // expect(fields.Parent).toBeTruthy();
+    const awsXAmznTraceId =
+      'Root=1-5b1d2450-6ac46730d346cad0e53f89d0;Parent=59fa1aeb03c2ec1f;Sampled=1';
+    const expected = {
+      Parent: '59fa1aeb03c2ec1f',
+      Root: '1-5b1d2450-6ac46730d346cad0e53f89d0',
+      Sampled: '1',
+      transactionId: '6ac46730d346cad0e53f89d0',
+    };
+    expect(utils.getTraceId(awsXAmznTraceId)).toEqual(expected);
+
+    const awsXAmznLineageParentTraceId =
+      'Root=1-5b1d2450-6ac46730d346cad0e53f89d0;Sampled=1;Parent=59fa1aeb03c2ec1f;Lineage=a87bd80c:1|68fd508a:5|c512fbe3:2';
+    const LineageParentExpected = {
+      Parent: '59fa1aeb03c2ec1f',
+      Root: '1-5b1d2450-6ac46730d346cad0e53f89d0',
+      Sampled: '1',
+      transactionId: '6ac46730d346cad0e53f89d0',
+      Lineage: 'a87bd80c:1|68fd508a:5|c512fbe3:2',
+    };
+    expect(utils.getTraceId(awsXAmznLineageParentTraceId)).toEqual(LineageParentExpected);
+
+    const awsXAmznLineageNoParentTraceId =
+      'Root=1-5b1d2450-6ac46730d346cad0e53f89d0;Sampled=1;Lineage=a87bd80c:1|68fd508a:5|c512fbe3:2\n';
+    const lineageNoParentActual = utils.getTraceId(awsXAmznLineageNoParentTraceId);
+    expect(lineageNoParentActual.Root).toEqual('1-5b1d2450-6ac46730d346cad0e53f89d0');
+    expect(lineageNoParentActual.transactionId).toEqual('6ac46730d346cad0e53f89d0');
+    expect(lineageNoParentActual.Parent).toBeTruthy();
+
+    expect(utils.getTraceId(null)).toEqual({
+      Root: 'f585f41',
+      Parent: '5f585f414d5a4e5f54524143',
+      Sampled: '1',
+      transactionId: '5f585f414d5a4e5f54524143',
+    });
+
+    expect(utils.getTraceId('x;y')).toEqual({
+      Root: '83b7978',
+      Parent: '783b79783b79783b79783b79',
+      Sampled: '1',
+      transactionId: '783b79783b79783b79783b79',
+    });
+
+    expect(utils.getTraceId('a=b;c=d;e=f')).toEqual({
+      Root: '13d623b',
+      Parent: '613d623b633d643b653d6661',
+      Sampled: '1',
+      transactionId: '613d623b633d643b653d6661',
+    });
+
+    const fields = utils.getTraceId(
+      'Root=1-670d0060-1b85fdcd75ed1c2557382245;Lineage=1:aba0be3a:0'
+    );
+    expect(fields.Root).toEqual('1-670d0060-1b85fdcd75ed1c2557382245');
+    expect(fields.transactionId).toEqual('1b85fdcd75ed1c2557382245');
+    expect(fields.Lineage).toEqual('1:aba0be3a:0');
+    expect(fields.Parent).toBeTruthy();
 
     // Invalid root value, the new parser should fail and then be handled by the legacy parser
     const invalidRootTraceId = 'Root=6ac46730d346cad0e53f89d0;Parent=59fa1aeb03c2ec1f;Sampled=1';
@@ -160,6 +160,45 @@ describe('utils', () => {
       Sampled: '1',
       transactionId: '526f6f743d36616334363733',
     });
+
+    // The x-ray value is too long, too many fields. We should parse it as usual
+    let longXrayId = 'Root=1-5b1d2450-6ac46730d346cad0e53f89d0;Parent=59fa1aeb03c2ec1f;Sampled=1';
+    for (let i = 0; i < 1000; i++) {
+      longXrayId += `;${i}=${i}`;
+    }
+    expect(utils.getTraceId(longXrayId)).toEqual({
+      Parent: '59fa1aeb03c2ec1f',
+      Root: '1-5b1d2450-6ac46730d346cad0e53f89d0',
+      Sampled: '1',
+      transactionId: '6ac46730d346cad0e53f89d0',
+    });
+  });
+
+  test.each`
+    xrayTraceId                                                                                          | expected
+    ${'Root=1-5b1d2450-6ac46730d346cad0e53f89d0;Parent=59fa1aeb03c2ec1f;Sampled=1'}                      | ${{ Root: '1-5b1d2450-6ac46730d346cad0e53f89d0', Parent: '59fa1aeb03c2ec1f', Sampled: '1' }}
+    ${'Root=1-5b1d2450-6ac46730d346cad0e53f89d0;Parent=59fa1aeb03c2ec1f'}                                | ${{ Root: '1-5b1d2450-6ac46730d346cad0e53f89d0', Parent: '59fa1aeb03c2ec1f' }}
+    ${'Root=1-5b1d2450-6ac46730d346cad0e53f89d0'}                                                        | ${{ Root: '1-5b1d2450-6ac46730d346cad0e53f89d0' }}
+    ${'Root=1-670d0060-1b85fdcd75ed1c2557382245;Lineage=1:aba0be3a:0'}                                   | ${{ Root: '1-670d0060-1b85fdcd75ed1c2557382245', Lineage: '1:aba0be3a:0' }}
+    ${'Root=1-5b1d2450-6ac46730d346cad0e53f89d0;Parent=59fa1aeb03c2ec1f;Sampled=1;Lineage=1:aba0be3a:0'} | ${{ Root: '1-5b1d2450-6ac46730d346cad0e53f89d0', Parent: '59fa1aeb03c2ec1f', Sampled: '1', Lineage: '1:aba0be3a:0' }}
+  `('splitXrayTraceIdToFields', ({ xrayTraceId, expected }) => {
+    expect(utils.splitXrayTraceIdToFields(xrayTraceId)).toEqual(expected);
+  });
+
+  test('splitXrayTraceIdToFields - too many fields', () => {
+    let longXrayId = '0=0';
+    for (let i = 1; i < 1000; i++) {
+      longXrayId += `;${i}=${i}`;
+    }
+
+    const expectedFields = {};
+    for (let i = 0; i < 100; i++) {
+      expectedFields[`${i}`] = `${i}`;
+    }
+
+    const fields = utils.splitXrayTraceIdToFields(longXrayId);
+
+    expect(fields).toEqual(expectedFields);
   });
 
   test('isObject', () => {

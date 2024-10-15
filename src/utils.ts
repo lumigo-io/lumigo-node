@@ -107,7 +107,7 @@ export const getTracerInfo = (): { name: string; version: string } => {
 
 const xRayFieldKeyValuePattern = /([^=;]+)=([^;]*)/g;
 
-const splitXrayTraceIdToFields = (
+export const splitXrayTraceIdToFields = (
   awsXAmznTraceId: string,
   maxFields: number = 100
 ): { [key: string]: string } => {
@@ -134,14 +134,6 @@ const splitXrayTraceIdToFields = (
     // Increment iteration counter
     iterations++;
   }
-
-  // Add default handling for known keys in case they're missing
-  const expectedKeys = ['Root', 'Parent', 'Sampled'];
-  expectedKeys.forEach((key) => {
-    if (!(key in result)) {
-      result[key] = null;
-    }
-  });
 
   // If maxIterations is reached, we can log a warning or handle it as needed
   if (iterations >= maxFields) {
