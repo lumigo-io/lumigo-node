@@ -155,10 +155,19 @@ export const getNewFormatTraceId = (awsXAmznTraceId: string): xRayTraceIdFields 
   const fields = splitXrayTraceIdToFields(awsXAmznTraceId);
   const root = fields.Root;
   if (!root) {
-    throw new Error('Root field is missing in the X-Ray trace ID');
+    throw new Error(
+      `X-Ray trace ID is missing the Root field (_X_AMZN_TRACE_ID=${awsXAmznTraceId})`
+    );
   }
-  // TODO: Make this fail safe, what if the split doesn't have 3 parts?
+  const rootValueSplit = root.split('-');
+  if (rootValueSplit.length < 3) {
+    throw new Error(
+      `X-Ray trace ID Root field is not in the expected format (Root=${fields.Root}, _X_AMZN_TRACE_ID=${awsXAmznTraceId})`
+    );
+  }
   const transactionId = fields.Root.split('-')[2];
+  // Note: we might not need to generate a Parent field if it's not present,
+  // but for now we'll keep it as is to minimize changes. The python tracer doesn't generate it FYI.
   const parent = fields.Parent || getRandomString(16);
   const sampled = fields.Sampled;
   const lineage = fields.Lineage;
@@ -186,7 +195,7 @@ export const getTraceId = (awsXAmznTraceId) => {
     return getNewFormatTraceId(awsXAmznTraceId);
   } catch (e) {
     logger.warn(
-      `Failed parsing the _X_AMZN_TRACE_ID environment variable using the format, falling back to legacy parsing implementation (_X_AMZN_TRACE_ID = ${awsXAmznTraceId})`,
+      `Failed parsing the _X_AMZN_TRACE_ID environment variable, falling back to legacy parsing implementation (_X_AMZN_TRACE_ID = ${awsXAmznTraceId})`,
       e
     );
   }
