@@ -252,14 +252,14 @@ export const getPatchedTraceId = (awsXAmznTraceId): string => {
   const { Root, Parent, Sampled, transactionId, Lineage } = getTraceId(awsXAmznTraceId);
   const rootArr = Root.split('-');
   const currentTime = Math.floor(Date.now() / 1000).toString(16);
-  let patchedTraceId = `Root=${rootArr[0]}-${currentTime}-${transactionId};Parent=${Parent}`;
+  const patchedTraceId = [`Root=${rootArr[0]}-${currentTime}-${transactionId}`, `Parent=${Parent}`]
   if (Sampled) {
-    patchedTraceId += `;Sampled=${Sampled}`;
+    patchedTraceId.push(`Sampled=${Sampled}`);
   }
   if (Lineage) {
-    patchedTraceId += `;Lineage=${Lineage}`;
+    patchedTraceId.push(`Lineage=${Lineage}`);
   }
-  return patchedTraceId;
+  return patchedTraceId.join(';');
 };
 
 export const isPromise = (obj: any): boolean => typeof obj?.then === 'function';
