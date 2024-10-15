@@ -14,11 +14,11 @@ import {
   LUMIGO_SECRET_MASKING_REGEX,
   LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP,
   LUMIGO_WHITELIST_KEYS_REGEXES,
-  LUMIGO_SECRET_MASKING_DEBUG,
   OMITTING_KEYS_REGEXES,
   parseJsonFromEnvVar,
   safeExecute,
   BYPASS_MASKING_KEYS,
+  isSecretMaskingDebug,
 } from '../utils';
 import { runOneTimeWrapper } from './functionUtils';
 
@@ -170,7 +170,7 @@ function innerPathScrubbing(input, secretPaths, uniquePaths, currentPath) {
 }
 
 function logSecretMaskingDebug(logger, message, additionalData) {
-  if (process.env[LUMIGO_SECRET_MASKING_DEBUG]) {
+  if (isSecretMaskingDebug()) {
     if (additionalData) {
       logger.debug(message, additionalData);
     } else {

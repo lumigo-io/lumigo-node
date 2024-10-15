@@ -353,6 +353,8 @@ export const isWarm = (): boolean =>
 export const isDebug = (): boolean =>
   validateEnvVar(DEBUG_FLAG) || TracerGlobals.getTracerInputs().debug;
 
+export const isSecretMaskingDebug = (): boolean => validateEnvVar(LUMIGO_SECRET_MASKING_DEBUG);
+
 export const isLambdaWrapped = (): boolean => validateEnvVar(WRAPPED_FLAG);
 
 export const shouldPropagateW3C = (): boolean => !validateEnvVar(LUMIGO_PROPAGATE_W3C, 'FALSE');
