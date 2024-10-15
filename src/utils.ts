@@ -135,9 +135,7 @@ export const getNewFormatTraceId = (awsXAmznTraceId: string): xRayTraceIdFields 
   const transactionId = fields.Root.split('-')[2];
   // Note: we might not need to generate a Parent field if it's not present,
   // but for now we'll keep it as is to minimize changes. The python tracer doesn't generate it FYI.
-  const parent = fields.Parent || getRandomString(16);
-  const sampled = fields.Sampled;
-  const lineage = fields.Lineage;
+  const { Parent: parent = getRandomString(16), Sampled: sampled,  Lineage: lineage } = fields;
 
   const parsedTraceId: xRayTraceIdFields = {
     Root: root,
