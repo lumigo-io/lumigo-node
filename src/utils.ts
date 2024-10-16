@@ -11,6 +11,14 @@ import { EdgeUrl } from './types/common/edgeTypes';
 import { CommonUtils } from '@lumigo/node-core';
 import { runOneTimeWrapper } from './utils/functionUtils';
 
+type xRayTraceIdFields = {
+  Root: String;
+  transactionId: String;
+  Parent: String;
+  Sampled?: String;
+  Lineage?: String;
+};
+
 export const getRandomId = CommonUtils.getRandomId;
 export const getRandomString = CommonUtils.getRandomString;
 export const md5Hash = CommonUtils.md5Hash;
@@ -111,7 +119,66 @@ export const getTracerInfo = (): { name: string; version: string } => {
   return { name, version };
 };
 
+const xRayFieldKeyValuePattern = /([^;=]+)=([^;=]+)/g;
+
+export const splitXrayTraceIdToFields = (
+  awsXAmznTraceId: string,
+  maxFields: number = 100
+): { [key: string]: string } => {
+  const matches = Array.from(awsXAmznTraceId.matchAll(xRayFieldKeyValuePattern)).slice(
+    0,
+    maxFields
+  );
+  return Object.fromEntries(matches.map((match) => [match[1], match[2]]));
+};
+
+export const getNewFormatTraceId = (awsXAmznTraceId: string): xRayTraceIdFields => {
+  const fields = splitXrayTraceIdToFields(awsXAmznTraceId);
+  const root = fields.Root;
+  if (!root) {
+    throw new Error(
+      `X-Ray trace ID is missing the Root field (_X_AMZN_TRACE_ID=${awsXAmznTraceId})`
+    );
+  }
+  const rootValueSplit = root.split('-');
+  if (rootValueSplit.length < 3) {
+    throw new Error(
+      `X-Ray trace ID Root field is not in the expected format (Root=${fields.Root}, _X_AMZN_TRACE_ID=${awsXAmznTraceId})`
+    );
+  }
+  const transactionId = fields.Root.split('-')[2];
+  // Note: we might not need to generate a Parent field if it's not present,
+  // but for now we'll keep it as is to minimize changes. The python tracer doesn't generate it FYI.
+  const { Parent: parent = getRandomString(16), Sampled: sampled, Lineage: lineage } = fields;
+
+  const parsedTraceId: xRayTraceIdFields = {
+    Root: root,
+    transactionId,
+    Parent: parent,
+  };
+  if (sampled) {
+    parsedTraceId.Sampled = sampled;
+  }
+  if (lineage) {
+    parsedTraceId.Lineage = lineage;
+  }
+
+  return parsedTraceId;
+};
+
 export const getTraceId = (awsXAmznTraceId) => {
+  try {
+    logger.debug(
+      `Parsing the _X_AMZN_TRACE_ID environment variable (_X_AMZN_TRACE_ID = ${awsXAmznTraceId})`
+    );
+    return getNewFormatTraceId(awsXAmznTraceId);
+  } catch (e) {
+    logger.warn(
+      `Failed parsing the _X_AMZN_TRACE_ID environment variable, falling back to legacy parsing implementation (_X_AMZN_TRACE_ID = ${awsXAmznTraceId})`,
+      e
+    );
+  }
+
   try {
     if (!awsXAmznTraceId) {
       throw new Error('Missing _X_AMZN_TRACE_ID environment variable.');
@@ -194,10 +261,17 @@ export const getTraceId = (awsXAmznTraceId) => {
 
 export const getPatchedTraceId = (awsXAmznTraceId): string => {
   // @ts-ignore
-  const { Root, Parent, Sampled, transactionId } = getTraceId(awsXAmznTraceId);
+  const { Root, Parent, Sampled, transactionId, Lineage } = getTraceId(awsXAmznTraceId);
   const rootArr = Root.split('-');
   const currentTime = Math.floor(Date.now() / 1000).toString(16);
-  return `Root=${rootArr[0]}-${currentTime}-${transactionId};Parent=${Parent};Sampled=${Sampled}`;
+  const patchedTraceId = [`Root=${rootArr[0]}-${currentTime}-${transactionId}`, `Parent=${Parent}`];
+  if (Sampled) {
+    patchedTraceId.push(`Sampled=${Sampled}`);
+  }
+  if (Lineage) {
+    patchedTraceId.push(`Lineage=${Lineage}`);
+  }
+  return patchedTraceId.join(';');
 };
 
 export const isPromise = (obj: any): boolean => typeof obj?.then === 'function';
