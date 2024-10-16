@@ -18,6 +18,7 @@ import {
   parseJsonFromEnvVar,
   safeExecute,
   BYPASS_MASKING_KEYS,
+  isSecretMaskingDebug,
 } from '../utils';
 import { runOneTimeWrapper } from './functionUtils';
 
@@ -169,10 +170,12 @@ function innerPathScrubbing(input, secretPaths, uniquePaths, currentPath) {
 }
 
 function logSecretMaskingDebug(logger, message, additionalData) {
-  if (additionalData) {
-    logger.debug(message, additionalData);
-  } else {
-    logger.debug(message);
+  if (isSecretMaskingDebug()) {
+    if (additionalData) {
+      logger.debug(message, additionalData);
+    } else {
+      logger.debug(message);
+    }
   }
 }
 

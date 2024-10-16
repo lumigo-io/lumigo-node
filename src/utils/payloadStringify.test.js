@@ -382,6 +382,23 @@ describe('payloadStringify', () => {
     ]);
   });
 
+  test('shallowMask -> LUMIGO_SECRET_MASKING_DEBUG', () => {
+    utils.setDebug();
+    utils.setSecretMaskingDebug();
+
+    expect(shallowMask('requestBody', { a: 'b' })).toEqual({ a: 'b' });
+
+    const debugLogs = ConsoleWritesForTesting.getLogs().filter((log) => log.msg.includes('DEBUG'));
+
+    expect(debugLogs).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          msg: '#LUMIGO# - DEBUG - "Shallow masking payload"',
+        }),
+      ])
+    );
+  });
+
   test.each`
     envVarValue                                                                | event                                                                                                                                                                                                                                                                                                                                                                                                                          | expectedResults
     ${['["object.foo"]']}                                                      | ${[{ secret: { key: 'value' } }, { object: { foo: 'value' } }]}                                                                                                                                                                                                                                                                                                                                                                | ${JSON.stringify([{ secret: '****' }, { object: { foo: '****' } }])}
