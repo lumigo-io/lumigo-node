@@ -41,6 +41,8 @@ export const LUMIGO_SECRET_MASKING_REGEX_HTTP_QUERY_PARAMS =
 export const LUMIGO_SECRET_MASKING_REGEX_ENVIRONMENT = 'LUMIGO_SECRET_MASKING_REGEX_ENVIRONMENT';
 export const LUMIGO_SECRET_MASKING_ALL_MAGIC = 'all';
 
+export const LUMIGO_SECRET_MASKING_DEBUG = 'LUMIGO_SECRET_MASKING_DEBUG';
+
 export const LUMIGO_SECRET_MASKING_EXACT_PATH = 'LUMIGO_SECRET_MASKING_EXACT_PATH';
 export const LUMIGO_WHITELIST_KEYS_REGEXES = 'LUMIGO_WHITELIST_KEYS_REGEXES';
 export const LUMIGO_SUPPORT_LARGE_INVOCATIONS = 'LUMIGO_SUPPORT_LARGE_INVOCATIONS';
@@ -56,6 +58,18 @@ export const OMITTING_KEYS_REGEXES = [
   'Signature',
   'Credential',
   'Authorization',
+];
+
+export const BYPASS_MASKING_KEYS = [
+  LUMIGO_SECRET_MASKING_REGEX,
+  LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP,
+  LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_BODIES,
+  LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_HEADERS,
+  LUMIGO_SECRET_MASKING_REGEX_HTTP_RESPONSE_BODIES,
+  LUMIGO_SECRET_MASKING_REGEX_HTTP_RESPONSE_HEADERS,
+  LUMIGO_SECRET_MASKING_REGEX_ENVIRONMENT,
+  LUMIGO_SECRET_MASKING_REGEX_HTTP_QUERY_PARAMS,
+  LUMIGO_SECRET_MASKING_EXACT_PATH,
 ];
 
 export const LUMIGO_EVENT_KEY = '_lumigo';
@@ -413,6 +427,8 @@ export const isWarm = (): boolean =>
 export const isDebug = (): boolean =>
   validateEnvVar(DEBUG_FLAG) || TracerGlobals.getTracerInputs().debug;
 
+export const isSecretMaskingDebug = (): boolean => validateEnvVar(LUMIGO_SECRET_MASKING_DEBUG);
+
 export const isLambdaWrapped = (): boolean => validateEnvVar(WRAPPED_FLAG);
 
 export const shouldPropagateW3C = (): boolean => !validateEnvVar(LUMIGO_PROPAGATE_W3C, 'FALSE');
@@ -496,6 +512,8 @@ export const setVerboseMode = () => (process.env[VERBOSE_FLAG] = 'TRUE');
 export const setSwitchOff = () => (process.env['LUMIGO_SWITCH_OFF'] = 'TRUE');
 
 export const setDebug = () => (process.env['LUMIGO_DEBUG'] = 'TRUE');
+
+export const setSecretMaskingDebug = () => (process.env['LUMIGO_SECRET_MASKING_DEBUG'] = 'TRUE');
 
 export const unsetDebug = () => (process.env['LUMIGO_DEBUG'] = undefined);
 

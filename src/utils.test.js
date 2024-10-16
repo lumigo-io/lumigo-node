@@ -34,6 +34,7 @@ import {
   LUMIGO_SUPPORT_LARGE_INVOCATIONS,
   removeLumigoFromError,
   removeLumigoFromStacktrace,
+  LUMIGO_SECRET_MASKING_DEBUG,
 } from './utils';
 
 describe('utils', () => {
@@ -320,6 +321,12 @@ describe('utils', () => {
     expect(utils.isDebug()).toBe(false);
     globals.TracerGlobals.setTracerInputs({ debug: true });
     expect(utils.isDebug()).toBe(true);
+  });
+
+  test('isSecretMaskingDebug -> ENV VAR', () => {
+    expect(utils.isSecretMaskingDebug()).toBe(false);
+    process.env.LUMIGO_SECRET_MASKING_DEBUG = 'TRUE';
+    expect(utils.isSecretMaskingDebug()).toBe(true);
   });
 
   test('isLambdaWrapped', () => {
