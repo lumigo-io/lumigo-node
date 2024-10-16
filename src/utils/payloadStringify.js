@@ -171,11 +171,7 @@ function innerPathScrubbing(input, secretPaths, uniquePaths, currentPath) {
 
 function logSecretMaskingDebug(logger, message, additionalData) {
   if (isSecretMaskingDebug()) {
-    if (additionalData) {
-      logger.debug(message, additionalData);
-    } else {
-      logger.debug(message);
-    }
+    logger.debug(message, additionalData);
   }
 }
 
@@ -281,7 +277,6 @@ const shallowMaskByRegex = (payload, regexes) => {
   });
   regexes = regexes || keyToOmitRegexes();
   if (isString(payload)) {
-    logSecretMaskingDebug(logger, 'Shallow masking string payload');
     return payload;
   }
   if (typeof payload !== 'object') {
