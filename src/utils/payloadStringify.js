@@ -229,6 +229,7 @@ export const payloadStringify = (
       if (totalSize < maxPayloadSize) {
         if (
           !shouldSkipSecretScrub &&
+          !BYPASS_MASKING_KEYS.includes(key) &&
           !keyContainsRegex(whitelistRegexes, key) &&
           keyContainsRegex(secretsRegexes, key)
         ) {

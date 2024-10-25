@@ -7,6 +7,12 @@ import {
   LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP,
   LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_BODIES,
   LUMIGO_WHITELIST_KEYS_REGEXES,
+  LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_HEADERS,
+  LUMIGO_SECRET_MASKING_REGEX_HTTP_RESPONSE_BODIES,
+  LUMIGO_SECRET_MASKING_REGEX_HTTP_RESPONSE_HEADERS,
+  LUMIGO_SECRET_MASKING_REGEX_ENVIRONMENT,
+  LUMIGO_SECRET_MASKING_REGEX_HTTP_QUERY_PARAMS,
+  LUMIGO_SECRET_MASKING_DEBUG,
 } from '../utils';
 import { keyToOmitRegexes, payloadStringify, shallowMask, truncate } from './payloadStringify';
 import { ConsoleWritesForTesting } from '../../testUtils/consoleMocker';
@@ -106,6 +112,47 @@ describe('payloadStringify', () => {
     const result = payloadStringify(payload);
 
     expect(result).toEqual('{"a":2,"password":"****"}');
+  });
+
+  test('payloadStringify -> should not mask masking envs', () => {
+    const someValue = 'a';
+
+    const envs = [
+      LUMIGO_SECRET_MASKING_REGEX,
+      LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP,
+      LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_BODIES,
+      LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_HEADERS,
+      LUMIGO_SECRET_MASKING_REGEX_HTTP_RESPONSE_BODIES,
+      LUMIGO_SECRET_MASKING_REGEX_HTTP_RESPONSE_HEADERS,
+      LUMIGO_SECRET_MASKING_REGEX_ENVIRONMENT,
+      LUMIGO_SECRET_MASKING_REGEX_HTTP_QUERY_PARAMS,
+      LUMIGO_SECRET_MASKING_EXACT_PATH,
+      LUMIGO_SECRET_MASKING_DEBUG,
+    ];
+
+    envs.forEach((env) => {
+      expect(
+        payloadStringify({
+          [env]: someValue,
+        })
+      ).toEqual(`{"${env}":"${someValue}"}`);
+    });
+  });
+
+  test('payloadStringify -> LUMIGO_SECRET_MASKING_REGEX', () => {
+    process.env[LUMIGO_SECRET_MASKING_REGEX] = JSON.stringify(['.*masking.*']);
+    const payload = {
+      a: 2,
+      aMaskingB: 'CoolPass35',
+      LUMIGO_SECRET_MASKING_REGEX: 'should not be masked',
+    };
+
+    const result = payloadStringify(payload);
+
+    expect(result).toEqual(
+      '{"a":2,"aMaskingB":"****","LUMIGO_SECRET_MASKING_REGEX":"should not be masked"}'
+    );
+    process.env[LUMIGO_SECRET_MASKING_REGEX] = undefined;
   });
 
   test('payloadStringify -> truncate after 10B', () => {
