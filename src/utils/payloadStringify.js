@@ -52,6 +52,7 @@ const keyToRegexes = (
   const regexes =
     tryParseEnvVar(backwardCompRegexEnvVarName) || tryParseEnvVar(regexesEnvVarName) || regexesList;
 
+  logSecretMaskingDebug(logger, 'Parsed regexes', { regexes });
   try {
     return regexes.map((x) => new RegExp(x, 'i'));
   } catch (e) {
