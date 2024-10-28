@@ -52,6 +52,7 @@ const keyToRegexes = (
   const regexes =
     tryParseEnvVar(backwardCompRegexEnvVarName) || tryParseEnvVar(regexesEnvVarName) || regexesList;
 
+  logSecretMaskingDebug(logger, 'Parsed regexes', { regexes });
   try {
     return regexes.map((x) => new RegExp(x, 'i'));
   } catch (e) {
@@ -229,6 +230,7 @@ export const payloadStringify = (
       if (totalSize < maxPayloadSize) {
         if (
           !shouldSkipSecretScrub &&
+          !BYPASS_MASKING_KEYS.includes(key) &&
           !keyContainsRegex(whitelistRegexes, key) &&
           keyContainsRegex(secretsRegexes, key)
         ) {
