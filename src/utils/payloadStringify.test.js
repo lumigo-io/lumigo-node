@@ -114,7 +114,8 @@ describe('payloadStringify', () => {
     expect(result).toEqual('{"a":2,"password":"****"}');
   });
 
-  test.each([
+  test.each(
+    [
       LUMIGO_SECRET_MASKING_REGEX,
       LUMIGO_SECRET_MASKING_REGEX_BACKWARD_COMP,
       LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_BODIES,
@@ -124,12 +125,15 @@ describe('payloadStringify', () => {
       LUMIGO_SECRET_MASKING_REGEX_ENVIRONMENT,
       LUMIGO_SECRET_MASKING_REGEX_HTTP_QUERY_PARAMS,
       LUMIGO_SECRET_MASKING_EXACT_PATH,
-      LUMIGO_SECRET_MASKING_DEBUG
-    ], 'payloadStringify -> should not mask masking the env-var %s', (envVar) => {
+      LUMIGO_SECRET_MASKING_DEBUG,
+    ],
+    'payloadStringify -> should not mask masking the env-var %s',
+    (envVar) => {
       const someValue = 'a';
-      
+
       expect(payloadStringify({ [envVar]: someValue })).toEqual(`{"${env}":"${someValue}"}`);
-  });
+    }
+  );
 
   test('payloadStringify -> LUMIGO_SECRET_MASKING_REGEX', () => {
     process.env[LUMIGO_SECRET_MASKING_REGEX] = JSON.stringify(['.*masking.*']);
