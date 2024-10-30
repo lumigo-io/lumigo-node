@@ -470,14 +470,24 @@ describe('awsSpan', () => {
   test('Lambda invoked by Lambda -> shouldnt scrub initial event', () => {
     const { context } = TracerGlobals.getHandlerInputs();
     const event = {
-      field: 'value',
+      string: 'value',
+      object: {
+        string: 'value',
+        object: {
+          string: 'value',
+        },
+      },
     };
-    process.env[LUMIGO_SECRET_MASKING_EXACT_PATH] = '["field"]';
+    process.env[LUMIGO_SECRET_MASKING_EXACT_PATH] =
+      '["string","object.string", "object.object.string"]';
     TracerGlobals.setHandlerInputs({ event, context });
     const startSpan = awsSpan.getFunctionSpan(event, context);
 
-    expect(event.field).toEqual('value');
-    expect(JSON.parse(startSpan.event).field).toEqual('****');
+    expect(event.string).toEqual('value');
+    expect(event.object.string).toEqual('value');
+    expect(event.object.object.string).toEqual('value');
+    expect(JSON.parse(startSpan.event).string).toEqual('****');
+    expect(JSON.parse(startSpan.event).object.object.string).toEqual('****');
   });
 
   test('Lambda invoked by DDB stream -> shouldnt scrub known fields', () => {
