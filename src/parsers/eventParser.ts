@@ -254,7 +254,7 @@ export const parseEvent = (event) => {
   if (isCloudfrontEvent(event)) {
     return parseCloudfrontEvent(event);
   }
-  return event;
+  return event ? { ...event } : null;
 };
 
 export const getSkipScrubPath = (event) => {
