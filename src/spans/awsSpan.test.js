@@ -8,6 +8,7 @@ import {
   EXECUTION_TAGS_KEY,
   getEventEntitySize,
   LUMIGO_SECRET_MASKING_ALL_MAGIC,
+  LUMIGO_SECRET_MASKING_EXACT_PATH,
   LUMIGO_SECRET_MASKING_REGEX_ENVIRONMENT,
   LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_BODIES,
   LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_HEADERS,
@@ -464,6 +465,29 @@ describe('awsSpan', () => {
     TracerGlobals.setHandlerInputs({ event, context });
     const startSpan = awsSpan.getFunctionSpan(event, context);
     expect(JSON.parse(startSpan.event).Records[0].s3.object.key).toEqual('value');
+  });
+
+  test('Lambda invoked by Lambda -> shouldnt scrub initial event', () => {
+    const { context } = TracerGlobals.getHandlerInputs();
+    const event = {
+      string: 'value',
+      object: {
+        string: 'value',
+        object: {
+          string: 'value',
+        },
+      },
+    };
+    process.env[LUMIGO_SECRET_MASKING_EXACT_PATH] =
+      '["string","object.string", "object.object.string"]';
+    TracerGlobals.setHandlerInputs({ event, context });
+    const startSpan = awsSpan.getFunctionSpan(event, context);
+
+    expect(event.string).toEqual('value');
+    expect(event.object.string).toEqual('value');
+    expect(event.object.object.string).toEqual('value');
+    expect(JSON.parse(startSpan.event).string).toEqual('****');
+    expect(JSON.parse(startSpan.event).object.object.string).toEqual('****');
   });
 
   test('Lambda invoked by DDB stream -> shouldnt scrub known fields', () => {

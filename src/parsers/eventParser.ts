@@ -12,6 +12,7 @@ import type {
 
 import * as logger from '../logger';
 import { getEnvVarAsList, isScrubKnownServicesOn } from '../utils';
+const clone = require('rfdc')();
 
 const API_GW_KEYS_ORDER = getEnvVarAsList('LUMIGO_API_GW_KEYS_ORDER', [
   'version',
@@ -234,7 +235,8 @@ export const parseCloudfrontEvent = (event: CloudFrontRequestEvent) => {
   return newCloudfrontEvent;
 };
 
-export const parseEvent = (event) => {
+export const parseEvent = (awsEvent) => {
+  const event = clone(awsEvent);
   if (isApiGwEvent(event)) {
     return parseApiGwEvent(event);
   }
