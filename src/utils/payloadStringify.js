@@ -1,5 +1,6 @@
 import * as logger from '../logger';
 import {
+  BYPASS_MASKING_KEYS,
   getEnvVarsMaskingRegex,
   getEventEntitySize,
   getHttpQueryParamsMaskingRegex,
@@ -8,7 +9,7 @@ import {
   getResponseBodyMaskingRegex,
   getResponseHeadersMaskingRegex,
   getSecretMaskingExactPath,
-  getSecretPaths,
+  getSecretPaths, isSecretMaskingDebug,
   isString,
   LUMIGO_SECRET_MASKING_ALL_MAGIC,
   LUMIGO_SECRET_MASKING_REGEX,
@@ -17,8 +18,6 @@ import {
   OMITTING_KEYS_REGEXES,
   parseJsonFromEnvVar,
   safeExecute,
-  BYPASS_MASKING_KEYS,
-  isSecretMaskingDebug,
 } from '../utils';
 import { runOneTimeWrapper } from './functionUtils';
 
@@ -170,7 +169,19 @@ function innerPathScrubbing(input, secretPaths, uniquePaths, currentPath) {
   return input;
 }
 
-function logSecretMaskingDebug(logger, message, additionalData) {
+function getPayloadRepresentation(payload) {
+  if (Array.isArray(payload)) {
+    return payload.slice(0, 100); // First 100 elements of the array
+  } else if (typeof payload === 'string') {
+    return payload.slice(0, 1000); // First 1000 characters of the string
+  } else if (typeof payload === 'object' && payload !== null) {
+    return Object.keys(payload); // Keys of the object
+  } else {
+    return payload; // Return as-is for other types
+  }
+}
+
+export function logSecretMaskingDebug(logger, message, additionalData) {
   if (isSecretMaskingDebug()) {
     logger.debug(message, additionalData);
   }
@@ -273,11 +284,11 @@ const invalidMaskingRegexWarning = runOneTimeWrapper((e) => {
 });
 
 const shallowMaskByRegex = (payload, regexes) => {
+  regexes = regexes || keyToOmitRegexes();
   logSecretMaskingDebug(logger, 'Shallow masking payload by regexes', {
-    payloadKeys: Object.keys(payload),
+    payload: getPayloadRepresentation(payload),
     regexes,
   });
-  regexes = regexes || keyToOmitRegexes();
   if (isString(payload)) {
     return payload;
   }
@@ -302,7 +313,7 @@ const shallowMaskByRegex = (payload, regexes) => {
 export const shallowMask = (context, payload) => {
   logSecretMaskingDebug(logger, 'Shallow masking payload', {
     context,
-    payloadKeys: Object.keys(payload),
+    payload: getPayloadRepresentation(payload),
   });
   let givenSecretRegexes = null;
   if (context === 'environment') {
