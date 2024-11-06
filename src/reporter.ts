@@ -75,14 +75,6 @@ export const sendSpans = async (spans: any[], addEnrichmentSpan: boolean = true)
   safeExecute(logSpans)(rtt, spans);
 };
 
-const isNotJsonString = (str: string) => {
-  const trimmed = str.trim();
-  return !(
-    (trimmed.startsWith('{') && trimmed.endsWith('}')) ||
-    (trimmed.startsWith('[') && trimmed.endsWith(']'))
-  );
-};
-
 const isJsonContent = (payload: any, headers: Object) => {
   const isJsonString = (str: any) => {
     try {
@@ -92,11 +84,18 @@ const isJsonContent = (payload: any, headers: Object) => {
       return false;
     }
   };
+  const isJsonObjectOrArray = (str: string) => {
+    const trimmed = str.trim();
+    return (
+      (trimmed.startsWith('{') && trimmed.endsWith('}')) ||
+      (trimmed.startsWith('[') && trimmed.endsWith(']'))
+    );
+  };
 
   return (
     isString(payload) &&
     (headers['content-type']?.toLowerCase().includes('json') ||
-      (!isNotJsonString(payload) && isJsonString(payload)))
+      (isJsonObjectOrArray(payload) && isJsonString(payload)))
   );
 };
 
