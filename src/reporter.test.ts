@@ -1328,7 +1328,7 @@ describe('reporter', () => {
           httpInfo: {
             request: {
               headers: {},
-              body: '{"secret":""...',
+              body: '{"secret":""...}',
             },
             response: {},
           },
@@ -1367,7 +1367,7 @@ describe('reporter', () => {
           httpInfo: {
             request: {
               headers: '{}',
-              body: '"{\\"secret\\":\\"\\"..."',
+              body: '"{\\"secret\\":\\"\\"...}"',
             },
             response: {},
           },
