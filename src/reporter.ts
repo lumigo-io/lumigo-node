@@ -76,7 +76,19 @@ export const sendSpans = async (spans: any[], addEnrichmentSpan: boolean = true)
 };
 
 const isJsonContent = (payload: any, headers: Object) => {
-  return isString(payload) && headers['content-type'] && headers['content-type'].includes('json');
+  const isJsonString = (str: any) => {
+    try {
+      JSON.parse(str);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  };
+
+  return (
+    (isString(payload) && headers['content-type'] && headers['content-type'].includes('json')) ||
+    isJsonString(payload)
+  );
 };
 
 function scrub(payload: any, headers: any, sizeLimit: number, truncated = false): string {
