@@ -1322,6 +1322,18 @@ describe('reporter', () => {
           },
         },
       },
+      {
+        id: '4',
+        info: {
+          httpInfo: {
+            request: {
+              headers: {},
+              body: '{"secret":""...',
+            },
+            response: {},
+          },
+        },
+      },
     ];
     const scrubbed = [
       spanWithoutSecrets,
@@ -1346,6 +1358,18 @@ describe('reporter', () => {
               headers: '{"content-type":"json"}',
               body: '{"secret":"****"}',
             },
+          },
+        },
+      },
+      {
+        id: '4',
+        info: {
+          httpInfo: {
+            request: {
+              headers: '{}',
+              body: '"{\\"secret\\":\\"\\"..."',
+            },
+            response: {},
           },
         },
       },
