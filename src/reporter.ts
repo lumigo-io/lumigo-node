@@ -76,7 +76,27 @@ export const sendSpans = async (spans: any[], addEnrichmentSpan: boolean = true)
 };
 
 const isJsonContent = (payload: any, headers: Object) => {
-  return isString(payload) && headers['content-type'] && headers['content-type'].includes('json');
+  const isJsonString = (str: any) => {
+    try {
+      JSON.parse(str);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  };
+  const isJsonObjectOrArray = (str: string) => {
+    const trimmed = str.trim();
+    return (
+      (trimmed.startsWith('{') && trimmed.endsWith('}')) ||
+      (trimmed.startsWith('[') && trimmed.endsWith(']'))
+    );
+  };
+
+  return (
+    isString(payload) &&
+    (headers['content-type']?.toLowerCase().includes('json') ||
+      (isJsonObjectOrArray(payload) && isJsonString(payload)))
+  );
 };
 
 function scrub(payload: any, headers: any, sizeLimit: number, truncated = false): string {

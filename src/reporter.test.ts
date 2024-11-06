@@ -1291,6 +1291,92 @@ describe('reporter', () => {
     shouldScrubDomainMock.mockReset();
   });
 
+  test('scrubSpans should scrub without content-type', () => {
+    const spanWithoutSecrets = {
+      id: '1',
+      info: { httpInfo: { request: {}, response: { body: 'body' } } },
+    };
+    const beforeScrub = [
+      spanWithoutSecrets,
+      {
+        id: '2',
+        info: {
+          httpInfo: {
+            request: {
+              headers: {},
+              body: JSON.stringify({ secret: '1234' }),
+            },
+            response: {},
+          },
+        },
+      },
+      {
+        id: '3',
+        info: {
+          httpInfo: {
+            request: {},
+            response: {
+              headers: { 'content-type': 'json' },
+              body: JSON.stringify({ secret: '1234' }),
+            },
+          },
+        },
+      },
+      {
+        id: '4',
+        info: {
+          httpInfo: {
+            request: {
+              headers: {},
+              body: '{"secret":""...}',
+            },
+            response: {},
+          },
+        },
+      },
+    ];
+    const scrubbed = [
+      spanWithoutSecrets,
+      {
+        id: '2',
+        info: {
+          httpInfo: {
+            request: {
+              headers: '{}',
+              body: '{"secret":"****"}',
+            },
+            response: {},
+          },
+        },
+      },
+      {
+        id: '3',
+        info: {
+          httpInfo: {
+            request: {},
+            response: {
+              headers: '{"content-type":"json"}',
+              body: '{"secret":"****"}',
+            },
+          },
+        },
+      },
+      {
+        id: '4',
+        info: {
+          httpInfo: {
+            request: {
+              headers: '{}',
+              body: '"{\\"secret\\":\\"\\"...}"',
+            },
+            response: {},
+          },
+        },
+      },
+    ];
+    expect(scrubSpans(beforeScrub)).toEqual(scrubbed);
+  });
+
   test(`sendSpans -> handle errors in forgeAndScrubRequestBody`, async () => {
     setDebug();
     // @ts-ignore

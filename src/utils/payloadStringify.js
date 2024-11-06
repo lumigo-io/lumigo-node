@@ -273,11 +273,10 @@ const invalidMaskingRegexWarning = runOneTimeWrapper((e) => {
 });
 
 const shallowMaskByRegex = (payload, regexes) => {
+  regexes = regexes || keyToOmitRegexes();
   logSecretMaskingDebug(logger, 'Shallow masking payload by regexes', {
-    payloadKeys: Object.keys(payload),
     regexes,
   });
-  regexes = regexes || keyToOmitRegexes();
   if (isString(payload)) {
     return payload;
   }
@@ -302,7 +301,6 @@ const shallowMaskByRegex = (payload, regexes) => {
 export const shallowMask = (context, payload) => {
   logSecretMaskingDebug(logger, 'Shallow masking payload', {
     context,
-    payloadKeys: Object.keys(payload),
   });
   let givenSecretRegexes = null;
   if (context === 'environment') {
