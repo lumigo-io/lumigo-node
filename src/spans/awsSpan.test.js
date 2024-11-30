@@ -37,6 +37,7 @@ import { RedisSpanBuilder } from '../../testUtils/redisSpanBuilder';
 import { PrismaSpanBuilder } from '../../testUtils/prismaSpanBuilder';
 
 const exampleApiGatewayEvent = require('../../testUtils/testdata/events/apigw-request.json');
+const clone = require('rfdc')();
 
 describe('awsSpan', () => {
   const spies = {};
@@ -442,6 +443,35 @@ describe('awsSpan', () => {
     expect(endSpan.envs).not.toEqual(payloadStringify(envs));
     expect(endSpan.envs).toEqual(payloadStringify(envs, getEventEntitySize() * 2));
     expect(endSpan.envs.length).toBeGreaterThan(startSpan.envs.length);
+  });
+
+  test('getEndFunctionSpan does not modify returnValue payload', () => {
+    const functionSpan = {
+      id: '6d26e3c8-60a6-4cee-8a70-f525f47a4caf_started',
+    };
+
+    const handlerReturnValue = {
+      err: null,
+      data: {
+        string: 'value',
+        object: {
+          string: 'value',
+          object: {
+            string: 'value',
+          },
+        },
+      },
+    };
+    const expectedData = clone(handlerReturnValue.data);
+
+    process.env[LUMIGO_SECRET_MASKING_EXACT_PATH] =
+      '["string","object.string", "object.object.string"]';
+
+    const endFunctionSpan = awsSpan.getEndFunctionSpan(functionSpan, handlerReturnValue);
+    expect(endFunctionSpan.return_value).toEqual(
+      '{"string":"****","object":{"string":"****","object":{"string":"****"}}}'
+    );
+    expect(handlerReturnValue.data).toEqual(expectedData);
   });
 
   test('Lambda invoked by S3 -> shouldnt scrub known S3 fields', () => {

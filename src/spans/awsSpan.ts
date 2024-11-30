@@ -51,6 +51,8 @@ export const NEO4J_SPAN = 'neo4j';
 export const ENRICHMENT_SPAN = 'enrichment';
 export const PRISMA_SPAN = 'prisma';
 
+const clone = require('rfdc')({ proto: true });
+
 export const getSpanInfo = (): SpanInfo => {
   const tracer = getTracerInfo();
 
@@ -242,7 +244,7 @@ export const getEndFunctionSpan = (functionSpan: GenericSpan, handlerReturnValue
   const ended = new Date().getTime();
   let returnValue: any;
   try {
-    returnValue = payloadStringify(data);
+    returnValue = payloadStringify(clone(data));
   } catch (e) {
     returnValue = truncate(data.toString(), getEventEntitySize(true));
     error = parseErrorObject({
