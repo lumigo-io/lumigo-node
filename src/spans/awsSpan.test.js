@@ -444,6 +444,36 @@ describe('awsSpan', () => {
     expect(endSpan.envs.length).toBeGreaterThan(startSpan.envs.length);
   });
 
+  test('getEndFunctionSpan does not modify returnValue payload', () => {
+    const functionSpan = {
+      id: '6d26e3c8-60a6-4cee-8a70-f525f47a4caf_started',
+    };
+
+    const handlerReturnValue = {
+      err: null,
+      data: {
+        string: 'value',
+        object: {
+          string: 'value',
+          object: {
+            string: 'value',
+          },
+        },
+      },
+    };
+    process.env[LUMIGO_SECRET_MASKING_EXACT_PATH] =
+      '["string","object.string", "object.object.string"]';
+
+    const endFunctionSpan = awsSpan.getEndFunctionSpan(functionSpan, handlerReturnValue);
+    expect(endFunctionSpan.return_value).toEqual(
+      '{"string":"****","object":{"string":"****","object":{"string":"****"}}}'
+    );
+    // here we expect the original data to be untouched
+    expect(handlerReturnValue.data.string).toEqual('value');
+    expect(handlerReturnValue.data.object.string).toEqual('value');
+    expect(handlerReturnValue.data.object.object.string).toEqual('value');
+  });
+
   test('Lambda invoked by S3 -> shouldnt scrub known S3 fields', () => {
     const { context } = TracerGlobals.getHandlerInputs();
     const event = {
