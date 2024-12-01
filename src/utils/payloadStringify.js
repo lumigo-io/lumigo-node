@@ -26,6 +26,7 @@ const nativeTypes = ['string', 'bigint', 'number', 'undefined', 'boolean'];
 const SCRUBBED_TEXT = '****';
 const TRUNCATED_TEXT = '...[too long]';
 const FAILED_SCRUBBING_BY_PATH = 'Failed to scrub payload by exact path';
+const clone = require('rfdc')();
 
 const isNativeType = (obj) => nativeTypes.includes(typeof obj);
 
@@ -176,6 +177,30 @@ function logSecretMaskingDebug(logger, message, additionalData) {
   }
 }
 
+function scrubPayloadBasedOnExactPath(originalPayload) {
+  let payload = clone(originalPayload);
+  let secretPaths = getSecretPaths();
+  if (secretPaths.length > 0) {
+    const uniquePaths = getUniqPaths(secretPaths);
+    if (isString(payload)) {
+      payload = safeExecute(
+        scrubJsonStringBySecretPath,
+        FAILED_SCRUBBING_BY_PATH,
+        logger.LOG_LEVELS.DEBUG,
+        payload
+      )(payload, secretPaths, uniquePaths, '');
+    } else {
+      payload = safeExecute(
+        scrubJsonBySecretPath,
+        FAILED_SCRUBBING_BY_PATH,
+        logger.LOG_LEVELS.DEBUG,
+        payload
+      )(payload, secretPaths, uniquePaths, '');
+    }
+  }
+  return payload;
+}
+
 export const payloadStringify = (
   payload,
   maxPayloadSize = getEventEntitySize(),
@@ -190,29 +215,9 @@ export const payloadStringify = (
 
   let isPruned = false;
 
-  if (getSecretMaskingExactPath()) {
-    let secretPaths = getSecretPaths();
-    if (secretPaths.length > 0) {
-      const uniquePaths = getUniqPaths(secretPaths);
-      if (isString(payload)) {
-        payload = safeExecute(
-          scrubJsonStringBySecretPath,
-          FAILED_SCRUBBING_BY_PATH,
-          logger.LOG_LEVELS.DEBUG,
-          payload
-        )(payload, secretPaths, uniquePaths, '');
-      } else {
-        payload = safeExecute(
-          scrubJsonBySecretPath,
-          FAILED_SCRUBBING_BY_PATH,
-          logger.LOG_LEVELS.DEBUG,
-          payload
-        )(payload, secretPaths, uniquePaths, '');
-      }
-    }
-  }
+  let result = getSecretMaskingExactPath() ? scrubPayloadBasedOnExactPath(payload) : payload;
 
-  let result = JSON.stringify(payload, function (key, value) {
+  result = JSON.stringify(result, function (key, value) {
     const type = typeof value;
     const isObj = type === 'object';
     const isStr = type === 'string';

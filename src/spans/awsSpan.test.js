@@ -37,7 +37,6 @@ import { RedisSpanBuilder } from '../../testUtils/redisSpanBuilder';
 import { PrismaSpanBuilder } from '../../testUtils/prismaSpanBuilder';
 
 const exampleApiGatewayEvent = require('../../testUtils/testdata/events/apigw-request.json');
-const clone = require('rfdc')();
 
 describe('awsSpan', () => {
   const spies = {};
@@ -462,8 +461,6 @@ describe('awsSpan', () => {
         },
       },
     };
-    const expectedData = clone(handlerReturnValue.data);
-
     process.env[LUMIGO_SECRET_MASKING_EXACT_PATH] =
       '["string","object.string", "object.object.string"]';
 
@@ -471,7 +468,10 @@ describe('awsSpan', () => {
     expect(endFunctionSpan.return_value).toEqual(
       '{"string":"****","object":{"string":"****","object":{"string":"****"}}}'
     );
-    expect(handlerReturnValue.data).toEqual(expectedData);
+    // here we expect the original data to be untouched
+    expect(handlerReturnValue.data.string).toEqual('value');
+    expect(handlerReturnValue.data.object.string).toEqual('value');
+    expect(handlerReturnValue.data.object.object.string).toEqual('value');
   });
 
   test('Lambda invoked by S3 -> shouldnt scrub known S3 fields', () => {
