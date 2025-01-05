@@ -24,7 +24,7 @@
     "test": "npm run build && npm run jest"
   },
   "dependencies": {
-    "@lumigo/node-core": "file:../node-core/lumigo-node-core.tgz",
+    "@lumigo/node-core": "1.16.1",
     "agentkeepalive": "^4.1.4",
     "axios": "1.7.7",
     "rfdc": "^1.4.1",
