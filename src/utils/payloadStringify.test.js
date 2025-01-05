@@ -342,6 +342,32 @@ describe('payloadStringify', () => {
     expect(shallowMask('requestBody', { a: 'b', aXy: 'bla' })).toEqual({ a: 'b', aXy: '****' });
   });
 
+  test('shallowMask -> regex should be case-insensitive', () => {
+    // requestBody
+    process.env[LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_BODIES] = '[".*X.*"]';
+    expect(shallowMask('requestBody', { a: 'b', axy: 'bla' })).toEqual({ a: 'b', axy: '****' });
+
+    // environment
+    process.env[LUMIGO_SECRET_MASKING_REGEX_ENVIRONMENT] = '[".*X.*"]';
+    expect(
+      shallowMask('environment', {
+        a: 'b',
+        axy: 'some secret',
+      })
+    ).toEqual({
+      a: 'b',
+      axy: '****',
+    });
+
+    // fallback to defaults, should also be case-insensitive
+    delete process.env[LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_BODIES]
+    expect(shallowMask('requestBody', { a: 'b', PaSSwoRd: 'bla' })).toEqual({
+      a: 'b',
+      PaSSwoRd: '****',
+    });
+
+  });
+
   test('shallowMask -> requestBody -> regex -> bypass', () => {
     const regex = '[".*X.*"]';
     process.env[LUMIGO_SECRET_MASKING_REGEX] = regex;
