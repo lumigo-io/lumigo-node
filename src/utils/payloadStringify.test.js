@@ -360,12 +360,11 @@ describe('payloadStringify', () => {
     });
 
     // fallback to defaults, should also be case-insensitive
-    delete process.env[LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_BODIES]
+    delete process.env[LUMIGO_SECRET_MASKING_REGEX_HTTP_REQUEST_BODIES];
     expect(shallowMask('requestBody', { a: 'b', PaSSwoRd: 'bla' })).toEqual({
       a: 'b',
       PaSSwoRd: '****',
     });
-
   });
 
   test('shallowMask -> requestBody -> regex -> bypass', () => {
