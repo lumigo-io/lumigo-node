@@ -817,20 +817,20 @@ describe('tracer', () => {
     expect(Http.addStepFunctionEvent).not.toBeCalled();
   });
 
-  test('responseStreamFunctionLogic - tracer disabled and decorator marked as responseStream', async () => {
-    const handler = jest.fn(async () => {});
-    handler[HANDLER_STREAMING] = STREAM_RESPONSE;
-
-    const { event, context } = new HandlerInputsBuilder().build();
-
-    const decoratedUserHandler = tracer.trace({})(handler);
-    await decoratedUserHandler(event, context);
-
-    expect(decoratedUserHandler[HANDLER_STREAMING]).toEqual(STREAM_RESPONSE);
-    expect(spies.warnClient).toHaveBeenCalledWith(
-      'Tracer is disabled, running on a response stream function'
-    );
-  });
+  // test('responseStreamFunctionLogic - tracer disabled and decorator marked as responseStream', async () => {
+  //   const handler = jest.fn(async () => {});
+  //   handler[HANDLER_STREAMING] = STREAM_RESPONSE;
+  //
+  //   const { event, context } = new HandlerInputsBuilder().build();
+  //
+  //   const decoratedUserHandler = tracer.trace({})(handler);
+  //   await decoratedUserHandler(event, context);
+  //
+  //   expect(decoratedUserHandler[HANDLER_STREAMING]).toEqual(STREAM_RESPONSE);
+  //   expect(spies.warnClient).toHaveBeenCalledWith(
+  //     'Tracer is disabled, running on a response stream function'
+  //   );
+  // });
 
   test('performStepFunctionLogic - Happy flow', async () => {
     const handler = jest.fn(async () => ({ hello: 'world' }));

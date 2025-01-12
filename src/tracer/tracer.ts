@@ -38,6 +38,7 @@ import {
 import { runOneTimeWrapper } from '../utils/functionUtils';
 import { TraceOptions } from './trace-options.type';
 import { GenericSpan } from '../types/spans/basicSpan';
+import { ResponseStream, ResponseStreamHandler } from './tracer.interface';
 
 export const HANDLER_CALLBACKED = 'handler_callbacked';
 export const HANDLER_STREAMING = Symbol.for('aws.lambda.runtime.handler.streaming');
@@ -51,7 +52,7 @@ export const LEAK_MESSAGE =
 
 export const trace =
   ({ token, debug, edgeHost, switchOff, stepFunction }: TraceOptions) =>
-  (userHandler: Handler) => {
+  <T extends Handler | ResponseStreamHandler>(userHandler: T) => {
     const isResponseStreamFunction = userHandler[HANDLER_STREAMING] === STREAM_RESPONSE;
     const decoratedUserHandler = async <Event = any>(
       event: Event,
@@ -62,17 +63,16 @@ export const trace =
         info(
           `The '${SWITCH_OFF_FLAG}' environment variable is set to 'true': this invocation will not be traced by Lumigo`
         );
+        // @ts-ignore
         return userHandler(event, context, callback);
       }
 
       if (!isAwsEnvironment()) {
         warnClient('Tracer is disabled, running on non-aws environment');
+        // @ts-ignore
         return userHandler(event, context, callback);
       }
-      if (isResponseStreamFunction) {
-        warnClient('Tracer is disabled, running on a response stream function');
-        return userHandler(event, context, callback);
-      }
+
       try {
         TracerGlobals.setHandlerInputs({ event, context });
         TracerGlobals.setTracerInputs({
@@ -125,10 +125,59 @@ export const trace =
       return performPromisifyType(err, data, type, callback);
     };
 
+    const decoratedResponseStreamUserHandler = async <Event = any>(
+      event: Event,
+      responseStream?: ResponseStream,
+      context?: Context,
+      callback?: Callback
+    ): Promise<ResponseStreamHandler> => {
+      try {
+        TracerGlobals.setHandlerInputs({ event, context });
+        TracerGlobals.setTracerInputs({
+          token,
+          debug,
+          edgeHost,
+          switchOff,
+          stepFunction,
+          lambdaTimeout: context.getRemainingTimeInMillis(),
+        });
+        ExecutionTags.autoTagEvent(event);
+      } catch (err) {
+        logger.warn('Failed to start tracer', err);
+      }
+
+      // context.__wrappedByLumigo = true;
+
+      const functionSpan = getFunctionSpan(event, context);
+
+      await hookUnhandledRejection(functionSpan);
+
+      const pStartTrace = startTrace(functionSpan);
+      const pUserHandler = promisifyUserResponseStreamHandler(
+        userHandler,
+        event,
+        responseStream,
+        context
+      );
+
+      let [, handlerReturnValue] = await Promise.all([pStartTrace, pUserHandler]);
+
+      handlerReturnValue = normalizeLambdaError(handlerReturnValue);
+
+      const cleanedHandlerReturnValue = removeLumigoFromStacktrace(handlerReturnValue);
+
+      await endTrace(functionSpan, cleanedHandlerReturnValue);
+      const { err, data, type } = cleanedHandlerReturnValue;
+
+      return performPromisifyType(err, data, type, callback);
+    };
+
     if (isResponseStreamFunction) {
-      decoratedUserHandler[HANDLER_STREAMING] = STREAM_RESPONSE;
+      decoratedResponseStreamUserHandler[HANDLER_STREAMING] = STREAM_RESPONSE;
+      return decoratedResponseStreamUserHandler as T;
+    } else {
+      return decoratedUserHandler as T;
     }
-    return decoratedUserHandler;
   };
 
 export const startTrace = async (functionSpan: GenericSpan) => {
@@ -196,6 +245,26 @@ export function promisifyUserHandler(
   return new Promise((resolve) => {
     try {
       const result = userHandler(event, context, callbackResolver(resolve));
+      if (isPromise(result)) {
+        result
+          .then((data) => resolve({ err: null, data, type: ASYNC_HANDLER_RESOLVED }))
+          .catch((err) => resolve({ err, data: null, type: ASYNC_HANDLER_REJECTED }));
+      }
+    } catch (err) {
+      resolve({ err, data: null, type: NON_ASYNC_HANDLER_ERRORED });
+    }
+  });
+}
+
+export function promisifyUserResponseStreamHandler(
+  userHandler,
+  event,
+  responseStream,
+  context
+): Promise<{ err: any; data: any; type: string }> {
+  return new Promise((resolve) => {
+    try {
+      const result = userHandler(event, responseStream, context, callbackResolver(resolve));
       if (isPromise(result)) {
         result
           .then((data) => resolve({ err: null, data, type: ASYNC_HANDLER_RESOLVED }))
@@ -286,7 +355,12 @@ const logLeakedSpans = (allSpans) => {
   });
 };
 
-const performPromisifyType = (err, data, type, callback): Handler => {
+const performPromisifyType = <T extends Handler | ResponseStreamHandler>(
+  err,
+  data: T,
+  type,
+  callback
+): T => {
   switch (type) {
     case HANDLER_CALLBACKED:
       callback(err, data);
