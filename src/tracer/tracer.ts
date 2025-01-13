@@ -73,20 +73,7 @@ export const trace =
         return userHandler(event, context, callback);
       }
 
-      try {
-        TracerGlobals.setHandlerInputs({ event, context });
-        TracerGlobals.setTracerInputs({
-          token,
-          debug,
-          edgeHost,
-          switchOff,
-          stepFunction,
-          lambdaTimeout: context.getRemainingTimeInMillis(),
-        });
-        ExecutionTags.autoTagEvent(event);
-      } catch (err) {
-        logger.warn('Failed to start tracer', err);
-      }
+      setTracerGlobals(event, context);
 
       if (!context || !isAwsContext(context)) {
         logger.warnClient(
@@ -125,12 +112,7 @@ export const trace =
       return performPromisifyType(err, data, type, callback);
     };
 
-    const decoratedResponseStreamUserHandler = async <Event = any>(
-      event: Event,
-      responseStream?: ResponseStream,
-      context?: Context,
-      callback?: Callback
-    ): Promise<ResponseStreamHandler> => {
+    function setTracerGlobals<Event>(event: Event, context: Context) {
       try {
         TracerGlobals.setHandlerInputs({ event, context });
         TracerGlobals.setTracerInputs({
@@ -145,6 +127,15 @@ export const trace =
       } catch (err) {
         logger.warn('Failed to start tracer', err);
       }
+    }
+
+    const decoratedResponseStreamUserHandler = async <Event = any>(
+      event: Event,
+      responseStream?: ResponseStream,
+      context?: Context,
+      callback?: Callback
+    ): Promise<ResponseStreamHandler> => {
+      setTracerGlobals(event, context);
 
       const functionSpan = getFunctionSpan(event, context);
 
