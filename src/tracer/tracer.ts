@@ -146,8 +146,6 @@ export const trace =
         logger.warn('Failed to start tracer', err);
       }
 
-      // context.__wrappedByLumigo = true;
-
       const functionSpan = getFunctionSpan(event, context);
 
       await hookUnhandledRejection(functionSpan);
