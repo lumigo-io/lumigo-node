@@ -50,10 +50,12 @@ export const MAX_ELEMENTS_IN_EXTRA = 10;
 export const LEAK_MESSAGE =
   'Execution leak detected. More information is available in: https://docs.lumigo.io/docs/execution-leak-detected';
 
+const isResponseStreamFunction = (userHandler: any) =>
+  userHandler[HANDLER_STREAMING] === STREAM_RESPONSE;
+
 export const trace =
   ({ token, debug, edgeHost, switchOff, stepFunction }: TraceOptions) =>
   <T extends Handler | ResponseStreamHandler>(userHandler: T) => {
-    const isResponseStreamFunction = userHandler[HANDLER_STREAMING] === STREAM_RESPONSE;
     const decoratedUserHandler = async <Event = any>(
       event: Event,
       context?: Context,
@@ -142,12 +144,7 @@ export const trace =
       await hookUnhandledRejection(functionSpan);
 
       const pStartTrace = startTrace(functionSpan);
-      const pUserHandler = promisifyUserResponseStreamHandler(
-        userHandler,
-        event,
-        responseStream,
-        context
-      );
+      const pUserHandler = promisifyUserHandler(userHandler, event, context, responseStream);
 
       let [, handlerReturnValue] = await Promise.all([pStartTrace, pUserHandler]);
 
@@ -161,7 +158,7 @@ export const trace =
       return performPromisifyType(err, data, type, callback);
     };
 
-    if (isResponseStreamFunction) {
+    if (isResponseStreamFunction(userHandler)) {
       logger.debug('Function has response stream in the handler');
       decoratedResponseStreamUserHandler[HANDLER_STREAMING] = STREAM_RESPONSE;
       return decoratedResponseStreamUserHandler as T;
@@ -230,31 +227,14 @@ export const isCallbacked = (handlerReturnValue) => {
 export function promisifyUserHandler(
   userHandler,
   event,
-  context
+  context,
+  responseStream?
 ): Promise<{ err: any; data: any; type: string }> {
   return new Promise((resolve) => {
     try {
-      const result = userHandler(event, context, callbackResolver(resolve));
-      if (isPromise(result)) {
-        result
-          .then((data) => resolve({ err: null, data, type: ASYNC_HANDLER_RESOLVED }))
-          .catch((err) => resolve({ err, data: null, type: ASYNC_HANDLER_REJECTED }));
-      }
-    } catch (err) {
-      resolve({ err, data: null, type: NON_ASYNC_HANDLER_ERRORED });
-    }
-  });
-}
-
-export function promisifyUserResponseStreamHandler(
-  userHandler,
-  event,
-  responseStream,
-  context
-): Promise<{ err: any; data: any; type: string }> {
-  return new Promise((resolve) => {
-    try {
-      const result = userHandler(event, responseStream, context, callbackResolver(resolve));
+      const result = isResponseStreamFunction(userHandler)
+        ? userHandler(event, responseStream, context, callbackResolver(resolve))
+        : userHandler(event, context, callbackResolver(resolve));
       if (isPromise(result)) {
         result
           .then((data) => resolve({ err: null, data, type: ASYNC_HANDLER_RESOLVED }))
