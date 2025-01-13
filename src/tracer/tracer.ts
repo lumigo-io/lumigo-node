@@ -173,6 +173,7 @@ export const trace =
     };
 
     if (isResponseStreamFunction) {
+      logger.debug('Function has response stream in the handler');
       decoratedResponseStreamUserHandler[HANDLER_STREAMING] = STREAM_RESPONSE;
       return decoratedResponseStreamUserHandler as T;
     } else {

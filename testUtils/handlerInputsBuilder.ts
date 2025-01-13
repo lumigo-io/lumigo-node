@@ -4,6 +4,7 @@ import { Context } from 'aws-lambda';
 export class HandlerInputsBuilder {
   _event: any;
   _context: Context;
+  _responseStream: any;
 
   static DEFAULT_AWS_REQUEST_ID = HttpSpanBuilder.DEFAULT_PARENT_ID;
   static DEFAULT_INVOKED_FUNCTION_ARN = HttpSpanBuilder.DEFAULT_ARN;
@@ -45,8 +46,14 @@ export class HandlerInputsBuilder {
     return this;
   };
 
+  withResponseStream = ()=>{
+    this._responseStream = {}
+    return this;
+  }
+
   build = () => ({
     event: this._event,
     context: this._context,
+    responseStream: this._responseStream
   });
 }
