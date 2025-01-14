@@ -38,7 +38,7 @@ import {
 import { runOneTimeWrapper } from '../utils/functionUtils';
 import { TraceOptions } from './trace-options.type';
 import { GenericSpan } from '../types/spans/basicSpan';
-import { ResponseStream, ResponseStreamHandler } from './tracer.interface';
+import { ResponseStreamHandler } from './tracer.interface';
 
 export const HANDLER_CALLBACKED = 'handler_callbacked';
 export const HANDLER_STREAMING = Symbol.for('aws.lambda.runtime.handler.streaming');
@@ -58,7 +58,7 @@ const runUserHandler = <Event>(
   event: Event,
   context: Context,
   callback?: Callback,
-  responseStream?: ResponseStream
+  responseStream?: any
 ) =>
   isResponseStreamFunction(userHandler)
     ? userHandler(event, responseStream, context, callback)
@@ -70,7 +70,7 @@ const processUserHandler = async <Event>(
   context: Context,
   options: TraceOptions,
   callback?: Callback,
-  responseStream?: ResponseStream
+  responseStream?: any
 ) => {
   const { token, debug, edgeHost, switchOff, stepFunction } = options;
 
@@ -162,7 +162,7 @@ const decorateUserHandler = <T extends Handler | ResponseStreamHandler>(
 
   const decoratedResponseStreamUserHandler = async <Event = any>(
     event: Event,
-    responseStream?: ResponseStream,
+    responseStream?: any,
     context?: Context,
     callback?: Callback
   ): Promise<ResponseStreamHandler> => {
