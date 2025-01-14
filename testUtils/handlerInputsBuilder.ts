@@ -46,14 +46,14 @@ export class HandlerInputsBuilder {
     return this;
   };
 
-  withResponseStream = ()=>{
-    this._responseStream = {}
+  withResponseStream = (stream: any) => {
+    this._responseStream = stream;
     return this;
-  }
+  };
 
   build = () => ({
     event: this._event,
     context: this._context,
-    responseStream: this._responseStream
+    responseStream: this._responseStream,
   });
 }

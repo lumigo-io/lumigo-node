@@ -818,18 +818,19 @@ describe('tracer', () => {
   });
 
   test('responseStreamFunctionLogic - tracer disabled and decorator marked as responseStream', async () => {
-    const handler = jest.fn(async () => ({}));
+    const handler = jest.fn(async (event, responseStream, _) => responseStream);
     handler[HANDLER_STREAMING] = STREAM_RESPONSE;
 
     const { event, context, responseStream } = new HandlerInputsBuilder()
-      .withResponseStream()
+      // here we put mocked data to stream, because handler is mocked as well. Mocked `handler` just return response stream back
+      .withResponseStream({ hello: 'world' })
       .build();
 
     const decoratedUserHandler = tracer.trace({})(handler);
     const result = await decoratedUserHandler(event, responseStream, context);
 
     expect(decoratedUserHandler[HANDLER_STREAMING]).toEqual(STREAM_RESPONSE);
-    expect(result).not.toBeNaN();
+    expect(result).toEqual({ hello: 'world' });
   });
 
   test('performStepFunctionLogic - Happy flow', async () => {
