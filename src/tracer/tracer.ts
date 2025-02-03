@@ -38,6 +38,7 @@ import {
 import { runOneTimeWrapper } from '../utils/functionUtils';
 import { TraceOptions } from './trace-options.type';
 import { GenericSpan } from '../types/spans/basicSpan';
+import { ResponseStreamHandler } from './tracer.interface';
 
 export const HANDLER_CALLBACKED = 'handler_callbacked';
 export const HANDLER_STREAMING = Symbol.for('aws.lambda.runtime.handler.streaming');
@@ -49,86 +50,138 @@ export const MAX_ELEMENTS_IN_EXTRA = 10;
 export const LEAK_MESSAGE =
   'Execution leak detected. More information is available in: https://docs.lumigo.io/docs/execution-leak-detected';
 
+const isResponseStreamFunction = (userHandler: any) =>
+  userHandler[HANDLER_STREAMING] === STREAM_RESPONSE;
+
+const runUserHandler = <Event>(
+  userHandler: any,
+  event: Event,
+  context: Context,
+  callback?: Callback,
+  responseStream?: any
+) =>
+  isResponseStreamFunction(userHandler)
+    ? userHandler(event, responseStream, context, callback)
+    : userHandler(event, context, callback);
+
+const processUserHandler = async <Event>(
+  userHandler: any,
+  event: Event,
+  context: Context,
+  options: TraceOptions,
+  callback?: Callback,
+  responseStream?: any
+) => {
+  const { token, debug, edgeHost, switchOff, stepFunction } = options;
+
+  if (!!switchOff || isSwitchedOff()) {
+    info(
+      `The '${SWITCH_OFF_FLAG}' environment variable is set to 'true': this invocation will not be traced by Lumigo`
+    );
+    return runUserHandler(userHandler, event, context, callback, responseStream);
+  }
+
+  if (!isAwsEnvironment()) {
+    warnClient('Tracer is disabled, running on non-aws environment');
+    return runUserHandler(userHandler, event, context, callback, responseStream);
+  }
+
+  try {
+    TracerGlobals.setHandlerInputs({ event, context });
+    TracerGlobals.setTracerInputs({
+      token,
+      debug,
+      edgeHost,
+      switchOff,
+      stepFunction,
+      lambdaTimeout: context.getRemainingTimeInMillis(),
+    });
+    ExecutionTags.autoTagEvent(event);
+  } catch (err) {
+    logger.warn('Failed to start tracer', err);
+  }
+
+  if (!context || !isAwsContext(context)) {
+    logger.warnClient(
+      'missing context parameter - learn more at https://docs.lumigo.io/docs/nodejs'
+    );
+    const { err, data, type } = await promisifyUserHandler(
+      userHandler,
+      event,
+      context,
+      responseStream
+    );
+    return performPromisifyType(err, data, type, callback);
+  }
+
+  if (context.__wrappedByLumigo) {
+    const { err, data, type } = await promisifyUserHandler(
+      userHandler,
+      event,
+      context,
+      responseStream
+    );
+    return performPromisifyType(err, data, type, callback);
+  }
+  context.__wrappedByLumigo = true;
+
+  const functionSpan = getFunctionSpan(event, context);
+
+  await hookUnhandledRejection(functionSpan);
+
+  const pStartTrace = startTrace(functionSpan);
+  const pUserHandler = promisifyUserHandler(userHandler, event, context, responseStream);
+
+  let [, handlerReturnValue] = await Promise.all([pStartTrace, pUserHandler]);
+
+  handlerReturnValue = normalizeLambdaError(handlerReturnValue);
+
+  if (isStepFunction()) {
+    handlerReturnValue = performStepFunctionLogic(handlerReturnValue);
+  }
+
+  const cleanedHandlerReturnValue = removeLumigoFromStacktrace(handlerReturnValue);
+
+  await endTrace(functionSpan, cleanedHandlerReturnValue);
+  const { err, data, type } = cleanedHandlerReturnValue;
+
+  return performPromisifyType(err, data, type, callback);
+};
+
+const decorateUserHandler = <T extends Handler | ResponseStreamHandler>(
+  userHandler: T,
+  options: TraceOptions
+) => {
+  const decoratedUserHandler = async <Event = any>(
+    event: Event,
+    context?: Context,
+    callback?: Callback
+  ): Promise<Handler> => {
+    return await processUserHandler(userHandler, event, context, options, callback, undefined);
+  };
+
+  const decoratedResponseStreamUserHandler = async <Event = any>(
+    event: Event,
+    responseStream?: any,
+    context?: Context,
+    callback?: Callback
+  ): Promise<ResponseStreamHandler> => {
+    return await processUserHandler(userHandler, event, context, options, callback, responseStream);
+  };
+
+  if (isResponseStreamFunction(userHandler)) {
+    logger.debug('Function has response stream in the handler');
+    decoratedResponseStreamUserHandler[HANDLER_STREAMING] = STREAM_RESPONSE;
+    return decoratedResponseStreamUserHandler as T;
+  } else {
+    return decoratedUserHandler as T;
+  }
+};
+
 export const trace =
-  ({ token, debug, edgeHost, switchOff, stepFunction }: TraceOptions) =>
-  (userHandler: Handler) => {
-    const isResponseStreamFunction = userHandler[HANDLER_STREAMING] === STREAM_RESPONSE;
-    const decoratedUserHandler = async <Event = any>(
-      event: Event,
-      context?: Context,
-      callback?: Callback
-    ): Promise<Handler> => {
-      if (!!switchOff || isSwitchedOff()) {
-        info(
-          `The '${SWITCH_OFF_FLAG}' environment variable is set to 'true': this invocation will not be traced by Lumigo`
-        );
-        return userHandler(event, context, callback);
-      }
-
-      if (!isAwsEnvironment()) {
-        warnClient('Tracer is disabled, running on non-aws environment');
-        return userHandler(event, context, callback);
-      }
-      if (isResponseStreamFunction) {
-        warnClient('Tracer is disabled, running on a response stream function');
-        return userHandler(event, context, callback);
-      }
-      try {
-        TracerGlobals.setHandlerInputs({ event, context });
-        TracerGlobals.setTracerInputs({
-          token,
-          debug,
-          edgeHost,
-          switchOff,
-          stepFunction,
-          lambdaTimeout: context.getRemainingTimeInMillis(),
-        });
-        ExecutionTags.autoTagEvent(event);
-      } catch (err) {
-        logger.warn('Failed to start tracer', err);
-      }
-
-      if (!context || !isAwsContext(context)) {
-        logger.warnClient(
-          'missing context parameter - learn more at https://docs.lumigo.io/docs/nodejs'
-        );
-        const { err, data, type } = await promisifyUserHandler(userHandler, event, context);
-        return performPromisifyType(err, data, type, callback);
-      }
-
-      if (context.__wrappedByLumigo) {
-        const { err, data, type } = await promisifyUserHandler(userHandler, event, context);
-        return performPromisifyType(err, data, type, callback);
-      }
-      context.__wrappedByLumigo = true;
-
-      const functionSpan = getFunctionSpan(event, context);
-
-      await hookUnhandledRejection(functionSpan);
-
-      const pStartTrace = startTrace(functionSpan);
-      const pUserHandler = promisifyUserHandler(userHandler, event, context);
-
-      let [, handlerReturnValue] = await Promise.all([pStartTrace, pUserHandler]);
-
-      handlerReturnValue = normalizeLambdaError(handlerReturnValue);
-
-      if (isStepFunction()) {
-        handlerReturnValue = performStepFunctionLogic(handlerReturnValue);
-      }
-
-      const cleanedHandlerReturnValue = removeLumigoFromStacktrace(handlerReturnValue);
-
-      await endTrace(functionSpan, cleanedHandlerReturnValue);
-      const { err, data, type } = cleanedHandlerReturnValue;
-
-      return performPromisifyType(err, data, type, callback);
-    };
-
-    if (isResponseStreamFunction) {
-      decoratedUserHandler[HANDLER_STREAMING] = STREAM_RESPONSE;
-    }
-    return decoratedUserHandler;
+  (options: TraceOptions) =>
+  <T extends Handler | ResponseStreamHandler>(userHandler: T): T => {
+    return decorateUserHandler(userHandler, options);
   };
 
 export const startTrace = async (functionSpan: GenericSpan) => {
@@ -191,11 +244,14 @@ export const isCallbacked = (handlerReturnValue) => {
 export function promisifyUserHandler(
   userHandler,
   event,
-  context
+  context,
+  responseStream?
 ): Promise<{ err: any; data: any; type: string }> {
   return new Promise((resolve) => {
     try {
-      const result = userHandler(event, context, callbackResolver(resolve));
+      const result = isResponseStreamFunction(userHandler)
+        ? userHandler(event, responseStream, context, callbackResolver(resolve))
+        : userHandler(event, context, callbackResolver(resolve));
       if (isPromise(result)) {
         result
           .then((data) => resolve({ err: null, data, type: ASYNC_HANDLER_RESOLVED }))
@@ -286,7 +342,12 @@ const logLeakedSpans = (allSpans) => {
   });
 };
 
-const performPromisifyType = (err, data, type, callback): Handler => {
+const performPromisifyType = <T extends Handler | ResponseStreamHandler>(
+  err,
+  data: T,
+  type,
+  callback
+): T => {
   switch (type) {
     case HANDLER_CALLBACKED:
       callback(err, data);

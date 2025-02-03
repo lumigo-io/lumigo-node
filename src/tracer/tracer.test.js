@@ -818,18 +818,19 @@ describe('tracer', () => {
   });
 
   test('responseStreamFunctionLogic - tracer disabled and decorator marked as responseStream', async () => {
-    const handler = jest.fn(async () => {});
+    const handler = jest.fn(async (event, responseStream, _) => responseStream);
     handler[HANDLER_STREAMING] = STREAM_RESPONSE;
 
-    const { event, context } = new HandlerInputsBuilder().build();
+    const { event, context, responseStream } = new HandlerInputsBuilder()
+      // here we put mocked data to stream, because handler is mocked as well. Mocked `handler` just return response stream back
+      .withResponseStream({ hello: 'world' })
+      .build();
 
     const decoratedUserHandler = tracer.trace({})(handler);
-    await decoratedUserHandler(event, context);
+    const result = await decoratedUserHandler(event, responseStream, context);
 
     expect(decoratedUserHandler[HANDLER_STREAMING]).toEqual(STREAM_RESPONSE);
-    expect(spies.warnClient).toHaveBeenCalledWith(
-      'Tracer is disabled, running on a response stream function'
-    );
+    expect(result).toEqual({ hello: 'world' });
   });
 
   test('performStepFunctionLogic - Happy flow', async () => {
