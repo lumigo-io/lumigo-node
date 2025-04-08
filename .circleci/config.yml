@@ -226,7 +226,7 @@ jobs:
       - run:
           name: Generate SBOM using Syft
           command: |
-            syft dir:. -o json > syft-sbom.json
+            syft dir:~/lumigo-node -o json > syft-sbom.json
       - run:
           name: Scan with Grype
           command: |
