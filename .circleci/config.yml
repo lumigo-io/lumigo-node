@@ -49,7 +49,7 @@ workflows:
         context: common
         requires:
           - lumigo-orb/is_environment_available
-    
+
     - lumigo-orb/integration-test-parallel:
         context: common
         tests_spec: testNode
@@ -71,6 +71,7 @@ workflows:
         requires:
           - test
           - test-18
+          - scan-vulnerabilities
           - lumigo-orb/integration-test-parallel
 
     - deploy:
@@ -80,6 +81,23 @@ workflows:
         filters:
           branches:
             only: master
+
+    - scan-vulnerabilities:
+        name: scan for vulnerabilities
+
+# Add a new scheduled workflow for daily vulnerability scanning
+  daily-vulnerability-scan:
+    triggers:
+      - schedule:
+          cron: "0 6 * * *"  # Run at 6:00 AM UTC every day
+          filters:
+            branches:
+              only:
+                - master
+    jobs:
+      - scan-vulnerabilities:
+          name: daily vulnerability scan
+          context: common
 
 jobs:
   test:
@@ -192,3 +210,25 @@ jobs:
     - run:
         name: deploy to npm + lambda layer
         command: ./scripts/bd_to_prod.sh
+
+  scan-vulnerabilities:
+    <<: *defaults
+    working_directory: ~/lumigo-node
+    steps:
+      - checkout
+      - run:
+          name: Install Syft
+          command: |
+            curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+      - run:
+          name: Install Grype
+          command: |
+            curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
+      - run:
+          name: Generate SBOM using Syft
+          command: |
+            syft dir:. -o json > syft-sbom.json
+      - run:
+          name: Scan with Grype
+          command: |
+            grype sbom:syft-sbom.json -o table
