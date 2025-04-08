@@ -212,7 +212,6 @@ jobs:
   scan-vulnerabilities:
     <<: *defaults
     working_directory: ~/lumigo-node
-    name: scan-vulnerabilities
     steps:
       - checkout
       - run:
