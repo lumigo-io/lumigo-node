@@ -82,8 +82,7 @@ workflows:
           branches:
             only: master
 
-    - scan-vulnerabilities:
-        name: scan for vulnerabilities
+    - scan-vulnerabilities
 
   daily-vulnerability-scan:
     triggers:
@@ -213,6 +212,7 @@ jobs:
   scan-vulnerabilities:
     <<: *defaults
     working_directory: ~/lumigo-node
+    name: scan-vulnerabilities
     steps:
       - checkout
       - run:
