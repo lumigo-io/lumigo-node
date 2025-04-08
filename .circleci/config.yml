@@ -140,15 +140,6 @@ jobs:
     steps:
       - checkout-and-install-deps
       - run:
-          name: install npm dependencies
-          command: npm install --legacy-peer-deps
-      - run:
-          name: install-npm-inner
-          command: |
-            pushd auto-instrument-handler
-              npm install
-            popd
-      - run:
           name: prettier
           command: npm run prettier:ci
       - run:
@@ -217,7 +208,7 @@ jobs:
     - run:
         name: Scan with Grype
         command: |
-          grype sbom:sbom.json -o table
+          grype sbom:sbom.json -o table --fail-on high
 
 commands:
   checkout-and-install-deps:
@@ -232,6 +223,3 @@ commands:
             pushd auto-instrument-handler
               npm install
             popd
-      - run:
-          name: prettier
-          command: npm run prettier:ci
