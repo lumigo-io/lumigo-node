@@ -195,7 +195,11 @@ jobs:
         command: ./scripts/bd_to_prod.sh
 
   scan-vulnerabilities:
-    <<: *defaults
+    docker:
+      - image: lumigo/ci:latest
+        auth:
+          username: lumigo
+          password: $DOCKERHUB_PASSWORD
     working_directory: ~/lumigo-node
     steps:
     - checkout-and-install-deps
