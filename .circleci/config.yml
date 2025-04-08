@@ -82,7 +82,10 @@ workflows:
           branches:
             only: master
 
-    - scan-vulnerabilities
+    - scan-vulnerabilities:
+        context:
+          - common
+
 
   daily-vulnerability-scan:
     triggers:
@@ -195,11 +198,7 @@ jobs:
         command: ./scripts/bd_to_prod.sh
 
   scan-vulnerabilities:
-    docker:
-      - image: lumigo/ci:latest
-        auth:
-          username: lumigo
-          password: $DOCKERHUB_PASSWORD
+    <<: *defaults
     working_directory: ~/lumigo-node
     steps:
     - checkout-and-install-deps
