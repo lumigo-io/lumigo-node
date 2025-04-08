@@ -85,7 +85,6 @@ workflows:
     - scan-vulnerabilities:
         name: scan for vulnerabilities
 
-# Add a new scheduled workflow for daily vulnerability scanning
   daily-vulnerability-scan:
     triggers:
       - schedule:
