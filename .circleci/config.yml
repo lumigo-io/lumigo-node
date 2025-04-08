@@ -106,16 +106,7 @@ jobs:
     resource_class: medium+
     working_directory: ~/lumigo-node
     steps:
-    - checkout
-    - run:
-        name: install npm dependencies
-        command: npm install
-    - run:
-        name: install-npm-inner
-        command: |
-          pushd auto-instrument-handler
-            npm install
-          popd
+    - checkout-and-install-deps
     - run:
         name: prettier
         command: npm run prettier:ci
@@ -144,13 +135,7 @@ jobs:
     resource_class: large
     working_directory: ~/lumigo-node
     steps:
-      - run:
-          name: show current node version
-          command: node --version
-      - run:
-          name: install openssl
-          command: apt-get update -y && apt-get install -y openssl
-      - checkout
+      - checkout-and-install-deps
       - run:
           name: install npm dependencies
           command: npm install --legacy-peer-deps
@@ -210,23 +195,40 @@ jobs:
         command: ./scripts/bd_to_prod.sh
 
   scan-vulnerabilities:
-    docker:
-      - image: cimg/node:23.11.0
+    <<: *defaults
+    working_directory: ~/lumigo-node
+    steps:
+    - checkout-and-install-deps
+    - run:
+        name: Install Syft
+        command: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+    - run:
+        name: Install Grype
+        command: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
+    - run:
+        name: Generate SBOM using Syft
+        command: |
+            syft dir:$(pwd) -o json > sbom.json
+    - run:
+        name: Scan with Grype
+        command: |
+          grype sbom:sbom.json -o table
+
+commands:
+  checkout-and-install-deps:
     steps:
       - checkout
       - run:
-          name: Install Syft
-          command: |
-            curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+          name: install npm dependencies
+          command: npm install
       - run:
-          name: Install Grype
+          name: install-npm-inner
           command: |
-            curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
+            pushd auto-instrument-handler
+              npm install
+            popd
       - run:
-          name: Generate SBOM using Syft
-          command: |
-             syft dir:$(pwd) -o json > sbom.json
-      - run:
-          name: Scan with Grype
-          command: |
-            grype sbom:sbom.json -o table
+          name: prettier
+          command: npm run prettier:ci
