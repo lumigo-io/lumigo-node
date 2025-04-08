@@ -210,7 +210,7 @@ jobs:
         command: ./scripts/bd_to_prod.sh
 
   scan-vulnerabilities:
-    <<: *defaults
+    image: cimg/node
     working_directory: ~/lumigo-node
     steps:
       - checkout
