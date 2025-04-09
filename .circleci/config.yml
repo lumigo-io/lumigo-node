@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  lumigo-orb: &lumigo_orb_version lumigo/lumigo-orb@dev:84e22aa
+  lumigo-orb: &lumigo_orb_version lumigo/lumigo-orb@dev:e981163
 
 defaults: &defaults
   docker:
@@ -66,7 +66,8 @@ workflows:
         requires:
           - lumigo-orb/integration-test-parallel
 
-    - lumigo-orb/vulnerability-scan
+    - lumigo-orb/vulnerability-scan:
+        pre_scan_command: "checkout-and-install-deps"
 
     - lumigo-orb/workflow-completed-successfully:
         context: common
@@ -84,6 +85,20 @@ workflows:
           branches:
             only: master
 
+  daily-vulnerability-scan:
+    triggers:
+      - schedule:
+          cron: "0 6 * * *"  # Run at 6:00 AM UTC every day
+          filters:
+            branches:
+              only:
+                - master
+    jobs:
+      - lumigo-orb/vulnerability-scan:
+          context: common
+          params:
+            checkout-and-install-deps: "checkout-and-install-deps"
+
 jobs:
   test:
     <<: *defaults
@@ -93,16 +108,7 @@ jobs:
     resource_class: medium+
     working_directory: ~/lumigo-node
     steps:
-    - checkout
-    - run:
-        name: install npm dependencies
-        command: npm install
-    - run:
-        name: install-npm-inner
-        command: |
-          pushd auto-instrument-handler
-            npm install
-          popd
+    - checkout-and-install-deps
     - run:
         name: prettier
         command: npm run prettier:ci
@@ -131,22 +137,7 @@ jobs:
     resource_class: large
     working_directory: ~/lumigo-node
     steps:
-      - run:
-          name: show current node version
-          command: node --version
-      - run:
-          name: install openssl
-          command: apt-get update -y && apt-get install -y openssl
-      - checkout
-      - run:
-          name: install npm dependencies
-          command: npm install --legacy-peer-deps
-      - run:
-          name: install-npm-inner
-          command: |
-            pushd auto-instrument-handler
-              npm install
-            popd
+      - checkout-and-install-deps
       - run:
           name: prettier
           command: npm run prettier:ci
@@ -195,3 +186,17 @@ jobs:
     - run:
         name: deploy to npm + lambda layer
         command: ./scripts/bd_to_prod.sh
+
+commands:
+  checkout-and-install-deps:
+    steps:
+      - checkout
+      - run:
+          name: install npm dependencies
+          command: npm install
+      - run:
+          name: install-npm-inner
+          command: |
+            pushd auto-instrument-handler
+              npm install
+            popd
