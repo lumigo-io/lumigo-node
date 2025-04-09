@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  lumigo-orb: &lumigo_orb_version lumigo/lumigo-orb@dev:e7c8de1
+  lumigo-orb: &lumigo_orb_version lumigo/lumigo-orb@volatile
 
 defaults: &defaults
   docker:
@@ -67,6 +67,7 @@ workflows:
           - lumigo-orb/integration-test-parallel
 
     - lumigo-orb/vulnerability-scan:
+        name: vulnerability-scan
         context: common
         pre_scan_command: |
           npm ci && pushd auto-instrument-handler && npm install && popd
@@ -97,8 +98,11 @@ workflows:
                 - master
     jobs:
       - lumigo-orb/vulnerability-scan:
+          name: daily-vulnerability-scan
           context: common
-          pre_scan_command: "checkout-and-install-deps"
+          pre_scan_command: |
+            npm ci && pushd auto-instrument-handler && npm install && popd
+
 
 jobs:
   test:
