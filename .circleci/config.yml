@@ -141,6 +141,12 @@ jobs:
     resource_class: large
     working_directory: ~/lumigo-node
     steps:
+      - run:
+          name: show current node version
+          command: node --version
+      - run:
+          name: install openssl # for running Prisma tests under Node >= 18
+          command: apt-get update -y && apt-get install -y openssl
       - checkout-and-install-deps
       - run:
           name: prettier
