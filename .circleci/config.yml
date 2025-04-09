@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  lumigo-orb: &lumigo_orb_version lumigo/lumigo-orb@dev:e981163
+  lumigo-orb: &lumigo_orb_version lumigo/lumigo-orb@dev:e7c8de1
 
 defaults: &defaults
   docker:
