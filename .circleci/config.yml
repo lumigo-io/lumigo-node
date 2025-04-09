@@ -69,7 +69,7 @@ workflows:
     - lumigo-orb/vulnerability-scan:
         context: common
         pre_scan_command: |
-          npm ci && pushd auto-instrument-handler && npm ci && popd
+          npm ci && pushd auto-instrument-handler && npm install && popd
 
     - lumigo-orb/workflow-completed-successfully:
         context: common
