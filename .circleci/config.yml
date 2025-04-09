@@ -49,7 +49,7 @@ workflows:
         context: common
         requires:
           - lumigo-orb/is_environment_available
-    
+
     - lumigo-orb/integration-test-parallel:
         context: common
         tests_spec: testNode
@@ -66,11 +66,17 @@ workflows:
         requires:
           - lumigo-orb/integration-test-parallel
 
+    - lumigo-orb/vulnerability-scan:
+        context: common
+        pre_scan_command: |
+          npm ci && pushd auto-instrument-handler && npm install && popd
+
     - lumigo-orb/workflow-completed-successfully:
         context: common
         requires:
           - test
           - test-18
+          - lumigo-orb/vulnerability-scan
           - lumigo-orb/integration-test-parallel
 
     - deploy:
@@ -81,6 +87,22 @@ workflows:
           branches:
             only: master
 
+  daily-vulnerability-scan:
+    triggers:
+      - schedule:
+          cron: "0 6 * * *"  # Run at 6:00 AM UTC every day
+          filters:
+            branches:
+              only:
+                - master
+    jobs:
+      - lumigo-orb/vulnerability-scan:
+          name: daily-vulnerability-scan
+          context: common
+          pre_scan_command: |
+            npm ci && pushd auto-instrument-handler && npm install && popd
+
+
 jobs:
   test:
     <<: *defaults
@@ -90,16 +112,7 @@ jobs:
     resource_class: medium+
     working_directory: ~/lumigo-node
     steps:
-    - checkout
-    - run:
-        name: install npm dependencies
-        command: npm install
-    - run:
-        name: install-npm-inner
-        command: |
-          pushd auto-instrument-handler
-            npm install
-          popd
+    - checkout-and-install-deps
     - run:
         name: prettier
         command: npm run prettier:ci
@@ -132,18 +145,9 @@ jobs:
           name: show current node version
           command: node --version
       - run:
-          name: install openssl
+          name: install openssl # for running Prisma tests under Node >= 18
           command: apt-get update -y && apt-get install -y openssl
-      - checkout
-      - run:
-          name: install npm dependencies
-          command: npm install --legacy-peer-deps
-      - run:
-          name: install-npm-inner
-          command: |
-            pushd auto-instrument-handler
-              npm install
-            popd
+      - checkout-and-install-deps
       - run:
           name: prettier
           command: npm run prettier:ci
@@ -192,3 +196,17 @@ jobs:
     - run:
         name: deploy to npm + lambda layer
         command: ./scripts/bd_to_prod.sh
+
+commands:
+  checkout-and-install-deps:
+    steps:
+      - checkout
+      - run:
+          name: install npm dependencies
+          command: npm install
+      - run:
+          name: install-npm-inner
+          command: |
+            pushd auto-instrument-handler
+              npm install
+            popd
