@@ -67,7 +67,8 @@ workflows:
           - lumigo-orb/integration-test-parallel
 
     - lumigo-orb/vulnerability-scan:
-        pre_scan_command: "checkout-and-install-deps"
+        pre_scan_command: |
+          npm ci && pushd auto-instrument-handler && npm ci && popd
 
     - lumigo-orb/workflow-completed-successfully:
         context: common
