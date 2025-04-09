@@ -96,8 +96,7 @@ workflows:
     jobs:
       - lumigo-orb/vulnerability-scan:
           context: common
-          params:
-            checkout-and-install-deps: "checkout-and-install-deps"
+          checkout-and-install-deps: "checkout-and-install-deps"
 
 jobs:
   test:
