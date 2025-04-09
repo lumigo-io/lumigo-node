@@ -67,7 +67,6 @@ workflows:
           - lumigo-orb/integration-test-parallel
 
     - lumigo-orb/vulnerability-scan:
-        name: vulnerability-scan
         context: common
         pre_scan_command: |
           npm ci && pushd auto-instrument-handler && npm install && popd
