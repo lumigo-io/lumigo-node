@@ -28,4 +28,4 @@ echo "Creating lumigo-node layer to ${region}"
     --region "$region" \
     --package-folder "nodejs lumigo_wrapper" \
     --version "$version" \
-    --runtimes "nodejs10.x nodejs12.x nodejs14.x nodejs16.x nodejs18.x nodejs20.x"
+    --runtimes "nodejs16.x nodejs18.x nodejs20.x nodejs22.x"
