@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  lumigo-orb: &lumigo_orb_version lumigo/lumigo-orb@volatile
+  lumigo-orb: &lumigo_orb_version lumigo/lumigo-orb@dev:9c76aba
 
 defaults: &defaults
   docker:
@@ -70,6 +70,7 @@ workflows:
         context: common
         pre_scan_command: |
           npm ci && pushd auto-instrument-handler && npm install && popd
+        targets_file: ./grype_targets.txt
 
     - lumigo-orb/workflow-completed-successfully:
         context: common
