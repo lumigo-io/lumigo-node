@@ -102,6 +102,7 @@ workflows:
           context: common
           pre_scan_command: |
             npm ci && pushd auto-instrument-handler && npm install && popd
+          targets_file: ./grype_targets.txt
 
 
 jobs:
