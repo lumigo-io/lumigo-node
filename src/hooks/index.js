@@ -6,6 +6,7 @@ import {
   setLambdaWrapped,
 } from '../utils';
 import { Http } from './http';
+import { Http2 } from './http2';
 import { hookMongoDb } from './mongodb';
 import { hookMssql } from './msSql';
 import { hookMySql } from './mySql';
@@ -19,6 +20,7 @@ export default () => {
   if (!isSwitchedOff() && isAwsEnvironment()) {
     if (!isLambdaWrapped()) {
       safeExecute(Http.hookHttp)();
+      safeExecute(Http2.hookHttp2)();
       safeExecute(hookMongoDb)();
       safeExecute(hookRedis)();
       safeExecute(hookPg)();
