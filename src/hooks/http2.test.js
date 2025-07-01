@@ -251,7 +251,6 @@ describe('http2 hook', () => {
     const expected1 = {
       url: 'https://x.com',
       options: undefined,
-      callback: undefined,
     };
     expect(Http2.http2RequestArguments(['https://x.com'])).toEqual(expected1);
   });
@@ -262,7 +261,6 @@ describe('http2 hook', () => {
     const expected2 = {
       url: 'https://x.com',
       options: undefined,
-      callback,
     };
     expect(Http2.http2RequestArguments(['https://x.com', callback])).toEqual(expected2);
   });
@@ -273,7 +271,6 @@ describe('http2 hook', () => {
     const expected3 = {
       url: 'https://x.com',
       options,
-      callback,
     };
     expect(Http2.http2RequestArguments(['https://x.com', options, callback])).toEqual(expected3);
   });
@@ -284,9 +281,36 @@ describe('http2 hook', () => {
     const expected4 = {
       url: undefined,
       options,
-      callback,
     };
     expect(Http2.http2RequestArguments([options, callback])).toEqual(expected4);
+  });
+
+  test('http2RequestArguments -> http2(http2Headers)', () => {
+    const http2Headers = {
+      ':method': 'POST',
+      ':path': '/httpbin/post',
+      ':scheme': 'https',
+      ':authority': 'nghttp2.org',
+      'content-type': 'application/json',
+      'content-length': '76',
+    };
+
+    const expected = {
+      url: 'https://nghttp2.org/httpbin/post',
+      options: {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'content-length': '76',
+        },
+        path: '/httpbin/post',
+        protocol: 'https:',
+        hostname: 'nghttp2.org',
+        host: 'nghttp2.org',
+      },
+    };
+
+    expect(Http2.http2RequestArguments([http2Headers])).toEqual(expected);
   });
 
   test('addOptionsToHttp2RequestArguments', () => {
@@ -453,7 +477,7 @@ describe('http2 hook', () => {
     const args = ['https://example.com', { headers: {} }];
     const extenderContext = {};
 
-    Http2.http2BeforeRequestWrapper(args, extenderContext);
+    Http2.http2BeforeConnectWrapper(args, extenderContext);
 
     // Verify that headers were added
     expect(args[1].headers).toBeDefined();
