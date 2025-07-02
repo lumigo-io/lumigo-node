@@ -1,12 +1,8 @@
-import { getCurrentTransactionId, getHttpSpan } from '../spans/awsSpan';
 import { URL } from 'url';
-import { SpansContainer, TracerGlobals } from '../globals';
-
 import * as extender from '../extender';
 import * as http2 from 'http2';
 
 import { GlobalDurationTimer } from '../utils/globalDurationTimer';
-import { runOneTimeWrapper } from '../utils/functionUtils';
 import { BaseHttp, RequestData } from './baseHttp';
 import { BasicChildSpan } from '../types/spans/basicSpan';
 import * as logger from '../logger';
@@ -18,190 +14,94 @@ export class Http2 {
     logger.debug('HTTP/2 request arguments', {
       args,
       argsLength: args.length,
-      firstArgType: args.length > 0 ? typeof args[0] : 'none',
-      firstArgIsArray: args.length > 0 ? Array.isArray(args[0]) : false,
-      firstArgIsURL: args.length > 0 ? args[0] instanceof URL : false,
-      secondArgType: args.length > 1 ? typeof args[1] : 'none',
-      thirdArgType: args.length > 2 ? typeof args[2] : 'none',
     });
 
     if (args.length === 0) {
       logger.debug('HTTP/2 request arguments error: no arguments provided');
-      throw new Error('http2.connect(...) was called without any arguments.');
+      throw new Error('ClientHttp2Session.request(...) was called without any arguments.');
     }
 
     let url = undefined;
     let options = undefined;
     let callback = undefined;
 
-    // Handle HTTP/2 specific headers format
+    // Handle HTTP/2 specific headers format - this is the primary format for HTTP/2 requests
     if (
       args[0] &&
       typeof args[0] === 'object' &&
       !Array.isArray(args[0]) &&
-      !(args[0] instanceof URL)
+      !(args[0] instanceof URL) &&
+      args[0][':method'] &&
+      args[0][':path']
     ) {
       const headers = args[0];
-      logger.debug('HTTP/2 request arguments: first arg is object', {
-        hasMethodHeader: !!headers[':method'],
-        hasPathHeader: !!headers[':path'],
-        hasSchemeHeader: !!headers[':scheme'],
-        hasAuthorityHeader: !!headers[':authority'],
-        headerKeys: Object.keys(headers),
-        isHttp2Headers: !!(
-          headers[':method'] &&
-          headers[':path'] &&
-          (headers[':scheme'] || headers[':authority'])
-        ),
-      });
+      const method = headers[':method'];
+      const path = headers[':path'];
+      const scheme = headers[':scheme'] || 'https'; // Default to https if not provided
+      const authority = headers[':authority'] || ''; // Authority might be empty
 
-      // Check if this is an HTTP/2 headers object with special keys
-      if (headers[':method'] && headers[':path'] && (headers[':scheme'] || headers[':authority'])) {
-        const method = headers[':method'];
-        const path = headers[':path'];
-        const scheme = headers[':scheme'] || 'https';
-        const authority = headers[':authority'] || '';
+      // Construct URL from HTTP/2 headers
+      url = `${scheme}://${authority}${path}`;
 
-        // Construct URL from HTTP/2 headers
-        url = `${scheme}://${authority}${path}`;
+      // Create options object with appropriate structure
+      options = {
+        method,
+        headers: { ...headers }, // Copy all headers
+        path,
+        protocol: `${scheme}:`,
+        hostname: authority,
+        host: authority,
+        http2Headers: {
+          // Store original HTTP/2 headers for reference
+          method: headers[':method'],
+          path: headers[':path'],
+          scheme: headers[':scheme'],
+          authority: headers[':authority'],
+        },
+      };
 
-        // Create options object with appropriate structure
-        options = {
-          method,
-          headers: { ...headers }, // Copy all headers
-          path,
-          protocol: `${scheme}:`,
-          hostname: authority,
-          host: authority,
-        };
+      // Remove HTTP/2 specific headers from the headers object
+      delete options.headers[':method'];
+      delete options.headers[':path'];
+      delete options.headers[':scheme'];
+      delete options.headers[':authority'];
 
-        logger.debug('HTTP/2 request arguments: created options from headers', {
-          method,
-          path,
-          protocol: `${scheme}:`,
-          hostname: authority,
-          headerCount: Object.keys(headers).length,
-          originalHeaders: headers,
-        });
-
-        // Remove HTTP/2 specific headers from the headers object
-        delete options.headers[':method'];
-        delete options.headers[':path'];
-        delete options.headers[':scheme'];
-        delete options.headers[':authority'];
-
-        logger.debug('HTTP/2 request arguments: cleaned headers', {
-          remainingHeaderCount: Object.keys(options.headers).length,
-          remainingHeaders: options.headers,
-        });
-
-        // Check for callback in the second argument
-        if (typeof args[1] === 'function') {
-          callback = args[1];
-        }
-
-        logger.debug('HTTP/2 request arguments parsed from headers', {
-          url,
-          method,
-          path,
-          authority,
-          scheme,
-          hasCallback: !!callback,
-        });
-
-        return { url, options };
-      }
-    }
-
-    // Handle standard URL and options format
-    if (typeof args[0] === 'string' || args[0] instanceof URL) {
-      url = args[0];
-      logger.debug('HTTP/2 request arguments: first arg is URL', {
-        url: typeof url === 'string' ? url : url instanceof URL ? url.toString() : 'URL object',
-        urlType: typeof url,
-        isURLObject: url instanceof URL,
-        hasSecondArg: args[1] !== undefined,
-      });
-
-      if (args[1]) {
-        if (typeof args[1] === 'function') {
-          callback = args[1];
-          logger.debug('HTTP/2 request arguments: second arg is callback function', {
-            callbackName: callback.name || 'anonymous',
-            callbackLength: callback.length, // Number of parameters
-          });
-        } else {
-          options = args[1];
-          logger.debug('HTTP/2 request arguments: second arg is options object', {
-            optionsKeys: options ? Object.keys(options) : [],
-            hasHeaders: options && !!options.headers,
-            headerKeys: options && options.headers ? Object.keys(options.headers) : [],
-          });
-
-          if (typeof args[2] === 'function') {
-            callback = args[2];
-            logger.debug('HTTP/2 request arguments: third arg is callback function', {
-              callbackName: callback.name || 'anonymous',
-              callbackLength: callback.length,
-            });
-          }
-        }
-      }
-    } else {
-      options = args[0];
-      logger.debug('HTTP/2 request arguments: first arg is options object', {
-        optionsKeys: options ? Object.keys(options) : [],
-        hasHeaders: options && !!options.headers,
-        headerKeys: options && options.headers ? Object.keys(options.headers) : [],
-      });
-
+      // Check for callback in the second argument
       if (typeof args[1] === 'function') {
         callback = args[1];
-        logger.debug('HTTP/2 request arguments: second arg is callback function', {
-          callbackName: callback.name || 'anonymous',
-          callbackLength: callback.length,
-        });
       }
+
+      logger.debug('HTTP/2 request arguments parsed from headers', {
+        url,
+        method,
+        path,
+        authority,
+        scheme,
+        hasCallback: !!callback,
+      });
+
+      return { url, options, callback };
     }
 
     logger.debug('HTTP/2 request arguments: final result', {
-      hasUrl: !!url,
       url: url,
-      hasOptions: !!options,
       optionsKeys: options ? Object.keys(options) : [],
-      hasCallback: !!callback,
     });
 
-    return { url, options };
+    return { url, options, callback };
   }
 
-
-
   @GlobalDurationTimer.timedSync()
-  static http2AfterConnectWrapper(args, originalFnResult, extenderContext) {
-    const clientHttp2Session = originalFnResult;
-    const {
-      requestData,
-      requestRandomId,
-      isTracedDisabled,
-      awsRequestId,
-      transactionId,
-      currentSpan,
-    } = extenderContext;
-    logger.debug('HTTP/2 after connect wrapper', {
-      requestRandomId,
-      awsRequestId,
-      transactionId,
-      hasRequestData: !!requestData,
-      hasCurrentSpan: !!currentSpan,
+  static http2AfterConnectWrapper(args, originalFnResult) {
+    logger.debug('HTTP/2 after connect wrapper called', {
+      args,
+      argsLength: args.length,
     });
-    if (isTracedDisabled) {
-      return;
-    }
-
     // Hook the request method to capture HTTP/2 requests
-    extender.hook(clientHttp2Session, 'request', {
-      beforeHook: (args) => {
+    // ClientHttp2Session.request creates a new HTTP/2 stream for sending a request and receiving a response
+    // This is the correct hook point as it's called for every HTTP/2 request made through this session
+    extender.hook(originalFnResult, 'request', {
+      beforeHook: (args, extenderContext) => {
         extenderContext.isTracedDisabled = true;
         const { url, options = {} } = Http2.http2RequestArguments(args);
 
@@ -237,8 +137,19 @@ export class Http2 {
 
         extenderContext.isTracedDisabled = false;
 
+        logger.debug('HTTP/2 before request extenderContext', {
+          extenderContext,
+          hasRequestData: !!extenderContext.requestData,
+          hasCurrentSpan: !!extenderContext.currentSpan,
+          hasRequestRandomId: !!extenderContext.requestRandomId,
+          hasAwsRequestId: !!extenderContext.awsRequestId,
+          hasTransactionId: !!extenderContext.transactionId,
+        });
       },
-      afterHook: (args, stream, beforeHookData) => {
+      afterHook: (args, stream, extenderContext) => {
+        // beforeHookData is the extenderContext object that was populated by the beforeHook
+        // It contains requestData, requestRandomId, currentSpan, and other data set in the beforeHook
+
         logger.debug('HTTP/2 stream afterHook args', {
           args,
           argsLength: args.length,
@@ -247,15 +158,16 @@ export class Http2 {
 
         // Log beforeHookData
         logger.debug('HTTP/2 stream afterHook beforeHookData', {
-          beforeHookData,
-          hasBeforeHookData: !!beforeHookData,
+          beforeHookData: extenderContext,
+          hasBeforeHookData: !!extenderContext,
         });
-        if (!beforeHookData) {
+        if (!extenderContext) {
           logger.debug('HTTP/2 stream afterHook - no beforeHookData');
           return;
         }
 
-        const { requestData, requestRandomId, currentSpan } = beforeHookData;
+        const { requestData, requestRandomId, awsRequestId, transactionId, currentSpan } =
+          extenderContext;
         logger.debug('HTTP/2 stream afterHook', {
           hasRequestData: !!requestData,
           requestRandomId,
@@ -266,6 +178,7 @@ export class Http2 {
         // Hook stream events to capture request and response data
         const endWrapper = BaseHttp.createRequestDataWriteHandler({ requestData, currentSpan });
         const writeWrapper = BaseHttp.createRequestDataWriteHandler({ requestData, currentSpan });
+
         // Hook response events
         const emitWrapper = Http2.http2StreamEmitBeforeHookWrapper(
           transactionId,
@@ -275,8 +188,13 @@ export class Http2 {
           currentSpan
         );
 
+        // Hook the stream.end method which is called when the request is finished sending data
+        // This allows us to capture the request body when it's sent to the server
         extender.hook(stream, 'end', { beforeHook: endWrapper });
         extender.hook(stream, 'write', { beforeHook: writeWrapper });
+
+        // Hook the stream.emit method which is called for all events on the HTTP/2 stream
+        // This allows us to capture response headers, data, and other events from the server
         extender.hook(stream, 'emit', { beforeHook: emitWrapper });
       },
     });
@@ -289,6 +207,8 @@ export class Http2 {
     requestRandomId: string,
     currentSpan: BasicChildSpan
   ) {
+    let responseDataWriterHandler = undefined;
+
     logger.debug('HTTP/2 creating stream emit hook wrapper', {
       transactionId,
       awsRequestId,
@@ -305,117 +225,78 @@ export class Http2 {
       requestData.body = '';
       logger.debug('HTTP/2 requestData.body was undefined, set to empty string');
     }
-    const emitResponseHandler = Http2.createEmitResponseHandler(
-      transactionId,
-      awsRequestId,
-      requestData,
-      requestRandomId
-    );
-    const oneTimerEmitResponseHandler = runOneTimeWrapper(emitResponseHandler, {});
-    const socketWriteRequestHandler = BaseHttp.createRequestSocketDataWriteHandler({
-      requestData,
-      currentSpan,
-    });
+
     return function (args: any[]) {
       GlobalDurationTimer.start();
       logger.debug('HTTP/2 stream emit event', { eventType: args[0] });
 
       if (args[0] === 'response') {
         const responseObj = args[1];
+
+        // Format the HTTP/2 response to match the expected structure for BaseHttp.createResponseDataWriterHandler
+        const formattedResponse = {
+          headers: { ...responseObj }, // Copy all headers from response
+          statusCode: responseObj[':status'] || 0, // Extract status code from :status header
+        };
+
         logger.debug('HTTP/2 response event received', {
           hasResponseObj: !!responseObj,
-          statusCode: responseObj?.statusCode,
-          hasHeaders: responseObj?.headers ? true : false,
-          headerKeys: responseObj?.headers ? Object.keys(responseObj.headers) : undefined,
+          statusCode: formattedResponse.statusCode,
+          hasHeaders: !!formattedResponse.headers,
+          headerKeys: formattedResponse.headers ? Object.keys(formattedResponse.headers) : [],
+          responseObj: responseObj,
         });
-        oneTimerEmitResponseHandler(responseObj);
+
+        responseDataWriterHandler = BaseHttp.createResponseDataWriterHandler({
+          transactionId,
+          awsRequestId,
+          requestData,
+          requestRandomId,
+          response: formattedResponse,
+        });
       }
-      if (args[0] === 'headers') {
-        // For HTTP/2, headers event contains the response headers
-        const headers = args[1];
-        const statusCode = headers[':status'];
-        logger.debug('HTTP/2 headers event received', { headers, statusCode });
-        oneTimerEmitResponseHandler({ headers, statusCode });
-      }
-      if (args[0] === 'socket') {
-        logger.debug('HTTP/2 socket event received');
-        socketWriteRequestHandler(args[1]);
-      }
+
       if (args[0] === 'data') {
-        logger.debug('HTTP/2 data event received', {
-          dataLength: args[1] ? args[1].length : 0,
-          dataType: args[1] ? typeof args[1] : 'undefined',
-        });
+        const data = args[1];
+        // For HTTP/2, data event contains the response body data
+
+        if (responseDataWriterHandler) {
+          logger.debug('HTTP/2 data event - calling responseDataWriterHandler');
+          responseDataWriterHandler(args);
+        }
       }
+
       if (args[0] === 'end') {
         logger.debug('HTTP/2 end event received');
+
+        if (responseDataWriterHandler) {
+          logger.debug('HTTP/2 end event - calling responseDataWriterHandler');
+          responseDataWriterHandler(args);
+        }
       }
+
       if (args[0] === 'error') {
-        logger.debug('HTTP/2 error event received', {
-          error: args[1] ? args[1].message : 'Unknown error',
+        const errorObj = args[1];
+        logger.warn('HTTP/2 error event received', {
+          error: errorObj ? errorObj.message : 'Unknown error',
+          errorObject: errorObj,
+          errorType: errorObj ? typeof errorObj : 'undefined',
+          errorStack: errorObj && errorObj.stack ? errorObj.stack : undefined,
         });
       }
       GlobalDurationTimer.stop();
     };
   }
 
-  static createEmitResponseHandler(
-    transactionId: string,
-    awsRequestId: string,
-    requestData: RequestData,
-    requestRandomId: string
-  ) {
-    logger.debug('HTTP/2 creating emit response handler', {
-      transactionId,
-      awsRequestId,
-      requestRandomId,
-      hasRequestData: !!requestData,
-    });
-
-    // Ensure requestData has a body property
-    if (!requestData) {
-      requestData = { body: '' };
-      logger.debug('HTTP/2 requestData was not defined in response handler, created empty');
-    } else if (requestData.body === undefined) {
-      requestData.body = '';
-      logger.debug(
-        'HTTP/2 requestData.body was undefined in response handler, set to empty string'
-      );
-    }
-    return (response: { headers: {}; statusCode: number }) => {
-      logger.debug('HTTP/2 emit response handler called', {
-        hasResponse: !!response,
-        statusCode: response ? response.statusCode : undefined,
-        hasHeaders: response && !!response.headers,
-        response: response,
-      });
-
-      const onHandler = BaseHttp.createResponseDataWriterHandler({
-        transactionId,
-        awsRequestId,
-        requestData,
-        requestRandomId,
-        response,
-      });
-      logger.debug('HTTP/2 hooking response emit events');
-    };
-  }
-
   static wrapHttp2Lib(http2Lib) {
-    logger.info('HTTP/2 wrapping library');
-    console.info('HTTP/2 wrapping library');
-
     // Hook the connect method which creates a new HTTP/2 session
     logger.info('HTTP/2 hooking connect method');
     extender.hook(http2Lib, 'connect', {
       afterHook: Http2.http2AfterConnectWrapper,
     });
-
   }
 
   static hookHttp2() {
-    logger.info('HTTP/2 initializing hooks');
-    console.log('HTTP/2 initializing hooks');
     Http2.wrapHttp2Lib(http2);
     logger.info('HTTP/2 hooks initialized');
   }

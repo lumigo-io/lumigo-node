@@ -290,10 +290,21 @@ export class BaseHttp {
       if (args[0] === 'data' && body.length < maxPayloadSize) {
         let chunk = httpDataToString(args[1]);
         const allowedLengthToAdd = maxPayloadSize - body.length;
+
+        logger.debug('Processing response data chunk', {
+          chunkLength: chunk.length,
+          allowedLengthToAdd,
+          totalBodyLength: body.length,
+        });
+
         //if we reached or close to limit get only substring of the part to reach the limit
         if (chunk.length > allowedLengthToAdd) {
           truncated = true;
           chunk = chunk.substr(0, allowedLengthToAdd);
+          logger.debug('Response data truncated', {
+            originalChunkLength: chunk.length,
+            truncatedChunkLength: allowedLengthToAdd,
+          });
         }
         body += chunk;
       }
@@ -304,6 +315,14 @@ export class BaseHttp {
           body,
           headers: lowerCaseObjectKeys(headers),
         };
+
+        logger.debug('Response data complete', {
+          statusCode,
+          bodyLength: body.length,
+          truncated,
+          receivedTime,
+        });
+
         const httpSpan = getHttpSpan(
           transactionId,
           awsRequestId,

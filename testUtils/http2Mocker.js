@@ -1,4 +1,4 @@
-const EventEmitter = require('events');
+import EventEmitter from 'events';
 
 /**
  * Mock implementation of HTTP/2 stream for testing
@@ -8,14 +8,6 @@ export class Http2Stream extends EventEmitter {
     super();
     this.headers = {};
     this.statusCode = 200;
-    this.state = {
-      state: 'OPEN',
-      localWindowSize: 65535,
-      localClose: false,
-      remoteClose: false
-    };
-    this.closed = false;
-    this.id = Math.floor(Math.random() * 1000) + 1; // Random stream ID
   }
 
   write(data) {
@@ -29,16 +21,6 @@ export class Http2Stream extends EventEmitter {
     }
     return true;
   }
-
-  close() {
-    this.closed = true;
-    this.emit('close');
-  }
-
-  priority(options = {}) {
-    this.emit('priority', options);
-    return true;
-  }
 }
 
 /**
@@ -48,20 +30,11 @@ export class Http2Session extends EventEmitter {
   constructor() {
     super();
     this.destroyed = false;
-    this.socket = {
-      remoteAddress: '127.0.0.1',
-      remotePort: 8080
-    };
-    this.state = {
-      deflateDynamicTableSize: 4096,
-      inflateDynamicTableSize: 4096
-    };
   }
 
   request(headers = {}, options = {}) {
     Http2RequestsForTesting.startRequest();
     const stream = new Http2Stream();
-    stream.session = this;
 
     // Store the request details
     Http2RequestsForTesting.pushRequest({
@@ -95,10 +68,6 @@ export class Http2Session extends EventEmitter {
   close() {
     this.destroyed = true;
     this.emit('close');
-  }
-  
-  goaway(errorCode, lastStreamId, opaqueData) {
-    this.emit('goaway', errorCode, lastStreamId, opaqueData);
   }
 }
 
@@ -243,79 +212,16 @@ export const Http2Mocker = (() => {
   };
 
   const createSecureClient = connect;
-  
-  // Mock for createServer and createSecureServer
-  const createServer = (options, onRequestHandler) => {
-    const server = new EventEmitter();
-    
-    if (typeof options === 'function') {
-      onRequestHandler = options;
-      options = {};
-    }
-    
-    if (onRequestHandler) {
-      server.on('request', onRequestHandler);
-    }
-    
-    server.listen = (port, callback) => {
-      if (callback) callback();
-      return server;
-    };
-    
-    return server;
-  };
-  
-  const createSecureServer = createServer;
 
   return {
     connect,
     createSecureClient,
-    createServer,
-    createSecureServer,
     constants: {
-      // HTTP/2 header constants
       HTTP2_HEADER_METHOD: ':method',
       HTTP2_HEADER_PATH: ':path',
       HTTP2_HEADER_AUTHORITY: ':authority',
       HTTP2_HEADER_SCHEME: ':scheme',
       HTTP2_HEADER_STATUS: ':status',
-      
-      // HTTP/2 error constants
-      NGHTTP2_NO_ERROR: 0,
-      NGHTTP2_PROTOCOL_ERROR: 1,
-      NGHTTP2_INTERNAL_ERROR: 2,
-      NGHTTP2_FLOW_CONTROL_ERROR: 3,
-      NGHTTP2_SETTINGS_TIMEOUT: 4,
-      NGHTTP2_STREAM_CLOSED: 5,
-      NGHTTP2_FRAME_SIZE_ERROR: 6,
-      NGHTTP2_REFUSED_STREAM: 7,
-      NGHTTP2_CANCEL: 8,
-      NGHTTP2_COMPRESSION_ERROR: 9,
-      NGHTTP2_CONNECT_ERROR: 10,
-      NGHTTP2_ENHANCE_YOUR_CALM: 11,
-      NGHTTP2_INADEQUATE_SECURITY: 12,
-      NGHTTP2_HTTP_1_1_REQUIRED: 13,
-      
-      // HTTP/2 session type constants
-      NGHTTP2_SESSION_SERVER: 1,
-      NGHTTP2_SESSION_CLIENT: 2,
-      
-      // HTTP/2 stream state constants
-      NGHTTP2_STREAM_STATE_IDLE: 1,
-      NGHTTP2_STREAM_STATE_OPEN: 2,
-      NGHTTP2_STREAM_STATE_RESERVED_LOCAL: 3,
-      NGHTTP2_STREAM_STATE_RESERVED_REMOTE: 4,
-      NGHTTP2_STREAM_STATE_HALF_CLOSED_LOCAL: 5,
-      NGHTTP2_STREAM_STATE_HALF_CLOSED_REMOTE: 6,
-      NGHTTP2_STREAM_STATE_CLOSED: 7,
-      
-      // HTTP/2 settings constants
-      NGHTTP2_DEFAULT_WEIGHT: 16,
-      
-      // HTTP/2 flag constants
-      NGHTTP2_FLAG_NONE: 0,
-      NGHTTP2_FLAG_END_STREAM: 1,
-      NGHTTP2_FLAG_END_HEADERS: 4,
     },
   };
 })();
