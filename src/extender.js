@@ -7,6 +7,12 @@ const noop = () => {};
 const isFunctionAlreadyWrapped = (fn) => fn && fn.__wrapped;
 
 export const hook = (module, funcName, options = {}, shimmerLib = shimmer) => {
+  logger.debug(`Applying hook to function ${funcName}`, {
+    hasBeforeHook: !!options.beforeHook,
+    hasAfterHook: !!options.afterHook,
+    moduleType: typeof module,
+  });
+
   const { beforeHook = noop, afterHook = noop } = options;
   const safeBeforeHook = safeExecute(beforeHook, `before hook of ${funcName} fail`);
   const safeAfterHook = safeExecute(afterHook, `after hook of ${funcName} fail`);
@@ -14,6 +20,7 @@ export const hook = (module, funcName, options = {}, shimmerLib = shimmer) => {
   try {
     const wrapper = (originalFn) => {
       if (isFunctionAlreadyWrapped(originalFn)) {
+        logger.debug(`Function ${funcName} is already wrapped, skipping`);
         return originalFn;
       }
       return function (...args) {
