@@ -7,6 +7,15 @@ import { BaseHttp, RequestData } from './baseHttp';
 import { BasicChildSpan } from '../types/spans/basicSpan';
 import * as logger from '../logger';
 
+// HTTP/2 specific headers that should be removed from the options.headers object
+const HTTP2_HEADERS = [
+  http2.constants.HTTP2_HEADER_METHOD,
+  http2.constants.HTTP2_HEADER_PATH,
+  http2.constants.HTTP2_HEADER_SCHEME,
+  http2.constants.HTTP2_HEADER_AUTHORITY,
+  http2.constants.HTTP2_HEADER_STATUS,
+];
+
 export class Http2 {
   @GlobalDurationTimer.timedSync()
   static http2RequestArguments(args: any[]): { url?: string; options?: any; callback?: Function } {
@@ -51,20 +60,20 @@ export class Http2 {
         protocol: `${scheme}:`,
         hostname: authority,
         host: authority,
-        http2Headers: {
-          // Store original HTTP/2 headers for reference
-          method: headers[':method'],
-          path: headers[':path'],
-          scheme: headers[':scheme'],
-          authority: headers[':authority'],
-        },
+      };
+
+      // Store HTTP/2 specific headers in a separate property for reference
+      options.http2Headers = {
+        method,
+        path,
+        scheme,
+        authority,
       };
 
       // Remove HTTP/2 specific headers from the headers object
-      delete options.headers[':method'];
-      delete options.headers[':path'];
-      delete options.headers[':scheme'];
-      delete options.headers[':authority'];
+      for (const header of HTTP2_HEADERS) {
+        delete options.headers[header];
+      }
 
       // Check for callback in the second argument
       if (typeof args[1] === 'function') {
@@ -102,7 +111,6 @@ export class Http2 {
     // This is the correct hook point as it's called for every HTTP/2 request made through this session
     extender.hook(originalFnResult, 'request', {
       beforeHook: (args, extenderContext) => {
-        extenderContext.isTracedDisabled = true;
         const { url, options = {} } = Http2.http2RequestArguments(args);
 
         logger.debug('HTTP/2 before request wrapper', { url, options });
@@ -134,8 +142,6 @@ export class Http2 {
         if (httpSpan) {
           extenderContext.currentSpan = httpSpan;
         }
-
-        extenderContext.isTracedDisabled = false;
 
         logger.debug('HTTP/2 before request extenderContext', {
           extenderContext,

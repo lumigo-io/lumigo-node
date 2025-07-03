@@ -240,7 +240,6 @@ describe('http2 hook', () => {
     beforeHook(args, extenderContext);
 
     // Verify that context was updated
-    expect(extenderContext.isTracedDisabled).toBe(false);
     expect(extenderContext.requestRandomId).toBeDefined();
     expect(extenderContext.transactionId).toBeDefined();
     expect(extenderContext.awsRequestId).toBeDefined();
