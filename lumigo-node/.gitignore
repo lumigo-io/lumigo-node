@@ -1,0 +1,21 @@
+*.tgz
+*.swp
+node_modules
+coverage
+lib
+dist
+env.yml
+.serverless
+.idea
+package-lock.json
+nodejs
+.DS_Store
+d_example/
+.vscode
+globalConfig.json
+
+lumigo_wrapper
+
+# Prisma test-related files - only the schema file is used by the Jest setup flow
+testUtils/prisma/**
+!testUtils/prisma/schema.prisma

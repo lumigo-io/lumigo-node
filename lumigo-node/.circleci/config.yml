@@ -1,0 +1,215 @@
+version: 2.1
+
+orbs:
+  lumigo-orb: &lumigo_orb_version lumigo/lumigo-orb@volatile
+
+defaults: &defaults
+  docker:
+    - image: lumigo/ci:latest
+      auth:
+        username: lumigo
+        password: $DOCKERHUB_PASSWORD
+
+workflows:
+  test-deploy:
+    jobs:
+    - lumigo-orb/print_orb_versions:
+        lumigo_orb_version: *lumigo_orb_version
+
+    - test:
+        context: common
+        filters:
+          branches:
+            ignore: master
+
+    - test-18:
+        context: common
+        filters:
+          branches:
+            ignore: master
+
+    - lumigo-orb/is_environment_available:
+        context: common
+        filters:
+          branches:
+            ignore: master
+
+    - lumigo-orb/be-deploy:
+        context: common
+        save_project_folder: false
+        requires:
+          - lumigo-orb/is_environment_available
+
+    - lumigo-orb/prep-it-resources:
+        context: common
+        venv_python_version: "3.9"
+        requires:
+          - lumigo-orb/is_environment_available
+
+    - lumigo-orb/prep-k8s-and-operator:
+        context: common
+        requires:
+          - lumigo-orb/is_environment_available
+
+    - lumigo-orb/integration-test-parallel:
+        context: common
+        tests_spec: testNode
+        run_test_cleanup: false
+        tests_max_parallel: 20
+        requires:
+          - lumigo-orb/be-deploy
+          - lumigo-orb/prep-it-resources
+          - lumigo-orb/prep-k8s-and-operator
+
+    - lumigo-orb/integration-test-cleanup:
+        name: post-test-cleanup
+        context: common
+        requires:
+          - lumigo-orb/integration-test-parallel
+
+    - lumigo-orb/vulnerability-scan:
+        context: common
+        pre_scan_command: |
+          npm ci && pushd auto-instrument-handler && npm install && popd
+        targets_file: ./grype_targets.txt
+
+    - lumigo-orb/workflow-completed-successfully:
+        context: common
+        requires:
+          - test
+          - test-18
+          - lumigo-orb/vulnerability-scan
+          - lumigo-orb/integration-test-parallel
+
+    - deploy:
+        context:
+          - common
+          - node.js
+        filters:
+          branches:
+            only: master
+
+  daily-vulnerability-scan:
+    triggers:
+      - schedule:
+          cron: "0 6 * * *"  # Run at 6:00 AM UTC every day
+          filters:
+            branches:
+              only:
+                - master
+    jobs:
+      - lumigo-orb/vulnerability-scan:
+          name: daily-vulnerability-scan
+          context: common
+          pre_scan_command: |
+            npm ci && pushd auto-instrument-handler && npm install && popd
+          targets_file: ./grype_targets.txt
+
+
+jobs:
+  test:
+    <<: *defaults
+    environment:
+      - TZ: Asia/Jerusalem
+      - NODE_OPTIONS: --max_old_space_size=1500
+    resource_class: medium+
+    working_directory: ~/lumigo-node
+    steps:
+    - checkout-and-install-deps
+    - run:
+        name: prettier
+        command: npm run prettier:ci
+    - run:
+        name: check types
+        command: npm run check-types
+    - run:
+        name: test
+        command: npm test
+    - run:
+        name: eslint
+        command: npm run lint
+    - run:
+        name: code-coverage
+        command: npm test --coverage && codecov
+    - store_artifacts:
+        path: coverage
+        prefix: coverage
+
+  test-18:
+    docker:
+      - image: node:18.20.3-bookworm-slim
+    environment:
+      - TZ: Asia/Jerusalem
+      - NODE_OPTIONS: --max_old_space_size=1500
+    resource_class: large
+    working_directory: ~/lumigo-node
+    steps:
+      - run:
+          name: show current node version
+          command: node --version
+      - run:
+          name: install openssl # for running Prisma tests under Node >= 18
+          command: apt-get update -y && apt-get install -y openssl
+      - checkout-and-install-deps
+      - run:
+          name: prettier
+          command: npm run prettier:ci
+      - run:
+          name: check types
+          command: npm run check-types
+      - run:
+          name: eslint
+          command: npm run lint
+      - run:
+          name: test
+          command: npm test
+          no_output_timeout: 15m
+
+  deploy:
+    <<: *defaults
+    environment:
+      - TZ: Asia/Jerusalem
+    resource_class: medium+
+    working_directory: ~/lumigo-node
+    steps:
+    - run:
+        command: |
+          mkdir ~/.ssh/ && echo -e "Host github.com\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
+          cd ..
+          git clone git@github.com:lumigo-io/common-resources.git
+    - run:
+        command: |
+          cd ..
+          git clone git@github.com:lumigo-io/utils.git
+    - run:
+        command: |
+          cd ..
+          git clone git@github.com:lumigo-io/larn.git
+    - checkout
+    - run:
+        name: Check if tagged
+        command: |
+          tags=$(git tag -l --points-at HEAD)
+          echo "Tags $tags"
+          if [[ ! -z "$tags" ]]
+          then
+            echo "A tagged commit, skip..."
+            circleci step halt
+          fi
+    - run:
+        name: deploy to npm + lambda layer
+        command: ./scripts/bd_to_prod.sh
+
+commands:
+  checkout-and-install-deps:
+    steps:
+      - checkout
+      - run:
+          name: install npm dependencies
+          command: npm install
+      - run:
+          name: install-npm-inner
+          command: |
+            pushd auto-instrument-handler
+              npm install
+            popd
