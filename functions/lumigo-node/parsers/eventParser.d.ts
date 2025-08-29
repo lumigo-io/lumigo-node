@@ -1,0 +1,13 @@
+import type { APIGatewayEvent, APIGatewayProxyEventV2, CloudFrontRequestEvent, S3Event, SNSEvent, SQSEvent } from 'aws-lambda';
+export declare const isApiGwEvent: (event: any) => event is APIGatewayEvent | APIGatewayProxyEventV2;
+export declare const isSnsEvent: (event: any) => event is SNSEvent;
+export declare const isSqsEvent: (event: any) => event is SQSEvent;
+export declare const isS3Event: (event: any) => event is S3Event;
+export declare const isCloudfrontEvent: (event: any) => event is CloudFrontRequestEvent;
+export declare const parseApiGwEvent: (event: any) => {};
+export declare const parseSnsEvent: (event: any) => {};
+export declare const parseSqsEvent: (event: any) => {};
+export declare const parseS3Event: (event: S3Event) => S3Event;
+export declare const parseCloudfrontEvent: (event: CloudFrontRequestEvent) => CloudFrontRequestEvent;
+export declare const parseEvent: (awsEvent: any) => any;
+export declare const getSkipScrubPath: (event: any) => (string | any[])[];

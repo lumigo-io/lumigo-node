@@ -1,14 +1,42 @@
 {
   "compilerOptions": {
+    "target": "es2020",
+    "module": "esnext",
+    "lib": ["es2020"],
     "outDir": "./dist",
-    "allowJs": true,
-    "target": "es5",
+    "rootDir": "./src",
+    "strict": false,
+    "noImplicitAny": false,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
     "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "removeComments": false,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": false,
+    "noImplicitOverride": false,
+    "exactOptionalPropertyTypes": false,
     "moduleResolution": "node",
-    "experimentalDecorators": true,
+    "allowImportingTsExtensions": false,
     "resolveJsonModule": true,
-    "lib": ["esnext", "dom"]
+    "isolatedModules": true,
+    "verbatimModuleSyntax": false,
+    "allowArbitraryExtensions": false,
+    "moduleDetection": "force",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
   },
-  "include": ["./src/**/*"],
-  "exclude": ["**/*.test.js", "**/*.test.ts", "__mocks__", "./testUtils"]
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.js",
+    "**/*.test.ts"
+  ]
 }

@@ -1,0 +1,54 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: EventProcessor Lambda with Lumigo tracing
+
+Parameters:
+  LumigoToken:
+    Type: String
+    Description: Lumigo API token for tracing
+    Default: t_f8f7b905da964eef89261
+    NoEcho: false
+
+Resources:
+  EventProcessorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: eventProcessor
+      CodeUri: .
+      Handler: eventProcessor.handler
+      Runtime: nodejs18.x
+      Timeout: 30
+      MemorySize: 128
+      Environment:
+        Variables:
+          LUMIGO_TRACER_TOKEN: !Ref LumigoToken
+          LUMIGO_ANONYMIZE_ENABLED: "true"
+          LUMIGO_ANONYMIZE_REGEX: '["ssn", "credit.*card", "bank.*account", "driver.*license", "passport.*number", "phone", "email", "address", "zip.*code", "date.*of.*birth", "ip.*address"]'
+      Policies:
+        - CloudWatchLogsFullAccess
+        - Statement:
+            - Effect: Allow
+              Action:
+                - logs:CreateLogGroup
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+              Resource: '*'
+        - Statement:
+            - Effect: Allow
+              Action:
+                - lambda:InvokeFunction
+              Resource: '*'
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /process
+            Method: post
+
+Outputs:
+  EventProcessorFunction:
+    Description: "EventProcessor Lambda Function ARN"
+    Value: !GetAtt EventProcessorFunction.Arn
+  EventProcessorApi:
+    Description: "API Gateway endpoint URL"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/process"

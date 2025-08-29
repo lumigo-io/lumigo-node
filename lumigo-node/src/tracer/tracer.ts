@@ -92,13 +92,36 @@ const processUserHandler = async <Event>(
     try {
       const patterns = JSON.parse(process.env['LUMIGO_ANONYMIZE_REGEX'] || '[]');
       if (patterns && patterns.length > 0) {
-        // Inline anonymization logic
+        // Enhanced anonymization logic that handles JSON strings properly
         const anonymizeValue = (value: any, key: string = ''): any => {
           if (value === null || value === undefined) {
             return value;
           }
 
           if (typeof value === 'string') {
+            // Special handling for event.body - parse JSON, anonymize, then re-stringify
+            if (key === 'body') {
+              try {
+                const parsedBody = JSON.parse(value);
+                const anonymizedBody = anonymizeValue(parsedBody, 'body');
+                // CRITICAL: Re-stringify back to JSON string for the tracer
+                return JSON.stringify(anonymizedBody);
+              } catch (e) {
+                // If parsing fails, fall back to simple anonymization
+                const valueMatches = patterns.some((pattern: string) => {
+                  try {
+                    const regex = new RegExp(pattern, 'i');
+                    return regex.test(value);
+                  } catch (e) {
+                    return false;
+                  }
+                });
+                if (valueMatches) {
+                  return '[ANONYMIZED]';
+                }
+              }
+            }
+
             // Check if the key matches any anonymization pattern
             const keyMatches = patterns.some((pattern: string) => {
               try {
@@ -140,7 +163,8 @@ const processUserHandler = async <Event>(
         };
 
         anonymizedEvent = anonymizeValue(event);
-        logger.debug('PII anonymization applied to event for Lumigo tracing');
+        logger.debug('Enhanced PII anonymization applied to event for Lumigo tracing');
+        logger.info('🔒 ANONYMIZATION: Granular field-level anonymization applied successfully');
       }
     } catch (e) {
       logger.warn('Failed to apply PII anonymization, using original event', e);

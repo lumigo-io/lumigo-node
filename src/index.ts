@@ -1,17 +1,17 @@
-import { trace, Tracer, TracerOptions } from './tracer';
-import {
+const { trace, Tracer, TracerOptions } = require('./tracer');
+const {
   isSwitchedOff,
   safeExecute,
   setSwitchOff,
   setVerboseMode,
   isValidToken,
   SWITCH_OFF_FLAG,
-} from './utils';
-import { ExecutionTags } from './globals';
-import startHooks from './hooks';
-import { HttpSpansAgent } from './httpSpansAgent';
-import * as logger from './logger';
-import * as LumigoLogger from './lumigoLogger';
+} = require('./utils');
+const { ExecutionTags } = require('./globals');
+const startHooks = require('./hooks');
+const { HttpSpansAgent } = require('./httpSpansAgent');
+const logger = require('./logger');
+const LumigoLogger = require('./lumigoLogger');
 
 logger.debug('Tracer imported');
 
@@ -21,54 +21,49 @@ const defaultOptions: Partial<TracerOptions> = {
   debug: false,
 };
 
-function initTracer(options?: TracerOptions): Tracer {
-  const traceOptions = {
-    ...defaultOptions,
-    ...options,
-  };
-
-  traceOptions?.verbose && setVerboseMode();
-  traceOptions?.switchOff && setSwitchOff();
+function initTracer(options: Partial<TracerOptions> = {}): Tracer {
+  const traceOptions = { ...defaultOptions, ...options };
+  traceOptions.verbose && setVerboseMode();
+  traceOptions.switchOff && setSwitchOff();
 
   const token = assertValidToken(traceOptions.token || process.env.LUMIGO_TRACER_TOKEN);
 
-  if (!traceOptions?.switchOff && !isSwitchedOff()) {
+  if (!traceOptions.switchOff && !isSwitchedOff()) {
     safeExecute(startHooks)();
-    HttpSpansAgent.initAgent();
+    logger.debug('Hooks started');
   }
 
-  return {
-    trace: trace({ ...traceOptions, token }),
-    addExecutionTag: ExecutionTags.addTag,
-    info: LumigoLogger.info,
-    warn: LumigoLogger.warn,
-    error: LumigoLogger.error,
-  };
+  if (traceOptions.stepFunction) {
+    logger.debug('Step function mode enabled');
+  }
+
+  return new Tracer(traceOptions);
 }
 
-const assertValidToken = <LumigoToken = string | null>(token: LumigoToken): LumigoToken => {
+function assertValidToken(token: string): string {
+  if (!token) {
+    throw new Error('LUMIGO_TRACER_TOKEN environment variable is required');
+  }
+
   if (!isValidToken(token)) {
-    logger.warnClient(`Invalid Token. Go to Lumigo Settings to get a valid token.`);
-    setSwitchOff();
-    return null;
+    throw new Error('Invalid LUMIGO_TRACER_TOKEN');
   }
 
   return token;
-};
+}
 
-// for index.d.ts to be generated properly
-export { info, warn, error } from './lumigoLogger';
-export default initTracer;
-export const addExecutionTag = ExecutionTags.addTag;
-export { initTracer };
-export type { Tracer, TracerOptions };
-
-// for backward compatibility
-module.exports = initTracer;
-Object.assign(module.exports, {
-  addExecutionTag,
-  info: LumigoLogger.info,
-  warn: LumigoLogger.warn,
-  error: LumigoLogger.error,
+// Export the functions
+module.exports = {
+  trace,
+  Tracer,
+  TracerOptions,
   initTracer,
-});
+  isSwitchedOff,
+  setSwitchOff,
+  setVerboseMode,
+  SWITCH_OFF_FLAG,
+  ExecutionTags,
+  HttpSpansAgent,
+  logger,
+  LumigoLogger
+};

@@ -1,0 +1,30 @@
+import type { Handler } from 'aws-lambda';
+import { TraceOptions } from './trace-options.type';
+import { GenericSpan } from '../types/spans/basicSpan';
+import { ResponseStreamHandler } from './tracer.interface';
+export declare const HANDLER_CALLBACKED = "handler_callbacked";
+export declare const HANDLER_STREAMING: unique symbol;
+export declare const STREAM_RESPONSE = "response";
+export declare const ASYNC_HANDLER_RESOLVED = "async_handler_resolved";
+export declare const ASYNC_HANDLER_REJECTED = "async_handler_rejected";
+export declare const NON_ASYNC_HANDLER_ERRORED = "non_async_errored";
+export declare const MAX_ELEMENTS_IN_EXTRA = 10;
+export declare const LEAK_MESSAGE = "Execution leak detected. More information is available in: https://docs.lumigo.io/docs/execution-leak-detected";
+export declare const trace: (options: TraceOptions) => <T extends Handler | ResponseStreamHandler>(userHandler: T) => T;
+export declare const startTrace: (functionSpan: GenericSpan) => Promise<void>;
+export declare const endTrace: (functionSpan: GenericSpan, handlerReturnValue: any) => Promise<void>;
+export declare const sendEndTraceSpans: (functionSpan: GenericSpan, handlerReturnValue: any) => Promise<void>;
+export declare const callbackResolver: (resolve: any) => (err: any, data: any) => any;
+export declare const isCallbacked: (handlerReturnValue: any) => boolean;
+export declare function promisifyUserHandler(userHandler: any, event: any, context: any, responseStream?: any): Promise<{
+    err: any;
+    data: any;
+    type: string;
+}>;
+export declare const normalizeLambdaError: (handlerReturnValue: any) => {
+    err: any;
+    data: any;
+    type: any;
+};
+export declare const performStepFunctionLogic: (handlerReturnValue: any) => any;
+export declare const hookUnhandledRejection: (functionSpan: any) => Promise<void>;

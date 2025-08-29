@@ -1,0 +1,10 @@
+version = 0.1
+[default.deploy.parameters]
+stack_name = "eventProcessor-stack"
+resolve_s3 = true
+s3_prefix = "eventProcessor-stack"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+image_repositories = []
+parameter_overrides = "LumigoToken=\"t_f8f7b905da964eef89261\""
