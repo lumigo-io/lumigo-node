@@ -297,7 +297,139 @@ export const startTrace = async (functionSpan: GenericSpan) => {
 export const endTrace = async (functionSpan: GenericSpan, handlerReturnValue: any) => {
   try {
     if (functionSpan && !isSwitchedOff() && isAwsEnvironment()) {
-      await sendEndTraceSpans(functionSpan, handlerReturnValue);
+      // Anonymize the return value before sending to Lumigo
+      let anonymizedReturnValue = handlerReturnValue;
+      if (process.env['LUMIGO_ANONYMIZE_ENABLED'] === 'true') {
+        try {
+          const patterns = JSON.parse(process.env['LUMIGO_ANONYMIZE_REGEX'] || '[]');
+          if (patterns && patterns.length > 0) {
+            // Use the same anonymization logic for return values
+            const anonymizeReturnValue = (value: any, key: string = ''): any => {
+              if (value === null || value === undefined) {
+                return value;
+              }
+
+              if (typeof value === 'string') {
+                // Check if the key matches any anonymization pattern
+                const keyMatches = patterns.some((pattern: string) => {
+                  try {
+                    const regex = new RegExp(pattern, 'i');
+                    return regex.test(key);
+                  } catch (e) {
+                    return false;
+                  }
+                });
+
+                // Check if the value matches any anonymization pattern
+                const valueMatches = patterns.some((pattern: string) => {
+                  try {
+                    const regex = new RegExp(pattern, 'i');
+                    return regex.test(value);
+                  } catch (e) {
+                    return false;
+                  }
+                });
+
+                if (keyMatches || valueMatches) {
+                  return '[ANONYMIZED]';
+                }
+              }
+
+              if (typeof value === 'object' && value !== null) {
+                if (Array.isArray(value)) {
+                  return value.map((item, index) => anonymizeReturnValue(item, `${key}[${index}]`));
+                } else {
+                  const anonymized: any = {};
+                  for (const [k, v] of Object.entries(value)) {
+                    anonymized[k] = anonymizeReturnValue(v, k);
+                  }
+                  return anonymized;
+                }
+              }
+
+              return value;
+            };
+
+            // Anonymize the entire return value object, with special handling for JSON string bodies
+            const anonymizeReturnValueWithBodyHandling = (value: any, key: string = ''): any => {
+              if (value === null || value === undefined) {
+                return value;
+              }
+
+              if (typeof value === 'string') {
+                // Special handling for body fields that might be JSON strings
+                if (key === 'body') {
+                  try {
+                    const parsedBody = JSON.parse(value);
+                    const anonymizedBody = anonymizeReturnValueWithBodyHandling(parsedBody, 'body');
+                    // CRITICAL: Re-stringify back to JSON string
+                    return JSON.stringify(anonymizedBody);
+                  } catch (e) {
+                    // If parsing fails, check if the string contains PII patterns
+                    const valueMatches = patterns.some((pattern: string) => {
+                      try {
+                        const regex = new RegExp(pattern, 'i');
+                        return regex.test(value);
+                      } catch (e) {
+                        return false;
+                      }
+                    });
+                    if (valueMatches) {
+                      return '[ANONYMIZED]';
+                    }
+                  }
+                }
+
+                // Check if the key matches any anonymization pattern
+                const keyMatches = patterns.some((pattern: string) => {
+                  try {
+                    const regex = new RegExp(pattern, 'i');
+                    return regex.test(key);
+                  } catch (e) {
+                    return false;
+                  }
+                });
+
+                // Check if the value matches any anonymization pattern
+                const valueMatches = patterns.some((pattern: string) => {
+                  try {
+                    const regex = new RegExp(pattern, 'i');
+                    return regex.test(value);
+                  } catch (e) {
+                    return false;
+                  }
+                });
+
+                if (keyMatches || valueMatches) {
+                  return '[ANONYMIZED]';
+                }
+              }
+
+              if (typeof value === 'object' && value !== null) {
+                if (Array.isArray(value)) {
+                  return value.map((item, index) => anonymizeReturnValueWithBodyHandling(item, `${key}[${index}]`));
+                } else {
+                  const anonymized: any = {};
+                  for (const [k, v] of Object.entries(value)) {
+                    anonymized[k] = anonymizeReturnValueWithBodyHandling(v, k);
+                  }
+                  return anonymized;
+                }
+              }
+
+              return value;
+            };
+
+            anonymizedReturnValue = anonymizeReturnValueWithBodyHandling(handlerReturnValue, 'returnValue');
+            logger.info('🔒 ANONYMIZATION: Return value anonymized for Lumigo traces');
+          }
+        } catch (e) {
+          logger.warn('Failed to anonymize return value, using original', e);
+          anonymizedReturnValue = handlerReturnValue;
+        }
+      }
+      
+      await sendEndTraceSpans(functionSpan, anonymizedReturnValue);
     }
   } catch (err) {
     logger.warn('endTrace failure', err);
