@@ -19,3 +19,38 @@ lumigo_wrapper
 # Prisma test-related files - only the schema file is used by the Jest setup flow
 testUtils/prisma/**
 !testUtils/prisma/schema.prisma
+
+# Deployment and build artifacts
+deployment/*/node_modules/
+deployment/*/.aws-sam/
+deployment/*/lumigo-node/
+deployment/*/response*.json
+deployment/*/local.env
+deployment/*/env.json
+
+# Lumigo tracer build artifacts
+lumigo-node/dist/
+lumigo-node/temp-*/
+lumigo-node/test-compile/
+
+# Backup files
+*.backup
+*.bak
+
+# Test response files
+response*.json
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Log files
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/
