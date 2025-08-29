@@ -1,4 +1,4 @@
-const lumigo = require('./lumigo-node');
+const lumigo = require('./lumigo-node/dist');
 
 // Initialize the modified Lumigo tracer with anonymization
 const tracer = lumigo();

@@ -16,7 +16,7 @@ export type Agent = {
 };
 
 export class Http {
-  @GlobalDurationTimer.timedSync()
+  //@GlobalDurationTimer.timedSync()
   static httpRequestArguments(args: any[]): { url?: string; options?: any; callback?: Function } {
     if (args.length === 0) {
       throw new Error('http/s.request(...) was called without any arguments.');
@@ -70,7 +70,7 @@ export class Http {
     }
   }
 
-  @GlobalDurationTimer.timedSync()
+  //@GlobalDurationTimer.timedSync()
   static httpBeforeRequestWrapper(args, extenderContext) {
     extenderContext.isTracedDisabled = true;
     const { url, options = {} } = Http.httpRequestArguments(args);
@@ -108,7 +108,7 @@ export class Http {
     extenderContext.isTracedDisabled = false;
   }
 
-  @GlobalDurationTimer.timedSync()
+  //@GlobalDurationTimer.timedSync()
   static httpAfterRequestWrapper(args, originalFnResult, extenderContext) {
     const clientRequest = originalFnResult;
     const {
@@ -158,7 +158,7 @@ export class Http {
     extender.hook(clientRequest, 'write', { beforeHook: writeWrapper });
   }
 
-  @GlobalDurationTimer.timedSync()
+  //@GlobalDurationTimer.timedSync()
   static addStepFunctionEvent(messageId: string) {
     // @ts-ignore
     const awsRequestId = TracerGlobals.getHandlerInputs().context.awsRequestId;

@@ -6,7 +6,7 @@ echo "🔨 Building Enhanced Lumigo Tracer..."
 cd lumigo-node
 
 echo "📦 Installing dependencies..."
-npm install
+npm install --legacy-peer-deps
 
 echo "⚡ Compiling TypeScript to JavaScript..."
 npx tsc --build --force

@@ -1,4 +1,0 @@
-const [NODE_MAJOR_VERSION, NODE_MINOR_VERSION, NODE_PATCH_VERSION] = process.versions.node
-  .split('.')
-  .map(Number);
-export { NODE_MAJOR_VERSION, NODE_MINOR_VERSION, NODE_PATCH_VERSION };

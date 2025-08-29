@@ -20,18 +20,38 @@ lumigo_wrapper
 testUtils/prisma/**
 !testUtils/prisma/schema.prisma
 
-# Deployment and build artifacts
-deployment/*/node_modules/
-deployment/*/.aws-sam/
-deployment/*/lumigo-node/
-deployment/*/response*.json
-deployment/*/local.env
-deployment/*/env.json
+# Deployment directory (completely temporary)
+deployment/
 
-# Lumigo tracer build artifacts
+# Build artifacts (temporary)
+dist/
 lumigo-node/dist/
 lumigo-node/temp-*/
 lumigo-node/test-compile/
+
+# Example directories (duplicate, not essential)
+example/
+lumigo-node/example/
+
+# Test and deployment directories (temporary)
+functions/
+auto-instrument-handler/
+testUtils/
+layers/
+__mocks__/
+.circleci/
+.github/
+scripts/
+
+# Temporary and test files
+package-lambda.json
+build-lumigo-tracer.sh
+dist.test.js
+test-*.json
+response*.json
+test-anonymization.js
+scratchpad.md
+eventProcessor.js
 
 # Backup files
 *.backup
