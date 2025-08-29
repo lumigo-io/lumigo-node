@@ -1,26 +1,27 @@
 # Lumigo Tracer Custom Anonymization Integration
 
-This project extends the [@lumigo/tracer](https://www.npmjs.com/package/@lumigo/tracer) package with custom data anonymization capabilities for handling PII (Personally Identifiable Information) and sensitive data.
+This project extends the [@lumigo/tracer](https://www.npmjs.com/package/@lumigo/tracer) package with custom data anonymization capabilities by modifying the core source code and building a custom version.
 
 ## 🎯 **Goal**
 
-Add a new environment variable `LUMIGO_ANONYMIZE_REGEX` similar to the existing `LUMIGO_SECRET_MASKING_REGEX`, but with enhanced anonymization capabilities that work on both keys and values.
+Add custom data anonymization logic directly into the core Lumigo tracer to anonymize sensitive data before it's sent to Lumigo, while preserving original data in Lambda logs for debugging.
 
 ## 🏗️ **Architecture**
 
 ### **Core Components**
 
-1. **`lib/anonymizer.js`** - Core anonymization logic
-2. **`lib/lumigo-anonymizer-wrapper.js`** - Integration wrapper for Lumigo tracer
-3. **Updated Lambda function** - Demonstrates usage
+1. **`lumigo-node/src/tracer/tracer.ts`** - Modified core Lumigo tracer with embedded anonymization logic
+2. **`deployment/eventProcessor-deploy/eventProcessor.js`** - Lambda handler using the custom tracer
+3. **`build-lumigo-tracer.sh`** - Build script for the custom tracer
 
 ### **Key Features**
 
-- **Regex-based anonymization** - Custom patterns for keys and values
-- **Default PII patterns** - Built-in patterns for common sensitive data
+- **Built-in anonymization** - Anonymization logic is part of the core tracer
+- **Regex-based patterns** - Custom patterns for keys and values
 - **Environment variable configuration** - Easy deployment configuration
-- **Non-destructive** - Original data preserved, anonymized copies created
+- **Non-destructive** - Original data preserved in logs, anonymized data sent to Lumigo
 - **Recursive processing** - Handles nested objects and arrays
+- **Multiple anonymization strategies** - Pattern replacement, truncation, partial masking
 
 ## 🔧 **Environment Variables**
 
@@ -33,82 +34,66 @@ LUMIGO_TRACER_TOKEN=your_lumigo_token
 ```bash
 LUMIGO_ANONYMIZE_ENABLED=true
 LUMIGO_ANONYMIZE_REGEX=["ssn", "credit.*card", "bank.*account", "phone", "email", "address"]
+LUMIGO_ANONYMIZE_DATA_SCHEMA='[
+  {"field": "address", "type": "truncate", "maxChars": 20, "position": "end"},
+  {"field": "name", "type": "truncate", "maxChars": 8, "position": "middle"},
+  {"field": "ssn", "type": "pattern", "pattern": "(\\d{3})-(\\d{2})-\\d{4}", "replacement": "$1-$2-****"},
+  {"field": "credit_card", "type": "pattern", "pattern": "(\\d{4})[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}", "replacement": "$1 **** **** ****"},
+  {"field": "phone", "type": "pattern", "pattern": "\\((\\d{3})\\) (\\d{3})-\\d{4}", "replacement": "($1) $2-****"},
+  {"field": "email", "type": "pattern", "pattern": "^([^@]{2})[^@]*@", "replacement": "$1***@"},
+  {"field": "ip_address", "type": "pattern", "pattern": "(\\d{1,3}\\.\\d{1,3})\\.\\d{1,3}\\.\\d{1,3}", "replacement": "$1.***.***"}
+]'
 ```
 
-## 📦 **Integration with @lumigo/tracer**
+## 📦 **Integration Approach**
 
-### **Current Implementation**
-The current implementation wraps the Lumigo tracer to add anonymization:
+### **Source Code Modification**
+Instead of wrapping the tracer, we modify the core source code in `lumigo-node/src/tracer/tracer.ts`:
 
-```javascript
-const lumigo = require('@lumigo/tracer');
-const LumigoAnonymizerWrapper = require('./lib/lumigo-anonymizer-wrapper');
-
-// Create the tracer instance
-const lumigoTracer = lumigo();
-
-// Create the anonymizer wrapper
-const tracer = new LumigoAnonymizerWrapper(lumigoTracer, {
-    enabled: true,
-    anonymizeRegex: ['ssn', 'credit.*card', 'phone']
-});
-
-// Export the handler wrapped with anonymization
-exports.handler = tracer.trace(myHandler);
-```
-
-### **Desired Integration**
-To integrate this directly into the `@lumigo/tracer` package, the following changes would be needed:
-
-#### **1. Package.json Updates**
-```json
-{
-  "name": "@lumigo/tracer",
-  "version": "2.0.0",
-  "dependencies": {
-    // ... existing dependencies
-  },
-  "env": {
-    "LUMIGO_ANONYMIZE_REGEX": "Array of regex patterns for anonymization",
-    "LUMIGO_ANONYMIZE_ENABLED": "Enable/disable anonymization (default: true)"
+```typescript
+// In processUserHandler function
+let anonymizedEvent = event;
+if (process.env['LUMIGO_ANONYMIZE_ENABLED'] === 'true') {
+  try {
+    const patterns = JSON.parse(process.env['LUMIGO_ANONYMIZE_REGEX'] || '[]');
+    const dataSpecificPatterns = JSON.parse(process.env['LUMIGO_ANONYMIZE_DATA_SCHEMA'] || '[]');
+    
+    if (patterns && patterns.length > 0) {
+      // Apply custom anonymization logic
+      anonymizedEvent = anonymizeValue(event);
+    }
+  } catch (e) {
+    logger.warn('Failed to apply anonymization:', e);
   }
 }
+
+// Set anonymized event for Lumigo tracing
+TracerGlobals.setHandlerInputs({ event: anonymizedEvent, context });
+
+// Call user handler with ORIGINAL event
+const pUserHandler = promisifyUserHandler(userHandler, event, context, responseStream);
 ```
 
-#### **2. Core Tracer Integration**
-```javascript
-// In the main tracer file
-class LumigoTracer {
-    constructor(options = {}) {
-        // ... existing initialization
-        
-        // Initialize anonymization
-        this.anonymizer = new DataAnonymizer(
-            process.env.LUMIGO_ANONYMIZE_REGEX ? 
-            JSON.parse(process.env.LUMIGO_ANONYMIZE_REGEX) : 
-            []
-        );
-        
-        this.anonymizationEnabled = process.env.LUMIGO_ANONYMIZE_ENABLED !== 'false';
-    }
-    
-    trace(handler) {
-        if (!this.anonymizationEnabled) {
-            return this.originalTrace(handler);
-        }
-        
-        return this.originalTrace(async (event, context) => {
-            // Anonymize incoming event
-            const anonymizedEvent = this.anonymizer.anonymizeEvent(event);
-            
-            // Call handler with anonymized event
-            const result = await handler(anonymizedEvent, context);
-            
-            // Anonymize response
-            return this.anonymizer.anonymizeResponse(result);
-        });
-    }
-}
+### **Build Process**
+The custom tracer must be built using this exact sequence:
+
+```bash
+cd lumigo-node
+
+# 1. Fix TypeScript compilation issues (if any)
+# Temporarily comment out problematic decorators in src/hooks/baseHttp.ts and src/hooks/http.ts
+
+# 2. Build with TypeScript
+npm run build
+
+# 3. Convert ES6 modules to CommonJS using Babel
+npx babel dist --out-dir dist --extensions .js --source-maps
+
+# 4. Copy to deployment directory
+cp -R dist ../deployment/eventProcessor-deploy/lumigo-node/
+
+# 5. Include package.json for version info
+cp package.json ../deployment/eventProcessor-deploy/lumigo-node/
 ```
 
 ## 🧪 **Testing**
@@ -125,57 +110,82 @@ node test-anonymization.js
 ### **AWS Testing**
 ```bash
 # Deploy with anonymization enabled
-./deployment/deploy-eventProcessor.sh <LUMIGO_TOKEN>
+cd deployment/eventProcessor-deploy
+sam build && sam deploy --no-confirm-changeset
 
 # Test the deployed endpoint
 curl -X POST https://your-api-gateway-url/Prod/process \
   -H "Content-Type: application/json" \
-  -d @test-eventProcessor-payload.json
+  -d '{
+    "type": "user_registration",
+    "data": {
+      "user": {
+        "name": "John Smith",
+        "email": "john.smith@example.com",
+        "ssn": "123-45-6789",
+        "phone": "(555) 123-4567",
+        "address": "123 Main Street, Anytown, USA 12345",
+        "credit_card": "4532 1234 5678 9012",
+        "ip_address": "192.168.1.100"
+      }
+    }
+  }'
 ```
 
 ## 📊 **Anonymization Patterns**
 
+### **Supported Strategies**
+
+1. **Pattern Replacement**: Use regex patterns with replacements
+   - SSN: `123-45-6789` → `123-45-****`
+   - Credit Card: `4532 1234 5678 9012` → `4532 **** **** ****`
+
+2. **Truncation**: Keep specified characters and mask the rest
+   - Address: `123 Main Street, Anytown, USA 12345` → `123 Main Street, ***`
+   - Name: `John Smith` → `Jo*** Sm`
+
+3. **Partial Masking**: Keep specified number of characters
+   - Email: `john.smith@example.com` → `jo***@example.com`
+   - Phone: `(555) 123-4567` → `(555) 123-****`
+
+4. **Built-in Patterns**: Automatic detection and masking
+   - IP Address: `192.168.1.100` → `192.168.***.***`
+
 ### **Default Patterns**
 The module includes built-in patterns for common PII:
 
-- `password` → `[PASSWORD]`
-- `ssn|social.*security` → `[SSN]`
-- `credit.*card|cc.*number` → `[CREDIT_CARD]`
-- `bank.*account|account.*number` → `[BANK_ACCOUNT]`
-- `driver.*license|license.*number` → `[DRIVER_LICENSE]`
-- `passport.*number` → `[PASSPORT]`
-- `phone|telephone` → `[PHONE]`
-- `email` → `[EMAIL]`
-- `address` → `[ADDRESS]`
-- `zip.*code|postal.*code` → `[ZIP_CODE]`
-- `date.*of.*birth|birth.*date` → `[DOB]`
-- `ip.*address` → `[IP_ADDRESS]`
-
-### **Custom Patterns**
-Add your own patterns via environment variable:
-
-```bash
-LUMIGO_ANONYMIZE_REGEX='["api.*key", "auth.*token", "session.*secret", "custom.*pattern"]'
-```
+- `ssn|social.*security` → Pattern-based masking
+- `credit.*card|cc.*number` → Pattern-based masking
+- `bank.*account|account.*number` → Pattern-based masking
+- `driver.*license|license.*number` → Pattern-based masking
+- `passport.*number` → Pattern-based masking
+- `phone|telephone` → Pattern-based masking
+- `email` → Pattern-based masking
+- `address` → Truncation-based masking
+- `zip.*code|postal.*code` → Pattern-based masking
+- `date.*of.*birth|birth.*date` → Pattern-based masking
+- `ip.*address` → Pattern-based masking
 
 ## 🚀 **Deployment**
 
-### **1. Update Lambda Function**
+### **1. Build Custom Tracer**
 ```bash
-cp functions/eventProcessor.js deployment/eventProcessor-deploy/
+./build-lumigo-tracer.sh
 ```
 
-### **2. Update Environment Variables**
-```bash
-# In template.yaml or environment configuration
-LUMIGO_ANONYMIZE_ENABLED: "true"
-LUMIGO_ANONYMIZE_REGEX: '["ssn", "credit.*card", "phone", "email"]'
-```
-
-### **3. Deploy**
+### **2. Deploy Lambda Function**
 ```bash
 cd deployment/eventProcessor-deploy
-sam build && sam deploy
+sam build && sam deploy --no-confirm-changeset
+```
+
+### **3. Verify Deployment**
+```bash
+# Check that custom code is included
+grep -n "LUMIGO_ANONYMIZE" lumigo-node/dist/tracer/tracer.js
+
+# Check that no ES6 imports remain
+grep -n "import.*from" lumigo-node/dist/tracer/tracer.js  # Should return nothing
 ```
 
 ## 🔍 **Monitoring & Verification**
@@ -183,33 +193,49 @@ sam build && sam deploy
 ### **CloudWatch Logs**
 Look for anonymization messages:
 ```
-Lumigo Anonymizer Wrapper initialized: { customPatterns: 0, defaultPatterns: 13, totalPatterns: 13 }
-Loaded 11 custom anonymization patterns from environment
-Anonymization enabled: true
+Enhanced PII anonymization applied to event for Lumigo tracing
+🔒 ANONYMIZATION: Data-specific anonymization applied successfully
+🔍 DEBUG: Original event keys: [user, transaction]
+🔍 DEBUG: Anonymized event keys: [user, transaction]
 ```
 
 ### **Lumigo Dashboard**
-- Check that sensitive data appears as `[ANONYMIZED]` or specific tags
+- Check that sensitive data appears with specific masking patterns
 - Verify that PII is not visible in traces
 - Monitor anonymization statistics
-
-## 📝 **Contributing to @lumigo/tracer**
-
-To contribute this anonymization feature to the main Lumigo tracer package:
-
-1. **Fork the repository**: https://github.com/lumigo-io/lumigo-node-tracer
-2. **Add the anonymization module** to the core package
-3. **Update the main tracer class** to support anonymization
-4. **Add environment variable support** for configuration
-5. **Update documentation** and examples
-6. **Submit a pull request**
 
 ## 🔐 **Security Considerations**
 
 - **Environment Variables**: Store regex patterns securely
 - **Pattern Validation**: Validate regex patterns to prevent injection attacks
-- **Data Handling**: Ensure original data is not logged or stored
+- **Data Handling**: Ensure original data is not sent to external services
 - **Compliance**: Verify anonymization meets your compliance requirements
+- **Logging**: Original data is preserved in Lambda logs for debugging
+
+## 🚨 **Troubleshooting**
+
+### **Common Issues**
+
+1. **ES6 Import Errors**: Ensure Babel conversion step is completed
+2. **TypeScript Compilation Errors**: Check for decorator issues in hooks files
+3. **Missing package.json**: The tracer needs package.json for version information
+4. **Module Not Found**: Verify dist directory is copied to deployment package
+
+### **Build Verification**
+
+After building, verify the custom code is included:
+
+```bash
+grep -n "LUMIGO_ANONYMIZE" lumigo-node/dist/tracer/tracer.js
+grep -n "import.*from" lumigo-node/dist/tracer/tracer.js  # Should return nothing
+```
+
+### **Deployment Verification**
+
+Check CloudWatch logs for successful execution:
+- No more "Cannot use import statement outside a module" errors
+- Lambda function executes successfully
+- Anonymization messages appear in logs
 
 ## 📚 **References**
 
@@ -217,3 +243,5 @@ To contribute this anonymization feature to the main Lumigo tracer package:
 - [@lumigo/tracer NPM Package](https://www.npmjs.com/package/@lumigo/tracer)
 - [Lumigo GitHub Repository](https://github.com/lumigo-io/lumigo-node-tracer)
 - [AWS Lambda Environment Variables](https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html)
+- [TypeScript Compilation](https://www.typescriptlang.org/docs/)
+- [Babel Transpilation](https://babeljs.io/docs/)
