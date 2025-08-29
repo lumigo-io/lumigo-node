@@ -1,90 +1,7 @@
-const lumigo = require('@lumigo/tracer');
+const lumigo = require('./lumigo-node/dist');
 
-// Initialize the Lumigo tracer
+// Initialize the modified Lumigo tracer with enhanced anonymization
 const tracer = lumigo();
-
-// Anonymization function to mask PII data
-function anonymizeEventForLumigo(event) {
-    if (!event || typeof event !== 'object') {
-        return event;
-    }
-
-    const anonymizedEvent = JSON.parse(JSON.stringify(event)); // Deep clone
-    
-    // Get anonymization patterns from environment
-    const anonymizePatterns = process.env.LUMIGO_ANONYMIZE_REGEX ? 
-        JSON.parse(process.env.LUMIGO_ANONYMIZE_REGEX) : 
-        ['ssn', 'credit.*card', 'bank.*account', 'driver.*license', 'passport.*number', 'phone', 'email', 'address', 'zip.*code', 'date.*of.*birth', 'ip.*address'];
-
-    function anonymizeValue(value) {
-        if (typeof value === 'string') {
-            return '[ANONYMIZED]';
-        } else if (typeof value === 'number') {
-            return 0;
-        } else if (typeof value === 'boolean') {
-            return false;
-        }
-        return value;
-    }
-
-    function anonymizeObject(obj, path = '') {
-        if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
-            for (const key in obj) {
-                if (obj.hasOwnProperty(key)) {
-                    const currentPath = path ? `${path}.${key}` : key;
-                    const shouldAnonymize = anonymizePatterns.some(pattern => {
-                        const regex = new RegExp(pattern, 'i');
-                        return regex.test(key) || regex.test(currentPath);
-                    });
-
-                    if (shouldAnonymize) {
-                        obj[key] = anonymizeValue(obj[key]);
-                    } else if (typeof obj[key] === 'object' && obj[key] !== null) {
-                        anonymizeObject(obj[key], currentPath);
-                    }
-                }
-            }
-        } else if (Array.isArray(obj)) {
-            obj.forEach((item, index) => {
-                if (typeof item === 'object' && item !== null) {
-                    anonymizeObject(item, `${path}[${index}]`);
-                }
-            });
-        }
-    }
-
-    anonymizeObject(anonymizedEvent);
-    return anonymizedEvent;
-}
-
-// Monkey patch the event object to anonymize data for Lumigo
-function createAnonymizedEventProxy(originalEvent) {
-    const anonymizedEvent = anonymizeEventForLumigo(originalEvent);
-    
-    // Create a proxy that returns anonymized data for Lumigo's internal use
-    // but allows the original event to be accessed by the Lambda handler
-    return new Proxy(originalEvent, {
-        get(target, prop) {
-            if (prop === 'body' && target.body) {
-                try {
-                    const originalBody = JSON.parse(target.body);
-                    const anonymizedBody = anonymizeEventForLumigo(originalBody);
-                    return JSON.stringify(anonymizedBody);
-                } catch (e) {
-                    return target.body;
-                }
-            }
-            return anonymizedEvent[prop] !== undefined ? anonymizedEvent[prop] : target[prop];
-        },
-        has(target, prop) {
-            return prop in anonymizedEvent || prop in target;
-        },
-        ownKeys(target) {
-            const keys = new Set([...Object.keys(anonymizedEvent), ...Object.keys(target)]);
-            return Array.from(keys);
-        }
-    });
-}
 
 const myHandler = async (event, context) => {
     console.log('EventProcessor Lambda started');
@@ -125,8 +42,8 @@ const myHandler = async (event, context) => {
             eventType: eventType,
             eventData: eventData,
             requestId: context.awsRequestId,
-            processingNote: 'Lambda processed original, unmodified data. Using Lumigo tracer with PII anonymization proxy.',
-            anonymizationNote: 'PII data is anonymized for Lumigo traces using event proxy while preserving original data for Lambda processing'
+            processingNote: 'Lambda processed original, unmodified data. Using modified Lumigo tracer with PII anonymization.',
+            anonymizationNote: 'PII data will be anonymized in Lumigo traces using embedded anonymization logic'
         };
 
         console.log('Processing result:', JSON.stringify(result, null, 2));
@@ -156,13 +73,4 @@ const myHandler = async (event, context) => {
     }
 };
 
-// Create a wrapper that anonymizes the event for Lumigo but passes the original to the handler
-const anonymizedHandler = async (event, context) => {
-    // Create an anonymized version of the event for Lumigo's internal processing
-    const anonymizedEvent = createAnonymizedEventProxy(event);
-    
-    // Call the original handler with the original event
-    return await myHandler(event, context);
-};
-
-exports.handler = tracer.trace(anonymizedHandler);
+exports.handler = tracer.trace(myHandler);
