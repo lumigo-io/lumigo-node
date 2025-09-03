@@ -307,17 +307,23 @@ cd src/lumigo-tracer
 rm -rf dist/ node_modules/ temp-build/ temp-dist/ test-compile/
 
 # Fix TypeScript compilation issues
-echo "🔧 Fixing TypeScript compilation issues..."
+echo "🔧 Restoring decorators for performance monitoring..."
 if [[ -f "hooks/baseHttp.ts" ]]; then
     cp hooks/baseHttp.ts hooks/baseHttp.ts.backup 2>/dev/null || true
-    sed -i '' 's/@GlobalDurationTimer.timedSync()/\/\/@GlobalDurationTimer.timedSync()/g' hooks/baseHttp.ts 2>/dev/null || \
-    sed -i 's/@GlobalDurationTimer.timedSync()/\/\/@GlobalDurationTimer.timedSync()/g' hooks/baseHttp.ts
+    # Restore decorators from various comment patterns
+    sed -i '' 's/\/\/@GlobalDurationTimer.timedSync()/@GlobalDurationTimer.timedSync()/g' hooks/baseHttp.ts 2>/dev/null || \
+    sed -i 's/\/\/@GlobalDurationTimer.timedSync()/@GlobalDurationTimer.timedSync()/g' hooks/baseHttp.ts
+    sed -i '' 's/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/@GlobalDurationTimer.timedSync()/@GlobalDurationTimer.timedSync()/g' hooks/baseHttp.ts 2>/dev/null || \
+    sed -i 's/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/@GlobalDurationTimer.timedSync()/@GlobalDurationTimer.timedSync()/g' hooks/baseHttp.ts
 fi
 
 if [[ -f "hooks/http.ts" ]]; then
     cp hooks/http.ts hooks/http.ts.backup 2>/dev/null || true
-    sed -i '' 's/@GlobalDurationTimer.timedSync()/\/\/@GlobalDurationTimer.timedSync()/g' hooks/http.ts 2>/dev/null || \
-    sed -i 's/@GlobalDurationTimer.timedSync()/\/\/@GlobalDurationTimer.timedSync()/g' hooks/http.ts
+    # Restore decorators from various comment patterns
+    sed -i '' 's/\/\/@GlobalDurationTimer.timedSync()/@GlobalDurationTimer.timedSync()/g' hooks/http.ts 2>/dev/null || \
+    sed -i 's/\/\/@GlobalDurationTimer.timedSync()/@GlobalDurationTimer.timedSync()/g' hooks/http.ts
+    sed -i '' 's/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/@GlobalDurationTimer.timedSync()/@GlobalDurationTimer.timedSync()/g' hooks/http.ts 2>/dev/null || \
+    sed -i 's/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/@GlobalDurationTimer.timedSync()/@GlobalDurationTimer.timedSync()/g' hooks/http.ts
 fi
 
 # Install dependencies with legacy peer deps to handle conflicts
@@ -328,9 +334,9 @@ npm install --legacy-peer-deps
 echo "⚡ Compiling TypeScript..."
 npm run build
 
-# Convert ES6 modules to CommonJS
-echo "🔄 Converting ES6 modules to CommonJS..."
-npx babel dist --out-dir dist --extensions .js --source-maps
+# Convert ES6 modules to CommonJS with decorator support
+echo "🔄 Converting ES6 modules to CommonJS with decorator support..."
+npx babel dist --out-dir dist --extensions .js --source-maps --config-file .babelrc
 
 # Copy built files to build directory
 echo "📁 Copying built files to build directory..."
