@@ -211,10 +211,26 @@ const processUserHandler = async <Event>(
             // Special handling for event.body - parse JSON, anonymize, then re-stringify
             if (key === 'body') {
               try {
-                const parsedBody = JSON.parse(value);
-                const anonymizedBody = anonymizeValue(parsedBody, 'body');
-                // CRITICAL: Re-stringify back to JSON string for the tracer
-                return JSON.stringify(anonymizedBody);
+                // Only try to parse if it looks like JSON (starts with { or [)
+                if (value.trim().startsWith('{') || value.trim().startsWith('[')) {
+                  const parsedBody = JSON.parse(value);
+                  const anonymizedBody = anonymizeValue(parsedBody, 'body');
+                  // CRITICAL: Re-stringify back to JSON string for the tracer
+                  return JSON.stringify(anonymizedBody);
+                } else {
+                  // Not JSON, treat as regular string
+                  const valueMatches = patterns.some((pattern: string) => {
+                    try {
+                      const regex = new RegExp(pattern, 'i');
+                      return regex.test(value);
+                    } catch (e) {
+                      return false;
+                    }
+                  });
+                  if (valueMatches) {
+                    return '[ANONYMIZED]';
+                  }
+                }
               } catch (e) {
                 // If parsing fails, fall back to simple anonymization
                 const valueMatches = patterns.some((pattern: string) => {
@@ -571,10 +587,30 @@ export const endTrace = async (functionSpan: GenericSpan, handlerReturnValue: an
                 // Special handling for body fields that might be JSON strings
                 if (key === 'body') {
                   try {
-                    const parsedBody = JSON.parse(value);
-                    const anonymizedBody = anonymizeReturnValueWithBodyHandling(parsedBody, 'body');
-                    // CRITICAL: Re-stringify back to JSON string
-                    return JSON.stringify(anonymizedBody);
+                    // Only try to parse if it looks like JSON (starts with { or [)
+                    if (value.trim().startsWith('{') || value.trim().startsWith('[')) {
+                      const parsedBody = JSON.parse(value);
+                      const anonymizedBody = anonymizeReturnValueWithBodyHandling(parsedBody, 'body');
+                      // CRITICAL: Re-stringify back to JSON string
+                      return JSON.stringify(anonymizedBody);
+                    } else {
+                      // Not JSON, treat as regular string
+                      const valueMatches = patterns.some((pattern: string) => {
+                        try {
+                          const regex = new RegExp(pattern, 'i');
+                          return regex.test(value);
+                        } catch (e) {
+                          return false;
+                        }
+                      });
+                      if (valueMatches) {
+                        // Apply data-specific anonymization if patterns are configured
+                        if (dataSpecificPatterns && dataSpecificPatterns.length > 0) {
+                          return applyDataSpecificAnonymization(value, key, dataSpecificPatterns);
+                        }
+                        return '[ANONYMIZED]';
+                      }
+                    }
                   } catch (e) {
                     // If parsing fails, check if the string contains PII patterns
                     const valueMatches = patterns.some((pattern: string) => {

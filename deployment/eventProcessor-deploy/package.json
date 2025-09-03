@@ -1,23 +1,14 @@
 {
-  "name": "eventProcessor",
+  "name": "lambda-with-custom-tracer",
   "version": "1.0.0",
-  "description": "EventProcessor Lambda with Lumigo Tracer for Custom Event Processing",
+  "description": "Lambda function with custom Lumigo tracer",
   "main": "eventProcessor.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "dependencies": {
-    "@lumigo/tracer": "^1.0.0",
-    "aws-sdk": "^2.1000.0"
-  },
-  "devDependencies": {},
-  "keywords": [
-    "aws",
-    "lambda",
-    "lumigo",
-    "tracer",
-    "anonymization"
-  ],
-  "author": "Barry Solomon",
-  "license": "MIT"
+    "@lumigo/node-core": "1.17.1",
+    "agentkeepalive": "^4.1.4",
+    "axios": "^1.11.0",
+    "rfdc": "^1.4.1",
+    "shimmer": "1.2.1",
+    "utf8": "^3.0.0"
+  }
 }

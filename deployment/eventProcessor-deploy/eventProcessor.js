@@ -1,10 +1,17 @@
-const lumigo = require('./lumigo-node/dist');
+const lumigo = require('./lumigo-node');
 
 // Initialize the modified Lumigo tracer with anonymization
-const tracer = lumigo();
+const tracer = lumigo.initTracer({
+    token: process.env.LUMIGO_TRACER_TOKEN,
+    debug: true
+});
 
 const myHandler = async (event, context) => {
     console.log('EventProcessor Lambda started');
+    console.log('🔧 Environment variables:');
+    console.log('  - LUMIGO_ANONYMIZE_ENABLED:', process.env.LUMIGO_ANONYMIZE_ENABLED);
+    console.log('  - LUMIGO_ANONYMIZE_REGEX:', process.env.LUMIGO_ANONYMIZE_REGEX);
+    console.log('  - LUMIGO_ANONYMIZE_DATA_SCHEMA:', process.env.LUMIGO_ANONYMIZE_DATA_SCHEMA);
     console.log('🔍 Lambda received ORIGINAL event (not anonymized):');
     console.log('Event type:', event.type || 'unknown');
     console.log('Event data keys:', event.data ? Object.keys(event.data) : 'none');

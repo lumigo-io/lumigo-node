@@ -8,6 +8,19 @@ Parameters:
     Description: Lumigo API token for tracing
     Default: t_f8f7b905da964eef89261
     NoEcho: false
+  LumigoAnonymizeEnabled:
+    Type: String
+    Description: Enable/disable anonymization
+    Default: "true"
+    AllowedValues: ["true", "false"]
+  LumigoAnonymizeRegex:
+    Type: String
+    Description: JSON array of regex patterns for anonymization
+    Default: '["ssn", "credit.*card", "bank.*account", "driver.*license", "passport.*number", "phone", "email", "address", "zip.*code", "date.*of.*birth", "ip.*address", "session.*token", "auth.*token"]'
+  LumigoAnonymizeDataSchema:
+    Type: String
+    Description: JSON array defining anonymization rules for specific fields
+    Default: '[{"field": "address", "type": "truncate", "maxChars": 20, "position": "end"}, {"field": "name", "type": "truncate", "maxChars": 8, "position": "middle"}, {"field": "session_token", "type": "truncate", "maxChars": 20, "position": "beginning"}, {"field": "auth_token", "type": "truncate", "maxChars": 20, "position": "beginning"}, {"field": "ssn", "type": "pattern", "pattern": "(\\d{3})-(\\d{2})-\\d{4}", "replacement": "$1-$2-****"}, {"field": "credit_card", "type": "pattern", "pattern": "(\\d{4})[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}", "replacement": "$1 **** **** ****"}, {"field": "phone", "type": "pattern", "pattern": "\\((\\d{3})\\) (\\d{3})-\\d{4}", "replacement": "($1) $2-****"}, {"field": "email", "type": "pattern", "pattern": "^([^@]{2})[^@]*@", "replacement": "$1***@"}, {"field": "ip_address", "type": "pattern", "pattern": "(\\d{1,3}\\.\\d{1,3})\\.\\d{1,3}\\.\\d{1,3}", "replacement": "$1.***.***"}]'
 
 Resources:
   EventProcessorFunction:
@@ -22,9 +35,9 @@ Resources:
       Environment:
         Variables:
           LUMIGO_TRACER_TOKEN: !Ref LumigoToken
-          LUMIGO_ANONYMIZE_ENABLED: "true"
-          LUMIGO_ANONYMIZE_REGEX: '["ssn", "credit.*card", "bank.*account", "driver.*license", "passport.*number", "phone", "email", "address", "zip.*code", "date.*of.*birth", "ip.*address"]'
-          LUMIGO_ANONYMIZE_DATA_SCHEMA: '[{"field": "address", "type": "truncate", "maxChars": 20, "position": "end"}, {"field": "name", "type": "truncate", "maxChars": 8, "position": "middle"}, {"field": "ssn", "type": "pattern", "pattern": "(\\d{3})-(\\d{2})-\\d{4}", "replacement": "$1-$2-****"}, {"field": "credit_card", "type": "pattern", "pattern": "(\\d{4})[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}", "replacement": "$1 **** **** ****"}, {"field": "phone", "type": "pattern", "pattern": "\\((\\d{3})\\) (\\d{3})-\\d{4}", "replacement": "($1) $2-****"}, {"field": "email", "type": "pattern", "pattern": "^([^@]{2})[^@]*@", "replacement": "$1***@"}, {"field": "ip_address", "type": "pattern", "pattern": "(\\d{1,3}\\.\\d{1,3})\\.\\d{1,3}\\.\\d{1,3}", "replacement": "$1.***.***"}]'
+          LUMIGO_ANONYMIZE_ENABLED: !Ref LumigoAnonymizeEnabled
+          LUMIGO_ANONYMIZE_REGEX: !Ref LumigoAnonymizeRegex
+          LUMIGO_ANONYMIZE_DATA_SCHEMA: !Ref LumigoAnonymizeDataSchema
       Policies:
         - CloudWatchLogsFullAccess
         - Statement:
