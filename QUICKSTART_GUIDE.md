@@ -24,58 +24,42 @@ git clone <your-repo-url>
 cd lumigo-tracer-custom
 ```
 
-### **1.2 Fix TypeScript Compilation Issues**
+### **1.2 Configure Environment Variables**
 
-The TypeScript compilation fails due to decorator issues. Fix this temporarily:
-
-```bash
-cd lumigo-node
-
-# Backup problematic files
-cp src/hooks/baseHttp.ts src/hooks/baseHttp.ts.backup
-cp src/hooks/http.ts src/hooks/http.ts.backup
-
-# Comment out problematic decorators
-sed -i '' 's/@GlobalDurationTimer.timedSync()/\/\/@GlobalDurationTimer.timedSync()/g' src/hooks/baseHttp.ts
-sed -i '' 's/@GlobalDurationTimer.timedSync()/\/\/@GlobalDurationTimer.timedSync()/g' src/hooks/http.ts
-```
-
-### **1.3 Build Custom Tracer**
+Edit `deployment-config.env` with your Lumigo token:
 
 ```bash
-# Install dependencies
-npm install --legacy-peer-deps
+# Lumigo Configuration
+LUMIGO_TRACER_TOKEN=your_lumigo_token_here
+LUMIGO_ANONYMIZE_ENABLED=true
 
-# Build with TypeScript
-npm run build
+# Anonymization Patterns (current working configuration)
+LUMIGO_ANONYMIZE_REGEX='["ssn", "credit.*card", "bank.*account", "driver.*license", "passport.*number", "phone", "email", "address", "zip.*code", "date.*of.*birth", "ip.*address", "session.*token", "auth.*token"]'
 
-# Convert ES6 modules to CommonJS (CRITICAL for Lambda)
-npx babel dist --out-dir dist --extensions .js --source-maps
+# Data Schema for Anonymization (truncation-based for reliability)
+LUMIGO_ANONYMIZE_DATA_SCHEMA='[{"field": "address", "type": "truncate", "maxChars": 20, "position": "end"}, {"field": "name", "type": "truncate", "maxChars": 8, "position": "middle"}, {"field": "session_token", "type": "truncate", "maxChars": 20, "position": "beginning"}, {"field": "auth_token", "type": "truncate", "maxChars": 20, "position": "beginning"}]'
 ```
 
-### **1.4 Verify Build Success**
+### **1.3 Deploy Everything with One Command**
 
 ```bash
-# Check that anonymization code is present
-grep -n "LUMIGO_ANONYMIZE" dist/tracer/tracer.js
-
-# Check that no ES6 imports remain
-grep -n "import.*from" dist/tracer/tracer.js  # Should return nothing
+# Deploy everything automatically
+./deploy.sh
 ```
 
-### **1.5 Deploy to AWS**
+This script will:
+- ✅ Build the custom tracer with anonymization
+- ✅ Handle npm dependency conflicts automatically
+- ✅ Deploy to AWS Lambda with API Gateway
+- ✅ Configure environment variables correctly
+- ✅ Provide testing instructions
 
-```bash
-cd ../deployment/eventProcessor-deploy
+### **1.4 Verify Deployment**
 
-# Copy built tracer
-cp -R ../lumigo-node/dist ./lumigo-node/
-cp ../lumigo-node/package.json ./lumigo-node/
-
-# Build and deploy
-sam build
-sam deploy --no-confirm-changeset
-```
+The script will output the API Gateway URL and testing instructions. Check CloudWatch logs for:
+- ✅ **"🔒 ANONYMIZATION: Return value anonymized for Lumigo traces"**
+- ✅ **"Spans sent [Xms, Y spans]"** with **"status":200**
+- ✅ **"Tracer ended"** with **"totalSpans":2**
 
 ## 🔍 **Step 2: Add Manual Tracing to Your Lambda**
 
@@ -85,7 +69,13 @@ Create a new Lambda function or modify existing one:
 
 ```javascript
 // handler.js
-const lumigo = require('./lumigo-node/dist');
+const lumigo = require('./lumigo-node');
+
+// Initialize the custom tracer with anonymization
+const tracer = lumigo.initTracer({
+    token: process.env.LUMIGO_TRACER_TOKEN,
+    debug: true
+});
 
 // Your existing Lambda handler
 async function myHandler(event, context) {
@@ -119,14 +109,20 @@ async function myHandler(event, context) {
 }
 
 // Export with Lumigo tracing
-exports.handler = lumigo.trace(myHandler);
+exports.handler = tracer.trace(myHandler);
 ```
 
 ### **2.2 Advanced Manual Tracing with Multiple Spans**
 
 ```javascript
 // handler-advanced.js
-const lumigo = require('./lumigo-node/dist');
+const lumigo = require('./lumigo-node');
+
+// Initialize the custom tracer with anonymization
+const tracer = lumigo.initTracer({
+    token: process.env.LUMIGO_TRACER_TOKEN,
+    debug: true
+});
 
 async function advancedHandler(event, context) {
     // Root span for the entire operation
@@ -173,14 +169,20 @@ async function advancedHandler(event, context) {
     }
 }
 
-exports.handler = lumigo.trace(advancedHandler);
+exports.handler = tracer.trace(advancedHandler);
 ```
 
 ### **2.3 Manual Tracing with Custom Attributes and Events**
 
 ```javascript
 // handler-detailed.js
-const lumigo = require('./lumigo-node/dist');
+const lumigo = require('./lumigo-node');
+
+// Initialize the custom tracer with anonymization
+const tracer = lumigo.initTracer({
+    token: process.env.LUMIGO_TRACER_TOKEN,
+    debug: true
+});
 
 async function detailedHandler(event, context) {
     const span = lumigo.startSpan('order-processing');
@@ -231,28 +233,23 @@ async function detailedHandler(event, context) {
     }
 }
 
-exports.handler = lumigo.trace(detailedHandler);
+exports.handler = tracer.trace(detailedHandler);
 ```
 
 ## ⚙️ **Step 3: Environment Configuration**
 
 ### **3.1 Lambda Environment Variables**
 
-Set these in your Lambda function configuration:
+Set these in your Lambda function configuration (or use `deployment-config.env`):
 
 ```bash
 # Required
 LUMIGO_TRACER_TOKEN=your_lumigo_token_here
 
-# Anonymization (optional)
+# Anonymization (current working configuration)
 LUMIGO_ANONYMIZE_ENABLED=true
-LUMIGO_ANONYMIZE_REGEX='["ssn", "credit.*card", "phone", "email", "address"]'
-LUMIGO_ANONYMIZE_DATA_SCHEMA='[
-  {"field": "ssn", "type": "pattern", "pattern": "(\\d{3})-(\\d{2})-\\d{4}", "replacement": "$1-$2-****"},
-  {"field": "credit_card", "type": "pattern", "pattern": "(\\d{4})[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}", "replacement": "$1 **** **** ****"},
-  {"field": "phone", "type": "pattern", "pattern": "\\((\\d{3})\\) (\\d{3})-\\d{4}", "replacement": "($1) $2-****"},
-  {"field": "email", "type": "pattern", "pattern": "^([^@]{2})[^@]*@", "replacement": "$1***@"}
-]'
+LUMIGO_ANONYMIZE_REGEX='["ssn", "credit.*card", "bank.*account", "driver.*license", "passport.*number", "phone", "email", "address", "zip.*code", "date.*of.*birth", "ip.*address", "session.*token", "auth.*token"]'
+LUMIGO_ANONYMIZE_DATA_SCHEMA='[{"field": "address", "type": "truncate", "maxChars": 20, "position": "end"}, {"field": "name", "type": "truncate", "maxChars": 8, "position": "middle"}, {"field": "session_token", "type": "truncate", "maxChars": 20, "position": "beginning"}, {"field": "auth_token", "type": "truncate", "maxChars": 20, "position": "beginning"}]'
 ```
 
 ### **3.2 SAM Template Configuration**
@@ -269,7 +266,8 @@ Resources:
         Variables:
           LUMIGO_TRACER_TOKEN: !Ref LumigoToken
           LUMIGO_ANONYMIZE_ENABLED: "true"
-          LUMIGO_ANONYMIZE_REGEX: '["ssn", "credit.*card", "phone", "email"]'
+          LUMIGO_ANONYMIZE_REGEX: '["ssn", "credit.*card", "bank.*account", "driver.*license", "passport.*number", "phone", "email", "address", "zip.*code", "date.*of.*birth", "ip.*address", "session.*token", "auth.*token"]'
+          LUMIGO_ANONYMIZE_DATA_SCHEMA: '[{"field": "address", "type": "truncate", "maxChars": 20, "position": "end"}, {"field": "name", "type": "truncate", "maxChars": 8, "position": "middle"}, {"field": "session_token", "type": "truncate", "maxChars": 20, "position": "beginning"}, {"field": "auth_token", "type": "truncate", "maxChars": 20, "position": "beginning"}]'
 ```
 
 ## 🧪 **Step 4: Testing and Verification**
@@ -313,8 +311,9 @@ aws logs get-log-events \
 2. Look for traces from your Lambda function
 3. Verify that:
    - Custom spans are visible
-   - Sensitive data is anonymized
+   - Sensitive data is anonymized (truncated or replaced with `[ANONYMIZED]`)
    - Custom attributes and events are present
+   - Spans show **"status":200** indicating successful transmission
 
 ## 🔄 **Step 5: Integration with Existing Code**
 
@@ -322,7 +321,13 @@ aws logs get-log-events \
 
 ```javascript
 // Minimal change to existing handler
-const lumigo = require('./lumigo-node/dist');
+const lumigo = require('./lumigo-node');
+
+// Initialize the custom tracer with anonymization
+const tracer = lumigo.initTracer({
+    token: process.env.LUMIGO_TRACER_TOKEN,
+    debug: true
+});
 
 // Your existing handler function
 async function existingHandler(event, context) {
@@ -344,14 +349,20 @@ async function existingHandler(event, context) {
 }
 
 // Wrap with Lumigo (only change needed)
-exports.handler = lumigo.trace(existingHandler);
+exports.handler = tracer.trace(existingHandler);
 ```
 
 ### **5.2 Gradual Integration**
 
 ```javascript
 // Start with basic tracing, add more later
-const lumigo = require('./lumigo-node/dist');
+const lumigo = require('./lumigo-node');
+
+// Initialize the custom tracer with anonymization
+const tracer = lumigo.initTracer({
+    token: process.env.LUMIGO_TRACER_TOKEN,
+    debug: true
+});
 
 async function gradualHandler(event, context) {
     // Phase 1: Basic operation span
@@ -377,28 +388,36 @@ async function gradualHandler(event, context) {
     }
 }
 
-exports.handler = lumigo.trace(gradualHandler);
+exports.handler = tracer.trace(gradualHandler);
 ```
 
 ## 🚨 **Troubleshooting**
 
 ### **Common Issues and Solutions**
 
-1. **"Cannot use import statement outside a module"**
-   - **Cause**: Babel conversion step was skipped
-   - **Solution**: Run `npx babel dist --out-dir dist --extensions .js --source-maps`
+1. **AWS SSO Token Expired**
+   - **Cause**: AWS credentials have expired
+   - **Solution**: Run `aws sso login` to refresh credentials
 
-2. **"Cannot find module './lumigo-node/dist'"**
+2. **npm Dependency Conflicts**
+   - **Cause**: Conflicting package versions during build
+   - **Solution**: The `./deploy.sh` script handles this automatically with `--legacy-peer-deps`
+
+3. **JSON Parsing Errors in Logs**
+   - **Cause**: Malformed JSON in environment variables
+   - **Solution**: Check that `deployment-config.env` has properly quoted JSON strings
+
+4. **"Cannot find module './lumigo-node'"**
    - **Cause**: Built tracer not copied to deployment directory
-   - **Solution**: Copy `dist` directory and `package.json` to deployment
+   - **Solution**: The `./deploy.sh` script handles this automatically
 
-3. **No spans appearing in Lumigo**
+5. **No spans appearing in Lumigo**
    - **Cause**: Invalid tracer token or network issues
-   - **Solution**: Verify `LUMIGO_TRACER_TOKEN` is correct
+   - **Solution**: Verify `LUMIGO_TRACER_TOKEN` is correct in `deployment-config.env`
 
-4. **Anonymization not working**
-   - **Cause**: Custom code not included in build
-   - **Solution**: Verify with `grep -n "LUMIGO_ANONYMIZE" dist/tracer/tracer.js`
+6. **Anonymization not working**
+   - **Cause**: Custom code not included in build or environment variables not set
+   - **Solution**: Check CloudWatch logs for **"🔒 ANONYMIZATION: Return value anonymized"**
 
 ### **Debug Commands**
 
@@ -406,11 +425,14 @@ exports.handler = lumigo.trace(gradualHandler);
 # Check if custom code is built
 grep -n "LUMIGO_ANONYMIZE" lumigo-node/dist/tracer/tracer.js
 
-# Check for ES6 imports
+# Check for ES6 imports (should return nothing)
 grep -n "import.*from" lumigo-node/dist/tracer/tracer.js
 
 # Verify deployment package
-ls -la lumigo-node/dist/tracer/
+ls -la deployment/eventProcessor-deploy/lumigo-node/
+
+# Check CloudWatch logs for anonymization
+aws logs get-log-events --log-group-name "/aws/lambda/eventProcessor" --log-stream-name "LATEST" | grep -E "(ANONYMIZATION|🔒|Spans sent)"
 ```
 
 ## 📚 **Next Steps**
@@ -426,8 +448,10 @@ ls -la lumigo-node/dist/tracer/
 - ✅ Babel conversion completes successfully
 - ✅ Lambda deploys and runs without module errors
 - ✅ Manual spans appear in Lumigo dashboard
-- ✅ Sensitive data is anonymized in traces
+- ✅ Sensitive data is anonymized in traces (truncated or `[ANONYMIZED]`)
 - ✅ Original data preserved in Lambda logs
+- ✅ CloudWatch logs show **"🔒 ANONYMIZATION: Return value anonymized"**
+- ✅ CloudWatch logs show **"Spans sent [Xms, Y spans]"** with **"status":200**
 
 ## 📞 **Getting Help**
 
