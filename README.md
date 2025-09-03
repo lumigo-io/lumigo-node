@@ -21,10 +21,11 @@ This approach modifies the core Lumigo tracer source code (`lumigo-node/src/trac
 
 ## Files
 
-- **`lumigo-node/src/tracer/tracer.ts`** - Core Lumigo tracer with embedded anonymization logic
-- **`deployment/eventProcessor-deploy/`** - Lambda deployment package
-- **`deployment/eventProcessor-deploy/eventProcessor.js`** - Lambda handler
-- **`build-lumigo-tracer.sh`** - Build script for the custom tracer
+- **`src/lumigo-tracer/tracer/tracer.ts`** - Core Lumigo tracer with embedded anonymization logic
+- **`src/lambda-handlers/lambdasAnonymous.js`** - Example Lambda handler with anonymization testing
+- **`src/sam-templates/lambdasAnonymous.yaml`** - SAM template for deployment
+- **`deploy.sh`** - Automated deployment script
+- **`package-tracer.sh`** - Build script for the custom tracer
 
 ## Environment Variables
 
@@ -58,7 +59,7 @@ This script will:
 ./package-tracer.sh lambda
 
 # Deploy manually
-cd deployment/eventProcessor-deploy
+cd deployment/lambdasAnonymous-deploy
 sam build
 sam deploy --no-confirm-changeset
 ```

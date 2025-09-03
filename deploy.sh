@@ -7,39 +7,25 @@ show_usage() {
     echo "Usage: $0 [lambda-name]"
     echo ""
     echo "Available Lambda functions:"
-    echo "  eventProcessor    - Original event processing Lambda"
-    echo "  lambdasAnonymous  - Example Lambda with manual tracing (recommended for users)"
+    echo "  lambdasAnonymous  - Example Lambda with anonymization testing (recommended for users)"
     echo ""
-    echo "If no lambda name is provided, you will be prompted to select one."
+    echo "If no lambda name is provided, lambdasAnonymous will be used by default."
 }
 
 # Check if lambda name is provided as argument
 if [ $# -eq 1 ]; then
     LAMBDA_NAME="$1"
-    if [ "$LAMBDA_NAME" != "eventProcessor" ] && [ "$LAMBDA_NAME" != "lambdasAnonymous" ]; then
+    if [ "$LAMBDA_NAME" != "lambdasAnonymous" ]; then
         echo "❌ Invalid Lambda name: $LAMBDA_NAME"
         show_usage
         exit 1
     fi
 else
     echo "Available Lambda functions:"
-    echo "1) eventProcessor    - Original event processing Lambda"
-    echo "2) lambdasAnonymous  - Example Lambda with manual tracing (recommended for users)"
+    echo "1) lambdasAnonymous  - Example Lambda with anonymization testing (recommended for users)"
     echo ""
-    read -p "Select Lambda function (1 or 2): " choice
-    
-    case $choice in
-        1)
-            LAMBDA_NAME="eventProcessor"
-            ;;
-        2)
-            LAMBDA_NAME="lambdasAnonymous"
-            ;;
-        *)
-            echo "❌ Invalid choice. Please run the script again."
-            exit 1
-            ;;
-    esac
+    echo "Using lambdasAnonymous as default."
+    LAMBDA_NAME="lambdasAnonymous"
 fi
 
 echo "Selected Lambda: $LAMBDA_NAME"
@@ -105,11 +91,7 @@ mkdir -p deployment/${LAMBDA_NAME}-deploy
 
 # Copy Lambda handler
 echo "📋 Copying Lambda handler..."
-if [ "$LAMBDA_NAME" = "lambdasAnonymous" ]; then
 cp src/lambda-handlers/lambdasAnonymous.js deployment/${LAMBDA_NAME}-deploy/
-else
-    cp src/lambda-handlers/eventProcessor.js deployment/${LAMBDA_NAME}-deploy/
-fi
 
 # Create the handler file if it doesn't exist (fallback)
 if [ ! -f "deployment/${LAMBDA_NAME}-deploy/${LAMBDA_NAME}.js" ] && [ ! -f "deployment/${LAMBDA_NAME}-deploy/eventProcessor.js" ]; then
@@ -202,85 +184,9 @@ fi
 
 # Create SAM template
 echo "📋 Creating SAM template..."
-if [ "$LAMBDA_NAME" = "lambdasAnonymous" ]; then
 cp src/sam-templates/lambdasAnonymous.yaml deployment/${LAMBDA_NAME}-deploy/template.yaml
-else
-    cp src/sam-templates/eventProcessor.yaml deployment/${LAMBDA_NAME}-deploy/template.yaml
-fi
 
-# Create the template file if it doesn't exist (fallback)
-if [ ! -f "deployment/${LAMBDA_NAME}-deploy/template.yaml" ]; then
-    cat > deployment/${LAMBDA_NAME}-deploy/template.yaml << 'EOF'
-AWSTemplateFormatVersion: '2010-09-09'
-Transform: AWS::Serverless-2016-10-31
-Description: EventProcessor Lambda with Lumigo tracing
 
-Parameters:
-  LumigoToken:
-    Type: String
-    Description: Lumigo API token for tracing
-    Default: t_f8f7b905da964eef89261
-    NoEcho: false
-  LumigoAnonymizeEnabled:
-    Type: String
-    Description: Enable/disable anonymization
-    Default: "true"
-    AllowedValues: ["true", "false"]
-  LumigoAnonymizeRegex:
-    Type: String
-    Description: JSON array of regex patterns for anonymization
-    Default: '["ssn", "credit.*card", "bank.*account", "driver.*license", "passport.*number", "phone", "email", "address", "zip.*code", "date.*of.*birth", "ip.*address", "session.*token", "auth.*token"]'
-  LumigoAnonymizeDataSchema:
-    Type: String
-    Description: JSON array defining anonymization rules for specific fields
-    Default: '[{"field": "address", "type": "truncate", "maxChars": 20, "position": "end"}, {"field": "name", "type": "truncate", "maxChars": 8, "position": "middle"}, {"field": "session_token", "type": "truncate", "maxChars": 20, "position": "beginning"}, {"field": "auth_token", "type": "truncate", "maxChars": 20, "position": "beginning"}, {"field": "ssn", "type": "pattern", "pattern": "(\\d{3})-(\\d{2})-\\d{4}", "replacement": "$1-$2-****"}, {"field": "credit_card", "type": "pattern", "pattern": "(\\d{4})[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}", "replacement": "$1 **** **** ****"}, {"field": "phone", "type": "pattern", "pattern": "\\((\\d{3})\\) (\\d{3})-\\d{4}", "replacement": "($1) $2-****"}, {"field": "email", "type": "pattern", "pattern": "^([^@]{2})[^@]*@", "replacement": "$1***@"}, {"field": "ip_address", "type": "pattern", "pattern": "(\\d{1,3}\\.\\d{1,3})\\.\\d{1,3}\\.\\d{1,3}", "replacement": "$1.***.***"}]'
-
-Resources:
-  EventProcessorFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: ${LAMBDA_NAME}
-      CodeUri: .
-      Handler: ${LAMBDA_NAME}.handler
-      Runtime: nodejs18.x
-      Timeout: 30
-      MemorySize: 128
-      Environment:
-        Variables:
-          LUMIGO_TRACER_TOKEN: !Ref LumigoToken
-          LUMIGO_ANONYMIZE_ENABLED: !Ref LumigoAnonymizeEnabled
-          LUMIGO_ANONYMIZE_REGEX: !Ref LumigoAnonymizeRegex
-          LUMIGO_ANONYMIZE_DATA_SCHEMA: !Ref LumigoAnonymizeDataSchema
-      Policies:
-        - CloudWatchLogsFullAccess
-        - Statement:
-            - Effect: Allow
-              Action:
-                - logs:CreateLogGroup
-                - logs:CreateLogStream
-                - logs:PutLogEvents
-              Resource: '*'
-        - Statement:
-            - Effect: Allow
-              Action:
-                - lambda:InvokeFunction
-              Resource: '*'
-      Events:
-        ApiEvent:
-          Type: Api
-          Properties:
-            Path: /process
-            Method: post
-
-Outputs:
-  EventProcessorFunction:
-    Description: "EventProcessor Lambda Function ARN"
-    Value: !GetAtt EventProcessorFunction.Arn
-  EventProcessorApi:
-    Description: "API Gateway endpoint URL"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/process"
-EOF
-fi
 
 # Create samconfig.toml with basic parameters only
 echo "📋 Creating SAM configuration..."
@@ -366,26 +272,7 @@ cp -R build/lumigo-node deployment/${LAMBDA_NAME}-deploy/
 
 # Create a clean package.json for deployment (without dev dependencies that cause conflicts)
 echo "📋 Creating clean package.json for deployment..."
-if [ "$LAMBDA_NAME" = "lambdasAnonymous" ]; then
 cp deployment/lambdasAnonymous-deploy/package.json deployment/${LAMBDA_NAME}-deploy/
-else
-    cat > deployment/${LAMBDA_NAME}-deploy/package.json << 'EOF'
-{
-  "name": "lambda-with-custom-tracer",
-  "version": "1.0.0",
-  "description": "Lambda function with custom Lumigo tracer",
-  "main": "${LAMBDA_NAME}.js",
-  "dependencies": {
-    "@lumigo/node-core": "1.17.1",
-    "agentkeepalive": "^4.1.4",
-    "axios": "^1.11.0",
-    "rfdc": "^1.4.1",
-    "shimmer": "1.2.1",
-    "utf8": "^3.0.0"
-  }
-}
-EOF
-fi
 
 # Go to deployment directory
 cd deployment/${LAMBDA_NAME}-deploy

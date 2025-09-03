@@ -1,12 +1,12 @@
 # Quickstart Guide: Custom Lumigo Tracer with Anonymization
 
-This guide will walk you through setting up a custom Lumigo tracer with built-in data anonymization and adding manual tracing to your existing Lambda functions.
+This guide will walk you through setting up a custom Lumigo tracer with built-in data anonymization and testing it with the included example Lambda function.
 
 ## 🚀 **Quick Start Overview**
 
 1. **Setup Custom Tracer** - Build and deploy the custom Lumigo tracer with anonymization
-2. **Add Manual Tracing** - Integrate manual tracing into your existing Lambda functions
-3. **Test & Verify** - Ensure everything works correctly
+2. **Test Example Lambda** - Test the included `lambdasAnonymous` Lambda function
+3. **Verify Anonymization** - Ensure sensitive data is properly anonymized
 
 ## 📋 **Prerequisites**
 
@@ -61,335 +61,135 @@ The script will output the API Gateway URL and testing instructions. Check Cloud
 - ✅ **"Spans sent [Xms, Y spans]"** with **"status":200**
 - ✅ **"Tracer ended"** with **"totalSpans":2**
 
-## 🔍 **Step 2: Add Manual Tracing to Your Lambda**
+## 🔍 **Step 2: Test the Example Lambda Function**
 
-### **2.1 Basic Manual Tracing Setup**
+### **2.1 Test the Deployed Lambda**
 
-Create a new Lambda function or modify existing one:
+The deployment script will provide you with an API Gateway URL. Test it with:
 
-```javascript
-// handler.js
-const lumigo = require('./lumigo-node');
-
-// Initialize the custom tracer with anonymization
-const tracer = lumigo.initTracer({
-    token: process.env.LUMIGO_TRACER_TOKEN,
-    debug: true
-});
-
-// Your existing Lambda handler
-async function myHandler(event, context) {
-    // Manual span creation
-    const span = lumigo.startSpan('custom-operation');
-    
-    try {
-        // Your business logic here
-        const result = await processData(event);
-        
-        // Add custom attributes to span
-        span.setAttribute('operation.type', 'data-processing');
-        span.setAttribute('operation.result', 'success');
-        span.setAttribute('data.size', JSON.stringify(event).length);
-        
-        return {
-            statusCode: 200,
-            body: JSON.stringify(result)
-        };
-    } catch (error) {
-        // Record error in span
-        span.recordException(error);
-        span.setAttribute('operation.result', 'error');
-        span.setAttribute('error.message', error.message);
-        
-        throw error;
-    } finally {
-        // Always end the span
-        span.end();
+```bash
+curl -X POST https://YOUR_API_GATEWAY_URL/Prod/process \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "user_registration",
+    "data": {
+      "user": {
+        "id": "123",
+        "name": "John Doe",
+        "email": "john@example.com",
+        "ssn": "123-45-6789",
+        "phone": "(555) 123-4567",
+        "address": "123 Main St, Anytown, USA",
+        "credit_card": "4111-1111-1111-1111",
+        "bank_account": "1234567890",
+        "driver_license": "DL123456789",
+        "passport_number": "P123456789",
+        "date_of_birth": "1990-01-01",
+        "ip_address": "192.168.1.1",
+        "session_token": "sess_abc123def456",
+        "auth_token": "auth_xyz789"
+      }
     }
-}
-
-// Export with Lumigo tracing
-exports.handler = tracer.trace(myHandler);
+  }'
 ```
 
-### **2.2 Advanced Manual Tracing with Multiple Spans**
+### **2.2 Verify Anonymization**
 
-```javascript
-// handler-advanced.js
-const lumigo = require('./lumigo-node');
+Check CloudWatch logs to verify that anonymization is working:
 
-// Initialize the custom tracer with anonymization
-const tracer = lumigo.initTracer({
-    token: process.env.LUMIGO_TRACER_TOKEN,
-    debug: true
-});
+```bash
+# Get the latest log stream
+aws logs describe-log-streams \
+  --log-group-name "/aws/lambda/lambdasAnonymous" \
+  --order-by LastEventTime \
+  --descending \
+  --max-items 1
 
-async function advancedHandler(event, context) {
-    // Root span for the entire operation
-    const rootSpan = lumigo.startSpan('user-registration');
-    
-    try {
-        // Validate input
-        const validationSpan = lumigo.startSpan('input-validation');
-        const validatedData = await validateInput(event);
-        validationSpan.setAttribute('validation.result', 'success');
-        validationSpan.setAttribute('validation.fields', Object.keys(validatedData).length);
-        validationSpan.end();
-        
-        // Process user data
-        const processingSpan = lumigo.startSpan('user-processing');
-        const user = await createUser(validatedData);
-        processingSpan.setAttribute('user.id', user.id);
-        processingSpan.setAttribute('user.email', user.email);
-        processingSpan.end();
-        
-        // Send welcome email
-        const emailSpan = lumigo.startSpan('welcome-email');
-        await sendWelcomeEmail(user.email);
-        emailSpan.setAttribute('email.sent', true);
-        emailSpan.setAttribute('email.recipient', user.email);
-        emailSpan.end();
-        
-        rootSpan.setAttribute('operation.completed', true);
-        rootSpan.setAttribute('user.created', user.id);
-        
-        return {
-            statusCode: 200,
-            body: JSON.stringify({ userId: user.id, message: 'User created successfully' })
-        };
-        
-    } catch (error) {
-        rootSpan.recordException(error);
-        rootSpan.setAttribute('operation.failed', true);
-        rootSpan.setAttribute('error.type', error.name);
-        
-        throw error;
-    } finally {
-        rootSpan.end();
-    }
-}
-
-exports.handler = tracer.trace(advancedHandler);
+# Get log events and look for anonymization messages
+aws logs get-log-events \
+  --log-group-name "/aws/lambda/lambdasAnonymous" \
+  --log-stream-name "YOUR_LOG_STREAM_NAME" | grep -E "(ANONYMIZATION|🔒|Spans sent)"
 ```
 
-### **2.3 Manual Tracing with Custom Attributes and Events**
-
-```javascript
-// handler-detailed.js
-const lumigo = require('./lumigo-node');
-
-// Initialize the custom tracer with anonymization
-const tracer = lumigo.initTracer({
-    token: process.env.LUMIGO_TRACER_TOKEN,
-    debug: true
-});
-
-async function detailedHandler(event, context) {
-    const span = lumigo.startSpan('order-processing');
-    
-    // Set span attributes
-    span.setAttribute('order.id', event.orderId);
-    span.setAttribute('customer.id', event.customerId);
-    span.setAttribute('order.total', event.total);
-    span.setAttribute('order.currency', event.currency);
-    
-    // Add custom events to the span
-    span.addEvent('order.received', {
-        'order.timestamp': new Date().toISOString(),
-        'order.source': event.source || 'api'
-    });
-    
-    try {
-        // Process order
-        const order = await processOrder(event);
-        
-        span.addEvent('order.processed', {
-            'order.status': order.status,
-            'order.processed_at': new Date().toISOString()
-        });
-        
-        // Update inventory
-        const inventorySpan = lumigo.startSpan('inventory-update');
-        await updateInventory(order.items);
-        inventorySpan.setAttribute('items.updated', order.items.length);
-        inventorySpan.end();
-        
-        span.addEvent('order.completed', {
-            'order.completed_at': new Date().toISOString(),
-            'order.final_status': 'completed'
-        });
-        
-        return { success: true, orderId: order.id };
-        
-    } catch (error) {
-        span.recordException(error);
-        span.addEvent('order.failed', {
-            'error.message': error.message,
-            'error.stack': error.stack
-        });
-        throw error;
-    } finally {
-        span.end();
-    }
-}
-
-exports.handler = tracer.trace(detailedHandler);
-```
+You should see:
+- ✅ **"🔒 ANONYMIZATION: Return value anonymized for Lumigo traces"**
+- ✅ **"Spans sent [Xms, Y spans]"** with **"status":200**
+- ✅ **"Tracer ended"** with **"totalSpans":2**
 
 ## ⚙️ **Step 3: Environment Configuration**
 
-### **3.1 Lambda Environment Variables**
-
-Set these in your Lambda function configuration (or use `deployment-config.env`):
+The deployment script automatically configures all necessary environment variables. The configuration is defined in `deployment-config.env`:
 
 ```bash
-# Required
+# Lumigo Configuration
 LUMIGO_TRACER_TOKEN=your_lumigo_token_here
-
-# Anonymization (current working configuration)
 LUMIGO_ANONYMIZE_ENABLED=true
+
+# Anonymization Patterns (current working configuration)
 LUMIGO_ANONYMIZE_REGEX='["ssn", "credit.*card", "bank.*account", "driver.*license", "passport.*number", "phone", "email", "address", "zip.*code", "date.*of.*birth", "ip.*address", "session.*token", "auth.*token"]'
+
+# Data Schema for Anonymization (truncation-based for reliability)
 LUMIGO_ANONYMIZE_DATA_SCHEMA='[{"field": "address", "type": "truncate", "maxChars": 20, "position": "end"}, {"field": "name", "type": "truncate", "maxChars": 8, "position": "middle"}, {"field": "session_token", "type": "truncate", "maxChars": 20, "position": "beginning"}, {"field": "auth_token", "type": "truncate", "maxChars": 20, "position": "beginning"}]'
-```
-
-### **3.2 SAM Template Configuration**
-
-```yaml
-# template.yaml
-Resources:
-  MyFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      Runtime: nodejs18.x
-      Handler: handler.handler
-      Environment:
-        Variables:
-          LUMIGO_TRACER_TOKEN: !Ref LumigoToken
-          LUMIGO_ANONYMIZE_ENABLED: "true"
-          LUMIGO_ANONYMIZE_REGEX: '["ssn", "credit.*card", "bank.*account", "driver.*license", "passport.*number", "phone", "email", "address", "zip.*code", "date.*of.*birth", "ip.*address", "session.*token", "auth.*token"]'
-          LUMIGO_ANONYMIZE_DATA_SCHEMA: '[{"field": "address", "type": "truncate", "maxChars": 20, "position": "end"}, {"field": "name", "type": "truncate", "maxChars": 8, "position": "middle"}, {"field": "session_token", "type": "truncate", "maxChars": 20, "position": "beginning"}, {"field": "auth_token", "type": "truncate", "maxChars": 20, "position": "beginning"}]'
 ```
 
 ## 🧪 **Step 4: Testing and Verification**
 
-### **4.1 Test Your Lambda Function**
+### **4.1 Test the Example Lambda**
+
+The deployment script provides the API Gateway URL. Test with:
 
 ```bash
-# Test with sample data
-aws lambda invoke \
-  --function-name your-function-name \
-  --payload '{"orderId": "12345", "customerId": "67890", "total": 99.99, "currency": "USD"}' \
-  --cli-binary-format raw-in-base64-out \
-  response.json
-
-# Check the response
-cat response.json
+curl -X POST https://YOUR_API_GATEWAY_URL/Prod/process \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "user_registration",
+    "data": {
+      "user": {
+        "id": "123",
+        "name": "John Doe",
+        "email": "john@example.com",
+        "ssn": "123-45-6789",
+        "phone": "(555) 123-4567",
+        "address": "123 Main St, Anytown, USA",
+        "credit_card": "4111-1111-1111-1111",
+        "bank_account": "1234567890",
+        "driver_license": "DL123456789",
+        "passport_number": "P123456789",
+        "date_of_birth": "1990-01-01",
+        "ip_address": "192.168.1.1",
+        "session_token": "sess_abc123def456",
+        "auth_token": "auth_xyz789"
+      }
+    }
+  }'
 ```
 
 ### **4.2 Verify CloudWatch Logs**
 
 ```bash
-# Get log group name
-aws logs describe-log-groups --log-group-name-prefix "/aws/lambda/your-function-name"
-
 # Get latest log stream
 aws logs describe-log-streams \
-  --log-group-name "/aws/lambda/your-function-name" \
+  --log-group-name "/aws/lambda/lambdasAnonymous" \
   --order-by LastEventTime \
   --descending \
   --max-items 1
 
 # Get log events
 aws logs get-log-events \
-  --log-group-name "/aws/lambda/your-function-name" \
-  --log-stream-name "your-log-stream-name"
+  --log-group-name "/aws/lambda/lambdasAnonymous" \
+  --log-stream-name "YOUR_LOG_STREAM_NAME"
 ```
 
 ### **4.3 Check Lumigo Dashboard**
 
 1. Go to your Lumigo dashboard
-2. Look for traces from your Lambda function
+2. Look for traces from the `lambdasAnonymous` Lambda function
 3. Verify that:
-   - Custom spans are visible
    - Sensitive data is anonymized (truncated or replaced with `[ANONYMIZED]`)
-   - Custom attributes and events are present
    - Spans show **"status":200** indicating successful transmission
+   - Original data is preserved in CloudWatch logs for debugging
 
-## 🔄 **Step 5: Integration with Existing Code**
 
-### **5.1 Minimal Integration (Recommended)**
-
-```javascript
-// Minimal change to existing handler
-const lumigo = require('./lumigo-node');
-
-// Initialize the custom tracer with anonymization
-const tracer = lumigo.initTracer({
-    token: process.env.LUMIGO_TRACER_TOKEN,
-    debug: true
-});
-
-// Your existing handler function
-async function existingHandler(event, context) {
-    // Add manual tracing here
-    const span = lumigo.startSpan('business-logic');
-    
-    try {
-        // Your existing code here
-        const result = await yourExistingFunction(event);
-        
-        span.setAttribute('operation.result', 'success');
-        return result;
-    } catch (error) {
-        span.recordException(error);
-        throw error;
-    } finally {
-        span.end();
-    }
-}
-
-// Wrap with Lumigo (only change needed)
-exports.handler = tracer.trace(existingHandler);
-```
-
-### **5.2 Gradual Integration**
-
-```javascript
-// Start with basic tracing, add more later
-const lumigo = require('./lumigo-node');
-
-// Initialize the custom tracer with anonymization
-const tracer = lumigo.initTracer({
-    token: process.env.LUMIGO_TRACER_TOKEN,
-    debug: true
-});
-
-async function gradualHandler(event, context) {
-    // Phase 1: Basic operation span
-    const operationSpan = lumigo.startSpan('main-operation');
-    
-    try {
-        // Your existing business logic
-        const result = await processBusinessLogic(event);
-        
-        // Phase 2: Add sub-operation spans later
-        // const subSpan = lumigo.startSpan('sub-operation');
-        // ... sub-operation logic
-        // subSpan.end();
-        
-        operationSpan.setAttribute('operation.completed', true);
-        return result;
-        
-    } catch (error) {
-        operationSpan.recordException(error);
-        throw error;
-    } finally {
-        operationSpan.end();
-    }
-}
-
-exports.handler = tracer.trace(gradualHandler);
-```
 
 ## 🚨 **Troubleshooting**
 
@@ -423,16 +223,16 @@ exports.handler = tracer.trace(gradualHandler);
 
 ```bash
 # Check if custom code is built
-grep -n "LUMIGO_ANONYMIZE" lumigo-node/dist/tracer/tracer.js
+grep -n "LUMIGO_ANONYMIZE" build/lumigo-node/tracer/tracer.js
 
 # Check for ES6 imports (should return nothing)
-grep -n "import.*from" lumigo-node/dist/tracer/tracer.js
+grep -n "import.*from" build/lumigo-node/tracer/tracer.js
 
 # Verify deployment package
-ls -la deployment/eventProcessor-deploy/lumigo-node/
+ls -la deployment/lambdasAnonymous-deploy/lumigo-node/
 
 # Check CloudWatch logs for anonymization
-aws logs get-log-events --log-group-name "/aws/lambda/eventProcessor" --log-stream-name "LATEST" | grep -E "(ANONYMIZATION|🔒|Spans sent)"
+aws logs get-log-events --log-group-name "/aws/lambda/lambdasAnonymous" --log-stream-name "LATEST" | grep -E "(ANONYMIZATION|🔒|Spans sent)"
 ```
 
 ## 📚 **Next Steps**
@@ -447,11 +247,11 @@ aws logs get-log-events --log-group-name "/aws/lambda/eventProcessor" --log-stre
 - ✅ Custom tracer builds without errors
 - ✅ Babel conversion completes successfully
 - ✅ Lambda deploys and runs without module errors
-- ✅ Manual spans appear in Lumigo dashboard
 - ✅ Sensitive data is anonymized in traces (truncated or `[ANONYMIZED]`)
 - ✅ Original data preserved in Lambda logs
 - ✅ CloudWatch logs show **"🔒 ANONYMIZATION: Return value anonymized"**
 - ✅ CloudWatch logs show **"Spans sent [Xms, Y spans]"** with **"status":200**
+- ✅ Decorators are working for performance monitoring
 
 ## 📞 **Getting Help**
 
