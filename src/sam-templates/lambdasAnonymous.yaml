@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: 'lambdasAnonomous - Example Lambda with Custom Lumigo Tracer and Anonymization'
+Description: 'lambdasAnonymous - Example Lambda with Custom Lumigo Tracer and Anonymization'
 
 Parameters:
   LumigoToken:
@@ -23,12 +23,12 @@ Globals:
         LUMIGO_ANONYMIZE_ENABLED: !Ref LumigoAnonymizeEnabled
 
 Resources:
-  lambdasAnonomousFunction:
+  lambdasAnonymousFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: lambdasAnonomous
+      FunctionName: lambdasAnonymous
       CodeUri: ./
-      Handler: lambdasAnonomous.handler
+      Handler: lambdasAnonymous.handler
       Description: 'Example Lambda demonstrating custom Lumigo tracer with anonymization and manual tracing'
       Events:
         Api:
@@ -36,31 +36,31 @@ Resources:
           Properties:
             Path: /process
             Method: post
-            RestApiId: !Ref lambdasAnonomousApi
+            RestApiId: !Ref lambdasAnonymousApi
       Tags:
         Project: lumigo-tracer-custom
-        Function: lambdasAnonomous
+        Function: lambdasAnonymous
         Purpose: example-user-demo
 
-  lambdasAnonomousApi:
+  lambdasAnonymousApi:
     Type: AWS::Serverless::Api
     Properties:
-      Name: lambdasAnonomous-api
+      Name: lambdasAnonymous-api
       StageName: Prod
-      Description: 'API Gateway for lambdasAnonomous Lambda function'
+      Description: 'API Gateway for lambdasAnonymous Lambda function'
       Tags:
         Project: lumigo-tracer-custom
         Purpose: example-user-demo
 
 Outputs:
-  lambdasAnonomousApi:
-    Description: "API Gateway endpoint URL for lambdasAnonomous function"
-    Value: !Sub "https://${lambdasAnonomousApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/process"
+  lambdasAnonymousApi:
+    Description: "API Gateway endpoint URL for lambdasAnonymous function"
+    Value: !Sub "https://${lambdasAnonymousApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/process"
     Export:
-      Name: lambdasAnonomousApiUrl
+      Name: lambdasAnonymousApiUrl
       
-  lambdasAnonomousFunction:
-    Description: "lambdasAnonomous Lambda Function ARN"
-    Value: !GetAtt lambdasAnonomousFunction.Arn
+  lambdasAnonymousFunction:
+    Description: "lambdasAnonymous Lambda Function ARN"
+    Value: !GetAtt lambdasAnonymousFunction.Arn
     Export:
-      Name: lambdasAnonomousFunctionArn
+      Name: lambdasAnonymousFunctionArn

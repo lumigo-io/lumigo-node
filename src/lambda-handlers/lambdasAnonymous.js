@@ -7,7 +7,7 @@ const tracer = lumigo.initTracer({
 });
 
 const myHandler = async (event, context) => {
-    console.log('lambdasAnonomous Lambda started');
+    console.log('lambdasAnonymous Lambda started');
     console.log('🔧 Environment variables:');
     console.log('  - LUMIGO_ANONYMIZE_ENABLED:', process.env.LUMIGO_ANONYMIZE_ENABLED);
     console.log('  - LUMIGO_ANONYMIZE_REGEX:', process.env.LUMIGO_ANONYMIZE_REGEX);

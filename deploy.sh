@@ -8,7 +8,7 @@ show_usage() {
     echo ""
     echo "Available Lambda functions:"
     echo "  eventProcessor    - Original event processing Lambda"
-    echo "  lambdasAnonomous  - Example Lambda with manual tracing (recommended for users)"
+    echo "  lambdasAnonymous  - Example Lambda with manual tracing (recommended for users)"
     echo ""
     echo "If no lambda name is provided, you will be prompted to select one."
 }
@@ -16,7 +16,7 @@ show_usage() {
 # Check if lambda name is provided as argument
 if [ $# -eq 1 ]; then
     LAMBDA_NAME="$1"
-    if [ "$LAMBDA_NAME" != "eventProcessor" ] && [ "$LAMBDA_NAME" != "lambdasAnonomous" ]; then
+    if [ "$LAMBDA_NAME" != "eventProcessor" ] && [ "$LAMBDA_NAME" != "lambdasAnonymous" ]; then
         echo "❌ Invalid Lambda name: $LAMBDA_NAME"
         show_usage
         exit 1
@@ -24,7 +24,7 @@ if [ $# -eq 1 ]; then
 else
     echo "Available Lambda functions:"
     echo "1) eventProcessor    - Original event processing Lambda"
-    echo "2) lambdasAnonomous  - Example Lambda with manual tracing (recommended for users)"
+    echo "2) lambdasAnonymous  - Example Lambda with manual tracing (recommended for users)"
     echo ""
     read -p "Select Lambda function (1 or 2): " choice
     
@@ -33,7 +33,7 @@ else
             LAMBDA_NAME="eventProcessor"
             ;;
         2)
-            LAMBDA_NAME="lambdasAnonomous"
+            LAMBDA_NAME="lambdasAnonymous"
             ;;
         *)
             echo "❌ Invalid choice. Please run the script again."
@@ -89,8 +89,8 @@ echo ""
 
 # Clean up any existing deployment directory (but preserve source files)
 echo "🧹 Cleaning up existing deployment directory..."
-if [ "$LAMBDA_NAME" = "lambdasAnonomous" ]; then
-    # For lambdasAnonomous, preserve the source files and only clean the build artifacts
+if [ "$LAMBDA_NAME" = "lambdasAnonymous" ]; then
+# For lambdasAnonymous, preserve the source files and only clean the build artifacts
     rm -rf deployment/${LAMBDA_NAME}-deploy/lumigo-node
     rm -f deployment/${LAMBDA_NAME}-deploy/samconfig.toml
 else
@@ -105,8 +105,8 @@ mkdir -p deployment/${LAMBDA_NAME}-deploy
 
 # Copy Lambda handler
 echo "📋 Copying Lambda handler..."
-if [ "$LAMBDA_NAME" = "lambdasAnonomous" ]; then
-    cp src/lambda-handlers/lambdasAnonomous.js deployment/${LAMBDA_NAME}-deploy/
+if [ "$LAMBDA_NAME" = "lambdasAnonymous" ]; then
+cp src/lambda-handlers/lambdasAnonymous.js deployment/${LAMBDA_NAME}-deploy/
 else
     cp src/lambda-handlers/eventProcessor.js deployment/${LAMBDA_NAME}-deploy/
 fi
@@ -202,8 +202,8 @@ fi
 
 # Create SAM template
 echo "📋 Creating SAM template..."
-if [ "$LAMBDA_NAME" = "lambdasAnonomous" ]; then
-    cp src/sam-templates/lambdasAnonomous.yaml deployment/${LAMBDA_NAME}-deploy/template.yaml
+if [ "$LAMBDA_NAME" = "lambdasAnonymous" ]; then
+cp src/sam-templates/lambdasAnonymous.yaml deployment/${LAMBDA_NAME}-deploy/template.yaml
 else
     cp src/sam-templates/eventProcessor.yaml deployment/${LAMBDA_NAME}-deploy/template.yaml
 fi
@@ -360,8 +360,8 @@ cp -R build/lumigo-node deployment/${LAMBDA_NAME}-deploy/
 
 # Create a clean package.json for deployment (without dev dependencies that cause conflicts)
 echo "📋 Creating clean package.json for deployment..."
-if [ "$LAMBDA_NAME" = "lambdasAnonomous" ]; then
-    cp deployment/lambdasAnonomous-deploy/package.json deployment/${LAMBDA_NAME}-deploy/
+if [ "$LAMBDA_NAME" = "lambdasAnonymous" ]; then
+cp deployment/lambdasAnonymous-deploy/package.json deployment/${LAMBDA_NAME}-deploy/
 else
     cat > deployment/${LAMBDA_NAME}-deploy/package.json << 'EOF'
 {
