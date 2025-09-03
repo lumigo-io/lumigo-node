@@ -125,8 +125,8 @@ check_prerequisites() {
     print_status "Checking prerequisites..."
     
     # Check if we're in the right directory
-    if [[ ! -f "lumigo-node/package.json" ]]; then
-        print_error "lumigo-node/package.json not found. Please run this script from the project root."
+    if [[ ! -f "src/lumigo-tracer/package.json" ]]; then
+        print_error "src/lumigo-tracer/package.json not found. Please run this script from the project root."
         exit 1
     fi
     
@@ -156,10 +156,13 @@ clean_build() {
     if [[ "$CLEAN_BUILD" == true ]]; then
         print_status "Cleaning build artifacts..."
         
-        # Clean lumigo-node
-        cd lumigo-node
+        # Clean build directory
+        rm -rf build/
+        
+        # Clean source directory
+        cd src/lumigo-tracer
         rm -rf dist/ node_modules/ temp-build/ temp-dist/ test-compile/
-        cd ..
+        cd ../..
         
         # Clean output directory
         rm -rf "$OUTPUT_DIR"
@@ -172,28 +175,28 @@ clean_build() {
 fix_typescript_issues() {
     print_status "Fixing TypeScript compilation issues..."
     
-    cd lumigo-node
+    cd src/lumigo-tracer
     
     # Backup problematic files if they exist
-    if [[ -f "src/hooks/baseHttp.ts" ]]; then
-        cp src/hooks/baseHttp.ts src/hooks/baseHttp.ts.backup 2>/dev/null || true
+    if [[ -f "hooks/baseHttp.ts" ]]; then
+        cp hooks/baseHttp.ts hooks/baseHttp.ts.backup 2>/dev/null || true
     fi
-    if [[ -f "src/hooks/http.ts" ]]; then
-        cp src/hooks/http.ts src/hooks/http.ts.backup 2>/dev/null || true
+    if [[ -f "hooks/http.ts" ]]; then
+        cp hooks/http.ts hooks/http.ts.backup 2>/dev/null || true
     fi
     
     # Comment out problematic decorators
-    if [[ -f "src/hooks/baseHttp.ts" ]]; then
-        sed -i '' 's/@GlobalDurationTimer.timedSync()/\/\/@GlobalDurationTimer.timedSync()/g' src/hooks/baseHttp.ts 2>/dev/null || \
-        sed -i 's/@GlobalDurationTimer.timedSync()/\/\/@GlobalDurationTimer.timedSync()/g' src/hooks/baseHttp.ts
+    if [[ -f "hooks/baseHttp.ts" ]]; then
+        sed -i '' 's/@GlobalDurationTimer.timedSync()/\/\/@GlobalDurationTimer.timedSync()/g' hooks/baseHttp.ts 2>/dev/null || \
+        sed -i 's/@GlobalDurationTimer.timedSync()/\/\/@GlobalDurationTimer.timedSync()/g' hooks/baseHttp.ts
     fi
     
-    if [[ -f "src/hooks/http.ts" ]]; then
-        sed -i '' 's/@GlobalDurationTimer.timedSync()/\/\/@GlobalDurationTimer.timedSync()/g' src/hooks/http.ts 2>/dev/null || \
-        sed -i 's/@GlobalDurationTimer.timedSync()/\/\/@GlobalDurationTimer.timedSync()/g' src/hooks/http.ts
+    if [[ -f "hooks/http.ts" ]]; then
+        sed -i '' 's/@GlobalDurationTimer.timedSync()/\/\/@GlobalDurationTimer.timedSync()/g' hooks/http.ts 2>/dev/null || \
+        sed -i 's/@GlobalDurationTimer.timedSync()/\/\/@GlobalDurationTimer.timedSync()/g' hooks/http.ts
     fi
     
-    cd ..
+    cd ../..
     print_success "TypeScript issues fixed"
 }
 
@@ -201,7 +204,7 @@ fix_typescript_issues() {
 build_tracer() {
     print_status "Building custom Lumigo tracer..."
     
-    cd lumigo-node
+    cd src/lumigo-tracer
     
     # Install dependencies
     print_status "Installing dependencies..."
@@ -215,7 +218,13 @@ build_tracer() {
     print_status "Converting ES6 modules to CommonJS..."
     npx babel dist --out-dir dist --extensions .js --source-maps
     
-    cd ..
+    # Copy built files to build directory
+    print_status "Copying built files to build directory..."
+    mkdir -p ../../build/lumigo-node
+    cp -r dist/* ../../build/lumigo-node/
+    cp package.json ../../build/lumigo-node/
+    
+    cd ../..
     print_success "Custom tracer built successfully"
 }
 
@@ -224,13 +233,13 @@ validate_build() {
     print_status "Validating build..."
     
     # Check if anonymization code is present
-    if ! grep -q "LUMIGO_ANONYMIZE" lumigo-node/dist/tracer/tracer.js; then
+    if ! grep -q "LUMIGO_ANONYMIZE" build/lumigo-node/tracer/tracer.js; then
         print_error "Anonymization code not found in built tracer"
         exit 1
     fi
     
     # Check for ES6 imports (should be none)
-    if grep -q "import.*from" lumigo-node/dist/tracer/tracer.js; then
+    if grep -q "import.*from" build/lumigo-node/tracer/tracer.js; then
         print_error "ES6 imports found in built tracer - Babel conversion failed"
         exit 1
     fi
@@ -246,9 +255,9 @@ run_tests() {
     fi
     
     print_status "Running tests..."
-    cd lumigo-node
+    cd src/lumigo-tracer
     npm test
-    cd ..
+    cd ../..
     print_success "Tests passed"
 }
 
@@ -266,15 +275,14 @@ create_npm_package() {
     mkdir -p "$package_dir"
     
     # Copy built tracer
-    cp -r lumigo-node/dist "$package_dir/"
-    cp lumigo-node/package.json "$package_dir/"
-    cp lumigo-node/README.md "$package_dir/" 2>/dev/null || true
-    cp lumigo-node/LICENSE "$package_dir/" 2>/dev/null || true
+    cp -r build/lumigo-node/* "$package_dir/"
+    cp src/lumigo-tracer/README.md "$package_dir/" 2>/dev/null || true
+    cp src/lumigo-tracer/LICENSE "$package_dir/" 2>/dev/null || true
     
     # Include source files if requested
     if [[ "$INCLUDE_SOURCE" == true ]]; then
-        cp -r lumigo-node/src "$package_dir/"
-        cp lumigo-node/tsconfig.json "$package_dir/" 2>/dev/null || true
+        cp -r src/lumigo-tracer/* "$package_dir/src/"
+        cp src/lumigo-tracer/tsconfig.json "$package_dir/" 2>/dev/null || true
     fi
     
     # Create package.json for the custom tracer
@@ -334,8 +342,7 @@ create_lambda_package() {
     mkdir -p "$package_dir"
     
     # Copy built tracer
-    cp -r lumigo-node/dist "$package_dir/lumigo-node/"
-    cp lumigo-node/package.json "$package_dir/lumigo-node/"
+    cp -r build/lumigo-node "$package_dir/"
     
     # Create Lambda handler
     cat > "$package_dir/handler.js" << 'EOF'
@@ -419,8 +426,7 @@ create_layer_package() {
     mkdir -p "$package_dir/nodejs"
     
     # Copy built tracer to nodejs directory (Lambda Layer structure)
-    cp -r lumigo-node/dist "$package_dir/nodejs/lumigo-node/"
-    cp lumigo-node/package.json "$package_dir/nodejs/lumigo-node/"
+    cp -r build/lumigo-node "$package_dir/nodejs/"
     
     # Create layer package.json
     cat > "$package_dir/nodejs/package.json" << EOF
@@ -453,8 +459,7 @@ create_docker_package() {
     mkdir -p "$package_dir"
     
     # Copy built tracer
-    cp -r lumigo-node/dist "$package_dir/lumigo-node/"
-    cp lumigo-node/package.json "$package_dir/lumigo-node/"
+    cp -r build/lumigo-node "$package_dir/"
     
     # Create Dockerfile
     cat > "$package_dir/Dockerfile" << 'EOF'

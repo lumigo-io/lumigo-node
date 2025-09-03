@@ -1,0 +1,66 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'lambdasAnonomous - Example Lambda with Custom Lumigo Tracer and Anonymization'
+
+Parameters:
+  LumigoToken:
+    Type: String
+    Description: Lumigo tracer token
+    Default: ''
+  LumigoAnonymizeEnabled:
+    Type: String
+    Description: Enable anonymization
+    Default: 'true'
+    AllowedValues: ['true', 'false']
+
+Globals:
+  Function:
+    Timeout: 30
+    Runtime: nodejs18.x
+    Environment:
+      Variables:
+        LUMIGO_TRACER_TOKEN: !Ref LumigoToken
+        LUMIGO_ANONYMIZE_ENABLED: !Ref LumigoAnonymizeEnabled
+
+Resources:
+  lambdasAnonomousFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: lambdasAnonomous
+      CodeUri: ./
+      Handler: lambdasAnonomous.handler
+      Description: 'Example Lambda demonstrating custom Lumigo tracer with anonymization and manual tracing'
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /process
+            Method: post
+            RestApiId: !Ref lambdasAnonomousApi
+      Tags:
+        Project: lumigo-tracer-custom
+        Function: lambdasAnonomous
+        Purpose: example-user-demo
+
+  lambdasAnonomousApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: lambdasAnonomous-api
+      StageName: Prod
+      Description: 'API Gateway for lambdasAnonomous Lambda function'
+      Tags:
+        Project: lumigo-tracer-custom
+        Purpose: example-user-demo
+
+Outputs:
+  lambdasAnonomousApi:
+    Description: "API Gateway endpoint URL for lambdasAnonomous function"
+    Value: !Sub "https://${lambdasAnonomousApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/process"
+    Export:
+      Name: lambdasAnonomousApiUrl
+      
+  lambdasAnonomousFunction:
+    Description: "lambdasAnonomous Lambda Function ARN"
+    Value: !GetAtt lambdasAnonomousFunction.Arn
+    Export:
+      Name: lambdasAnonomousFunctionArn

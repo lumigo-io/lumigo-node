@@ -172,7 +172,7 @@ export class BaseHttp {
     return returnData;
   }
 
-  ////////////////////@GlobalDurationTimer.timedSync()
+  ////////////////////////////////@GlobalDurationTimer.timedSync()
   static _getHostFromOptionsOrUrl({ options, url = undefined }: httpRequestCreatedParams) {
     if (url) {
       return new URL(url).hostname;
@@ -371,7 +371,7 @@ export class BaseHttp {
     }
   }
 
-  ////////////////////@GlobalDurationTimer.timedSync()
+  ////////////////////////////////@GlobalDurationTimer.timedSync()
   static parseHttpRequestOptions(options: ParseHttpRequestOptions = {}, url?: string): RequestData {
     const host = BaseHttp._getHostFromOptionsOrUrl({ options, url });
     const agent = options.agent || options._defaultAgent;

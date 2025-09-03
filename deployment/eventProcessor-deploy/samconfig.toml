@@ -1,7 +1,7 @@
 version = 0.1
 [default.deploy.parameters]
 stack_name = "eventProcessor-stack"
-s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-1756931436"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-1756940404"
 s3_prefix = "eventProcessor-stack"
 region = "us-east-1"
 confirm_changeset = true

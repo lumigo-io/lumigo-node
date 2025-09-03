@@ -2,6 +2,49 @@
 
 echo "🚀 Deploying Custom Lumigo Tracer with Anonymization..."
 
+# Function to show usage
+show_usage() {
+    echo "Usage: $0 [lambda-name]"
+    echo ""
+    echo "Available Lambda functions:"
+    echo "  eventProcessor    - Original event processing Lambda"
+    echo "  lambdasAnonomous  - Example Lambda with manual tracing (recommended for users)"
+    echo ""
+    echo "If no lambda name is provided, you will be prompted to select one."
+}
+
+# Check if lambda name is provided as argument
+if [ $# -eq 1 ]; then
+    LAMBDA_NAME="$1"
+    if [ "$LAMBDA_NAME" != "eventProcessor" ] && [ "$LAMBDA_NAME" != "lambdasAnonomous" ]; then
+        echo "❌ Invalid Lambda name: $LAMBDA_NAME"
+        show_usage
+        exit 1
+    fi
+else
+    echo "Available Lambda functions:"
+    echo "1) eventProcessor    - Original event processing Lambda"
+    echo "2) lambdasAnonomous  - Example Lambda with manual tracing (recommended for users)"
+    echo ""
+    read -p "Select Lambda function (1 or 2): " choice
+    
+    case $choice in
+        1)
+            LAMBDA_NAME="eventProcessor"
+            ;;
+        2)
+            LAMBDA_NAME="lambdasAnonomous"
+            ;;
+        *)
+            echo "❌ Invalid choice. Please run the script again."
+            exit 1
+            ;;
+    esac
+fi
+
+echo "Selected Lambda: $LAMBDA_NAME"
+echo ""
+
 # Configuration file (this is what you edit)
 CONFIG_FILE="deployment-config.env"
 
@@ -44,17 +87,33 @@ echo "  - Regex patterns: $LUMIGO_ANONYMIZE_REGEX"
 echo "  - Data schema: $LUMIGO_ANONYMIZE_DATA_SCHEMA"
 echo ""
 
-# Clean up any existing deployment directory
+# Clean up any existing deployment directory (but preserve source files)
 echo "🧹 Cleaning up existing deployment directory..."
-rm -rf deployment/eventProcessor-deploy
+if [ "$LAMBDA_NAME" = "lambdasAnonomous" ]; then
+    # For lambdasAnonomous, preserve the source files and only clean the build artifacts
+    rm -rf deployment/${LAMBDA_NAME}-deploy/lumigo-node
+    rm -f deployment/${LAMBDA_NAME}-deploy/samconfig.toml
+else
+    # For eventProcessor, clean everything
+    rm -rf deployment/${LAMBDA_NAME}-deploy
+    mkdir -p deployment/${LAMBDA_NAME}-deploy
+fi
 
-# Create fresh deployment directory
+# Create fresh deployment directory if it doesn't exist
 echo "📁 Creating fresh deployment directory..."
-mkdir -p deployment/eventProcessor-deploy
+mkdir -p deployment/${LAMBDA_NAME}-deploy
 
 # Copy Lambda handler
 echo "📋 Copying Lambda handler..."
-cat > deployment/eventProcessor-deploy/eventProcessor.js << 'EOF'
+if [ "$LAMBDA_NAME" = "lambdasAnonomous" ]; then
+    cp src/lambda-handlers/lambdasAnonomous.js deployment/${LAMBDA_NAME}-deploy/
+else
+    cp src/lambda-handlers/eventProcessor.js deployment/${LAMBDA_NAME}-deploy/
+fi
+
+# Create the handler file if it doesn't exist (fallback)
+if [ ! -f "deployment/${LAMBDA_NAME}-deploy/${LAMBDA_NAME}.js" ] && [ ! -f "deployment/${LAMBDA_NAME}-deploy/eventProcessor.js" ]; then
+    cat > deployment/${LAMBDA_NAME}-deploy/eventProcessor.js << 'EOF'
 const lumigo = require('./lumigo-node');
 
 // Initialize the modified Lumigo tracer with anonymization
@@ -139,10 +198,19 @@ const myHandler = async (event, context) => {
 
 exports.handler = tracer.trace(myHandler);
 EOF
+fi
 
 # Create SAM template
 echo "📋 Creating SAM template..."
-cat > deployment/eventProcessor-deploy/template.yaml << 'EOF'
+if [ "$LAMBDA_NAME" = "lambdasAnonomous" ]; then
+    cp src/sam-templates/lambdasAnonomous.yaml deployment/${LAMBDA_NAME}-deploy/template.yaml
+else
+    cp src/sam-templates/eventProcessor.yaml deployment/${LAMBDA_NAME}-deploy/template.yaml
+fi
+
+# Create the template file if it doesn't exist (fallback)
+if [ ! -f "deployment/${LAMBDA_NAME}-deploy/template.yaml" ]; then
+    cat > deployment/${LAMBDA_NAME}-deploy/template.yaml << 'EOF'
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: EventProcessor Lambda with Lumigo tracing
@@ -171,9 +239,9 @@ Resources:
   EventProcessorFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: eventProcessor
+      FunctionName: ${LAMBDA_NAME}
       CodeUri: .
-      Handler: eventProcessor.handler
+      Handler: ${LAMBDA_NAME}.handler
       Runtime: nodejs18.x
       Timeout: 30
       MemorySize: 128
@@ -212,15 +280,16 @@ Outputs:
     Description: "API Gateway endpoint URL"
     Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/process"
 EOF
+fi
 
 # Create samconfig.toml with basic parameters only
 echo "📋 Creating SAM configuration..."
-cat > deployment/eventProcessor-deploy/samconfig.toml << EOF
+cat > deployment/${LAMBDA_NAME}-deploy/samconfig.toml << EOF
 version = 0.1
 [default.deploy.parameters]
-stack_name = "eventProcessor-stack"
+stack_name = "${LAMBDA_NAME}-stack"
 resolve_s3 = true
-s3_prefix = "eventProcessor-stack"
+s3_prefix = "${LAMBDA_NAME}-stack"
 region = "us-east-1"
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM"
@@ -230,24 +299,25 @@ EOF
 
 # Build the custom tracer
 echo "🔨 Building custom Lumigo tracer..."
-cd lumigo-node
 
 # Clean any existing build artifacts
 echo "🧹 Cleaning existing build artifacts..."
+rm -rf build/
+cd src/lumigo-tracer
 rm -rf dist/ node_modules/ temp-build/ temp-dist/ test-compile/
 
 # Fix TypeScript compilation issues
 echo "🔧 Fixing TypeScript compilation issues..."
-if [[ -f "src/hooks/baseHttp.ts" ]]; then
-    cp src/hooks/baseHttp.ts src/hooks/baseHttp.ts.backup 2>/dev/null || true
-    sed -i '' 's/@GlobalDurationTimer.timedSync()/\/\/@GlobalDurationTimer.timedSync()/g' src/hooks/baseHttp.ts 2>/dev/null || \
-    sed -i 's/@GlobalDurationTimer.timedSync()/\/\/@GlobalDurationTimer.timedSync()/g' src/hooks/baseHttp.ts
+if [[ -f "hooks/baseHttp.ts" ]]; then
+    cp hooks/baseHttp.ts hooks/baseHttp.ts.backup 2>/dev/null || true
+    sed -i '' 's/@GlobalDurationTimer.timedSync()/\/\/@GlobalDurationTimer.timedSync()/g' hooks/baseHttp.ts 2>/dev/null || \
+    sed -i 's/@GlobalDurationTimer.timedSync()/\/\/@GlobalDurationTimer.timedSync()/g' hooks/baseHttp.ts
 fi
 
-if [[ -f "src/hooks/http.ts" ]]; then
-    cp src/hooks/http.ts src/hooks/http.ts.backup 2>/dev/null || true
-    sed -i '' 's/@GlobalDurationTimer.timedSync()/\/\/@GlobalDurationTimer.timedSync()/g' src/hooks/http.ts 2>/dev/null || \
-    sed -i 's/@GlobalDurationTimer.timedSync()/\/\/@GlobalDurationTimer.timedSync()/g' src/hooks/http.ts
+if [[ -f "hooks/http.ts" ]]; then
+    cp hooks/http.ts hooks/http.ts.backup 2>/dev/null || true
+    sed -i '' 's/@GlobalDurationTimer.timedSync()/\/\/@GlobalDurationTimer.timedSync()/g' hooks/http.ts 2>/dev/null || \
+    sed -i 's/@GlobalDurationTimer.timedSync()/\/\/@GlobalDurationTimer.timedSync()/g' hooks/http.ts
 fi
 
 # Install dependencies with legacy peer deps to handle conflicts
@@ -262,34 +332,43 @@ npm run build
 echo "🔄 Converting ES6 modules to CommonJS..."
 npx babel dist --out-dir dist --extensions .js --source-maps
 
+# Copy built files to build directory
+echo "📁 Copying built files to build directory..."
+mkdir -p ../../build/lumigo-node
+cp -r dist/* ../../build/lumigo-node/
+cp package.json ../../build/lumigo-node/
+
+cd ../..
+
 # Validate the build
 echo "✅ Validating build..."
-if ! grep -q "LUMIGO_ANONYMIZE" dist/tracer/tracer.js; then
+if ! grep -q "LUMIGO_ANONYMIZE" build/lumigo-node/tracer/tracer.js; then
     echo "❌ ERROR: Anonymization code not found in built tracer"
     exit 1
 fi
 
-if grep -q "import.*from" dist/tracer/tracer.js; then
+if grep -q "import.*from" build/lumigo-node/tracer/tracer.js; then
     echo "❌ ERROR: ES6 imports found in built tracer - Babel conversion failed"
     exit 1
 fi
 
 echo "✅ Build validation passed"
 
-cd ..
-
 # Copy built tracer to deployment
 echo "📁 Copying built tracer to deployment..."
-cp -R lumigo-node/dist deployment/eventProcessor-deploy/lumigo-node/
+cp -R build/lumigo-node deployment/${LAMBDA_NAME}-deploy/
 
 # Create a clean package.json for deployment (without dev dependencies that cause conflicts)
 echo "📋 Creating clean package.json for deployment..."
-cat > deployment/eventProcessor-deploy/package.json << 'EOF'
+if [ "$LAMBDA_NAME" = "lambdasAnonomous" ]; then
+    cp deployment/lambdasAnonomous-deploy/package.json deployment/${LAMBDA_NAME}-deploy/
+else
+    cat > deployment/${LAMBDA_NAME}-deploy/package.json << 'EOF'
 {
   "name": "lambda-with-custom-tracer",
   "version": "1.0.0",
   "description": "Lambda function with custom Lumigo tracer",
-  "main": "eventProcessor.js",
+  "main": "${LAMBDA_NAME}.js",
   "dependencies": {
     "@lumigo/node-core": "1.17.1",
     "agentkeepalive": "^4.1.4",
@@ -300,9 +379,10 @@ cat > deployment/eventProcessor-deploy/package.json << 'EOF'
   }
 }
 EOF
+fi
 
 # Go to deployment directory
-cd deployment/eventProcessor-deploy
+cd deployment/${LAMBDA_NAME}-deploy
 
 # Build SAM application with npm conflict resolution
 echo "🏗️ Building SAM application..."
@@ -367,7 +447,7 @@ sam deploy --no-confirm-changeset
 # Update Lambda environment variables with the correct values
 echo "🔧 Updating Lambda environment variables..."
 aws lambda update-function-configuration \
-  --function-name eventProcessor \
+  --function-name ${LAMBDA_NAME} \
   --environment Variables="{
     LUMIGO_TRACER_TOKEN=$LUMIGO_TRACER_TOKEN,
     LUMIGO_ANONYMIZE_ENABLED=$LUMIGO_ANONYMIZE_ENABLED,
@@ -381,7 +461,7 @@ echo ""
 echo "📋 DEPLOYMENT SUMMARY:"
 echo "======================"
 echo "🔗 API Gateway URL: https://bea2wba4f8.execute-api.us-east-1.amazonaws.com/Prod/process"
-echo "📦 Lambda Function: eventProcessor"
+echo "📦 Lambda Function: ${LAMBDA_NAME}"
 echo "🌍 Region: us-east-1"
 echo "🔧 Anonymization: $LUMIGO_ANONYMIZE_ENABLED"
 echo ""
@@ -394,7 +474,7 @@ echo '  -d '"'"'{"type":"user_registration","data":{"user":{"id":"123","name":"J
 echo ""
 echo "📊 MONITORING:"
 echo "=============="
-echo "• Check CloudWatch logs: aws logs describe-log-groups --log-group-name-prefix /aws/lambda/eventProcessor"
+echo "• Check CloudWatch logs: aws logs describe-log-groups --log-group-name-prefix /aws/lambda/${LAMBDA_NAME}"
 echo "• View Lumigo traces: https://platform.lumigo.io/traces"
 echo ""
 echo "💡 To modify anonymization settings, edit ../deployment-config.env and run this script again"

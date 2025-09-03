@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "outDir": "./dist",
+    "allowJs": true,
+    "target": "es2015",
+    "module": "commonjs",
+    "declaration": true,
+    "moduleResolution": "node",
+    "experimentalDecorators": true,
+    "resolveJsonModule": true,
+    "lib": ["es2015", "dom"],
+    "noImplicitAny": false,
+    "strict": false,
+    "skipLibCheck": true,
+    "noEmitOnError": false
+  },
+  "include": ["./**/*"],
+  "exclude": ["**/*.test.js", "**/*.test.ts", "__mocks__", "./testUtils"]
+}

@@ -7,7 +7,7 @@ const tracer = lumigo.initTracer({
 });
 
 const myHandler = async (event, context) => {
-    console.log('EventProcessor Lambda started');
+    console.log('eventProcessor Lambda started');
     console.log('🔧 Environment variables:');
     console.log('  - LUMIGO_ANONYMIZE_ENABLED:', process.env.LUMIGO_ANONYMIZE_ENABLED);
     console.log('  - LUMIGO_ANONYMIZE_REGEX:', process.env.LUMIGO_ANONYMIZE_REGEX);
@@ -44,7 +44,7 @@ const myHandler = async (event, context) => {
         }
 
         const result = {
-            message: 'Event processed successfully',
+            message: 'Event processed successfully with anonymization',
             timestamp: new Date().toISOString(),
             eventType: eventType,
             eventData: eventData,

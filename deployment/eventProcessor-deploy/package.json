@@ -2,7 +2,7 @@
   "name": "lambda-with-custom-tracer",
   "version": "1.0.0",
   "description": "Lambda function with custom Lumigo tracer",
-  "main": "eventProcessor.js",
+  "main": "${LAMBDA_NAME}.js",
   "dependencies": {
     "@lumigo/node-core": "1.17.1",
     "agentkeepalive": "^4.1.4",

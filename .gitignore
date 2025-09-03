@@ -20,6 +20,9 @@ lumigo_wrapper
 testUtils/prisma/**
 !testUtils/prisma/schema.prisma
 
+# Build directory (temporary build artifacts)
+build/
+
 # Deployment directory (completely temporary)
 deployment/
 
