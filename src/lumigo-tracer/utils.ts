@@ -736,6 +736,7 @@ const recursiveGetKeyByDepth = (event, keyToSearch, maxDepth) => {
       foundValue = recursiveGetKeyByDepth(event[k], keyToSearch, maxDepth - 1);
       return foundValue !== undefined;
     }
+    return false;
   };
   Object.keys(event).some(examineKey);
   return foundValue;

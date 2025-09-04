@@ -44,7 +44,6 @@ layers/
 __mocks__/
 .circleci/
 .github/
-scripts/
 
 # Temporary and test files
 package-lambda.json

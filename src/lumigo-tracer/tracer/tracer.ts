@@ -820,11 +820,13 @@ const performPromisifyType = <T extends Handler | ResponseStreamHandler>(
   switch (type) {
     case HANDLER_CALLBACKED:
       callback(err, data);
-      break;
+      return data;
     case ASYNC_HANDLER_RESOLVED:
       return data;
     case NON_ASYNC_HANDLER_ERRORED:
     case ASYNC_HANDLER_REJECTED:
       throw err;
+    default:
+      return data;
   }
 };

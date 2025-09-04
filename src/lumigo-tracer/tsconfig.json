@@ -14,6 +14,34 @@
     "skipLibCheck": true,
     "noEmitOnError": false
   },
-  "include": ["./**/*"],
-  "exclude": ["**/*.test.js", "**/*.test.ts", "__mocks__", "./testUtils"]
+  "include": [
+    "*.ts",
+    "*.js",
+    "events/**/*.ts",
+    "events/**/*.js",
+    "guards/**/*.ts",
+    "guards/**/*.js",
+    "hooks/**/*.ts",
+    "hooks/**/*.js",
+    "parsers/**/*.ts",
+    "parsers/**/*.js",
+    "spans/**/*.ts",
+    "spans/**/*.js",
+    "tools/**/*.ts",
+    "tools/**/*.js",
+    "tracer/**/*.ts",
+    "tracer/**/*.js",
+    "types/**/*.ts",
+    "types/**/*.js",
+    "utils/**/*.ts",
+    "utils/**/*.js"
+  ],
+  "exclude": [
+    "**/*.test.js",
+    "**/*.test.ts",
+    "__mocks__",
+    "./testUtils",
+    "./dist",
+    "node_modules"
+  ]
 }

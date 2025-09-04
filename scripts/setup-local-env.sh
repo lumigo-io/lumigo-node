@@ -1,15 +1,15 @@
 #!/bin/bash
 
-# Setup local environment for EventProcessor Lambda testing
+# Setup local environment for lambdasAnonymous Lambda testing
 set -e
 
-echo "🔧 Setting up local environment for EventProcessor Lambda..."
+echo "🔧 Setting up local environment for lambdasAnonymous Lambda..."
 
 # Check if .env file exists
-if [ -f "deployment/eventProcessor-deploy/local.env" ]; then
+if [ -f "deployment/lambdasAnonymous-deploy/local.env" ]; then
     echo "📁 Found existing local.env file"
     echo "Current contents:"
-    cat deployment/eventProcessor-deploy/local.env
+    cat deployment/lambdasAnonymous-deploy/local.env
     echo ""
     
     read -p "Do you want to update it? (y/n): " -n 1 -r
@@ -33,18 +33,22 @@ read AWS_REGION
 AWS_REGION=${AWS_REGION:-us-east-1}
 
 # Create/update local.env
-cat > deployment/eventProcessor-deploy/local.env << EOF
+cat > deployment/lambdasAnonymous-deploy/local.env << EOF
 # Local testing environment variables
 LUMIGO_TRACER_TOKEN=$LUMIGO_TRACER_TOKEN
 AWS_REGION=$AWS_REGION
 NODE_ENV=development
+LUMIGO_ANONYMIZE_ENABLED=true
 EOF
 
 echo "✅ Local environment configured successfully!"
-echo "📁 Environment file: deployment/eventProcessor-deploy/local.env"
+echo "📁 Environment file: deployment/lambdasAnonymous-deploy/local.env"
 echo ""
 echo "You can now run local tests with:"
-echo "  ./deployment/test-eventProcessor-local.sh"
+echo "  cd deployment/lambdasAnonymous-deploy && sam local invoke lambdasAnonymousFunction --event test-event.json"
 echo ""
 echo "Or deploy to AWS with:"
-echo "  ./deployment/deploy-eventProcessor.sh $LUMIGO_TRACER_TOKEN"
+echo "  cd deployment/lambdasAnonymous-deploy && sam deploy"
+echo ""
+echo "🔑 Lumigo token configured: $LUMIGO_TRACER_TOKEN"
+echo "🌍 AWS region: $AWS_REGION"
