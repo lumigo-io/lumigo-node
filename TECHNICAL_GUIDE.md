@@ -1,4 +1,4 @@
-# Working Process - Custom Lumigo Tracer with Anonymization
+# Technical Guide: Custom Lumigo Tracer with Anonymization
 
 **IMPORTANT: This document contains the EXACT working process. Follow these steps precisely to avoid hours of debugging.**
 
@@ -100,6 +100,10 @@ cp -r node_modules/ms ../deployment/lambdasAnonymous-deploy/lumigo-node/node_mod
 cp -r node_modules/agentkeepalive ../deployment/lambdasAnonymous-deploy/lumigo-node/node_modules/
 cp -r node_modules/depd ../deployment/lambdasAnonymous-deploy/lumigo-node/node_modules/
 cp -r node_modules/aws-sdk ../deployment/lambdasAnonymous-deploy/lumigo-node/node_modules/
+cp -r node_modules/utf8 ../deployment/lambdasAnonymous-deploy/lumigo-node/node_modules/
+cp -r node_modules/rfdc ../deployment/lambdasAnonymous-deploy/lumigo-node/node_modules/
+cp -r node_modules/shimmer ../deployment/lambdasAnonymous-deploy/lumigo-node/node_modules/
+cp -r node_modules/axios ../deployment/lambdasAnonymous-deploy/lumigo-node/node_modules/
 ```
 
 #### **2.8 Build and Deploy SAM Application**
@@ -227,3 +231,123 @@ The process is successful when:
 - ✅ Lumigo receives anonymized data in traces
 
 **Remember**: This process works. If it fails, you likely skipped or modified one of these exact steps.
+
+## 🧪 **Testing and Verification**
+
+### **Test the Example Lambda**
+
+The deployment script provides the API Gateway URL. Test with:
+
+```bash
+curl -X POST https://YOUR_API_GATEWAY_URL/Prod/process \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "user_registration",
+    "data": {
+      "user": {
+        "id": "123",
+        "name": "John Doe",
+        "email": "john@example.com",
+        "ssn": "123-45-6789",
+        "phone": "(555) 123-4567",
+        "address": "123 Main St, Anytown, USA",
+        "credit_card": "4111-1111-1111-1111",
+        "bank_account": "1234567890",
+        "driver_license": "DL123456789",
+        "passport_number": "P123456789",
+        "date_of_birth": "1990-01-01",
+        "ip_address": "192.168.1.1",
+        "session_token": "sess_abc123def456",
+        "auth_token": "auth_xyz789"
+      }
+    }
+  }'
+```
+
+### **Verify CloudWatch Logs**
+
+```bash
+# Get latest log stream
+aws logs describe-log-streams \
+  --log-group-name "/aws/lambda/lambdasAnonymous" \
+  --order-by LastEventTime \
+  --descending \
+  --max-items 1
+
+# Get log events
+aws logs get-log-events \
+  --log-group-name "/aws/lambda/lambdasAnonymous" \
+  --log-stream-name "YOUR_LOG_STREAM_NAME"
+```
+
+### **Check Lumigo Dashboard**
+
+1. Go to your Lumigo dashboard
+2. Look for traces from the `lambdasAnonymous` Lambda function
+3. Verify that:
+   - Sensitive data is anonymized (truncated or replaced with `[ANONYMIZED]`)
+   - Spans show **"status":200** indicating successful transmission
+   - Original data is preserved in CloudWatch logs for debugging
+
+## 🚨 **Troubleshooting**
+
+### **Common Issues and Solutions**
+
+1. **AWS SSO Token Expired**
+   - **Cause**: AWS credentials have expired
+   - **Solution**: Run `aws sso login` to refresh credentials
+
+2. **npm Dependency Conflicts**
+   - **Cause**: Conflicting package versions during build
+   - **Solution**: The `./deploy.sh` script handles this automatically with `--legacy-peer-deps`
+
+3. **JSON Parsing Errors in Logs**
+   - **Cause**: Malformed JSON in environment variables
+   - **Solution**: Check that `deployment-config.env` has properly quoted JSON strings
+
+4. **"Cannot find module './lumigo-node'"**
+   - **Cause**: Built tracer not copied to deployment directory
+   - **Solution**: The `./deploy.sh` script handles this automatically
+
+5. **"Cannot find module '@lumigo/node-core'" or similar dependency errors**
+   - **Cause**: Missing dependencies in deployment package
+   - **Solution**: Use the manual build process in section 2 above
+
+6. **Babel configuration errors**
+   - **Cause**: Missing `.babelrc` file
+   - **Solution**: Create it manually: `echo '{"presets": ["@babel/preset-env"], "plugins": ["@babel/plugin-proposal-decorators", {"decoratorsBeforeExport": true}]}' > src/lumigo-tracer/.babelrc`
+
+7. **No spans appearing in Lumigo**
+   - **Cause**: Invalid tracer token or network issues
+   - **Solution**: Verify `LUMIGO_TRACER_TOKEN` is correct in `deployment-config.env`
+
+8. **Anonymization not working**
+   - **Cause**: Custom code not included in build or environment variables not set
+   - **Solution**: Check CloudWatch logs for **"🔒 ANONYMIZATION: Return value anonymized"**
+
+### **Debug Commands**
+
+```bash
+# Check if custom code is built
+grep -n "LUMIGO_ANONYMIZE" build/lumigo-node/tracer/tracer.js
+
+# Check for ES6 imports (should return nothing)
+grep -n "import.*from" build/lumigo-node/tracer/tracer.js
+
+# Verify deployment package
+ls -la deployment/lambdasAnonymous-deploy/lumigo-node/
+
+# Check CloudWatch logs for anonymization
+aws logs get-log-events --log-group-name "/aws/lambda/lambdasAnonymous" --log-stream-name "LATEST" | grep -E "(ANONYMIZATION|🔒|Spans sent)"
+```
+
+## 🎯 **Success Checklist**
+
+- ✅ Custom tracer builds without errors
+- ✅ Babel conversion completes successfully
+- ✅ Lambda deploys and runs without module errors
+- ✅ Sensitive data is anonymized in traces (truncated or `[ANONYMIZED]`)
+- ✅ Original data preserved in Lambda logs
+- ✅ CloudWatch logs show **"🔒 ANONYMIZATION: Return value anonymized"**
+- ✅ CloudWatch logs show **"Spans sent [Xms, Y spans]"** with **"status":200**
+- ✅ Decorators are working for performance monitoring
