@@ -242,7 +242,7 @@ npm run build
 
 # Convert ES6 modules to CommonJS with decorator support
 echo "🔄 Converting ES6 modules to CommonJS with decorator support..."
-npx babel dist --out-dir dist --extensions .js --source-maps --config-file .babelrc
+npx babel dist --out-dir dist --extensions .js --source-maps
 
 # Copy built files to build directory
 echo "📁 Copying built files to build directory..."
@@ -274,15 +274,24 @@ cp -R build/lumigo-node deployment/${LAMBDA_NAME}-deploy/
 echo "📋 Creating clean package.json for deployment..."
 cp deployment/lambdasAnonymous-deploy/package.json deployment/${LAMBDA_NAME}-deploy/
 
-# Copy essential dependencies to avoid module not found errors
-echo "📦 Copying essential dependencies..."
+# Copy package.json to the root level for the tracer to find it
+echo "📋 Copying package.json to root level for tracer access..."
+cp src/lumigo-tracer/package.json deployment/${LAMBDA_NAME}-deploy/package.json
+
+# Copy all dependencies but exclude large dev dependencies
+echo "📦 Copying all runtime dependencies..."
 mkdir -p deployment/${LAMBDA_NAME}-deploy/lumigo-node/node_modules
-cp -r src/lumigo-tracer/node_modules/@lumigo deployment/${LAMBDA_NAME}-deploy/lumigo-node/node_modules/ 2>/dev/null || true
-cp -r src/lumigo-tracer/node_modules/debug deployment/${LAMBDA_NAME}-deploy/lumigo-node/node_modules/ 2>/dev/null || true
-cp -r src/lumigo-tracer/node_modules/ms deployment/${LAMBDA_NAME}-deploy/lumigo-node/node_modules/ 2>/dev/null || true
-cp -r src/lumigo-tracer/node_modules/agentkeepalive deployment/${LAMBDA_NAME}-deploy/lumigo-node/node_modules/ 2>/dev/null || true
-cp -r src/lumigo-tracer/node_modules/depd deployment/${LAMBDA_NAME}-deploy/lumigo-node/node_modules/ 2>/dev/null || true
-cp -r src/lumigo-tracer/node_modules/aws-sdk deployment/${LAMBDA_NAME}-deploy/lumigo-node/node_modules/ 2>/dev/null || true
+cp -r src/lumigo-tracer/node_modules/* deployment/${LAMBDA_NAME}-deploy/lumigo-node/node_modules/ 2>/dev/null || true
+
+# Remove large development dependencies to keep package size manageable
+echo "🧹 Removing large dev dependencies..."
+rm -rf deployment/${LAMBDA_NAME}-deploy/lumigo-node/node_modules/aws-sdk 2>/dev/null || true
+rm -rf deployment/${LAMBDA_NAME}-deploy/lumigo-node/node_modules/typescript 2>/dev/null || true
+rm -rf deployment/${LAMBDA_NAME}-deploy/lumigo-node/node_modules/prettier 2>/dev/null || true
+rm -rf deployment/${LAMBDA_NAME}-deploy/lumigo-node/node_modules/eslint 2>/dev/null || true
+rm -rf deployment/${LAMBDA_NAME}-deploy/lumigo-node/node_modules/jest 2>/dev/null || true
+rm -rf deployment/${LAMBDA_NAME}-deploy/lumigo-node/node_modules/@types 2>/dev/null || true
+rm -rf deployment/${LAMBDA_NAME}-deploy/lumigo-node/node_modules/@babel 2>/dev/null || true
 
 # Go to deployment directory
 cd deployment/${LAMBDA_NAME}-deploy
