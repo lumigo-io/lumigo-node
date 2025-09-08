@@ -54,7 +54,37 @@ This script will:
 - ✅ Configure environment variables correctly
 - ✅ Provide testing instructions
 
-### **1.4 Verify Deployment**
+### **1.4 Alternative: Manual Build (If Automated Fails)**
+
+If the automated deployment fails due to missing dependencies, use this manual process:
+
+```bash
+# 1. Build the tracer
+cd lumigo-node
+npm run build 2>/dev/null || npx tsc --build --force
+npx babel dist --out-dir dist --extensions .js --source-maps
+
+# 2. Copy built files to deployment
+cd ..
+cp -r lumigo-node/dist/* deployment/lambdasAnonymous-deploy/lumigo-node/
+cp -r lumigo-node/package.json deployment/lambdasAnonymous-deploy/lumigo-node/
+
+# 3. Copy essential dependencies
+mkdir -p deployment/lambdasAnonymous-deploy/lumigo-node/node_modules
+cp -r lumigo-node/node_modules/@lumigo deployment/lambdasAnonymous-deploy/lumigo-node/node_modules/
+cp -r lumigo-node/node_modules/debug deployment/lambdasAnonymous-deploy/lumigo-node/node_modules/
+cp -r lumigo-node/node_modules/ms deployment/lambdasAnonymous-deploy/lumigo-node/node_modules/
+cp -r lumigo-node/node_modules/agentkeepalive deployment/lambdasAnonymous-deploy/lumigo-node/node_modules/
+cp -r lumigo-node/node_modules/depd deployment/lambdasAnonymous-deploy/lumigo-node/node_modules/
+cp -r lumigo-node/node_modules/aws-sdk deployment/lambdasAnonymous-deploy/lumigo-node/node_modules/
+
+# 4. Deploy
+cd deployment/lambdasAnonymous-deploy
+sam build
+sam deploy --no-confirm-changeset
+```
+
+### **1.5 Verify Deployment**
 
 The script will output the API Gateway URL and testing instructions. Check CloudWatch logs for:
 - ✅ **"🔒 ANONYMIZATION: Return value anonymized for Lumigo traces"**
@@ -211,11 +241,19 @@ aws logs get-log-events \
    - **Cause**: Built tracer not copied to deployment directory
    - **Solution**: The `./deploy.sh` script handles this automatically
 
-5. **No spans appearing in Lumigo**
+5. **"Cannot find module '@lumigo/node-core'" or similar dependency errors**
+   - **Cause**: Missing dependencies in deployment package
+   - **Solution**: Use the manual build process in section 1.4 above
+
+6. **Babel configuration errors**
+   - **Cause**: Missing `.babelrc` file
+   - **Solution**: Create it manually: `echo '{"presets": ["@babel/preset-env"], "plugins": ["@babel/plugin-proposal-decorators", {"decoratorsBeforeExport": true}]}' > src/lumigo-tracer/.babelrc`
+
+7. **No spans appearing in Lumigo**
    - **Cause**: Invalid tracer token or network issues
    - **Solution**: Verify `LUMIGO_TRACER_TOKEN` is correct in `deployment-config.env`
 
-6. **Anonymization not working**
+8. **Anonymization not working**
    - **Cause**: Custom code not included in build or environment variables not set
    - **Solution**: Check CloudWatch logs for **"🔒 ANONYMIZATION: Return value anonymized"**
 

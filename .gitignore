@@ -7,7 +7,6 @@ dist
 env.yml
 .serverless
 .idea
-package-lock.json
 nodejs
 .DS_Store
 d_example/
@@ -47,7 +46,6 @@ __mocks__/
 
 # Temporary and test files
 package-lambda.json
-build-lumigo-tracer.sh
 dist.test.js
 test-*.json
 response*.json

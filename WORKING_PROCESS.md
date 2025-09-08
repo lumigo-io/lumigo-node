@@ -11,7 +11,18 @@
 
 ## 🚀 **Complete Working Process**
 
-### **Step 1: Fix TypeScript Compilation Issues**
+### **Step 1: Automated Deployment (Recommended)**
+
+```bash
+# Deploy everything with one command
+./deploy.sh
+```
+
+This handles all the complexity automatically. If it fails, proceed to manual steps below.
+
+### **Step 2: Manual Build Process (If Automated Fails)**
+
+#### **2.1 Fix TypeScript Compilation Issues**
 
 The TypeScript compilation fails due to decorator issues in other files. Temporarily fix this:
 
@@ -27,16 +38,23 @@ sed -i '' 's/@GlobalDurationTimer.timedSync()/\/\/@GlobalDurationTimer.timedSync
 sed -i '' 's/@GlobalDurationTimer.timedSync()/\/\/@GlobalDurationTimer.timedSync()/g' src/hooks/http.ts
 ```
 
-### **Step 2: Build with TypeScript**
+#### **2.2 Build with TypeScript**
 
 ```bash
 cd lumigo-node
-npm run build
+npm run build 2>/dev/null || npx tsc --build --force
 ```
 
 **Expected Output**: Build completes without errors
 
-### **Step 3: Convert ES6 to CommonJS with Babel**
+#### **2.3 Create Babel Configuration**
+
+```bash
+# Create .babelrc file in the correct location
+echo '{"presets": ["@babel/preset-env"], "plugins": ["@babel/plugin-proposal-decorators", {"decoratorsBeforeExport": true}]}' > src/lumigo-tracer/.babelrc
+```
+
+#### **2.4 Convert ES6 to CommonJS with Babel**
 
 **CRITICAL**: This step is essential - TypeScript outputs ES6 modules that Lambda cannot run.
 
@@ -47,7 +65,7 @@ npx babel dist --out-dir dist --extensions .js --source-maps
 
 **Expected Output**: `Successfully compiled 56 files with Babel (XXXms)`
 
-### **Step 4: Verify Custom Code is Included**
+#### **2.5 Verify Custom Code is Included**
 
 ```bash
 # Check that anonymization code is present
@@ -61,20 +79,33 @@ grep -n "import.*from" dist/tracer/tracer.js  # Should return nothing
 - `LUMIGO_ANONYMIZE` should return line numbers
 - `import.*from` should return nothing
 
-### **Step 5: Copy to Deployment Directory**
+#### **2.6 Copy to Deployment Directory**
 
 ```bash
 # Copy the built tracer
-cp -R dist ../deployment/eventProcessor-deploy/lumigo-node/
-
-# Include package.json for version info
-cp package.json ../deployment/eventProcessor-deploy/lumigo-node/
+cp -r dist/* ../deployment/lambdasAnonymous-deploy/lumigo-node/
+cp package.json ../deployment/lambdasAnonymous-deploy/lumigo-node/
 ```
 
-### **Step 6: Build and Deploy SAM Application**
+#### **2.7 Copy Essential Dependencies**
 
 ```bash
-cd ../deployment/eventProcessor-deploy
+# Create node_modules directory
+mkdir -p ../deployment/lambdasAnonymous-deploy/lumigo-node/node_modules
+
+# Copy essential dependencies
+cp -r node_modules/@lumigo ../deployment/lambdasAnonymous-deploy/lumigo-node/node_modules/
+cp -r node_modules/debug ../deployment/lambdasAnonymous-deploy/lumigo-node/node_modules/
+cp -r node_modules/ms ../deployment/lambdasAnonymous-deploy/lumigo-node/node_modules/
+cp -r node_modules/agentkeepalive ../deployment/lambdasAnonymous-deploy/lumigo-node/node_modules/
+cp -r node_modules/depd ../deployment/lambdasAnonymous-deploy/lumigo-node/node_modules/
+cp -r node_modules/aws-sdk ../deployment/lambdasAnonymous-deploy/lumigo-node/node_modules/
+```
+
+#### **2.8 Build and Deploy SAM Application**
+
+```bash
+cd ../deployment/lambdasAnonymous-deploy
 
 # Build SAM application
 sam build
@@ -85,7 +116,7 @@ sam deploy --no-confirm-changeset
 
 **Expected Output**: Deployment succeeds with CloudFormation stack updates
 
-### **Step 7: Test the Deployment**
+### **Step 3: Test the Deployment**
 
 ```bash
 curl -X POST https://YOUR_API_GATEWAY_URL/Prod/process \
@@ -141,10 +172,20 @@ The Lambda should:
 - **Solution**: Verify custom code is in built files
 - **Verification**: `grep -n "LUMIGO_ANONYMIZE" dist/tracer/tracer.js` returns line numbers
 
-### **4. Missing package.json**
+### **4. Missing Dependencies**
+- **Symptom**: "Cannot find module '@lumigo/node-core'" or similar errors
+- **Solution**: Copy essential dependencies manually (see step 2.7 above)
+- **Verification**: `ls lumigo-node/node_modules/@lumigo` shows directory exists
+
+### **5. Missing package.json**
 - **Symptom**: "Cannot find module '../package.json'" error
 - **Solution**: Copy package.json to deployment directory
 - **Verification**: `ls lumigo-node/package.json` shows file exists
+
+### **6. Babel Configuration Missing**
+- **Symptom**: "Cannot find module '.babelrc'" error
+- **Solution**: Create .babelrc file (see step 2.3 above)
+- **Verification**: `ls src/lumigo-tracer/.babelrc` shows file exists
 
 ## 📝 **Environment Variables**
 

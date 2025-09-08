@@ -274,6 +274,16 @@ cp -R build/lumigo-node deployment/${LAMBDA_NAME}-deploy/
 echo "📋 Creating clean package.json for deployment..."
 cp deployment/lambdasAnonymous-deploy/package.json deployment/${LAMBDA_NAME}-deploy/
 
+# Copy essential dependencies to avoid module not found errors
+echo "📦 Copying essential dependencies..."
+mkdir -p deployment/${LAMBDA_NAME}-deploy/lumigo-node/node_modules
+cp -r src/lumigo-tracer/node_modules/@lumigo deployment/${LAMBDA_NAME}-deploy/lumigo-node/node_modules/ 2>/dev/null || true
+cp -r src/lumigo-tracer/node_modules/debug deployment/${LAMBDA_NAME}-deploy/lumigo-node/node_modules/ 2>/dev/null || true
+cp -r src/lumigo-tracer/node_modules/ms deployment/${LAMBDA_NAME}-deploy/lumigo-node/node_modules/ 2>/dev/null || true
+cp -r src/lumigo-tracer/node_modules/agentkeepalive deployment/${LAMBDA_NAME}-deploy/lumigo-node/node_modules/ 2>/dev/null || true
+cp -r src/lumigo-tracer/node_modules/depd deployment/${LAMBDA_NAME}-deploy/lumigo-node/node_modules/ 2>/dev/null || true
+cp -r src/lumigo-tracer/node_modules/aws-sdk deployment/${LAMBDA_NAME}-deploy/lumigo-node/node_modules/ 2>/dev/null || true
+
 # Go to deployment directory
 cd deployment/${LAMBDA_NAME}-deploy
 

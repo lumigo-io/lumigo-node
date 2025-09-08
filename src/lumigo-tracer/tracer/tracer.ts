@@ -86,221 +86,18 @@ const processUserHandler = async <Event>(
     return runUserHandler(userHandler, event, context, callback, responseStream);
   }
 
-  // Create anonymized event for Lumigo tracing if anonymization is enabled
-  let anonymizedEvent = event;
+  // Anonymize event if anonymization is enabled
   if (process.env['LUMIGO_ANONYMIZE_ENABLED'] === 'true') {
     try {
-      const patterns = JSON.parse(process.env['LUMIGO_ANONYMIZE_REGEX'] || '[]');
-      const dataSpecificPatterns = JSON.parse(process.env['LUMIGO_ANONYMIZE_DATA_SCHEMA'] || '[]');
-      
-      if (patterns && patterns.length > 0) {
-        // Data-specific anonymization function
-        const applyDataSpecificAnonymization = (value: string, key: string, patterns: any[]): string => {
-          const lowerKey = key.toLowerCase();
-          const lowerValue = value.toLowerCase();
-
-          // First priority: Apply custom patterns from environment
-          for (const pattern of patterns) {
-            if (pattern.field) {
-              const fieldRegex = new RegExp(pattern.field, 'i');
-              if (fieldRegex.test(key) || fieldRegex.test(value)) {
-                if (pattern.type === 'pattern' && pattern.pattern && pattern.replacement) {
-                  try {
-                    const regex = new RegExp(pattern.pattern);
-                    return value.replace(regex, pattern.replacement);
-                  } catch (e) {
-                    logger.warn('Invalid regex pattern in anonymization config: ' + pattern.pattern);
-                    continue;
-                  }
-                } else if (pattern.type === 'partial' && pattern.keep) {
-                  const keepChars = pattern.keep;
-                  if (value.length > keepChars) {
-                    return value.substring(0, keepChars) + '*'.repeat(value.length - keepChars);
-                  }
-                } else if (pattern.type === 'truncate') {
-                  const maxChars = pattern.maxChars || 10;
-                  const position = pattern.position || 'end'; // 'start', 'end', 'middle', 'random'
-                  
-                  if (value.length <= maxChars) {
-                    return value;
-                  }
-                  
-                  switch (position) {
-                    case 'start':
-                      return '***' + value.substring(value.length - maxChars);
-                    case 'middle':
-                      const start = Math.floor(maxChars / 2);
-                      const end = value.length - (maxChars - start);
-                      return value.substring(0, start) + '***' + value.substring(end);
-                    case 'random':
-                      const randomStart = Math.floor(Math.random() * (value.length - maxChars));
-                      return value.substring(0, randomStart) + '***' + value.substring(randomStart + maxChars);
-                    case 'end':
-                    default:
-                      return value.substring(0, maxChars) + '***';
-                  }
-                } else if (pattern.type === 'regex' && pattern.pattern) {
-                  try {
-                    const regex = new RegExp(pattern.pattern);
-                    return value.replace(regex, pattern.replacement || '***');
-                  } catch (e) {
-                    logger.warn('Invalid regex pattern in anonymization config: ' + pattern.pattern);
-                    continue;
-                  }
-                }
-              }
-            }
-          }
-
-          // Second priority: Built-in patterns (fallback)
-          // IP Address: Keep first 2 octets, mask last 2
-          if (lowerKey.includes('ip') || lowerKey.includes('address') || 
-              /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(value)) {
-            const parts = value.split('.');
-            if (parts.length === 4) {
-              return `${parts[0]}.${parts[1]}.***.***`;
-            }
-          }
-
-          // SSN: Keep first 7 digits, mask last 2
-          if (lowerKey.includes('ssn') || lowerKey.includes('social') || 
-              /^\d{3}-\d{2}-\d{4}$/.test(value)) {
-            return value.replace(/\d{2}$/, '**');
-          }
-
-          // Credit Card: Keep first 4, mask middle, keep last 4
-          if (lowerKey.includes('credit') || lowerKey.includes('card') || 
-              /^\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}$/.test(value.replace(/[\s-]/g, ''))) {
-            const clean = value.replace(/[\s-]/g, '');
-            if (clean.length === 16) {
-              return `${clean.substring(0, 4)} **** **** ${clean.substring(12)}`;
-            }
-          }
-
-          // Phone: Keep area code, mask rest
-          if (lowerKey.includes('phone') || lowerKey.includes('tel') || 
-              /^\+?1?[\s-]?\(?(\d{3})\)?[\s-]?\d{3}[\s-]?\d{4}$/.test(value)) {
-            const clean = value.replace(/[\s\-\(\)\+]/g, '');
-            if (clean.length >= 10) {
-              const areaCode = clean.substring(0, 3);
-              return `(${areaCode}) ***-****`;
-            }
-          }
-
-          // Email: Keep first 2 chars of username, mask rest
-          if (lowerKey.includes('email') || lowerKey.includes('mail') || 
-              /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-            const [username, domain] = value.split('@');
-            if (username.length > 2) {
-              return `${username.substring(0, 2)}***@${domain}`;
-            }
-            return `***@${domain}`;
-          }
-
-          // Fallback to simple anonymization
-          return '[ANONYMIZED]';
-        };
-
-        // Enhanced anonymization logic that handles JSON strings properly
-        const anonymizeValue = (value: any, key: string = ''): any => {
-          if (value === null || value === undefined) {
-            return value;
-          }
-
-          if (typeof value === 'string') {
-            // Special handling for event.body - parse JSON, anonymize, then re-stringify
-            if (key === 'body') {
-              try {
-                // Only try to parse if it looks like JSON (starts with { or [)
-                if (value.trim().startsWith('{') || value.trim().startsWith('[')) {
-                  const parsedBody = JSON.parse(value);
-                  const anonymizedBody = anonymizeValue(parsedBody, 'body');
-                  // CRITICAL: Re-stringify back to JSON string for the tracer
-                  return JSON.stringify(anonymizedBody);
-                } else {
-                  // Not JSON, treat as regular string
-                  const valueMatches = patterns.some((pattern: string) => {
-                    try {
-                      const regex = new RegExp(pattern, 'i');
-                      return regex.test(value);
-                    } catch (e) {
-                      return false;
-                    }
-                  });
-                  if (valueMatches) {
-                    return '[ANONYMIZED]';
-                  }
-                }
-              } catch (e) {
-                // If parsing fails, fall back to simple anonymization
-                const valueMatches = patterns.some((pattern: string) => {
-                  try {
-                    const regex = new RegExp(pattern, 'i');
-                    return regex.test(value);
-                  } catch (e) {
-                    return false;
-                  }
-                });
-                if (valueMatches) {
-                  return '[ANONYMIZED]';
-                }
-              }
-            }
-
-            // Check if the key matches any anonymization pattern
-            const keyMatches = patterns.some((pattern: string) => {
-              try {
-                const regex = new RegExp(pattern, 'i');
-                return regex.test(key);
-              } catch (e) {
-                return false;
-              }
-            });
-
-            // Check if the value matches any anonymization pattern
-            const valueMatches = patterns.some((pattern: string) => {
-              try {
-                const regex = new RegExp(pattern, 'i');
-                return regex.test(value);
-              } catch (e) {
-                return false;
-              }
-            });
-
-            if (keyMatches || valueMatches) {
-              // Always apply data-specific anonymization for built-in patterns
-              return applyDataSpecificAnonymization(value, key, dataSpecificPatterns);
-            }
-          }
-
-          if (typeof value === 'object' && value !== null) {
-            if (Array.isArray(value)) {
-              return value.map((item, index) => anonymizeValue(item, `${key}[${index}]`));
-            } else {
-              const anonymized: any = {};
-              for (const [k, v] of Object.entries(value)) {
-                anonymized[k] = anonymizeValue(v, k);
-              }
-              return anonymized;
-            }
-          }
-
-          return value;
-        };
-
-        anonymizedEvent = anonymizeValue(event);
-        logger.debug('Enhanced PII anonymization applied to event for Lumigo tracing');
-        logger.info('🔒 ANONYMIZATION: Data-specific anonymization applied successfully');
-        logger.info('🔍 DEBUG: Original event keys:', Object.keys(event));
-        logger.info('🔍 DEBUG: Anonymized event keys:', Object.keys(anonymizedEvent));
-      }
+      event = anonymizeData(event);
+      logger.info('🔒 ANONYMIZATION: Data-specific anonymization applied successfully');
     } catch (e) {
       logger.warn('Failed to apply PII anonymization, using original event', e);
     }
   }
 
   try {
-    TracerGlobals.setHandlerInputs({ event: anonymizedEvent, context });
+    TracerGlobals.setHandlerInputs({ event, context });
     TracerGlobals.setTracerInputs({
       token,
       debug,
@@ -309,7 +106,7 @@ const processUserHandler = async <Event>(
       stepFunction,
       lambdaTimeout: context.getRemainingTimeInMillis(),
     });
-    ExecutionTags.autoTagEvent(anonymizedEvent);
+    ExecutionTags.autoTagEvent(event);
   } catch (err) {
     logger.warn('Failed to start tracer', err);
   }
@@ -338,7 +135,7 @@ const processUserHandler = async <Event>(
   }
   context.__wrappedByLumigo = true;
 
-  const functionSpan = getFunctionSpan(anonymizedEvent, context); // Use anonymized event for span
+  const functionSpan = getFunctionSpan(event, context);
 
   await hookUnhandledRejection(functionSpan);
 
@@ -360,6 +157,221 @@ const processUserHandler = async <Event>(
 
   return performPromisifyType(err, data, type, callback);
 };
+
+/**
+ * Applies data-specific anonymization to a value based on configured patterns
+ */
+function applyDataSpecificAnonymization(value: string, key: string, patterns: any[]): string {
+  const lowerKey = key.toLowerCase();
+  const lowerValue = value.toLowerCase();
+
+  // First priority: Apply custom patterns from environment
+  for (const pattern of patterns) {
+    if (pattern.field) {
+      const fieldRegex = new RegExp(pattern.field, 'i');
+      if (fieldRegex.test(key) || fieldRegex.test(value)) {
+        if (pattern.type === 'pattern' && pattern.pattern && pattern.replacement) {
+          try {
+            const regex = new RegExp(pattern.pattern);
+            return value.replace(regex, pattern.replacement);
+          } catch (e) {
+            logger.warn('Invalid regex pattern in anonymization config: ' + pattern.pattern);
+            continue;
+          }
+        } else if (pattern.type === 'partial' && pattern.keep) {
+          const keepChars = pattern.keep;
+          if (value.length > keepChars) {
+            return value.substring(0, keepChars) + '*'.repeat(value.length - keepChars);
+          }
+        } else if (pattern.type === 'truncate') {
+          const maxChars = pattern.maxChars || 10;
+          const position = pattern.position || 'end'; // 'start', 'end', 'middle', 'random'
+          
+          if (value.length <= maxChars) {
+            return value;
+          }
+          
+          switch (position) {
+            case 'start':
+              return '***' + value.substring(value.length - maxChars);
+            case 'middle':
+              const start = Math.floor(maxChars / 2);
+              const end = value.length - (maxChars - start);
+              return value.substring(0, start) + '***' + value.substring(end);
+            case 'random':
+              const randomStart = Math.floor(Math.random() * (value.length - maxChars));
+              return value.substring(0, randomStart) + '***' + value.substring(randomStart + maxChars);
+            case 'end':
+            default:
+              return value.substring(0, maxChars) + '***';
+          }
+        } else if (pattern.type === 'regex' && pattern.pattern) {
+          try {
+            const regex = new RegExp(pattern.pattern);
+            return value.replace(regex, pattern.replacement || '***');
+          } catch (e) {
+            logger.warn('Invalid regex pattern in anonymization config: ' + pattern.pattern);
+            continue;
+          }
+        }
+      }
+    }
+  }
+
+  // Second priority: Built-in patterns (fallback)
+  // IP Address: Keep first 2 octets, mask last 2
+  if (lowerKey.includes('ip') || lowerKey.includes('address') || 
+      /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(value)) {
+    const parts = value.split('.');
+    if (parts.length === 4) {
+      return `${parts[0]}.${parts[1]}.***.***`;
+    }
+  }
+
+  // SSN: Keep first 7 digits, mask last 2
+  if (lowerKey.includes('ssn') || lowerKey.includes('social') || 
+      /^\d{3}-\d{2}-\d{4}$/.test(value)) {
+    return value.replace(/\d{2}$/, '**');
+  }
+
+  // Credit Card: Keep first 4, mask middle, keep last 4
+  if (lowerKey.includes('credit') || lowerKey.includes('card') || 
+      /^\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}$/.test(value.replace(/[\s-]/g, ''))) {
+    const clean = value.replace(/[\s-]/g, '');
+    if (clean.length === 16) {
+      return `${clean.substring(0, 4)} **** **** ${clean.substring(12)}`;
+    }
+  }
+
+  // Phone: Keep area code, mask rest
+  if (lowerKey.includes('phone') || lowerKey.includes('tel') || 
+      /^\+?1?[\s-]?\(?(\d{3})\)?[\s-]?\d{3}[\s-]?\d{4}$/.test(value)) {
+    const clean = value.replace(/[\s\-\(\)\+]/g, '');
+    if (clean.length >= 10) {
+      const areaCode = clean.substring(0, 3);
+      return `(${areaCode}) ***-****`;
+    }
+  }
+
+  // Email: Keep first 2 chars of username, mask rest
+  if (lowerKey.includes('email') || lowerKey.includes('mail') || 
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+    const [username, domain] = value.split('@');
+    if (username.length > 2) {
+      return `${username.substring(0, 2)}***@${domain}`;
+    }
+    return `***@${domain}`;
+  }
+
+  // Fallback to simple anonymization
+  return '[ANONYMIZED]';
+}
+
+/**
+ * Main anonymization function that processes any data structure
+ */
+function anonymizeData(data: any): any {
+
+  try {
+    const patterns = JSON.parse(process.env['LUMIGO_ANONYMIZE_REGEX'] || '[]');
+    const dataSpecificPatterns = JSON.parse(process.env['LUMIGO_ANONYMIZE_DATA_SCHEMA'] || '[]');
+    
+    if (!patterns || patterns.length === 0) {
+      return data;
+    }
+
+    const anonymizeValue = (value: any, key: string = ''): any => {
+      if (value === null || value === undefined) {
+        return value;
+      }
+
+      if (typeof value === 'string') {
+        // Special handling for event.body - parse JSON, anonymize, then re-stringify
+        if (key === 'body') {
+          try {
+            // Only try to parse if it looks like JSON (starts with { or [)
+            if (value.trim().startsWith('{') || value.trim().startsWith('[')) {
+              const parsedBody = JSON.parse(value);
+              const anonymizedBody = anonymizeValue(parsedBody, 'body');
+              // CRITICAL: Re-stringify back to JSON string for the tracer
+              return JSON.stringify(anonymizedBody);
+            } else {
+              // Not JSON, treat as regular string
+              const valueMatches = patterns.some((pattern: string) => {
+                try {
+                  const regex = new RegExp(pattern, 'i');
+                  return regex.test(value);
+                } catch (e) {
+                  return false;
+                }
+              });
+              if (valueMatches) {
+                return '[ANONYMIZED]';
+              }
+            }
+          } catch (e) {
+            // If parsing fails, fall back to simple anonymization
+            const valueMatches = patterns.some((pattern: string) => {
+              try {
+                const regex = new RegExp(pattern, 'i');
+                return regex.test(value);
+              } catch (e) {
+                return false;
+              }
+            });
+            if (valueMatches) {
+              return '[ANONYMIZED]';
+            }
+          }
+        }
+
+        // Check if the key matches any anonymization pattern
+        const keyMatches = patterns.some((pattern: string) => {
+          try {
+            const regex = new RegExp(pattern, 'i');
+            return regex.test(key);
+          } catch (e) {
+            return false;
+          }
+        });
+
+        // Check if the value matches any anonymization pattern
+        const valueMatches = patterns.some((pattern: string) => {
+          try {
+            const regex = new RegExp(pattern, 'i');
+            return regex.test(value);
+          } catch (e) {
+            return false;
+          }
+        });
+
+        if (keyMatches || valueMatches) {
+          // Always apply data-specific anonymization for built-in patterns
+          return applyDataSpecificAnonymization(value, key, dataSpecificPatterns);
+        }
+      }
+
+      if (typeof value === 'object' && value !== null) {
+        if (Array.isArray(value)) {
+          return value.map((item, index) => anonymizeValue(item, `${key}[${index}]`));
+        } else {
+          const anonymized: any = {};
+          for (const [k, v] of Object.entries(value)) {
+            anonymized[k] = anonymizeValue(v, k);
+          }
+          return anonymized;
+        }
+      }
+
+      return value;
+    };
+
+    return anonymizeValue(data);
+  } catch (e) {
+    logger.warn('Failed to apply PII anonymization', e);
+    return data;
+  }
+}
 
 const decorateUserHandler = <T extends Handler | ResponseStreamHandler>(
   userHandler: T,
@@ -425,256 +437,13 @@ export const startTrace = async (functionSpan: GenericSpan) => {
 export const endTrace = async (functionSpan: GenericSpan, handlerReturnValue: any) => {
   try {
     if (functionSpan && !isSwitchedOff() && isAwsEnvironment()) {
+
       // Anonymize the return value before sending to Lumigo
       let anonymizedReturnValue = handlerReturnValue;
-              if (process.env['LUMIGO_ANONYMIZE_ENABLED'] === 'true') {
-          try {
-            const patterns = JSON.parse(process.env['LUMIGO_ANONYMIZE_REGEX'] || '[]');
-            const dataSpecificPatterns = JSON.parse(process.env['LUMIGO_ANONYMIZE_DATA_SCHEMA'] || '[]');
-            
-            if (patterns && patterns.length > 0) {
-              // Data-specific anonymization function for return values
-              const applyDataSpecificAnonymization = (value: string, key: string, patterns: any[]): string => {
-                const lowerKey = key.toLowerCase();
-                const lowerValue = value.toLowerCase();
-
-                // IP Address: Keep first 2 octets, mask last 2
-                if (lowerKey.includes('ip') || lowerKey.includes('address') || 
-                    /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(value)) {
-                  const parts = value.split('.');
-                  if (parts.length === 4) {
-                    return `${parts[0]}.${parts[1]}.***.***`;
-                  }
-                }
-
-                // SSN: Keep first 7 digits, mask last 2
-                if (lowerKey.includes('ssn') || lowerKey.includes('social') || 
-                    /^\d{3}-\d{2}-\d{4}$/.test(value)) {
-                  return value.replace(/\d{2}$/, '**');
-                }
-
-                // Credit Card: Keep first 4, mask middle, keep last 4
-                if (lowerKey.includes('credit') || lowerKey.includes('card') || 
-                    /^\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}$/.test(value.replace(/[\s-]/g, ''))) {
-                  const clean = value.replace(/[\s-]/g, '');
-                  if (clean.length === 16) {
-                    return `${clean.substring(0, 4)} **** **** ${clean.substring(12)}`;
-                  }
-                }
-
-                // Phone: Keep area code, mask rest
-                if (lowerKey.includes('phone') || lowerKey.includes('tel') || 
-                    /^\+?1?[\s-]?\(?(\d{3})\)?[\s-]?\d{3}[\s-]?\d{4}$/.test(value)) {
-                  const clean = value.replace(/[\s\-\(\)\+]/g, '');
-                  if (clean.length >= 10) {
-                    const areaCode = clean.substring(0, 3);
-                    return `(${areaCode}) ***-****`;
-                  }
-                }
-
-                // Email: Keep first 2 chars of username, mask rest
-                if (lowerKey.includes('email') || lowerKey.includes('mail') || 
-                    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-                  const [username, domain] = value.split('@');
-                  if (username.length > 2) {
-                    return `${username.substring(0, 2)}***@${domain}`;
-                  }
-                  return `***@${domain}`;
-                }
-
-                // Default: Apply custom patterns from environment
-                for (const pattern of patterns) {
-                  if (pattern.field && pattern.mask) {
-                    const fieldRegex = new RegExp(pattern.field, 'i');
-                    if (fieldRegex.test(key) || fieldRegex.test(value)) {
-                      if (pattern.type === 'partial' && pattern.keep) {
-                        const keepChars = pattern.keep;
-                        if (value.length > keepChars) {
-                          return value.substring(0, keepChars) + '*'.repeat(value.length - keepChars);
-                        }
-                      } else if (pattern.type === 'truncate') {
-                        const maxChars = pattern.maxChars || 10;
-                        const position = pattern.position || 'end'; // 'start', 'end', 'middle', 'random'
-                        
-                        if (value.length <= maxChars) {
-                          return value;
-                        }
-                        
-                        switch (position) {
-                          case 'start':
-                            return '***' + value.substring(value.length - maxChars);
-                          case 'middle':
-                            const start = Math.floor(maxChars / 2);
-                            const end = value.length - (maxChars - start);
-                            return value.substring(0, start) + '***' + value.substring(end);
-                          case 'random':
-                            const randomStart = Math.floor(Math.random() * (value.length - maxChars));
-                            return value.substring(0, randomStart) + '***' + value.substring(randomStart + maxChars);
-                          case 'end':
-                          default:
-                            return value.substring(0, maxChars) + '***';
-                        }
-                      } else if (pattern.type === 'regex' && pattern.pattern) {
-                        try {
-                          const regex = new RegExp(pattern.pattern);
-                          return value.replace(regex, pattern.replacement || '***');
-                        } catch (e) {
-                          // Invalid regex, fall through to default
-                        }
-                      }
-                    }
-                  }
-                }
-
-                // Fallback to simple anonymization
-                return '[ANONYMIZED]';
-              };
-
-              // Use the same anonymization logic for return values
-              const anonymizeReturnValue = (value: any, key: string = ''): any => {
-              if (value === null || value === undefined) {
-                return value;
-              }
-
-              if (typeof value === 'string') {
-                // Check if the key matches any anonymization pattern
-                const keyMatches = patterns.some((pattern: string) => {
-                  try {
-                    const regex = new RegExp(pattern, 'i');
-                    return regex.test(key);
-                  } catch (e) {
-                    return false;
-                  }
-                });
-
-                // Check if the value matches any anonymization pattern
-                const valueMatches = patterns.some((pattern: string) => {
-                  try {
-                    const regex = new RegExp(pattern, 'i');
-                    return regex.test(value);
-                  } catch (e) {
-                    return false;
-                  }
-                });
-
-                if (keyMatches || valueMatches) {
-                  return '[ANONYMIZED]';
-                }
-              }
-
-              if (typeof value === 'object' && value !== null) {
-                if (Array.isArray(value)) {
-                  return value.map((item, index) => anonymizeReturnValue(item, `${key}[${index}]`));
-                } else {
-                  const anonymized: any = {};
-                  for (const [k, v] of Object.entries(value)) {
-                    anonymized[k] = anonymizeReturnValue(v, k);
-                  }
-                  return anonymized;
-                }
-              }
-
-              return value;
-            };
-
-            // Anonymize the entire return value object, with special handling for JSON string bodies
-            const anonymizeReturnValueWithBodyHandling = (value: any, key: string = ''): any => {
-              if (value === null || value === undefined) {
-                return value;
-              }
-
-              if (typeof value === 'string') {
-                // Special handling for body fields that might be JSON strings
-                if (key === 'body') {
-                  try {
-                    // Only try to parse if it looks like JSON (starts with { or [)
-                    if (value.trim().startsWith('{') || value.trim().startsWith('[')) {
-                      const parsedBody = JSON.parse(value);
-                      const anonymizedBody = anonymizeReturnValueWithBodyHandling(parsedBody, 'body');
-                      // CRITICAL: Re-stringify back to JSON string
-                      return JSON.stringify(anonymizedBody);
-                    } else {
-                      // Not JSON, treat as regular string
-                      const valueMatches = patterns.some((pattern: string) => {
-                        try {
-                          const regex = new RegExp(pattern, 'i');
-                          return regex.test(value);
-                        } catch (e) {
-                          return false;
-                        }
-                      });
-                      if (valueMatches) {
-                        // Apply data-specific anonymization if patterns are configured
-                        if (dataSpecificPatterns && dataSpecificPatterns.length > 0) {
-                          return applyDataSpecificAnonymization(value, key, dataSpecificPatterns);
-                        }
-                        return '[ANONYMIZED]';
-                      }
-                    }
-                  } catch (e) {
-                    // If parsing fails, check if the string contains PII patterns
-                    const valueMatches = patterns.some((pattern: string) => {
-                      try {
-                        const regex = new RegExp(pattern, 'i');
-                        return regex.test(value);
-                      } catch (e) {
-                        return false;
-                      }
-                    });
-                    if (valueMatches) {
-                      // Apply data-specific anonymization if patterns are configured
-                      if (dataSpecificPatterns && dataSpecificPatterns.length > 0) {
-                        return applyDataSpecificAnonymization(value, key, dataSpecificPatterns);
-                      }
-                      return '[ANONYMIZED]';
-                    }
-                  }
-                }
-
-                // Check if the key matches any anonymization pattern
-                const keyMatches = patterns.some((pattern: string) => {
-                  try {
-                    const regex = new RegExp(pattern, 'i');
-                    return regex.test(key);
-                  } catch (e) {
-                    return false;
-                  }
-                });
-
-                // Check if the value matches any anonymization pattern
-                const valueMatches = patterns.some((pattern: string) => {
-                  try {
-                    const regex = new RegExp(pattern, 'i');
-                    return regex.test(value);
-                  } catch (e) {
-                    return false;
-                  }
-                });
-
-                if (keyMatches || valueMatches) {
-                  // Always apply data-specific anonymization for built-in patterns
-                  return applyDataSpecificAnonymization(value, key, dataSpecificPatterns);
-                }
-              }
-
-              if (typeof value === 'object' && value !== null) {
-                if (Array.isArray(value)) {
-                  return value.map((item, index) => anonymizeReturnValueWithBodyHandling(item, `${key}[${index}]`));
-                } else {
-                  const anonymized: any = {};
-                  for (const [k, v] of Object.entries(value)) {
-                    anonymized[k] = anonymizeReturnValueWithBodyHandling(v, k);
-                  }
-                  return anonymized;
-                }
-              }
-
-              return value;
-            };
-
-            anonymizedReturnValue = anonymizeReturnValueWithBodyHandling(handlerReturnValue, 'returnValue');
-            logger.info('🔒 ANONYMIZATION: Return value anonymized for Lumigo traces');
-          }
+      if (process.env['LUMIGO_ANONYMIZE_ENABLED'] === 'true') {
+        try {
+          anonymizedReturnValue = anonymizeData(handlerReturnValue);
+          logger.info('🔒 ANONYMIZATION: Return value anonymized for Lumigo traces');
         } catch (e) {
           logger.warn('Failed to anonymize return value, using original', e);
           anonymizedReturnValue = handlerReturnValue;

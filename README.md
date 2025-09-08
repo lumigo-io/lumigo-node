@@ -64,6 +64,36 @@ sam build
 sam deploy --no-confirm-changeset
 ```
 
+### **Option 3: Manual Build with Dependency Fix (If Automated Fails)**
+
+If the automated deployment fails due to missing dependencies, use this manual process:
+
+```bash
+# 1. Build the tracer
+cd lumigo-node
+npm run build 2>/dev/null || npx tsc --build --force
+npx babel dist --out-dir dist --extensions .js --source-maps
+
+# 2. Copy built files to deployment
+cd ..
+cp -r lumigo-node/dist/* deployment/lambdasAnonymous-deploy/lumigo-node/
+cp -r lumigo-node/package.json deployment/lambdasAnonymous-deploy/lumigo-node/
+
+# 3. Copy essential dependencies
+mkdir -p deployment/lambdasAnonymous-deploy/lumigo-node/node_modules
+cp -r lumigo-node/node_modules/@lumigo deployment/lambdasAnonymous-deploy/lumigo-node/node_modules/
+cp -r lumigo-node/node_modules/debug deployment/lambdasAnonymous-deploy/lumigo-node/node_modules/
+cp -r lumigo-node/node_modules/ms deployment/lambdasAnonymous-deploy/lumigo-node/node_modules/
+cp -r lumigo-node/node_modules/agentkeepalive deployment/lambdasAnonymous-deploy/lumigo-node/node_modules/
+cp -r lumigo-node/node_modules/depd deployment/lambdasAnonymous-deploy/lumigo-node/node_modules/
+cp -r lumigo-node/node_modules/aws-sdk deployment/lambdasAnonymous-deploy/lumigo-node/node_modules/
+
+# 4. Deploy
+cd deployment/lambdasAnonymous-deploy
+sam build
+sam deploy --no-confirm-changeset
+```
+
 ## Testing
 
 After deployment, the script will provide the API Gateway URL. Test with:
@@ -132,6 +162,11 @@ LUMIGO_ANONYMIZE_DATA_SCHEMA='[{"field": "address", "type": "truncate", "maxChar
 2. **npm Dependency Conflicts**: The deploy script handles this automatically with `--legacy-peer-deps`
 3. **JSON Parsing Errors**: Check that environment variables are properly quoted in `deployment-config.env`
 4. **Module Not Found**: Verify the deploy script completed successfully
+5. **Missing Dependencies**: If you get `Cannot find module '@lumigo/node-core'` or similar errors, use Option 3 manual build process above
+6. **Babel Configuration Error**: If you get `.babelrc` not found errors, the automated build should handle this, but you can create it manually:
+   ```bash
+   echo '{"presets": ["@babel/preset-env"], "plugins": ["@babel/plugin-proposal-decorators", {"decoratorsBeforeExport": true}]}' > src/lumigo-tracer/.babelrc
+   ```
 
 ### Build Verification
 

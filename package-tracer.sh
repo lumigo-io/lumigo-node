@@ -344,6 +344,16 @@ create_lambda_package() {
     # Copy built tracer
     cp -r build/lumigo-node "$package_dir/"
     
+    # Copy essential dependencies
+    print_status "Copying essential dependencies..."
+    mkdir -p "$package_dir/lumigo-node/node_modules"
+    cp -r src/lumigo-tracer/node_modules/@lumigo "$package_dir/lumigo-node/node_modules/" 2>/dev/null || true
+    cp -r src/lumigo-tracer/node_modules/debug "$package_dir/lumigo-node/node_modules/" 2>/dev/null || true
+    cp -r src/lumigo-tracer/node_modules/ms "$package_dir/lumigo-node/node_modules/" 2>/dev/null || true
+    cp -r src/lumigo-tracer/node_modules/agentkeepalive "$package_dir/lumigo-node/node_modules/" 2>/dev/null || true
+    cp -r src/lumigo-tracer/node_modules/depd "$package_dir/lumigo-node/node_modules/" 2>/dev/null || true
+    cp -r src/lumigo-tracer/node_modules/aws-sdk "$package_dir/lumigo-node/node_modules/" 2>/dev/null || true
+    
     # Create Lambda handler
     cat > "$package_dir/handler.js" << 'EOF'
 const lumigo = require('./lumigo-node');
