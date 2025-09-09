@@ -31,15 +31,21 @@ fi
 echo "Selected Lambda: $LAMBDA_NAME"
 echo ""
 
-# Configuration file (this is what you edit)
-CONFIG_FILE="deployment-config.env"
+# Configuration file (prefer local file if it exists)
+if [ -f "deployment-config.env.local" ]; then
+    CONFIG_FILE="deployment-config.env.local"
+    echo "🔑 Using local configuration file: $CONFIG_FILE"
+else
+    CONFIG_FILE="deployment-config.env"
+    echo "🔑 Using configuration file: $CONFIG_FILE"
+fi
 
 # Check if config exists
 if [ ! -f "$CONFIG_FILE" ]; then
     echo "❌ $CONFIG_FILE not found. Creating default configuration..."
     cat > "$CONFIG_FILE" << 'EOF'
 # Lumigo Configuration
-LUMIGO_TRACER_TOKEN=t_f8f7b905da964eef89261
+LUMIGO_TRACER_TOKEN=your_lumigo_token_here
 LUMIGO_ANONYMIZE_ENABLED=true
 
 # Anonymization Patterns
@@ -80,7 +86,7 @@ if [ "$LAMBDA_NAME" = "lambdasAnonymous" ]; then
     rm -rf deployment/${LAMBDA_NAME}-deploy/lumigo-node
     rm -f deployment/${LAMBDA_NAME}-deploy/samconfig.toml
 else
-    # For eventProcessor, clean everything
+    # Clean everything
     rm -rf deployment/${LAMBDA_NAME}-deploy
     mkdir -p deployment/${LAMBDA_NAME}-deploy
 fi
@@ -94,8 +100,8 @@ echo "📋 Copying Lambda handler..."
 cp src/lambda-handlers/lambdasAnonymous.js deployment/${LAMBDA_NAME}-deploy/
 
 # Create the handler file if it doesn't exist (fallback)
-if [ ! -f "deployment/${LAMBDA_NAME}-deploy/${LAMBDA_NAME}.js" ] && [ ! -f "deployment/${LAMBDA_NAME}-deploy/eventProcessor.js" ]; then
-    cat > deployment/${LAMBDA_NAME}-deploy/eventProcessor.js << 'EOF'
+if [ ! -f "deployment/${LAMBDA_NAME}-deploy/${LAMBDA_NAME}.js" ]; then
+    cat > deployment/${LAMBDA_NAME}-deploy/${LAMBDA_NAME}.js << 'EOF'
 const lumigo = require('./lumigo-node');
 
 // Initialize the modified Lumigo tracer with anonymization
@@ -105,7 +111,7 @@ const tracer = lumigo.initTracer({
 });
 
 const myHandler = async (event, context) => {
-    console.log('EventProcessor Lambda started');
+    console.log('Lambda started');
     console.log('🔧 Environment variables:');
     console.log('  - LUMIGO_ANONYMIZE_ENABLED:', process.env.LUMIGO_ANONYMIZE_ENABLED);
     console.log('  - LUMIGO_ANONYMIZE_REGEX:', process.env.LUMIGO_ANONYMIZE_REGEX);

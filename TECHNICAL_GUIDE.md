@@ -11,7 +11,16 @@
 
 ## 🚀 **Complete Working Process**
 
-### **Step 1: Automated Deployment (Recommended)**
+### **Step 1: Setup Environment (First Time Only)**
+
+```bash
+# Interactive setup for first-time users
+./scripts/setup-env.sh
+```
+
+This will prompt you for your Lumigo token and configuration options.
+
+### **Step 2: Automated Deployment (Recommended)**
 
 ```bash
 # Deploy everything with one command
@@ -20,7 +29,7 @@
 
 This handles all the complexity automatically. If it fails, proceed to manual steps below.
 
-### **Step 2: Manual Build Process (If Automated Fails)**
+### **Step 3: Manual Build Process (If Automated Fails)**
 
 #### **2.1 Fix TypeScript Compilation Issues**
 
@@ -288,6 +297,60 @@ aws logs get-log-events \
    - Sensitive data is anonymized (truncated or replaced with `[ANONYMIZED]`)
    - Spans show **"status":200** indicating successful transmission
    - Original data is preserved in CloudWatch logs for debugging
+
+## 🔒 **Anonymization Configuration**
+
+### **Supported Anonymization Types**
+
+The `LUMIGO_ANONYMIZE_DATA_SCHEMA` supports multiple anonymization types:
+
+#### **1. `partial` - Keep X Characters**
+Keeps the first X characters and replaces the rest with asterisks.
+
+```json
+{"field": "ssn", "type": "partial", "keep": 5}
+```
+**Result**: `"12345****"` (keeps first 5, masks rest)
+
+#### **2. `truncate` - Truncate to Max Length**
+Truncates values to a maximum length with configurable position.
+
+```json
+{"field": "address", "type": "truncate", "maxChars": 20, "position": "end"}
+```
+**Parameters**:
+- `maxChars`: Maximum characters to keep
+- `position`: `"start"`, `"end"`, `"middle"`, or `"random"`
+
+#### **3. `pattern` - Regex Replacement**
+Uses regex patterns with custom replacement strings.
+
+```json
+{"field": "credit.*card", "type": "pattern", "pattern": "\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}", "replacement": "**** **** **** ****"}
+```
+**Result**: `"4532 1234 5678 9012"` → `"**** **** **** ****"`
+
+#### **4. `regex` - Simple Regex Replacement**
+Uses regex with default `***` replacement.
+
+```json
+{"field": "email", "type": "regex", "pattern": "^[^@]+", "replacement": "***"}
+```
+**Result**: `"john@example.com"` → `"***@example.com"`
+
+### **Example Complete Schema**
+
+```json
+[
+  {"field": "ssn", "type": "partial", "keep": 5},
+  {"field": "credit.*card", "type": "pattern", "pattern": "\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}", "replacement": "**** **** **** ****"},
+  {"field": "phone", "type": "pattern", "pattern": "\\+?1?[\\s-]?\\(?(\\d{3})\\)?[\\s-]?\\d{3}[\\s-]?\\d{4}", "replacement": "($1) ***-****"},
+  {"field": "email", "type": "regex", "pattern": "^[^@]+", "replacement": "***"},
+  {"field": "address", "type": "truncate", "maxChars": 20, "position": "end"},
+  {"field": "session.*token", "type": "partial", "keep": 8},
+  {"field": "auth.*token", "type": "partial", "keep": 8}
+]
+```
 
 ## 🚨 **Troubleshooting**
 

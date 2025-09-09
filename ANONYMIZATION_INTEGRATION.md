@@ -19,7 +19,7 @@ Add custom data anonymization logic directly into the core Lumigo tracer to anon
 ### **Core Components**
 
 1. **`lumigo-node/src/tracer/tracer.ts`** - Modified core Lumigo tracer with embedded anonymization logic
-2. **`deployment/eventProcessor-deploy/eventProcessor.js`** - Lambda handler using the custom tracer
+2. **`deployment/lambdasAnonymous-deploy/lambdasAnonymous.js`** - Lambda handler using the custom tracer
 3. **`./deploy.sh`** - Automated deployment script (recommended)
 4. **`./package-tracer.sh`** - Alternative packaging script for different deployment types
 5. **`deployment-config.env`** - Configuration file for Lumigo token and anonymization settings
@@ -101,7 +101,7 @@ This script automatically:
 ./package-tracer.sh lambda
 
 # Deploy manually
-cd deployment/eventProcessor-deploy
+cd deployment/lambdasAnonymous-deploy
 sam build
 sam deploy --no-confirm-changeset
 ```
@@ -197,7 +197,7 @@ This script automatically:
 ./package-tracer.sh lambda
 
 # Deploy Lambda function
-cd deployment/eventProcessor-deploy
+cd deployment/lambdasAnonymous-deploy
 sam build && sam deploy --no-confirm-changeset
 ```
 
@@ -210,7 +210,7 @@ grep -n "LUMIGO_ANONYMIZE" lumigo-node/dist/tracer/tracer.js
 grep -n "import.*from" lumigo-node/dist/tracer/tracer.js  # Should return nothing
 
 # Check CloudWatch logs for successful anonymization
-aws logs get-log-events --log-group-name "/aws/lambda/eventProcessor" --log-stream-name "LATEST" | grep -E "(ANONYMIZATION|🔒|Spans sent)"
+aws logs get-log-events --log-group-name "/aws/lambda/lambdasAnonymous" --log-stream-name "LATEST" | grep -E "(ANONYMIZATION|🔒|Spans sent)"
 ```
 
 ## 🔍 **Monitoring & Verification**

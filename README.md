@@ -29,7 +29,13 @@ This approach modifies the core Lumigo tracer source code (`lumigo-node/src/trac
 
 ### 1. Configure Environment Variables
 
-Edit `deployment-config.env` with your Lumigo token:
+**Option A: Interactive Setup (Recommended)**
+```bash
+./scripts/setup-env.sh
+```
+
+**Option B: Manual Setup**
+Follow the [Setup Guide](SETUP_GUIDE.md) and edit `deployment-config.env` with your Lumigo token:
 
 ```bash
 # Lumigo Configuration

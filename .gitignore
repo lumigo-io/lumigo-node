@@ -51,7 +51,6 @@ test-*.json
 response*.json
 test-anonymization.js
 scratchpad.md
-eventProcessor.js
 
 # Backup files
 *.backup
@@ -64,6 +63,9 @@ response*.json
 .env
 .env.local
 .env.*.local
+deployment-config.env
+deployment-config.env.local
+local.env
 
 # Log files
 *.log
