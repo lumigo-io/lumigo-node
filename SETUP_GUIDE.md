@@ -1,24 +1,16 @@
-# Setup Guide: Configuring Your Credentials
+# Quick Start Guide: Deploy Your First Test Lambda
 
-This guide will help you set up your own credentials and tokens for the Custom Lumigo Tracer project.
+This guide will walk you through deploying a test Lambda function with the custom Lumigo tracer in just a few minutes.
 
-## 🔑 **Required Credentials**
+## 🚀 **Step-by-Step Quick Start**
 
-### **1. Lumigo Tracer Token**
-
-You need a Lumigo tracer token to send traces to Lumigo. Get this from your Lumigo dashboard:
+### **Step 1: Get Your Lumigo Token**
 
 1. Log into your [Lumigo Dashboard](https://platform.lumigo.io/)
 2. Go to **Settings** → **API TOKEN**
 3. Copy your tracer token (starts with `t_`)
 
-### **2. AWS Credentials**
-
-You need AWS credentials with permissions to:
-- Deploy Lambda functions
-- Create API Gateway endpoints
-- Create CloudFormation stacks
-- Write to CloudWatch logs
+### **Step 2: Set Up AWS Credentials**
 
 **Option A: AWS SSO (Recommended)**
 ```bash
@@ -30,31 +22,19 @@ aws sso login
 aws configure
 ```
 
-## 🚀 **Quick Setup**
-
-### **Option A: Interactive Setup (Recommended)**
-
+**Verify your credentials:**
 ```bash
-./scripts/setup-env.sh
+aws sts get-caller-identity
 ```
 
-This will prompt you for:
-- Your Lumigo tracer token
-- Whether to enable anonymization
-- Custom anonymization patterns (optional)
+### **Step 3: Configure Your Environment**
 
-### **Option B: Manual Setup**
-
-**Step 1: Copy the Template**
-
+**Create your configuration file:**
 ```bash
 cp deployment-config.env.template deployment-config.env
 ```
 
-**Step 2: Edit Your Configuration**
-
-Open `deployment-config.env` and replace the placeholder values:
-
+**Edit the configuration:**
 ```bash
 # Edit the file
 nano deployment-config.env
@@ -62,56 +42,82 @@ nano deployment-config.env
 code deployment-config.env
 ```
 
-Replace `your_lumigo_token_here` with your actual Lumigo token:
-
+**Replace the placeholder with your actual Lumigo token:**
 ```bash
 # Example (replace with your actual token)
 LUMIGO_TRACER_TOKEN=t_your_actual_token_here
 ```
 
-### **Step 3: Verify Your Setup**
+### **Step 4: Deploy the Test Lambda**
 
-```bash
-# Test AWS credentials
-aws sts get-caller-identity
-
-# Verify Lumigo token format (optional)
-echo "Your token should start with 't_' and be about 20+ characters long"
-```
-
-### **Step 4: Deploy**
-
+**Deploy everything with one command:**
 ```bash
 ./deploy.sh
 ```
 
+This will:
+- ✅ Build the custom tracer with anonymization
+- ✅ Deploy a test Lambda function to AWS
+- ✅ Create an API Gateway endpoint
+- ✅ Set up all environment variables
+- ✅ Provide testing instructions
+
+### **Step 5: Test Your Deployment**
+
+**The deployment script will output your API Gateway URL. Test it with:**
+
+```bash
+curl -X POST https://your-api-gateway-url/Prod/process \
+  -H "Content-Type: application/json" \
+  -d '{"type":"user_registration","data":{"user":{"id":"123","name":"John Doe","email":"john@example.com","ssn":"123-45-6789","phone":"(555) 123-4567","address":"123 Main St, Anytown, USA"}}}'
+```
+
+### **Step 6: Verify Anonymization**
+
+**Check CloudWatch logs to see anonymized data:**
+```bash
+# Get the latest logs
+aws logs describe-log-groups --log-group-name-prefix /aws/lambda/lambdasAnonymous
+
+# View the logs
+aws logs get-log-events --log-group-name /aws/lambda/lambdasAnonymous --log-stream-name [latest-stream]
+```
+
+**Check Lumigo dashboard:**
+- Go to [Lumigo Traces](https://platform.lumigo.io/traces)
+- Look for your test traces with anonymized PII data
+
+## 🎉 **You're Done!**
+
+Your test Lambda function is now deployed and running with the custom Lumigo tracer. The sensitive data in your test payload will be anonymized in the traces sent to Lumigo.
+
+## 🚨 **Troubleshooting**
+
+### **"Invalid Lumigo Token" Error**
+1. Verify your token is correct in `deployment-config.env`
+2. Check that the token starts with `t_`
+3. Ensure you have an active Lumigo account
+
+### **"AWS Credentials Not Found" Error**
+1. Run `aws sso login` (if using SSO)
+2. Or run `aws configure` (if using access keys)
+3. Verify with `aws sts get-caller-identity`
+
+### **"Permission Denied" Error**
+1. Check your AWS IAM permissions
+2. Ensure you have Lambda, API Gateway, and CloudFormation permissions
+3. Contact your AWS administrator if needed
+
 ## 🔒 **Security Best Practices**
 
 ### **Never Commit Sensitive Files**
-
 The following files contain sensitive information and are automatically excluded from git:
-
 - `deployment-config.env` - Contains your Lumigo token
 - `local.env` - Contains local environment variables
 - `.env*` - Environment files
 
-### **Verify .gitignore**
-
-Make sure these files are in your `.gitignore`:
-
-```gitignore
-# Environment files
-.env
-.env.local
-.env.*.local
-deployment-config.env
-local.env
-```
-
 ### **Check for Exposed Credentials**
-
 Before committing, always check for exposed credentials:
-
 ```bash
 # Search for potential exposed tokens
 grep -r "t_[a-zA-Z0-9]" . --exclude-dir=.git --exclude="*.template"
@@ -122,7 +128,6 @@ grep -r "AKIA[a-zA-Z0-9]" . --exclude-dir=.git --exclude="*.template"
 ## 🛠️ **Advanced Configuration**
 
 ### **Custom Anonymization Patterns**
-
 You can customize what data gets anonymized by modifying the regex patterns in `deployment-config.env`:
 
 ```bash
@@ -131,7 +136,6 @@ LUMIGO_ANONYMIZE_REGEX='["ssn", "credit.*card", "custom_field", "another_sensiti
 ```
 
 ### **Custom Data Schema**
-
 You can define specific anonymization rules for different field types:
 
 ```bash
@@ -142,43 +146,19 @@ LUMIGO_ANONYMIZE_DATA_SCHEMA='[
 ]'
 ```
 
-## 🚨 **Troubleshooting**
+## 📞 **Next Steps**
 
-### **"Invalid Lumigo Token" Error**
+Now that you have a working test Lambda, you can:
 
-1. Verify your token is correct in `deployment-config.env`
-2. Check that the token starts with `t_`
-3. Ensure you have an active Lumigo account
-
-### **"AWS Credentials Not Found" Error**
-
-1. Run `aws sso login` (if using SSO)
-2. Or run `aws configure` (if using access keys)
-3. Verify with `aws sts get-caller-identity`
-
-### **"Permission Denied" Error**
-
-1. Check your AWS IAM permissions
-2. Ensure you have Lambda, API Gateway, and CloudFormation permissions
-3. Contact your AWS administrator if needed
-
-## 📞 **Getting Help**
-
-If you encounter issues:
-
-1. Check the `TECHNICAL_GUIDE.md` for detailed troubleshooting
-2. Verify your credentials are correctly configured
-3. Check CloudWatch logs for specific error messages
-4. Ensure all required permissions are granted
+1. **Explore Layer Integration**: Check out the `README.md` for instructions on using the custom tracer as a Lambda layer
+2. **Customize Anonymization**: Modify patterns in `deployment-config.env` to match your needs
+3. **Integrate with Existing Lambdas**: Use the layer approach to add tracing to your existing functions
 
 ## ✅ **Verification Checklist**
 
 Before deploying, verify:
-
 - [ ] `deployment-config.env` exists and contains your actual Lumigo token
 - [ ] AWS credentials are configured and working
-- [ ] No sensitive information is committed to git
-- [ ] `.gitignore` excludes sensitive files
 - [ ] You can run `aws sts get-caller-identity` successfully
 
 **Remember**: Never commit your actual credentials to version control!

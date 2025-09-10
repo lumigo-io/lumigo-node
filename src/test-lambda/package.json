@@ -1,0 +1,9 @@
+{
+  "name": "test-lambda-with-custom-tracer",
+  "version": "1.0.0",
+  "description": "Test Lambda function with custom Lumigo tracer",
+  "main": "index.js",
+  "dependencies": {
+    "@lumigo/tracer": "file:../packages/layer-package.zip"
+  }
+}

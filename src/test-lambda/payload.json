@@ -1,0 +1,11 @@
+{
+  "test": "data",
+  "user": {
+    "ssn": "123-45-6789",
+    "email": "test@example.com",
+    "credit_card": "4532 1234 5678 9012",
+    "phone": "(555) 123-4567",
+    "address": "123 Main Street, Anytown, USA 12345",
+    "ip_address": "192.168.1.100"
+  }
+}

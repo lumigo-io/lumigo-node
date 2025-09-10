@@ -1,0 +1,8 @@
+{
+  "Variables": {
+    "LUMIGO_TRACER_TOKEN": "your_lumigo_token_here",
+    "LUMIGO_ANONYMIZE_ENABLED": "true",
+    "LUMIGO_ANONYMIZE_REGEX": "[\"ssn\", \"credit.*card\", \"email\", \"phone\", \"address\", \"ip.*\"]",
+    "LUMIGO_ANONYMIZE_DATA_SCHEMA": "[{\"field\": \"ssn\", \"type\": \"partial\", \"keep\": 5}, {\"field\": \"credit.*card\", \"type\": \"truncate\", \"maxChars\": 16, \"position\": \"end\"}, {\"field\": \"phone\", \"type\": \"truncate\", \"maxChars\": 8, \"position\": \"end\"}, {\"field\": \"email\", \"type\": \"truncate\", \"maxChars\": 10, \"position\": \"end\"}, {\"field\": \"address\", \"type\": \"truncate\", \"maxChars\": 20, \"position\": \"end\"}, {\"field\": \"ip.*\", \"type\": \"partial\", \"keep\": 2, \"separator\": \".\"}]"
+  }
+}
