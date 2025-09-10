@@ -20,6 +20,12 @@
 
 This will prompt you for your Lumigo token and configuration options.
 
+**✅ Verified Working Configuration:**
+- **API Gateway URL**: `https://bea2wba4f8.execute-api.us-east-1.amazonaws.com/Prod/process`
+- **Lambda Function**: `lambdasAnonymous`
+- **Region**: `us-east-1`
+- **Anonymization**: All types working (partial, pattern, regex, truncate)
+
 ### **Step 2: Automated Deployment (Recommended)**
 
 ```bash
@@ -338,14 +344,31 @@ Uses regex with default `***` replacement.
 ```
 **Result**: `"john@example.com"` → `"***@example.com"`
 
+#### **5. IP Address Anonymization**
+Special handling for IPv4 and IPv6 addresses with appropriate separators.
+
+**IPv4 Addresses (dot separators):**
+```json
+{"field": ".*ip.*", "type": "partial", "keep": 2, "separator": "."}
+```
+**Result**: `"192.168.1.100"` → `"192.168.***.***"`
+
+**IPv6 Addresses (colon separators):**
+```json
+{"field": ".*ipv6.*", "type": "partial", "keep": 2, "separator": ":"}
+```
+**Result**: `"2001:0db8:85a3:0000:0000:8a2e:0370:7334"` → `"2001:0db8:***:***:***:***:***:***"`
+
 ### **Example Complete Schema**
 
 ```json
 [
   {"field": "ssn", "type": "partial", "keep": 5},
-  {"field": "credit.*card", "type": "pattern", "pattern": "\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}", "replacement": "**** **** **** ****"},
-  {"field": "phone", "type": "pattern", "pattern": "\\+?1?[\\s-]?\\(?(\\d{3})\\)?[\\s-]?\\d{3}[\\s-]?\\d{4}", "replacement": "($1) ***-****"},
-  {"field": "email", "type": "regex", "pattern": "^[^@]+", "replacement": "***"},
+  {"field": "credit.*card", "type": "truncate", "maxChars": 16, "position": "end"},
+  {"field": "phone", "type": "truncate", "maxChars": 8, "position": "end"},
+  {"field": "email", "type": "truncate", "maxChars": 10, "position": "end"},
+  {"field": ".*ipv6.*", "type": "partial", "keep": 2, "separator": ":"},
+  {"field": ".*ip.*", "type": "partial", "keep": 2, "separator": "."},
   {"field": "address", "type": "truncate", "maxChars": 20, "position": "end"},
   {"field": "session.*token", "type": "partial", "keep": 8},
   {"field": "auth.*token", "type": "partial", "keep": 8}

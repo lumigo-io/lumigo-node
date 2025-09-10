@@ -43,10 +43,10 @@ LUMIGO_TRACER_TOKEN=your_lumigo_token_here
 LUMIGO_ANONYMIZE_ENABLED=true
 
 # Anonymization Patterns
-LUMIGO_ANONYMIZE_REGEX='["ssn", "credit.*card", "bank.*account", "driver.*license", "passport.*number", "phone", "email", "address", "zip.*code", "date.*of.*birth", "ip.*address", "session.*token", "auth.*token"]'
+LUMIGO_ANONYMIZE_REGEX='["ssn", "credit.*card", "bank.*account", "driver.*license", "passport.*number", "phone", "email", ".*ipv6.*", ".*ip.*", "address", "zip.*code", "date.*of.*birth", "session.*token", "auth.*token"]'
 
-# Data Schema for Anonymization
-LUMIGO_ANONYMIZE_DATA_SCHEMA='[{"field": "address", "type": "truncate", "maxChars": 20, "position": "end"}, {"field": "name", "type": "truncate", "maxChars": 8, "position": "middle"}, {"field": "session_token", "type": "truncate", "maxChars": 20, "position": "beginning"}, {"field": "auth_token", "type": "truncate", "maxChars": 20, "position": "beginning"}]'
+# Data Schema for Anonymization - Multiple types supported
+LUMIGO_ANONYMIZE_DATA_SCHEMA='[{"field": "ssn", "type": "partial", "keep": 5}, {"field": "credit.*card", "type": "truncate", "maxChars": 16, "position": "end"}, {"field": "phone", "type": "truncate", "maxChars": 8, "position": "end"}, {"field": "email", "type": "truncate", "maxChars": 10, "position": "end"}, {"field": ".*ipv6.*", "type": "partial", "keep": 2, "separator": ":"}, {"field": ".*ip.*", "type": "partial", "keep": 2, "separator": "."}, {"field": "address", "type": "truncate", "maxChars": 20, "position": "end"}, {"field": "session.*token", "type": "partial", "keep": 8}, {"field": "auth.*token", "type": "partial", "keep": 8}]'
 ```
 
 ### 2. Deploy Everything
@@ -68,22 +68,57 @@ This script will:
 The script will output the API Gateway URL. Test with:
 
 ```bash
-curl -X POST https://YOUR_API_GATEWAY_URL/Prod/process \
+curl -X POST https://bea2wba4f8.execute-api.us-east-1.amazonaws.com/Prod/process \
   -H "Content-Type: application/json" \
   -d '{
     "type": "user_registration",
     "data": {
       "user": {
-        "id": "123",
-        "name": "John Doe",
-        "email": "john@example.com",
+        "name": "John Smith",
+        "email": "john.smith@example.com",
         "ssn": "123-45-6789",
         "phone": "(555) 123-4567",
-        "address": "123 Main St, Anytown, USA",
-        "credit_card": "4111-1111-1111-1111"
+        "address": "123 Main Street, Anytown, USA 12345",
+        "credit_card": "4532 1234 5678 9012",
+        "ip_address": "192.168.1.100",
+        "session_token": "sess_abc123def456ghi789jkl012mno345pqr678stu901vwx234yz",
+        "auth_token": "auth_zyx987wvu654tsr321qpo098nml765kji432hgf109edc876baz",
+        "driver_license": "DL123456789",
+        "passport_number": "P123456789",
+        "bank_account": "1234567890",
+        "zip_code": "12345",
+        "date_of_birth": "1990-01-15"
+      },
+      "payment": {
+        "credit_card_number": "4532-1234-5678-9012",
+        "cvv": "123",
+        "expiry": "12/25"
+      },
+      "contact": {
+        "email_address": "contact@example.com",
+        "phone_number": "+1-555-987-6543",
+        "home_address": "456 Oak Avenue, Springfield, IL 62701"
       }
     }
-  }'
+  }' | jq .
+```
+
+### 3b. Test IPv6 Address Anonymization
+
+```bash
+curl -X POST $API_GATEWAY_URL \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "ip_test",
+    "data": {
+      "ip_address": "192.168.1.100",
+      "primary_ip": "10.0.0.1",
+      "secondary_ip": "203.0.113.1",
+      "ipv6_address": "2001:0db8:85a3:0000:0000:8a2e:0370:7334",
+      "ipv6_primary": "2001:db8::1",
+      "ipv6_secondary": "fe80::1"
+    }
+  }' | jq .
 ```
 
 ### 4. Verify Anonymization
@@ -110,13 +145,24 @@ Check CloudWatch logs for:
 
 ## Anonymization Rules
 
-The current implementation uses **truncation-based anonymization** for reliability:
+The current implementation supports **multiple anonymization types**:
 
+### Partial Anonymization (keeps part of the data):
+- **SSN**: Keeps last 5 characters (`123-45-6789` → `***-45-6789`)
+- **Session Token**: Keeps first 8 characters (`sess_abc123...` → `sess_abc***`)
+- **Auth Token**: Keeps first 8 characters (`auth_zyx987...` → `auth_zyx***`)
+- **IPv4 Addresses**: Keeps first 2 octets (`192.168.1.100` → `192.168.***.***`)
+- **IPv6 Addresses**: Keeps first 2 segments (`2001:0db8:...` → `2001:0db8:***:***`)
+
+### Truncation Anonymization (shortens data):
+- **Credit Card**: Truncated to 16 characters from the end
+- **Phone**: Truncated to 8 characters from the end
+- **Email**: Truncated to 10 characters from the end
 - **Address**: Truncated to 20 characters from the end
-- **Name**: Truncated to 8 characters from the middle  
-- **Session Token**: Truncated to 20 characters from the beginning
-- **Auth Token**: Truncated to 20 characters from the beginning
-- **Other PII**: Replaced with `[ANONYMIZED]` based on regex patterns
+
+### Pattern-based Anonymization:
+- **Driver License, Passport, Bank Account**: Replaced with `[ANONYMIZED]`
+- **Zip Code, Date of Birth**: Replaced with `[ANONYMIZED]`
 
 ## Benefits
 

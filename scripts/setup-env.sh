@@ -96,10 +96,10 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
         done
         LUMIGO_ANONYMIZE_REGEX+=']'
     else
-        LUMIGO_ANONYMIZE_REGEX='["ssn", "credit.*card", "bank.*account", "driver.*license", "passport.*number", "phone", "email", "address", "zip.*code", "date.*of.*birth", "ip.*address", "session.*token", "auth.*token"]'
+        LUMIGO_ANONYMIZE_REGEX='["ssn", "credit.*card", "bank.*account", "driver.*license", "passport.*number", "phone", "email", ".*ip.*", ".*ipv6.*", "address", "zip.*code", "date.*of.*birth", "session.*token", "auth.*token"]'
     fi
 else
-    LUMIGO_ANONYMIZE_REGEX='["ssn", "credit.*card", "bank.*account", "driver.*license", "passport.*number", "phone", "email", "address", "zip.*code", "date.*of.*birth", "ip.*address", "session.*token", "auth.*token"]'
+    LUMIGO_ANONYMIZE_REGEX='["ssn", "credit.*card", "bank.*account", "driver.*license", "passport.*number", "phone", "email", ".*ip.*", ".*ipv6.*", "address", "zip.*code", "date.*of.*birth", "session.*token", "auth.*token"]'
 fi
 
 # Create the configuration file
@@ -108,11 +108,11 @@ cat > deployment-config.env << EOF
 LUMIGO_TRACER_TOKEN=$LUMIGO_TRACER_TOKEN
 LUMIGO_ANONYMIZE_ENABLED=$LUMIGO_ANONYMIZE_ENABLED
 
-# Anonymization Patterns
-LUMIGO_ANONYMIZE_REGEX='$LUMIGO_ANONYMIZE_REGEX'
+        # Anonymization Patterns
+        LUMIGO_ANONYMIZE_REGEX='$LUMIGO_ANONYMIZE_REGEX'
 
-# Data Schema for Anonymization - Multiple types supported
-LUMIGO_ANONYMIZE_DATA_SCHEMA='[{"field": "ssn", "type": "partial", "keep": 5}, {"field": "credit.*card", "type": "pattern", "pattern": "\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}", "replacement": "**** **** **** ****"}, {"field": "phone", "type": "pattern", "pattern": "\\+?1?[\\s-]?\\(?(\\d{3})\\)?[\\s-]?\\d{3}[\\s-]?\\d{4}", "replacement": "($1) ***-****"}, {"field": "email", "type": "regex", "pattern": "^[^@]+", "replacement": "***"}, {"field": "address", "type": "truncate", "maxChars": 20, "position": "end"}, {"field": "session.*token", "type": "partial", "keep": 8}, {"field": "auth.*token", "type": "partial", "keep": 8}]'
+        # Data Schema for Anonymization - Multiple types supported
+        LUMIGO_ANONYMIZE_DATA_SCHEMA='[{"field": "ssn", "type": "partial", "keep": 5}, {"field": "credit.*card", "type": "truncate", "maxChars": 16, "position": "end"}, {"field": "phone", "type": "truncate", "maxChars": 8, "position": "end"}, {"field": "email", "type": "truncate", "maxChars": 10, "position": "end"}, {"field": ".*ip.*", "type": "partial", "keep": 2, "separator": "."}, {"field": ".*ipv6.*", "type": "partial", "keep": 2, "separator": ":"}, {"field": "address", "type": "truncate", "maxChars": 20, "position": "end"}, {"field": "session.*token", "type": "partial", "keep": 8}, {"field": "auth.*token", "type": "partial", "keep": 8}]'
 EOF
 
 echo ""

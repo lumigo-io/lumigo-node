@@ -86,15 +86,15 @@ const processUserHandler = async <Event>(
     return runUserHandler(userHandler, event, context, callback, responseStream);
   }
 
-  // Anonymize event if anonymization is enabled
-  if (process.env['LUMIGO_ANONYMIZE_ENABLED'] === 'true') {
-    try {
-      event = anonymizeData(event);
-      logger.info('🔒 ANONYMIZATION: Data-specific anonymization applied successfully');
-    } catch (e) {
-      logger.warn('Failed to apply PII anonymization, using original event', e);
+    // Anonymize event if anonymization is enabled
+    if (process.env['LUMIGO_ANONYMIZE_ENABLED'] === 'true') {
+      try {
+        event = anonymizeData(event);
+        logger.debug('🔒 ANONYMIZATION: Data-specific anonymization applied successfully');
+      } catch (e) {
+        logger.warn('Failed to apply PII anonymization, using original event', e);
+      }
     }
-  }
 
   try {
     TracerGlobals.setHandlerInputs({ event, context });
@@ -180,8 +180,22 @@ function applyDataSpecificAnonymization(value: string, key: string, patterns: an
           }
         } else if (pattern.type === 'partial' && pattern.keep) {
           const keepChars = pattern.keep;
-          if (value.length > keepChars) {
-            return value.substring(0, keepChars) + '*'.repeat(value.length - keepChars);
+          const separator = pattern.separator || '';
+          
+          if (separator) {
+            // Handle IP addresses with dot separator
+            const parts = value.split(separator);
+            if (parts.length > keepChars) {
+              const keptParts = parts.slice(0, keepChars);
+              const maskedParts = parts.slice(keepChars).map(() => '***');
+              return [...keptParts, ...maskedParts].join(separator);
+            }
+            return value;
+          } else {
+            // Handle regular partial anonymization
+            if (value.length > keepChars) {
+              return value.substring(0, keepChars) + '*'.repeat(value.length - keepChars);
+            }
           }
         } else if (pattern.type === 'truncate') {
           const maxChars = pattern.maxChars || 10;
@@ -273,8 +287,86 @@ function applyDataSpecificAnonymization(value: string, key: string, patterns: an
 function anonymizeData(data: any): any {
 
   try {
-    const patterns = JSON.parse(process.env['LUMIGO_ANONYMIZE_REGEX'] || '[]');
-    const dataSpecificPatterns = JSON.parse(process.env['LUMIGO_ANONYMIZE_DATA_SCHEMA'] || '[]');
+    const regexEnv = process.env['LUMIGO_ANONYMIZE_REGEX'] || '[]';
+    const schemaEnv = process.env['LUMIGO_ANONYMIZE_DATA_SCHEMA'] || '[]';
+    
+    // Clean the JSON strings to remove any problematic characters (control characters, etc.)
+    const cleanRegexEnv = regexEnv.trim().replace(/[\u0000-\u001F\u007F-\u009F]/g, '');
+    const cleanSchemaEnv = schemaEnv.trim().replace(/[\u0000-\u001F\u007F-\u009F]/g, '');
+    
+    let patterns: string[] = [];
+    let dataSpecificPatterns: any[] = [];
+    
+    // Parse and validate regex patterns
+    try {
+      const parsedPatterns = JSON.parse(cleanRegexEnv);
+      if (Array.isArray(parsedPatterns)) {
+        patterns = parsedPatterns.filter((pattern, index) => {
+          if (typeof pattern === 'string' && pattern.trim()) {
+            try {
+              // Test if the pattern is a valid regex
+              new RegExp(pattern, 'i');
+              return true;
+            } catch (e) {
+              logger.warn(`Invalid regex pattern at index ${index}: "${pattern}" - ${e.message}. Skipping.`);
+              return false;
+            }
+          } else {
+            logger.warn(`Invalid regex pattern at index ${index}: expected string, got ${typeof pattern}. Skipping.`);
+            return false;
+          }
+        });
+      } else {
+        logger.warn('LUMIGO_ANONYMIZE_REGEX should be an array. Using empty array.');
+      }
+    } catch (e) {
+      logger.warn(`Failed to parse LUMIGO_ANONYMIZE_REGEX: ${e.message}. Using empty array.`);
+    }
+    
+    // Parse and validate data schema patterns
+    try {
+      const parsedSchema = JSON.parse(cleanSchemaEnv);
+      if (Array.isArray(parsedSchema)) {
+        dataSpecificPatterns = parsedSchema.filter((item, index) => {
+          if (typeof item === 'object' && item !== null && item.field && item.type) {
+            // Validate required fields
+            if (typeof item.field !== 'string') {
+              logger.warn(`Invalid data schema at index ${index}: field must be a string. Skipping.`);
+              return false;
+            }
+            if (typeof item.type !== 'string') {
+              logger.warn(`Invalid data schema at index ${index}: type must be a string. Skipping.`);
+              return false;
+            }
+            // Validate type-specific fields
+            if (item.type === 'partial' && typeof item.keep !== 'number') {
+              logger.warn(`Invalid data schema at index ${index}: partial type requires 'keep' number. Skipping.`);
+              return false;
+            }
+            if (item.type === 'truncate' && typeof item.maxChars !== 'number') {
+              logger.warn(`Invalid data schema at index ${index}: truncate type requires 'maxChars' number. Skipping.`);
+              return false;
+            }
+            if (item.type === 'pattern' && (!item.pattern || !item.replacement)) {
+              logger.warn(`Invalid data schema at index ${index}: pattern type requires 'pattern' and 'replacement'. Skipping.`);
+              return false;
+            }
+            if (item.type === 'regex' && (!item.pattern || !item.replacement)) {
+              logger.warn(`Invalid data schema at index ${index}: regex type requires 'pattern' and 'replacement'. Skipping.`);
+              return false;
+            }
+            return true;
+          } else {
+            logger.warn(`Invalid data schema at index ${index}: expected object with field and type. Skipping.`);
+            return false;
+          }
+        });
+      } else {
+        logger.warn('LUMIGO_ANONYMIZE_DATA_SCHEMA should be an array. Using empty array.');
+      }
+    } catch (e) {
+      logger.warn(`Failed to parse LUMIGO_ANONYMIZE_DATA_SCHEMA: ${e.message}. Using empty array.`);
+    }
     
     if (!patterns || patterns.length === 0) {
       return data;
@@ -325,30 +417,50 @@ function anonymizeData(data: any): any {
           }
         }
 
-        // Check if the key matches any anonymization pattern
-        const keyMatches = patterns.some((pattern: string) => {
-          try {
-            const regex = new RegExp(pattern, 'i');
-            return regex.test(key);
-          } catch (e) {
-            return false;
-          }
-        });
-
-        // Check if the value matches any anonymization pattern
-        const valueMatches = patterns.some((pattern: string) => {
-          try {
-            const regex = new RegExp(pattern, 'i');
-            return regex.test(value);
-          } catch (e) {
-            return false;
-          }
-        });
-
-        if (keyMatches || valueMatches) {
-          // Always apply data-specific anonymization for built-in patterns
-          return applyDataSpecificAnonymization(value, key, dataSpecificPatterns);
+      // Check if the key matches any anonymization pattern
+      const keyMatches = patterns.some((pattern: string) => {
+        try {
+          const regex = new RegExp(pattern, 'i');
+          return regex.test(key);
+        } catch (e) {
+          logger.warn(`Error testing key pattern '${pattern}': ${e.message}`);
+          return false;
         }
+      });
+
+      // For IP addresses and similar structured data, only check key patterns
+      // For other data types (like SSN, email), check both key and value patterns
+      let shouldAnonymize = keyMatches;
+      
+      if (!keyMatches) {
+        // Only check value patterns if key didn't match and it's not an IP-like field
+        const isIpLikeField = patterns.some((pattern: string) => {
+          try {
+            const regex = new RegExp(pattern, 'i');
+            return regex.test(key) && (pattern.includes('ip') || pattern.includes('address'));
+          } catch (e) {
+            return false;
+          }
+        });
+        
+        if (!isIpLikeField) {
+          const valueMatches = patterns.some((pattern: string) => {
+            try {
+              const regex = new RegExp(pattern, 'i');
+              return regex.test(value);
+            } catch (e) {
+              logger.warn(`Error testing value pattern '${pattern}': ${e.message}`);
+              return false;
+            }
+          });
+          shouldAnonymize = valueMatches;
+        }
+      }
+
+      if (shouldAnonymize) {
+        // Always apply data-specific anonymization for built-in patterns
+        return applyDataSpecificAnonymization(value, key, dataSpecificPatterns);
+      }
       }
 
       if (typeof value === 'object' && value !== null) {
