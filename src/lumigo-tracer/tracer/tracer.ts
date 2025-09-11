@@ -277,8 +277,35 @@ function applyDataSpecificAnonymization(value: string, key: string, patterns: an
     return `***@${domain}`;
   }
 
-  // Fallback to simple anonymization
-  return '[ANONYMIZED]';
+  // Special handling for large sensitive fields
+  if (lowerKey.includes('driver') || lowerKey.includes('license') || 
+      lowerKey.includes('passport') || lowerKey.includes('bank') || 
+      lowerKey.includes('account') || lowerKey.includes('zip') || 
+      lowerKey.includes('birth') || lowerKey.includes('session') || 
+      lowerKey.includes('auth') || lowerKey.includes('token')) {
+    // For large sensitive fields, show more context
+    if (value.length <= 20) {
+      return value.substring(0, 3) + '***' + value.substring(value.length - 3);
+    } else {
+      const start = Math.min(6, Math.floor(value.length * 0.15));
+      const end = Math.min(6, Math.floor(value.length * 0.15));
+      return value.substring(0, start) + '***' + value.substring(value.length - end);
+    }
+  }
+
+  // Fallback to intelligent anonymization based on field length
+  if (value.length <= 10) {
+    // Short fields: mask most characters
+    return '*'.repeat(Math.min(value.length, 4));
+  } else if (value.length <= 50) {
+    // Medium fields: show first 2 and last 2 characters
+    return value.substring(0, 2) + '***' + value.substring(value.length - 2);
+  } else {
+    // Long fields: show first 4 and last 4 characters with middle masked
+    const start = Math.min(4, Math.floor(value.length * 0.1));
+    const end = Math.min(4, Math.floor(value.length * 0.1));
+    return value.substring(0, start) + '***' + value.substring(value.length - end);
+  }
 }
 
 /**
@@ -398,7 +425,16 @@ function anonymizeData(data: any): any {
                 }
               });
               if (valueMatches) {
-                return '[ANONYMIZED]';
+                // Intelligent anonymization based on field length
+                if (value.length <= 10) {
+                  return '*'.repeat(Math.min(value.length, 4));
+                } else if (value.length <= 50) {
+                  return value.substring(0, 2) + '***' + value.substring(value.length - 2);
+                } else {
+                  const start = Math.min(4, Math.floor(value.length * 0.1));
+                  const end = Math.min(4, Math.floor(value.length * 0.1));
+                  return value.substring(0, start) + '***' + value.substring(value.length - end);
+                }
               }
             }
           } catch (e) {
@@ -412,7 +448,16 @@ function anonymizeData(data: any): any {
               }
             });
             if (valueMatches) {
-              return '[ANONYMIZED]';
+              // Intelligent anonymization based on field length
+              if (value.length <= 10) {
+                return '*'.repeat(Math.min(value.length, 4));
+              } else if (value.length <= 50) {
+                return value.substring(0, 2) + '***' + value.substring(value.length - 2);
+              } else {
+                const start = Math.min(4, Math.floor(value.length * 0.1));
+                const end = Math.min(4, Math.floor(value.length * 0.1));
+                return value.substring(0, start) + '***' + value.substring(value.length - end);
+              }
             }
           }
         }
