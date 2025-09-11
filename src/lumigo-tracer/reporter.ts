@@ -99,16 +99,16 @@ const isJsonContent = (payload: any, headers: Object) => {
   );
 };
 
-function scrub(payload: any, headers: any, sizeLimit: number, truncated = false): string {
+function scrub(payload: any, headers: any, sizeLimit: number, truncated = false, contextKey?: string): string {
   try {
     if (isJsonContent(payload, headers)) {
       if (truncated) payload = untruncateJson(payload);
-      return payloadStringify(JSON.parse(payload), sizeLimit, null, truncated);
+      return payloadStringify(JSON.parse(payload), sizeLimit, null, truncated, contextKey);
     } else {
-      return payloadStringify(payload, sizeLimit, truncated);
+      return payloadStringify(payload, sizeLimit, null, truncated, contextKey);
     }
   } catch (e) {
-    return payloadStringify(payload, sizeLimit, truncated);
+    return payloadStringify(payload, sizeLimit, null, truncated, contextKey);
   }
 }
 
@@ -133,7 +133,8 @@ const scrubSpan = (span) => {
           decodeHttpBody(response.body, isError),
           response.headers,
           sizeLimit,
-          span.info.httpInfo.response.truncated
+          span.info.httpInfo.response.truncated,
+          'responseBody'
         );
       }
       if (span.info.httpInfo.request?.body) {
@@ -141,7 +142,8 @@ const scrubSpan = (span) => {
           decodeHttpBody(request.body, isError),
           request.headers,
           sizeLimit,
-          span.info.httpInfo.request.truncated
+          span.info.httpInfo.request.truncated,
+          'requestBody'
         );
       }
       if (span.info.httpInfo.request?.headers) {

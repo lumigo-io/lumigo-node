@@ -316,7 +316,7 @@ function applyDataSpecificAnonymization(value: string, key: string, patterns: an
 /**
  * Main anonymization function that processes any data structure
  */
-function anonymizeData(data: any): any {
+export function anonymizeData(data: any, contextKey?: string): any {
 
   try {
     const regexEnv = process.env['LUMIGO_ANONYMIZE_REGEX'] || '[]';
@@ -404,21 +404,38 @@ function anonymizeData(data: any): any {
       return data;
     }
 
-    const anonymizeValue = (value: any, key: string = ''): any => {
+    const anonymizeValue = (value: any, key: string = '', path: string[] = []): any => {
       if (value === null || value === undefined) {
         return value;
       }
 
       if (typeof value === 'string') {
-        // Special handling for event.body - parse JSON, anonymize, then re-stringify
-        if (key === 'body') {
+        // Special handling for event.body, requestBody, responseBody - parse JSON, anonymize, then re-stringify
+        if (key === 'body' || key === 'requestBody' || key === 'responseBody' || contextKey === 'requestBody' || contextKey === 'responseBody') {
+          console.log('🔍 ANONYMIZATION BODY DEBUG:', {
+            key,
+            valueLength: value.length,
+            valuePreview: value.substring(0, 100) + '...',
+            isJson: value.trim().startsWith('{') || value.trim().startsWith('[')
+          });
+          
           try {
             // Only try to parse if it looks like JSON (starts with { or [)
             if (value.trim().startsWith('{') || value.trim().startsWith('[')) {
               const parsedBody = JSON.parse(value);
-              const anonymizedBody = anonymizeValue(parsedBody, 'body');
+              const anonymizedBody = anonymizeValue(parsedBody, 'body', path);
+              const reStringified = JSON.stringify(anonymizedBody);
+              
+              console.log('🔍 ANONYMIZATION BODY JSON PARSE SUCCESS:', {
+                key,
+                originalLength: value.length,
+                anonymizedLength: reStringified.length,
+                originalPreview: value.substring(0, 100) + '...',
+                anonymizedPreview: reStringified.substring(0, 100) + '...'
+              });
+              
               // CRITICAL: Re-stringify back to JSON string for the tracer
-              return JSON.stringify(anonymizedBody);
+              return reStringified;
             } else {
               // Not JSON, treat as regular string
               const valueMatches = patterns.some((pattern: string) => {
@@ -515,11 +532,11 @@ function anonymizeData(data: any): any {
 
       if (typeof value === 'object' && value !== null) {
         if (Array.isArray(value)) {
-          return value.map((item, index) => anonymizeValue(item, `${key}[${index}]`));
+          return value.map((item, index) => anonymizeValue(item, `${key}[${index}]`, [...path, `${key}[${index}]`]));
         } else {
           const anonymized: any = {};
           for (const [k, v] of Object.entries(value)) {
-            anonymized[k] = anonymizeValue(v, k);
+            anonymized[k] = anonymizeValue(v, k, [...path, k]);
           }
           return anonymized;
         }
@@ -528,7 +545,7 @@ function anonymizeData(data: any): any {
       return value;
     };
 
-    return anonymizeValue(data);
+    return anonymizeValue(data, contextKey || '', []);
   } catch (e) {
     logger.warn('Failed to apply PII anonymization', e);
     return data;

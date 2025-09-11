@@ -205,7 +205,8 @@ export const payloadStringify = (
   payload,
   maxPayloadSize = getEventEntitySize(),
   skipScrubPath = null,
-  truncated = false
+  truncated = false,
+  contextKey = null
 ) => {
   let totalSize = 0;
   let refsFound = [];
@@ -215,7 +216,19 @@ export const payloadStringify = (
 
   let isPruned = false;
 
-  let result = getSecretMaskingExactPath() ? scrubPayloadBasedOnExactPath(payload) : payload;
+  // Apply anonymization if enabled
+  let result = payload;
+  if (process.env['LUMIGO_ANONYMIZE_ENABLED'] === 'true') {
+    try {
+      const { anonymizeData } = require('../tracer/tracer');
+      result = anonymizeData(payload, contextKey);
+    } catch (error) {
+      logger.warn('Failed to anonymize payload, using original', error);
+      result = payload;
+    }
+  }
+
+  result = getSecretMaskingExactPath() ? scrubPayloadBasedOnExactPath(result) : result;
 
   result = JSON.stringify(result, function (key, value) {
     const type = typeof value;

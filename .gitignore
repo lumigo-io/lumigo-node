@@ -76,3 +76,5 @@ logs/
 *.temp
 temp/
 tmp/
+*.zip
+env-vars*.json

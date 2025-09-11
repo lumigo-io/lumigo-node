@@ -38,6 +38,7 @@ import { payloadStringify, shallowMask, truncate } from '../utils/payloadStringi
 import { Utf8Utils } from '../utils/utf8Utils';
 import { getW3CMessageId } from '../utils/w3cUtils';
 import { RequestData, ResponseData } from '../hooks/baseHttp';
+import { anonymizeData } from '../tracer/tracer';
 
 export const HTTP_SPAN = 'http';
 export const FUNCTION_SPAN = 'function';
@@ -374,14 +375,117 @@ export const getHttpSpan = (
 
   const prioritizedSpanId = getHttpSpanId(randomRequestId, spanId);
   if (requestData) {
-    requestData.body && (requestData.body = shallowMask('requestBody', requestData.body));
-    requestData.headers &&
-      (requestData.headers = shallowMask('requestHeaders', requestData.headers));
+    // Check if HTTP anonymization is enabled (defaults to true if LUMIGO_ANONYMIZE_ENABLED is true)
+    const httpAnonymizeEnabled = process.env['LUMIGO_ANONYMIZE_ENABLED'] === 'true' && 
+                                 process.env['LUMIGO_ANONYMIZE_HTTP_ENABLED'] !== 'false';
+    
+    // Apply anonymization before masking
+    if (httpAnonymizeEnabled) {
+      try {
+        // Anonymize request body - handle JSON parsing and anonymization
+        console.log('🔍 BEFORE ANONYMIZATION - Request body:', {
+          type: typeof requestData.body,
+          length: requestData.body?.length,
+          preview: requestData.body?.substring(0, 100) + '...'
+        });
+        
+        if (requestData.body && typeof requestData.body === 'string') {
+          try {
+            // Only try to parse if it looks like JSON (starts with { or [)
+            if (requestData.body.trim().startsWith('{') || requestData.body.trim().startsWith('[')) {
+              const parsedBody = JSON.parse(requestData.body);
+              const anonymizedBody = anonymizeData(parsedBody);
+              // Keep as object, don't re-stringify
+              requestData.body = anonymizedBody;
+              console.log('🔍 AFTER JSON ANONYMIZATION - Request body:', {
+                type: typeof requestData.body,
+                isObject: typeof requestData.body === 'object',
+                preview: JSON.stringify(requestData.body).substring(0, 100) + '...'
+              });
+            } else {
+              // Not JSON, treat as regular string
+              requestData.body = anonymizeData(requestData.body);
+              console.log('🔍 AFTER STRING ANONYMIZATION - Request body:', {
+                type: typeof requestData.body,
+                length: requestData.body?.length,
+                preview: requestData.body?.substring(0, 100) + '...'
+              });
+            }
+          } catch (e) {
+            // If parsing fails, treat as regular string
+            requestData.body = anonymizeData(requestData.body);
+            console.log('🔍 AFTER STRING ANONYMIZATION (parse failed) - Request body:', {
+              type: typeof requestData.body,
+              length: requestData.body?.length,
+              preview: requestData.body?.substring(0, 100) + '...'
+            });
+          }
+        } else {
+          // Already an object or null/undefined
+          requestData.body = anonymizeData(requestData.body);
+          console.log('🔍 AFTER OBJECT ANONYMIZATION - Request body:', {
+            type: typeof requestData.body,
+            isObject: typeof requestData.body === 'object',
+            preview: requestData.body ? JSON.stringify(requestData.body).substring(0, 100) + '...' : 'null/undefined'
+          });
+        }
+        
+        logger.debug('🔒 HTTP ANONYMIZATION: Request body anonymized successfully');
+        // Anonymize request headers
+        requestData.headers = anonymizeData(requestData.headers);
+        logger.debug('🔒 HTTP ANONYMIZATION: Request headers anonymized successfully');
+      } catch (error) {
+        logger.warn('Failed to anonymize request data', error);
+      }
+    } else {
+      // Apply shallowMask when HTTP anonymization is disabled
+      requestData.body && (requestData.body = shallowMask('requestBody', requestData.body));
+      requestData.headers &&
+        (requestData.headers = shallowMask('requestHeaders', requestData.headers));
+    }
   }
   if (responseData) {
-    responseData.body && (responseData.body = shallowMask('responseBody', responseData.body));
-    responseData.headers &&
-      (responseData.headers = shallowMask('responseHeaders', responseData.headers));
+    // Check if HTTP anonymization is enabled (defaults to true if LUMIGO_ANONYMIZE_ENABLED is true)
+    const httpAnonymizeEnabled = process.env['LUMIGO_ANONYMIZE_ENABLED'] === 'true' && 
+                                 process.env['LUMIGO_ANONYMIZE_HTTP_ENABLED'] !== 'false';
+    
+    // Apply anonymization before masking
+    if (httpAnonymizeEnabled) {
+      try {
+        // Anonymize response body - handle JSON parsing and anonymization
+        if (responseData.body && typeof responseData.body === 'string') {
+          try {
+            // Only try to parse if it looks like JSON (starts with { or [)
+            if (responseData.body.trim().startsWith('{') || responseData.body.trim().startsWith('[')) {
+              const parsedBody = JSON.parse(responseData.body);
+              const anonymizedBody = anonymizeData(parsedBody);
+              // Keep as object, don't re-stringify
+              responseData.body = anonymizedBody;
+            } else {
+              // Not JSON, treat as regular string
+              responseData.body = anonymizeData(responseData.body);
+            }
+          } catch (e) {
+            // If parsing fails, treat as regular string
+            responseData.body = anonymizeData(responseData.body);
+          }
+        } else {
+          // Already an object or null/undefined
+          responseData.body = anonymizeData(responseData.body);
+        }
+        logger.debug('🔒 HTTP ANONYMIZATION: Response body anonymized successfully');
+        // Anonymize response headers
+        responseData.headers = anonymizeData(responseData.headers);
+        logger.debug('🔒 HTTP ANONYMIZATION: Response headers anonymized successfully');
+      } catch (error) {
+        logger.warn('Failed to anonymize response data', error);
+      }
+    } else {
+      // Apply shallowMask when HTTP anonymization is disabled
+      responseData.body && (responseData.body = shallowMask('responseBody', responseData.body));
+      responseData.headers &&
+        (responseData.headers = shallowMask('responseHeaders', responseData.headers));
+    }
   }
   const httpInfo = getHttpInfo(requestData, responseData);
 
