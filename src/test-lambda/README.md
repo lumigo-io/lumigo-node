@@ -1,12 +1,30 @@
 # Test Lambda Function for Custom Lumigo Tracer
 
-This directory contains a test Lambda function to validate the custom Lumigo tracer layer integration.
+This directory contains a test Lambda function to validate the custom Lumigo tracer layer integration with DynamoDB operations.
+
+## Features
+
+- **Custom Lumigo Tracer Integration** - Uses the custom tracer as a Lambda layer
+- **DynamoDB Operations** - Creates, uses, and deletes a DynamoDB table
+- **Comprehensive Anonymization Testing** - Tests anonymization across multiple data types
+- **Error Handling** - Includes proper cleanup and error handling
+
+## DynamoDB Operations
+
+The Lambda function performs the following DynamoDB operations:
+
+1. **Create Table** - Creates a temporary DynamoDB table with pay-per-request billing
+2. **Insert Data** - Inserts user data with sensitive information
+3. **Retrieve Data** - Gets the inserted data back from DynamoDB
+4. **Update Data** - Updates the record with processing status
+5. **Scan Table** - Scans all items in the table
+6. **Delete Table** - Cleans up by deleting the temporary table
 
 ## Files
 
-- **`index.js`** - Lambda handler with custom tracer integration
-- **`package.json`** - Lambda function dependencies
-- **`payload.json`** - Test payload with sensitive data for anonymization testing
+- **`index.js`** - Lambda handler with DynamoDB operations and custom tracer integration
+- **`package.json`** - Lambda function dependencies (includes AWS SDK)
+- **`payload.json`** - Test payload with comprehensive sensitive data
 - **`env-vars.json`** - Environment variables template
 - **`env-vars-final.json`** - Environment variables with placeholder token
 

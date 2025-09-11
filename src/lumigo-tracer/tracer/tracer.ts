@@ -86,18 +86,23 @@ const processUserHandler = async <Event>(
     return runUserHandler(userHandler, event, context, callback, responseStream);
   }
 
-    // Anonymize event if anonymization is enabled
-    if (process.env['LUMIGO_ANONYMIZE_ENABLED'] === 'true') {
-      try {
-        event = anonymizeData(event);
-        logger.debug('🔒 ANONYMIZATION: Data-specific anonymization applied successfully');
-      } catch (e) {
-        logger.warn('Failed to apply PII anonymization, using original event', e);
-      }
+  // Store original event for user handler
+  const originalEvent = event;
+  
+  // Anonymize event for tracing purposes only
+  let anonymizedEvent = event;
+  if (process.env['LUMIGO_ANONYMIZE_ENABLED'] === 'true') {
+    try {
+      anonymizedEvent = anonymizeData(event);
+      logger.debug('🔒 ANONYMIZATION: Data-specific anonymization applied successfully');
+    } catch (e) {
+      logger.warn('Failed to apply PII anonymization, using original event', e);
+      anonymizedEvent = event;
     }
+  }
 
   try {
-    TracerGlobals.setHandlerInputs({ event, context });
+    TracerGlobals.setHandlerInputs({ event: anonymizedEvent, context });
     TracerGlobals.setTracerInputs({
       token,
       debug,
@@ -106,7 +111,7 @@ const processUserHandler = async <Event>(
       stepFunction,
       lambdaTimeout: context.getRemainingTimeInMillis(),
     });
-    ExecutionTags.autoTagEvent(event);
+    ExecutionTags.autoTagEvent(anonymizedEvent);
   } catch (err) {
     logger.warn('Failed to start tracer', err);
   }
@@ -117,7 +122,7 @@ const processUserHandler = async <Event>(
     );
     const { err, data, type } = await promisifyUserHandler(
       userHandler,
-      event, // Use original event for user handler
+      originalEvent, // Use original event for user handler
       context,
       responseStream
     );
@@ -127,7 +132,7 @@ const processUserHandler = async <Event>(
   if (context.__wrappedByLumigo) {
     const { err, data, type } = await promisifyUserHandler(
       userHandler,
-      event, // Use original event for user handler
+      originalEvent, // Use original event for user handler
       context,
       responseStream
     );
@@ -135,12 +140,12 @@ const processUserHandler = async <Event>(
   }
   context.__wrappedByLumigo = true;
 
-  const functionSpan = getFunctionSpan(event, context);
+  const functionSpan = getFunctionSpan(anonymizedEvent, context);
 
   await hookUnhandledRejection(functionSpan);
 
   const pStartTrace = startTrace(functionSpan);
-  const pUserHandler = promisifyUserHandler(userHandler, event, context, responseStream); // Use original event for user handler
+  const pUserHandler = promisifyUserHandler(userHandler, originalEvent, context, responseStream); // Use original event for user handler
 
   let [, handlerReturnValue] = await Promise.all([pStartTrace, pUserHandler]);
 
