@@ -1,5 +1,8 @@
 # Lumigo Tracer Custom Anonymization
 
+> **⚠️ DISCLAIMER: This is NOT an official Lumigo release**  
+> This is a custom implementation created as an example to demonstrate how to add anonymization capabilities to Lumigo's tracer. While it works and has been tested, it is not officially supported by Lumigo. Use at your own discretion and consider this a proof-of-concept implementation.
+
 This project demonstrates how to inject custom data anonymization logic directly into Lumigo's tracer source code to anonymize sensitive data before it's sent to Lumigo.
 
 ## Overview
