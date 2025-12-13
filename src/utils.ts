@@ -22,6 +22,11 @@ type xRayTraceIdFields = {
 export const getRandomId = CommonUtils.getRandomId;
 export const getRandomString = CommonUtils.getRandomString;
 export const md5Hash = CommonUtils.md5Hash;
+
+export const getNodeMajorVersion = (): number => {
+  const [major] = process.versions.node.split('.').map(Number);
+  return major;
+};
 export const SPAN_PATH = '/api/spans';
 export const LUMIGO_TRACER_EDGE = 'lumigo-tracer-edge.golumigo.com';
 export const LUMIGO_DEFAULT_DOMAIN_SCRUBBERS =

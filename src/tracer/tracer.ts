@@ -34,6 +34,7 @@ import {
   STEP_FUNCTION_UID_KEY,
   SWITCH_OFF_FLAG,
   removeLumigoFromError,
+  getNodeMajorVersion,
 } from '../utils';
 import { runOneTimeWrapper } from '../utils/functionUtils';
 import { TraceOptions } from './trace-options.type';
@@ -249,13 +250,30 @@ export function promisifyUserHandler(
 ): Promise<{ err: any; data: any; type: string }> {
   return new Promise((resolve) => {
     try {
-      const result = isResponseStreamFunction(userHandler)
-        ? userHandler(event, responseStream, context, callbackResolver(resolve))
-        : userHandler(event, context, callbackResolver(resolve));
+      // Node.js 24+ doesn't support callback-based handlers
+      // https://docs.aws.amazon.com/lambda/latest/dg/nodejs-handler.html
+      const nodeMajorVersion = getNodeMajorVersion();
+      const shouldPassCallback = nodeMajorVersion < 24;
+
+      let result;
+      if (isResponseStreamFunction(userHandler)) {
+        result = shouldPassCallback
+          ? userHandler(event, responseStream, context, callbackResolver(resolve))
+          : userHandler(event, responseStream, context);
+      } else {
+        result = shouldPassCallback
+          ? userHandler(event, context, callbackResolver(resolve))
+          : userHandler(event, context);
+      }
+
       if (isPromise(result)) {
         result
           .then((data) => resolve({ err: null, data, type: ASYNC_HANDLER_RESOLVED }))
           .catch((err) => resolve({ err, data: null, type: ASYNC_HANDLER_REJECTED }));
+      } else if (!shouldPassCallback) {
+        // In Node.js 24+, handlers MUST return a promise
+        // If they don't, treat the result as the resolved value
+        resolve({ err: null, data: result, type: ASYNC_HANDLER_RESOLVED });
       }
     } catch (err) {
       resolve({ err, data: null, type: NON_ASYNC_HANDLER_ERRORED });
