@@ -60,10 +60,19 @@ const runUserHandler = <Event>(
   context: Context,
   callback?: Callback,
   responseStream?: any
-) =>
-  isResponseStreamFunction(userHandler)
-    ? userHandler(event, responseStream, context, callback)
-    : userHandler(event, context, callback);
+) => {
+  // Node.js 24+ doesn't support callback-based handlers
+  const nodeMajorVersion = getNodeMajorVersion();
+  const shouldPassCallback = nodeMajorVersion < 24;
+
+  if (isResponseStreamFunction(userHandler)) {
+    return shouldPassCallback
+      ? userHandler(event, responseStream, context, callback)
+      : userHandler(event, responseStream, context);
+  } else {
+    return shouldPassCallback ? userHandler(event, context, callback) : userHandler(event, context);
+  }
+};
 
 const processUserHandler = async <Event>(
   userHandler: any,
@@ -270,10 +279,6 @@ export function promisifyUserHandler(
         result
           .then((data) => resolve({ err: null, data, type: ASYNC_HANDLER_RESOLVED }))
           .catch((err) => resolve({ err, data: null, type: ASYNC_HANDLER_REJECTED }));
-      } else if (!shouldPassCallback) {
-        // In Node.js 24+, handlers MUST return a promise
-        // If they don't, treat the result as the resolved value
-        resolve({ err: null, data: result, type: ASYNC_HANDLER_RESOLVED });
       }
     } catch (err) {
       resolve({ err, data: null, type: NON_ASYNC_HANDLER_ERRORED });

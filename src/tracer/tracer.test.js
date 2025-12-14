@@ -406,6 +406,111 @@ describe('tracer', () => {
       type: tracer.HANDLER_CALLBACKED,
     });
   });
+
+  test('promisifyUserHandler Node.js 24+ - async handler without callback', async () => {
+    const getNodeMajorVersionSpy = jest.spyOn(utils, 'getNodeMajorVersion');
+    getNodeMajorVersionSpy.mockReturnValue(24);
+
+    const { event, context } = new HandlerInputsBuilder().build();
+    const data = 'Node 24 async handler';
+
+    const asyncHandler = async (event, context) => {
+      return data;
+    };
+
+    await expect(tracer.promisifyUserHandler(asyncHandler, event, context)).resolves.toEqual({
+      err: null,
+      data,
+      type: tracer.ASYNC_HANDLER_RESOLVED,
+    });
+
+    getNodeMajorVersionSpy.mockRestore();
+  });
+
+  test('promisifyUserHandler Node.js 24+ - async handler rejection', async () => {
+    const getNodeMajorVersionSpy = jest.spyOn(utils, 'getNodeMajorVersion');
+    getNodeMajorVersionSpy.mockReturnValue(24);
+
+    const { event, context } = new HandlerInputsBuilder().build();
+    const err = new Error('Node 24 rejection');
+
+    const asyncHandler = async (event, context) => {
+      throw err;
+    };
+
+    await expect(tracer.promisifyUserHandler(asyncHandler, event, context)).resolves.toEqual({
+      err,
+      data: null,
+      type: tracer.ASYNC_HANDLER_REJECTED,
+    });
+
+    getNodeMajorVersionSpy.mockRestore();
+  });
+
+  test('promisifyUserHandler Node.js 24+ - response stream handler', async () => {
+    const getNodeMajorVersionSpy = jest.spyOn(utils, 'getNodeMajorVersion');
+    getNodeMajorVersionSpy.mockReturnValue(24);
+
+    const { event, context, responseStream } = new HandlerInputsBuilder()
+      .withResponseStream({ test: 'data' })
+      .build();
+
+    const streamHandler = async (event, responseStream, context) => {
+      return { streamed: true };
+    };
+    streamHandler[tracer.HANDLER_STREAMING] = tracer.STREAM_RESPONSE;
+
+    await expect(
+      tracer.promisifyUserHandler(streamHandler, event, context, responseStream)
+    ).resolves.toEqual({
+      err: null,
+      data: { streamed: true },
+      type: tracer.ASYNC_HANDLER_RESOLVED,
+    });
+
+    getNodeMajorVersionSpy.mockRestore();
+  });
+
+  test('promisifyUserHandler Node.js < 24 - callback handler still works', async () => {
+    const getNodeMajorVersionSpy = jest.spyOn(utils, 'getNodeMajorVersion');
+    getNodeMajorVersionSpy.mockReturnValue(20);
+
+    const { event, context } = new HandlerInputsBuilder().build();
+    const data = 'callback data';
+
+    const callbackHandler = (event, context, callback) => {
+      callback(null, data);
+    };
+
+    await expect(tracer.promisifyUserHandler(callbackHandler, event, context)).resolves.toEqual({
+      err: null,
+      data,
+      type: tracer.HANDLER_CALLBACKED,
+    });
+
+    getNodeMajorVersionSpy.mockRestore();
+  });
+
+  test('trace; Node.js 24+ with tracing disabled - async handler works', async () => {
+    const getNodeMajorVersionSpy = jest.spyOn(utils, 'getNodeMajorVersion');
+    getNodeMajorVersionSpy.mockReturnValue(24);
+
+    new EnvironmentBuilder().awsEnvironment().applyEnv();
+    utils.setSwitchOff();
+
+    const { event, context } = new HandlerInputsBuilder().build();
+    const data = 'Node 24 with tracing disabled';
+
+    const asyncHandler = async (event, context) => {
+      return data;
+    };
+
+    const lumigoTracer = require('../index')({ token: TOKEN });
+    const result = await lumigoTracer.trace(asyncHandler)(event, context);
+
+    expect(result).toEqual(data);
+    getNodeMajorVersionSpy.mockRestore();
+  });
   each([['t_'], [''], ['10faa5e13e7844aaa1234']]).test('trace; invalid token [%s]', (token) => {
     require('../index')({ token });
     expect(spies.warnClient).toBeCalledWith(
