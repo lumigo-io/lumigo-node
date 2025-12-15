@@ -35,6 +35,8 @@ import {
   SWITCH_OFF_FLAG,
   removeLumigoFromError,
   getNodeMajorVersion,
+  isNode24Plus,
+  supportsCallbackHandlers,
 } from '../utils';
 import { runOneTimeWrapper } from '../utils/functionUtils';
 import { TraceOptions } from './trace-options.type';
@@ -62,10 +64,17 @@ const runUserHandler = <Event>(
   responseStream?: any
 ) => {
   // Node.js 24+ doesn't support callback-based handlers
-  const nodeMajorVersion = getNodeMajorVersion();
-  const shouldPassCallback = nodeMajorVersion < 24;
+  const shouldPassCallback = supportsCallbackHandlers();
+  const isStreamHandler = isResponseStreamFunction(userHandler);
 
-  if (isResponseStreamFunction(userHandler)) {
+  logger.debug('runUserHandler: Node.js version compatibility check', {
+    nodeMajorVersion: getNodeMajorVersion(),
+    shouldPassCallback,
+    isStreamHandler,
+    handlerParamCount: userHandler.length,
+  });
+
+  if (isStreamHandler) {
     return shouldPassCallback
       ? userHandler(event, responseStream, context, callback)
       : userHandler(event, responseStream, context);
@@ -83,6 +92,16 @@ const processUserHandler = async <Event>(
   responseStream?: any
 ) => {
   const { token, debug, edgeHost, switchOff, stepFunction } = options;
+
+  logger.debug('processUserHandler: Entry', {
+    hasEvent: !!event,
+    hasContext: !!context,
+    contextType: typeof context,
+    contextValue: context,
+    isAwsContext: context ? isAwsContext(context) : false,
+    hasCallback: !!callback,
+    hasResponseStream: !!responseStream,
+  });
 
   if (!!switchOff || isSwitchedOff()) {
     info(
@@ -162,29 +181,86 @@ const decorateUserHandler = <T extends Handler | ResponseStreamHandler>(
   userHandler: T,
   options: TraceOptions
 ) => {
-  const decoratedUserHandler = async <Event = any>(
-    event: Event,
-    context?: Context,
-    callback?: Callback
-  ): Promise<Handler> => {
-    return await processUserHandler(userHandler, event, context, options, callback, undefined);
-  };
+  const isNode24 = isNode24Plus();
 
-  const decoratedResponseStreamUserHandler = async <Event = any>(
-    event: Event,
-    responseStream?: any,
-    context?: Context,
-    callback?: Callback
-  ): Promise<ResponseStreamHandler> => {
-    return await processUserHandler(userHandler, event, context, options, callback, responseStream);
-  };
+  logger.debug('decorateUserHandler: Creating wrapper', {
+    nodeMajorVersion: getNodeMajorVersion(),
+    isNode24Plus: isNode24,
+    isResponseStream: isResponseStreamFunction(userHandler),
+  });
 
-  if (isResponseStreamFunction(userHandler)) {
-    logger.debug('Function has response stream in the handler');
-    decoratedResponseStreamUserHandler[HANDLER_STREAMING] = STREAM_RESPONSE;
-    return decoratedResponseStreamUserHandler as T;
+  // Node.js 24+ doesn't allow callback parameter in handler signature
+  if (isNode24) {
+    const decoratedUserHandlerNode24 = async <Event = any>(
+      event: Event,
+      context?: Context
+    ): Promise<Handler> => {
+      logger.debug('decoratedUserHandlerNode24: Invoked', {
+        hasEvent: !!event,
+        hasContext: !!context,
+        contextType: typeof context,
+        contextKeys: context ? Object.keys(context) : [],
+        isAwsContext: context ? isAwsContext(context) : false,
+        userHandlerParamCount: userHandler.length,
+      });
+      return await processUserHandler(userHandler, event, context, options, undefined, undefined);
+    };
+
+    const decoratedResponseStreamUserHandlerNode24 = async <Event = any>(
+      event: Event,
+      responseStream?: any,
+      context?: Context
+    ): Promise<ResponseStreamHandler> => {
+      return await processUserHandler(
+        userHandler,
+        event,
+        context,
+        options,
+        undefined,
+        responseStream
+      );
+    };
+
+    if (isResponseStreamFunction(userHandler)) {
+      logger.debug('Function has response stream in the handler');
+      decoratedResponseStreamUserHandlerNode24[HANDLER_STREAMING] = STREAM_RESPONSE;
+      return decoratedResponseStreamUserHandlerNode24 as unknown as T;
+    } else {
+      return decoratedUserHandlerNode24 as unknown as T;
+    }
   } else {
-    return decoratedUserHandler as T;
+    // Node.js < 24: Keep callback parameter for backward compatibility
+    const decoratedUserHandler = async <Event = any>(
+      event: Event,
+      context?: Context,
+      callback?: Callback
+    ): Promise<Handler> => {
+      return await processUserHandler(userHandler, event, context, options, callback, undefined);
+    };
+
+    const decoratedResponseStreamUserHandler = async <Event = any>(
+      event: Event,
+      responseStream?: any,
+      context?: Context,
+      callback?: Callback
+    ): Promise<ResponseStreamHandler> => {
+      return await processUserHandler(
+        userHandler,
+        event,
+        context,
+        options,
+        callback,
+        responseStream
+      );
+    };
+
+    if (isResponseStreamFunction(userHandler)) {
+      logger.debug('Function has response stream in the handler');
+      decoratedResponseStreamUserHandler[HANDLER_STREAMING] = STREAM_RESPONSE;
+      return decoratedResponseStreamUserHandler as T;
+    } else {
+      return decoratedUserHandler as T;
+    }
   }
 };
 
@@ -261,11 +337,19 @@ export function promisifyUserHandler(
     try {
       // Node.js 24+ doesn't support callback-based handlers
       // https://docs.aws.amazon.com/lambda/latest/dg/nodejs-handler.html
-      const nodeMajorVersion = getNodeMajorVersion();
-      const shouldPassCallback = nodeMajorVersion < 24;
+      const shouldPassCallback = supportsCallbackHandlers();
+      const isStreamHandler = isResponseStreamFunction(userHandler);
+
+      logger.debug('promisifyUserHandler: Node.js version compatibility check', {
+        nodeMajorVersion: getNodeMajorVersion(),
+        shouldPassCallback,
+        isStreamHandler,
+        handlerParamCount: userHandler.length,
+        handlerName: userHandler.name || '<anonymous>',
+      });
 
       let result;
-      if (isResponseStreamFunction(userHandler)) {
+      if (isStreamHandler) {
         result = shouldPassCallback
           ? userHandler(event, responseStream, context, callbackResolver(resolve))
           : userHandler(event, responseStream, context);
@@ -275,12 +359,29 @@ export function promisifyUserHandler(
           : userHandler(event, context);
       }
 
-      if (isPromise(result)) {
+      const isResultPromise = isPromise(result);
+      logger.debug('promisifyUserHandler: Handler invoked', {
+        isResultPromise,
+        resultType: typeof result,
+      });
+
+      if (isResultPromise) {
         result
-          .then((data) => resolve({ err: null, data, type: ASYNC_HANDLER_RESOLVED }))
-          .catch((err) => resolve({ err, data: null, type: ASYNC_HANDLER_REJECTED }));
+          .then((data) => {
+            logger.debug('promisifyUserHandler: Handler promise resolved');
+            resolve({ err: null, data, type: ASYNC_HANDLER_RESOLVED });
+          })
+          .catch((err) => {
+            logger.debug('promisifyUserHandler: Handler promise rejected', {
+              errorMessage: err?.message,
+            });
+            resolve({ err, data: null, type: ASYNC_HANDLER_REJECTED });
+          });
       }
     } catch (err) {
+      logger.debug('promisifyUserHandler: Handler threw synchronous error', {
+        errorMessage: err?.message,
+      });
       resolve({ err, data: null, type: NON_ASYNC_HANDLER_ERRORED });
     }
   });

@@ -27,6 +27,23 @@ export const getNodeMajorVersion = (): number => {
   const [major] = process.versions.node.split('.').map(Number);
   return major;
 };
+
+/**
+ * Checks if the current Node.js version is 24 or higher.
+ * Node.js 24+ removed callback support from Lambda handlers.
+ */
+export const isNode24Plus = (): boolean => {
+  return getNodeMajorVersion() >= 24;
+};
+
+/**
+ * Checks if the current Node.js version supports callback-based Lambda handlers.
+ * Callbacks are deprecated starting from Node.js 24.
+ */
+export const supportsCallbackHandlers = (): boolean => {
+  return getNodeMajorVersion() < 24;
+};
+
 export const SPAN_PATH = '/api/spans';
 export const LUMIGO_TRACER_EDGE = 'lumigo-tracer-edge.golumigo.com';
 export const LUMIGO_DEFAULT_DOMAIN_SCRUBBERS =
