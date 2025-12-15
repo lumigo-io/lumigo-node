@@ -55,7 +55,7 @@ export const LEAK_MESSAGE =
 const isResponseStreamFunction = (userHandler: any) =>
   userHandler[HANDLER_STREAMING] === STREAM_RESPONSE;
 
-const runUserHandler = <Event>(
+export const runUserHandler = <Event>(
   userHandler: any,
   event: Event,
   context: Context,

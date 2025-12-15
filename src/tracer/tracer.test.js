@@ -987,4 +987,72 @@ describe('tracer', () => {
     const requests = AxiosMocker.getRequests();
     expect(requests.length).toEqual(2);
   });
+
+  describe('runUserHandler', () => {
+    test('non-stream handler with callback support - passes callback', () => {
+      const supportsCallbackSpy = jest.spyOn(utils, 'supportsCallbackHandlers');
+      supportsCallbackSpy.mockReturnValue(true);
+
+      const { event, context } = new HandlerInputsBuilder().build();
+      const callback = jest.fn();
+      const userHandler = jest.fn().mockReturnValue('result');
+
+      tracer.runUserHandler(userHandler, event, context, callback);
+
+      expect(userHandler).toHaveBeenCalledWith(event, context, callback);
+
+      supportsCallbackSpy.mockRestore();
+    });
+
+    test('non-stream handler without callback support - does NOT pass callback', () => {
+      const supportsCallbackSpy = jest.spyOn(utils, 'supportsCallbackHandlers');
+      supportsCallbackSpy.mockReturnValue(false);
+
+      const { event, context } = new HandlerInputsBuilder().build();
+      const callback = jest.fn();
+      const userHandler = jest.fn().mockReturnValue('result');
+
+      tracer.runUserHandler(userHandler, event, context, callback);
+
+      expect(userHandler).toHaveBeenCalledWith(event, context);
+
+      supportsCallbackSpy.mockRestore();
+    });
+
+    test('stream handler with callback support - passes callback', () => {
+      const supportsCallbackSpy = jest.spyOn(utils, 'supportsCallbackHandlers');
+      supportsCallbackSpy.mockReturnValue(true);
+
+      const { event, context, responseStream } = new HandlerInputsBuilder()
+        .withResponseStream({ stream: 'data' })
+        .build();
+      const callback = jest.fn();
+      const userHandler = jest.fn().mockReturnValue('result');
+      userHandler[HANDLER_STREAMING] = STREAM_RESPONSE;
+
+      tracer.runUserHandler(userHandler, event, context, callback, responseStream);
+
+      expect(userHandler).toHaveBeenCalledWith(event, responseStream, context, callback);
+
+      supportsCallbackSpy.mockRestore();
+    });
+
+    test('stream handler without callback support - does NOT pass callback', () => {
+      const supportsCallbackSpy = jest.spyOn(utils, 'supportsCallbackHandlers');
+      supportsCallbackSpy.mockReturnValue(false);
+
+      const { event, context, responseStream } = new HandlerInputsBuilder()
+        .withResponseStream({ stream: 'data' })
+        .build();
+      const callback = jest.fn();
+      const userHandler = jest.fn().mockReturnValue('result');
+      userHandler[HANDLER_STREAMING] = STREAM_RESPONSE;
+
+      tracer.runUserHandler(userHandler, event, context, callback, responseStream);
+
+      expect(userHandler).toHaveBeenCalledWith(event, responseStream, context);
+
+      supportsCallbackSpy.mockRestore();
+    });
+  });
 });
