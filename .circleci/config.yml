@@ -78,7 +78,6 @@ workflows:
         requires:
           - test
           - test-18
-          - test-24
           - lumigo-orb/vulnerability-scan
           - lumigo-orb/integration-test-parallel
 
