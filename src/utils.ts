@@ -29,16 +29,9 @@ export const getNodeMajorVersion = (): number => {
 };
 
 /**
- * Checks if the current Node.js version is 24 or higher.
- * Node.js 24+ removed callback support from Lambda handlers.
- */
-export const isNode24Plus = (): boolean => {
-  return getNodeMajorVersion() >= 24;
-};
-
-/**
  * Checks if the current Node.js version supports callback-based Lambda handlers.
  * Callbacks are deprecated starting from Node.js 24.
+ * @returns true if Node < 24 (supports callbacks), false if Node >= 24 (no callback support)
  */
 export const supportsCallbackHandlers = (): boolean => {
   return getNodeMajorVersion() < 24;

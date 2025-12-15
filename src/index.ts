@@ -13,7 +13,7 @@ import { HttpSpansAgent } from './httpSpansAgent';
 import * as logger from './logger';
 import * as LumigoLogger from './lumigoLogger';
 
-logger.debug('Tracer imported - draft 2.0');
+logger.debug('Tracer imported');
 
 const defaultOptions: Partial<TracerOptions> = {
   switchOff: false,
