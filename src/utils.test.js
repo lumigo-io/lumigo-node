@@ -1286,39 +1286,41 @@ describe('utils', () => {
     expect(result).toEqual(expectedStack);
   });
 
-  test('getNodeMajorVersion -> returns current Node major version', () => {
-    const result = getNodeMajorVersion();
-    const expectedMajorVersion = parseInt(process.versions.node.split('.')[0]);
+  test('getNodeMajorVersion -> extracts version from AWS_EXECUTION_ENV', () => {
+    const originalEnv = process.env.AWS_EXECUTION_ENV;
 
-    expect(result).toEqual(expectedMajorVersion);
-    expect(typeof result).toBe('number');
-    expect(result).toBeGreaterThan(0);
+    process.env.AWS_EXECUTION_ENV = 'AWS_Lambda_nodejs20.x';
+    expect(getNodeMajorVersion()).toEqual(20);
+
+    process.env.AWS_EXECUTION_ENV = 'AWS_Lambda_nodejs24.x';
+    expect(getNodeMajorVersion()).toEqual(24);
+
+    process.env.AWS_EXECUTION_ENV = '';
+    expect(getNodeMajorVersion()).toEqual(0);
+
+    delete process.env.AWS_EXECUTION_ENV;
+    expect(getNodeMajorVersion()).toEqual(0);
+
+    process.env.AWS_EXECUTION_ENV = originalEnv;
   });
 
   test('supportsCallbackHandlers -> correctly determines callback support', () => {
-    const originalNodeVersion = process.versions.node;
+    const originalEnv = process.env.AWS_EXECUTION_ENV;
 
-    // Test multiple Node versions
     [18, 20, 22, 23].forEach((version) => {
-      Object.defineProperty(process.versions, 'node', {
-        value: `${version}.0.0`,
-        configurable: true,
-      });
+      process.env.AWS_EXECUTION_ENV = `AWS_Lambda_nodejs${version}.x`;
       expect(utils.supportsCallbackHandlers()).toBe(true);
     });
 
     [24, 25, 30].forEach((version) => {
-      Object.defineProperty(process.versions, 'node', {
-        value: `${version}.0.0`,
-        configurable: true,
-      });
+      process.env.AWS_EXECUTION_ENV = `AWS_Lambda_nodejs${version}.x`;
       expect(utils.supportsCallbackHandlers()).toBe(false);
     });
 
+    delete process.env.AWS_EXECUTION_ENV;
+    expect(utils.supportsCallbackHandlers()).toBe(true);
+
     // Restore
-    Object.defineProperty(process.versions, 'node', {
-      value: originalNodeVersion,
-      configurable: true,
-    });
+    process.env.AWS_EXECUTION_ENV = originalEnv;
   });
 });

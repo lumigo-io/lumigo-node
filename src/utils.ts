@@ -24,8 +24,13 @@ export const getRandomString = CommonUtils.getRandomString;
 export const md5Hash = CommonUtils.md5Hash;
 
 export const getNodeMajorVersion = (): number => {
-  const [major] = process.versions.node.split('.').map(Number);
-  return major;
+  // Extract Node version from AWS_EXECUTION_ENV
+  const execEnv = process.env.AWS_EXECUTION_ENV || '';
+  const match = execEnv.match(/nodejs(\d+)/);
+  if (match) {
+    return parseInt(match[1], 10);
+  }
+  return 0;
 };
 
 /**
