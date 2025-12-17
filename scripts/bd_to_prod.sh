@@ -39,7 +39,7 @@ echo "Creating layer file again so the tarball will have the right version numbe
 ./scripts/prepare_layer_files.sh
 
 echo "Creating lumigo-node layer"
-../utils/common_bash/create_layer.sh --layer-name lumigo-node-tracer --region ALL --package-folder "nodejs lumigo_wrapper" --version $(git describe --abbrev=0 --tags) --runtimes "nodejs16.x nodejs18.x nodejs20.x nodejs22.x"
+../utils/common_bash/create_layer.sh --layer-name lumigo-node-tracer --region ALL --package-folder "nodejs lumigo_wrapper" --version $(git describe --abbrev=0 --tags) --runtimes "nodejs16.x nodejs18.x nodejs20.x nodejs22.x nodejs24.x"
 
 echo "Creating layer latest version arn table md file (LAYERS.md)"
 cd ../larn && npm i -g
@@ -49,6 +49,7 @@ larn -r nodejs16.x -n layers/LAYERS16x --filter lumigo-node-tracer -p ~/lumigo-n
 larn -r nodejs18.x -n layers/LAYERS18x --filter lumigo-node-tracer -p ~/lumigo-node
 larn -r nodejs20.x -n layers/LAYERS20x --filter lumigo-node-tracer -p ~/lumigo-node
 larn -r nodejs22.x -n layers/LAYERS22x --filter lumigo-node-tracer -p ~/lumigo-node
+larn -r nodejs24.x -n layers/LAYERS24x --filter lumigo-node-tracer -p ~/lumigo-node
 cd ../lumigo-node
 git add layers/LAYERS12x.md
 git add layers/LAYERS14x.md
@@ -56,6 +57,7 @@ git add layers/LAYERS16x.md
 git add layers/LAYERS18x.md
 git add layers/LAYERS20x.md
 git add layers/LAYERS22x.md
+git add layers/LAYERS24x.md
 git commit -m "docs: layers md [skip ci]"
 
 source ../utils/common_bash/functions.sh

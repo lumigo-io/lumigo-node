@@ -35,6 +35,8 @@ import {
   removeLumigoFromError,
   removeLumigoFromStacktrace,
   LUMIGO_SECRET_MASKING_DEBUG,
+  getNodeMajorVersion,
+  supportsCallbackHandlers,
 } from './utils';
 
 describe('utils', () => {
@@ -1282,5 +1284,43 @@ describe('utils', () => {
     const result = removeLumigoFromError(err.stack);
 
     expect(result).toEqual(expectedStack);
+  });
+
+  test('getNodeMajorVersion -> extracts version from AWS_EXECUTION_ENV', () => {
+    const originalEnv = process.env.AWS_EXECUTION_ENV;
+
+    process.env.AWS_EXECUTION_ENV = 'AWS_Lambda_nodejs20.x';
+    expect(getNodeMajorVersion()).toEqual(20);
+
+    process.env.AWS_EXECUTION_ENV = 'AWS_Lambda_nodejs24.x';
+    expect(getNodeMajorVersion()).toEqual(24);
+
+    process.env.AWS_EXECUTION_ENV = '';
+    expect(getNodeMajorVersion()).toEqual(0);
+
+    delete process.env.AWS_EXECUTION_ENV;
+    expect(getNodeMajorVersion()).toEqual(0);
+
+    process.env.AWS_EXECUTION_ENV = originalEnv;
+  });
+
+  test('supportsCallbackHandlers -> correctly determines callback support', () => {
+    const originalEnv = process.env.AWS_EXECUTION_ENV;
+
+    [18, 20, 22, 23].forEach((version) => {
+      process.env.AWS_EXECUTION_ENV = `AWS_Lambda_nodejs${version}.x`;
+      expect(utils.supportsCallbackHandlers()).toBe(true);
+    });
+
+    [24, 25, 30].forEach((version) => {
+      process.env.AWS_EXECUTION_ENV = `AWS_Lambda_nodejs${version}.x`;
+      expect(utils.supportsCallbackHandlers()).toBe(false);
+    });
+
+    delete process.env.AWS_EXECUTION_ENV;
+    expect(utils.supportsCallbackHandlers()).toBe(true);
+
+    // Restore
+    process.env.AWS_EXECUTION_ENV = originalEnv;
   });
 });

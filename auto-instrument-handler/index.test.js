@@ -1,7 +1,7 @@
 const index = require('./index');
 
 describe('tracer', () => {
-  test('handler call the original function', () => {
+  test('handler call the original function', () => {  
     process.env[index.LUMIGO_SWITCH_OFF] = 'TRUE';
     process.env.LAMBDA_TASK_ROOT = '/var/task';
 
@@ -41,5 +41,37 @@ describe('tracer', () => {
     ] = `${__dirname}/testdata/example_handler.my_handler`;
     expect(index.handler({}, {})).resolves.toEqual({ hello: 'world' });
   });
+});
 
+describe('Node.js version compatibility', () => {
+  const originalEnv = process.env.AWS_EXECUTION_ENV;
+
+  afterEach(() => {
+    jest.resetModules();
+    process.env.AWS_EXECUTION_ENV = originalEnv;
+  });
+
+  test('handler has callback parameter for Node 20', () => {
+    jest.resetModules();
+    process.env.AWS_EXECUTION_ENV = 'AWS_Lambda_nodejs20.x';
+    const freshIndex = require('./index');
+    // Legacy handler has 3 parameters (event, context, callback)
+    expect(freshIndex.handler.length).toBe(3);
+  });
+
+  test('handler has no callback parameter for Node 24', () => {
+    jest.resetModules();
+    process.env.AWS_EXECUTION_ENV = 'AWS_Lambda_nodejs24.x';
+    const freshIndex = require('./index');
+    // Node 24+ handler has 2 parameters (event, context)
+    expect(freshIndex.handler.length).toBe(2);
+  });
+
+  test('handler has no callback parameter for Node 25', () => {
+    jest.resetModules();
+    process.env.AWS_EXECUTION_ENV = 'AWS_Lambda_nodejs25.x';
+    const freshIndex = require('./index');
+    // Node 25+ handler has 2 parameters (event, context)
+    expect(freshIndex.handler.length).toBe(2);
+  });
 });

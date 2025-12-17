@@ -406,6 +406,111 @@ describe('tracer', () => {
       type: tracer.HANDLER_CALLBACKED,
     });
   });
+
+  test('promisifyUserHandler Node.js 24+ - async handler without callback', async () => {
+    const getNodeMajorVersionSpy = jest.spyOn(utils, 'getNodeMajorVersion');
+    getNodeMajorVersionSpy.mockReturnValue(24);
+
+    const { event, context } = new HandlerInputsBuilder().build();
+    const data = 'Node 24 async handler';
+
+    const asyncHandler = async (event, context) => {
+      return data;
+    };
+
+    await expect(tracer.promisifyUserHandler(asyncHandler, event, context)).resolves.toEqual({
+      err: null,
+      data,
+      type: tracer.ASYNC_HANDLER_RESOLVED,
+    });
+
+    getNodeMajorVersionSpy.mockRestore();
+  });
+
+  test('promisifyUserHandler Node.js 24+ - async handler rejection', async () => {
+    const getNodeMajorVersionSpy = jest.spyOn(utils, 'getNodeMajorVersion');
+    getNodeMajorVersionSpy.mockReturnValue(24);
+
+    const { event, context } = new HandlerInputsBuilder().build();
+    const err = new Error('Node 24 rejection');
+
+    const asyncHandler = async (event, context) => {
+      throw err;
+    };
+
+    await expect(tracer.promisifyUserHandler(asyncHandler, event, context)).resolves.toEqual({
+      err,
+      data: null,
+      type: tracer.ASYNC_HANDLER_REJECTED,
+    });
+
+    getNodeMajorVersionSpy.mockRestore();
+  });
+
+  test('promisifyUserHandler Node.js 24+ - response stream handler', async () => {
+    const getNodeMajorVersionSpy = jest.spyOn(utils, 'getNodeMajorVersion');
+    getNodeMajorVersionSpy.mockReturnValue(24);
+
+    const { event, context, responseStream } = new HandlerInputsBuilder()
+      .withResponseStream({ test: 'data' })
+      .build();
+
+    const streamHandler = async (event, responseStream, context) => {
+      return { streamed: true };
+    };
+    streamHandler[tracer.HANDLER_STREAMING] = tracer.STREAM_RESPONSE;
+
+    await expect(
+      tracer.promisifyUserHandler(streamHandler, event, context, responseStream)
+    ).resolves.toEqual({
+      err: null,
+      data: { streamed: true },
+      type: tracer.ASYNC_HANDLER_RESOLVED,
+    });
+
+    getNodeMajorVersionSpy.mockRestore();
+  });
+
+  test('promisifyUserHandler Node.js < 24 - callback handler still works', async () => {
+    const getNodeMajorVersionSpy = jest.spyOn(utils, 'getNodeMajorVersion');
+    getNodeMajorVersionSpy.mockReturnValue(20);
+
+    const { event, context } = new HandlerInputsBuilder().build();
+    const data = 'callback data';
+
+    const callbackHandler = (event, context, callback) => {
+      callback(null, data);
+    };
+
+    await expect(tracer.promisifyUserHandler(callbackHandler, event, context)).resolves.toEqual({
+      err: null,
+      data,
+      type: tracer.HANDLER_CALLBACKED,
+    });
+
+    getNodeMajorVersionSpy.mockRestore();
+  });
+
+  test('trace; Node.js 24+ with tracing disabled - async handler works', async () => {
+    const getNodeMajorVersionSpy = jest.spyOn(utils, 'getNodeMajorVersion');
+    getNodeMajorVersionSpy.mockReturnValue(24);
+
+    new EnvironmentBuilder().awsEnvironment().applyEnv();
+    utils.setSwitchOff();
+
+    const { event, context } = new HandlerInputsBuilder().build();
+    const data = 'Node 24 with tracing disabled';
+
+    const asyncHandler = async (event, context) => {
+      return data;
+    };
+
+    const lumigoTracer = require('../index')({ token: TOKEN });
+    const result = await lumigoTracer.trace(asyncHandler)(event, context);
+
+    expect(result).toEqual(data);
+    getNodeMajorVersionSpy.mockRestore();
+  });
   each([['t_'], [''], ['10faa5e13e7844aaa1234']]).test('trace; invalid token [%s]', (token) => {
     require('../index')({ token });
     expect(spies.warnClient).toBeCalledWith(
@@ -881,5 +986,187 @@ describe('tracer', () => {
     expect(result[LUMIGO_EVENT_KEY][STEP_FUNCTION_UID_KEY]).not.toEqual('old');
     const requests = AxiosMocker.getRequests();
     expect(requests.length).toEqual(2);
+  });
+
+  describe('runUserHandler', () => {
+    test('non-stream handler with callback support - passes callback', () => {
+      const supportsCallbackSpy = jest.spyOn(utils, 'supportsCallbackHandlers');
+      supportsCallbackSpy.mockReturnValue(true);
+
+      const { event, context } = new HandlerInputsBuilder().build();
+      const callback = jest.fn();
+      const userHandler = jest.fn().mockReturnValue('result');
+
+      tracer.runUserHandler(userHandler, event, context, callback);
+
+      expect(userHandler).toHaveBeenCalledWith(event, context, callback);
+
+      supportsCallbackSpy.mockRestore();
+    });
+
+    test('non-stream handler without callback support - does NOT pass callback', () => {
+      const supportsCallbackSpy = jest.spyOn(utils, 'supportsCallbackHandlers');
+      supportsCallbackSpy.mockReturnValue(false);
+
+      const { event, context } = new HandlerInputsBuilder().build();
+      const callback = jest.fn();
+      const userHandler = jest.fn().mockReturnValue('result');
+
+      tracer.runUserHandler(userHandler, event, context, callback);
+
+      expect(userHandler).toHaveBeenCalledWith(event, context);
+
+      supportsCallbackSpy.mockRestore();
+    });
+
+    test('stream handler with callback support - passes callback', () => {
+      const supportsCallbackSpy = jest.spyOn(utils, 'supportsCallbackHandlers');
+      supportsCallbackSpy.mockReturnValue(true);
+
+      const { event, context, responseStream } = new HandlerInputsBuilder()
+        .withResponseStream({ stream: 'data' })
+        .build();
+      const callback = jest.fn();
+      const userHandler = jest.fn().mockReturnValue('result');
+      userHandler[HANDLER_STREAMING] = STREAM_RESPONSE;
+
+      tracer.runUserHandler(userHandler, event, context, callback, responseStream);
+
+      expect(userHandler).toHaveBeenCalledWith(event, responseStream, context, callback);
+
+      supportsCallbackSpy.mockRestore();
+    });
+
+    test('stream handler without callback support - does NOT pass callback', () => {
+      const supportsCallbackSpy = jest.spyOn(utils, 'supportsCallbackHandlers');
+      supportsCallbackSpy.mockReturnValue(false);
+
+      const { event, context, responseStream } = new HandlerInputsBuilder()
+        .withResponseStream({ stream: 'data' })
+        .build();
+      const callback = jest.fn();
+      const userHandler = jest.fn().mockReturnValue('result');
+      userHandler[HANDLER_STREAMING] = STREAM_RESPONSE;
+
+      tracer.runUserHandler(userHandler, event, context, callback, responseStream);
+
+      expect(userHandler).toHaveBeenCalledWith(event, responseStream, context);
+
+      supportsCallbackSpy.mockRestore();
+    });
+  });
+
+  describe('createNode24Handler (via decorateUserHandler)', () => {
+    test('decorated handler signature has no callback parameter', () => {
+      const supportsCallbackSpy = jest.spyOn(utils, 'supportsCallbackHandlers');
+      supportsCallbackSpy.mockReturnValue(false);
+
+      const userHandler = async (event, context) => ({ success: true });
+      const decoratedHandler = tracer.trace({})(userHandler);
+
+      // Node 24 handler should have 2 parameters (event, context) - no callback
+      expect(decoratedHandler.length).toBe(2);
+
+      supportsCallbackSpy.mockRestore();
+    });
+
+    test('decorated stream handler signature has no callback parameter', () => {
+      const supportsCallbackSpy = jest.spyOn(utils, 'supportsCallbackHandlers');
+      supportsCallbackSpy.mockReturnValue(false);
+
+      const userHandler = async (event, responseStream, context) => ({ streamed: true });
+      userHandler[HANDLER_STREAMING] = STREAM_RESPONSE;
+
+      const decoratedHandler = tracer.trace({})(userHandler);
+
+      // Node 24 stream handler should have 3 parameters (event, responseStream, context) - no callback
+      expect(decoratedHandler.length).toBe(3);
+      expect(decoratedHandler[HANDLER_STREAMING]).toBe(STREAM_RESPONSE);
+
+      supportsCallbackSpy.mockRestore();
+    });
+
+    test('async handler resolves correctly without callback', async () => {
+      const supportsCallbackSpy = jest.spyOn(utils, 'supportsCallbackHandlers');
+      supportsCallbackSpy.mockReturnValue(false);
+
+      const expectedResult = { data: 'test result' };
+      const userHandler = async (event, context) => expectedResult;
+
+      const { event, context } = new HandlerInputsBuilder().build();
+      const decoratedHandler = tracer.trace({})(userHandler);
+
+      const result = await decoratedHandler(event, context);
+
+      expect(result).toEqual(expectedResult);
+
+      supportsCallbackSpy.mockRestore();
+    });
+
+    test('async handler rejects correctly without callback', async () => {
+      const supportsCallbackSpy = jest.spyOn(utils, 'supportsCallbackHandlers');
+      supportsCallbackSpy.mockReturnValue(false);
+
+      const expectedError = new Error('Node 24 error');
+      const userHandler = async (event, context) => {
+        throw expectedError;
+      };
+
+      const { event, context } = new HandlerInputsBuilder().build();
+      const decoratedHandler = tracer.trace({})(userHandler);
+
+      await expect(decoratedHandler(event, context)).rejects.toEqual(expectedError);
+
+      supportsCallbackSpy.mockRestore();
+    });
+
+    test('stream handler works correctly without callback', async () => {
+      const supportsCallbackSpy = jest.spyOn(utils, 'supportsCallbackHandlers');
+      supportsCallbackSpy.mockReturnValue(false);
+
+      const expectedResult = { streamed: true };
+      const userHandler = async (event, responseStream, context) => expectedResult;
+      userHandler[HANDLER_STREAMING] = STREAM_RESPONSE;
+
+      const { event, context, responseStream } = new HandlerInputsBuilder()
+        .withResponseStream({ stream: 'data' })
+        .build();
+
+      const decoratedHandler = tracer.trace({})(userHandler);
+      const result = await decoratedHandler(event, responseStream, context);
+
+      expect(result).toEqual(expectedResult);
+
+      supportsCallbackSpy.mockRestore();
+    });
+
+    test('legacy handler has callback parameter when callbacks supported', () => {
+      const supportsCallbackSpy = jest.spyOn(utils, 'supportsCallbackHandlers');
+      supportsCallbackSpy.mockReturnValue(true);
+
+      const userHandler = async (event, context, callback) => ({ success: true });
+      const decoratedHandler = tracer.trace({})(userHandler);
+
+      // Legacy handler should have 3 parameters (event, context, callback)
+      expect(decoratedHandler.length).toBe(3);
+
+      supportsCallbackSpy.mockRestore();
+    });
+
+    test('legacy stream handler has callback parameter when callbacks supported', () => {
+      const supportsCallbackSpy = jest.spyOn(utils, 'supportsCallbackHandlers');
+      supportsCallbackSpy.mockReturnValue(true);
+
+      const userHandler = async (event, responseStream, context, callback) => ({ streamed: true });
+      userHandler[HANDLER_STREAMING] = STREAM_RESPONSE;
+
+      const decoratedHandler = tracer.trace({})(userHandler);
+
+      // Legacy stream handler should have 4 parameters (event, responseStream, context, callback)
+      expect(decoratedHandler.length).toBe(4);
+      expect(decoratedHandler[HANDLER_STREAMING]).toBe(STREAM_RESPONSE);
+
+      supportsCallbackSpy.mockRestore();
+    });
   });
 });

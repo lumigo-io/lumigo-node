@@ -22,6 +22,26 @@ type xRayTraceIdFields = {
 export const getRandomId = CommonUtils.getRandomId;
 export const getRandomString = CommonUtils.getRandomString;
 export const md5Hash = CommonUtils.md5Hash;
+
+export const getNodeMajorVersion = (): number => {
+  // Extract Node version from AWS_EXECUTION_ENV
+  const execEnv = process.env.AWS_EXECUTION_ENV || '';
+  const match = execEnv.match(/nodejs(\d+)/);
+  if (match) {
+    return parseInt(match[1], 10);
+  }
+  return 0;
+};
+
+/**
+ * Checks if the current Node.js version supports callback-based Lambda handlers.
+ * Callbacks are deprecated starting from Node.js 24.
+ * @returns true if Node < 24 (supports callbacks), false if Node >= 24 (no callback support)
+ */
+export const supportsCallbackHandlers = (): boolean => {
+  return getNodeMajorVersion() < 24;
+};
+
 export const SPAN_PATH = '/api/spans';
 export const LUMIGO_TRACER_EDGE = 'lumigo-tracer-edge.golumigo.com';
 export const LUMIGO_DEFAULT_DOMAIN_SCRUBBERS =

@@ -3,6 +3,19 @@ const { load } = require('./aws/aws-user-function.js');
 
 const ORIGINAL_HANDLER_KEY = 'LUMIGO_ORIGINAL_HANDLER';
 
+const getNodeMajorVersion = () => {
+  const execEnv = process.env.AWS_EXECUTION_ENV || '';
+  const match = execEnv.match(/nodejs(\d+)/);
+  if (match) {
+    return parseInt(match[1], 10);
+  }
+  return 0;
+};
+
+const supportsCallbackHandlers = () => {
+  return getNodeMajorVersion() < 24;
+};
+
 const getHandler = () => {
   if (process.env[ORIGINAL_HANDLER_KEY] === undefined)
     throw Error('Could not load the original handler. Please contact Lumigo.');
@@ -61,6 +74,17 @@ const handlerAsync = async (event, context, callback) => {
   return lumigo.trace(userHandler)(event, context, callback);
 };
 
+// Handler without callback parameter (Node 24+)
+const handlerAsyncNoCallback = async (event, context) => {
+  let userHandler;
+  try {
+    userHandler = await getHandlerAsync();
+  } catch (e) {
+    throw removeLumigoFromStacktrace(e);
+  }
+  return lumigo.trace(userHandler)(event, context);
+};
+
 switch (process.env.AWS_EXECUTION_ENV) {
   case 'AWS_Lambda_nodejs12.x':
     module.exports = { ORIGINAL_HANDLER_KEY, handler };
@@ -70,7 +94,10 @@ switch (process.env.AWS_EXECUTION_ENV) {
     } catch (e) {};
     break;
   default:
-    module.exports = { ORIGINAL_HANDLER_KEY, handler: handlerAsync };
+    module.exports = {
+      ORIGINAL_HANDLER_KEY,
+      handler: supportsCallbackHandlers() ? handlerAsync : handlerAsyncNoCallback
+    };
     try {
       // require the user's handler during initialization time, just as without Lumigo
       (async () => {
