@@ -115,6 +115,9 @@ jobs:
     resource_class: medium+
     working_directory: ~/lumigo-node
     steps:
+    - run:
+        name: show current node version
+        command: node --version
     - checkout-and-install-deps
     - run:
         name: prettier
