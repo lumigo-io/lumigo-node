@@ -36,7 +36,7 @@ workflows:
 
     - lumigo-orb/prep-it-resources:
         context: common
-        venv_python_version: "3.9"
+        docker_image: lumigo/ci-node18:latest
         requires:
           - lumigo-orb/is_environment_available
 
