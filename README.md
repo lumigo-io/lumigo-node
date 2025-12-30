@@ -8,7 +8,7 @@
 
 This is [`@lumigo/tracer`](https://), Lumigo's Node.js agent for distributed tracing and performance monitoring.
 
-Supported NodeJS runtimes: 16.x (deprecated by AWS), 18.x (deprecated by AWS), 20.x, 22.x and 24.x
+Supported NodeJS runtimes: 18.x, 20.x, 22.x and 24.x
 
 Please refer to AWS NodeJS runtime support [here](https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html).
 ## Usage

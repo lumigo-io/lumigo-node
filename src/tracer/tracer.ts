@@ -230,9 +230,9 @@ const createLegacyHandler = <T extends Handler | ResponseStreamHandler>(
 
   if (isResponseStreamFunction(userHandler)) {
     decoratedResponseStreamUserHandler[HANDLER_STREAMING] = STREAM_RESPONSE;
-    return decoratedResponseStreamUserHandler as T;
+    return decoratedResponseStreamUserHandler as unknown as T;
   } else {
-    return decoratedUserHandler as T;
+    return decoratedUserHandler as unknown as T;
   }
 };
 

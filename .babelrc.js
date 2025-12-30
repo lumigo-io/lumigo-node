@@ -6,8 +6,8 @@ const presets = [
 
 const plugins = [
   [ "@babel/plugin-proposal-decorators", { "legacy": true } ],
-  "@babel/plugin-proposal-class-properties",
-  "@babel/plugin-proposal-optional-chaining",
+  "@babel/plugin-transform-class-properties",
+  "@babel/plugin-transform-optional-chaining",
 ];
 
 module.exports = { presets, plugins };

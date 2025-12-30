@@ -75,8 +75,8 @@ export const wrapMongoClient4xClass = (mongoClientLibrary: any) => {
               typeof callback === 'function'
                 ? callback
                 : typeof options === 'function'
-                ? options
-                : undefined;
+                  ? options
+                  : undefined;
             options = typeof options !== 'function' ? options : undefined;
             originalStaticConnect
               .bind(this)(...injectMonitoringCommand([url, options, callback]))

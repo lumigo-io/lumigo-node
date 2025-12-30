@@ -243,7 +243,7 @@ export const getTraceId = (awsXAmznTraceId) => {
     );
     logger.debug('Error while parsing the _X_AMZN_TRACE_ID environment variable:', err);
 
-    var traceId = awsXAmznTraceId;
+    let traceId = awsXAmznTraceId;
     if (!traceId) {
       // If we do not have the _X_AMZN_TRACE_ID environment variable, we use
       // the invocation identifier in the Lambda context
@@ -261,7 +261,7 @@ export const getTraceId = (awsXAmznTraceId) => {
       );
     }
 
-    var base64TraceId = Buffer.from(traceId).toString('hex');
+    let base64TraceId = Buffer.from(traceId).toString('hex');
 
     while (base64TraceId.length < 24) {
       base64TraceId += base64TraceId;
