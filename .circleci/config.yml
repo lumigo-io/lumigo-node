@@ -81,6 +81,14 @@ workflows:
           - lumigo-orb/vulnerability-scan
           - lumigo-orb/integration-test-parallel
 
+    - test-larn:
+        context:
+          - common
+          - node.js
+        filters:
+          branches:
+            ignore: master
+
     - deploy:
         context:
           - common
@@ -165,6 +173,47 @@ jobs:
           command: npm test
           no_output_timeout: 15m
 
+  test-larn:
+    <<: *defaults
+    environment:
+      - TZ: Asia/Jerusalem
+    resource_class: medium+
+    working_directory: ~/lumigo-node
+    steps:
+    - run:
+        command: |
+          mkdir ~/.ssh/ && echo -e "Host github.com\n\tStrictHostKeyChecking no\n" > ~/.ssh/config
+          cd ..
+          git clone git@github.com:lumigo-io/common-resources.git
+    - run:
+        command: |
+          cd ..
+          git clone git@github.com:lumigo-io/larn.git
+    - checkout
+    - run:
+        name: setup AWS credentials
+        command: |
+          mkdir -p ~/.aws
+          enc_location=../common-resources/encrypted_files/credentials_production.enc
+          echo ${KEY} | gpg --batch -d --passphrase-fd 0 ${enc_location} > ~/.aws/credentials
+    - run:
+        name: test parallel larn commands
+        no_output_timeout: 20m
+        command: |
+          cd ../larn && npm i -g
+          echo "Running larn for all runtimes in parallel..."
+          larn -r nodejs12.x -n layers/LAYERS12x --filter lumigo-node-tracer -p ~/lumigo-node && echo "Done: nodejs12.x" &
+          larn -r nodejs14.x -n layers/LAYERS14x --filter lumigo-node-tracer -p ~/lumigo-node && echo "Done: nodejs14.x" &
+          larn -r nodejs16.x -n layers/LAYERS16x --filter lumigo-node-tracer -p ~/lumigo-node && echo "Done: nodejs16.x" &
+          larn -r nodejs18.x -n layers/LAYERS18x --filter lumigo-node-tracer -p ~/lumigo-node && echo "Done: nodejs18.x" &
+          larn -r nodejs20.x -n layers/LAYERS20x --filter lumigo-node-tracer -p ~/lumigo-node && echo "Done: nodejs20.x" &
+          larn -r nodejs22.x -n layers/LAYERS22x --filter lumigo-node-tracer -p ~/lumigo-node && echo "Done: nodejs22.x" &
+          larn -r nodejs24.x -n layers/LAYERS24x --filter lumigo-node-tracer -p ~/lumigo-node && echo "Done: nodejs24.x" &
+          wait
+          echo "All larn commands completed"
+          echo "Verifying generated files..."
+          ls -la ~/lumigo-node/layers/LAYERS*.md
+
   deploy:
     <<: *defaults
     environment:
@@ -199,6 +248,7 @@ jobs:
     - run:
         name: deploy to npm + lambda layer
         command: ./scripts/bd_to_prod.sh
+        no_output_timeout: 20m
 
 commands:
   checkout-and-install-deps:
