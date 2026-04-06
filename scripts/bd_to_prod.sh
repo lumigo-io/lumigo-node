@@ -43,13 +43,17 @@ echo "Creating lumigo-node layer"
 
 echo "Creating layer latest version arn table md file (LAYERS.md)"
 cd ../larn && npm i -g
-larn -r nodejs12.x -n layers/LAYERS12x --filter lumigo-node-tracer -p ~/lumigo-node
-larn -r nodejs14.x -n layers/LAYERS14x --filter lumigo-node-tracer -p ~/lumigo-node
-larn -r nodejs16.x -n layers/LAYERS16x --filter lumigo-node-tracer -p ~/lumigo-node
-larn -r nodejs18.x -n layers/LAYERS18x --filter lumigo-node-tracer -p ~/lumigo-node
-larn -r nodejs20.x -n layers/LAYERS20x --filter lumigo-node-tracer -p ~/lumigo-node
-larn -r nodejs22.x -n layers/LAYERS22x --filter lumigo-node-tracer -p ~/lumigo-node
-larn -r nodejs24.x -n layers/LAYERS24x --filter lumigo-node-tracer -p ~/lumigo-node
+
+echo "Running larn for all runtimes in parallel..."
+larn -r nodejs12.x -n layers/LAYERS12x --filter lumigo-node-tracer -p ~/lumigo-node && echo "Done: nodejs12.x" &
+larn -r nodejs14.x -n layers/LAYERS14x --filter lumigo-node-tracer -p ~/lumigo-node && echo "Done: nodejs14.x" &
+larn -r nodejs16.x -n layers/LAYERS16x --filter lumigo-node-tracer -p ~/lumigo-node && echo "Done: nodejs16.x" &
+larn -r nodejs18.x -n layers/LAYERS18x --filter lumigo-node-tracer -p ~/lumigo-node && echo "Done: nodejs18.x" &
+larn -r nodejs20.x -n layers/LAYERS20x --filter lumigo-node-tracer -p ~/lumigo-node && echo "Done: nodejs20.x" &
+larn -r nodejs22.x -n layers/LAYERS22x --filter lumigo-node-tracer -p ~/lumigo-node && echo "Done: nodejs22.x" &
+larn -r nodejs24.x -n layers/LAYERS24x --filter lumigo-node-tracer -p ~/lumigo-node && echo "Done: nodejs24.x" &
+wait
+echo "All larn commands completed"
 cd ../lumigo-node
 git add layers/LAYERS12x.md
 git add layers/LAYERS14x.md
