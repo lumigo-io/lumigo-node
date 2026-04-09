@@ -102,7 +102,7 @@ workflows:
           name: daily-vulnerability-scan
           context: common
           notify_on_failure: true
-          failure_notification_message: "Daily vulnerability scan failed for lumigo-node."
+          failure_notification_message: "Daily vulnerability scan failed for lumigo-node"
           pre_scan_command: |
             npm ci && pushd auto-instrument-handler && npm install && popd
           targets_file: ./grype_targets.txt
