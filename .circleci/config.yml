@@ -69,12 +69,12 @@ workflows:
 
     - lumigo-orb/vulnerability-scan:
         context: common
-        min_fail_severity: negligible
         notify_on_failure: true
         notify_dash0_on_failure: true
         failure_notification_message: "TEST: Dash0 webhook smoke test from lumigo-node — please ignore"
         pre_scan_command: |
-          npm ci && pushd auto-instrument-handler && npm install && popd
+          echo "Forcing failure to test Slack notification path"
+          exit 1
         targets_file: ./grype_targets.txt
 
     - lumigo-orb/workflow-completed-successfully:
