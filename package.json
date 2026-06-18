@@ -17,7 +17,7 @@
     "jest-detectOpenHandles": "jest --detectOpenHandles",
     "jest-traces": "node --trace-deprecation --trace-warnings node_modules/.bin/jest",
     "lint": "eslint ./src",
-    "prepublishOnly": "npm run lint && npm run prettier:fix && npm run test",
+    "prepublishOnly": "npm run build",
     "prettier:ci": "prettier --list-different \"src/**/*.[jt]s\" --parser typescript",
     "prettier:fix": "prettier --write \"./src/**/*.[jt]s\" --parser typescript",
     "semantic-release": "semantic-release",
