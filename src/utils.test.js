@@ -233,8 +233,10 @@ describe('utils', () => {
     expect(resultRoot).toEqual(patchedTraceIdPrefix);
     expect(resultSuffix).toEqual(patchedTraceIdSuffix);
 
+    // getPatchedTraceId truncates to whole seconds, so timeDiff is Date.now()
+    // modulo 1000 and is legitimately 0 on an exact second boundary
     const timeDiff = Date.now() - 1000 * parseInt(resultTime, 16);
-    expect(timeDiff).toBeGreaterThan(0);
+    expect(timeDiff).toBeGreaterThanOrEqual(0);
     expect(timeDiff).toBeLessThan(1500);
   });
 

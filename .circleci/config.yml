@@ -42,7 +42,10 @@ workflows:
 
     - lumigo-orb/prep-it-resources:
         context: common
-        venv_python_version: "3.9"
+        # Must be >= 3.10: the orb installs pip==25.1 (needs >= 3.9) and
+        # pre-commit==4.6.0 (needs >= 3.10) into this venv. The image default
+        # python3 is 3.7, so this cannot be omitted.
+        venv_python_version: "3.11"
         requires:
           - lumigo-orb/is_environment_available
 
