@@ -276,6 +276,12 @@ export const getAwsServiceFromHost = (host = '') => {
     return service;
   }
 
+  // Account-based DynamoDB endpoints put the account id in the first label:
+  // <account-id>.ddb.<region>.amazonaws.com. Current AWS SDKs route DynamoDB there
+  // by default (accountIdEndpointMode defaults to 'preferred'), so matching only the
+  // first label would classify the call as an external service.
+  if (host.split('.')[1] === 'ddb') return 'dynamodb';
+
   if (host.includes('execute-api')) return 'apigw';
 
   return EXTERNAL_SERVICE;

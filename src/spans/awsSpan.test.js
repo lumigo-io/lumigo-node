@@ -594,6 +594,12 @@ describe('awsSpan', () => {
     expect(awsSpan.getAwsServiceFromHost(host2)).toEqual(awsSpan.EXTERNAL_SERVICE);
   });
 
+  test('getAwsServiceFromHost -> account-based dynamodb endpoint', () => {
+    // Current AWS SDKs route DynamoDB to <account-id>.ddb.<region>.amazonaws.com
+    const host = '291070810472.ddb.us-west-2.amazonaws.com';
+    expect(awsSpan.getAwsServiceFromHost(host)).toEqual('dynamodb');
+  });
+
   test('getAwsServiceFromHost -> api-gw', () => {
     const host1 = `random.random.execute-api.amazonaws.com`;
     expect(awsSpan.getAwsServiceFromHost(host1)).toEqual('apigw');
