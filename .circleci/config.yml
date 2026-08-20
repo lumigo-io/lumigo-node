@@ -1,7 +1,12 @@
 version: 2.1
 
 orbs:
-  lumigo-orb: &lumigo_orb_version lumigo/lumigo-orb@volatile
+  # Temporarily pinned to the dev build of
+  # https://github.com/lumigo-io/lumigo-orb/pull/241 so this branch can get past
+  # `pip install pre-commit==4.6.0`, which cannot resolve on this repo's venv python.
+  # Revert to `lumigo/lumigo-orb@volatile` once that PR is merged and promoted.
+  # (CircleCI deletes dev orb versions after 90 days.)
+  lumigo-orb: &lumigo_orb_version lumigo/lumigo-orb@dev:4cfb4a0
 
 defaults: &defaults
   docker:
